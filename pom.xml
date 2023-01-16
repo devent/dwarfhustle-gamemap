@@ -66,6 +66,8 @@
 
     <modules>
         <module>dwarfhustle-gamemap-jme</module>
+        <module>dwarfhustle-gamemap-debug-javafx</module>
+        <module>dwarfhustle-gamemap-debug-antlr</module>
     </modules>
 
     <dependencyManagement>
