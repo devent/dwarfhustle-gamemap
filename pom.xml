@@ -1,7 +1,7 @@
 <!--
 
-    Dwarf Hustle Model - Manages the compile dependencies for the model.
-    Copyright © 2022 Erwin Müller (erwin.mueller@anrisoftware.com)
+    Dwarf Hustle Game Map - Game map.
+    Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published by
@@ -65,9 +65,9 @@
     </developers>
 
     <modules>
+        <module>dwarfhustle-gamemap-console-javafx</module>
+        <module>dwarfhustle-gamemap-console-antlr</module>
         <module>dwarfhustle-gamemap-jme</module>
-        <module>dwarfhustle-gamemap-debug-javafx</module>
-        <module>dwarfhustle-gamemap-debug-antlr</module>
     </modules>
 
     <dependencyManagement>

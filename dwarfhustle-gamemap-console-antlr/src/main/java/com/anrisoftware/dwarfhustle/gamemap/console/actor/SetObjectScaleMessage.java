@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-jme - Game map.
+ * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,20 +15,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme;
+package com.anrisoftware.dwarfhustle.gamemap.console.actor;
 
-import com.anrisoftware.dwarfhustle.model.actor.ActorsModule;
-import com.google.inject.AbstractModule;
+import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 /**
+ * Event that the scale of a game object should be updated.
  *
- *
- * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ * @author Erwin Müller
  */
-public class AppModule extends AbstractModule {
+@RequiredArgsConstructor
+@ToString(callSuper = true)
+public class SetObjectScaleMessage extends Message {
 
-	@Override
-	protected void configure() {
-		install(new ActorsModule());
-	}
+    public final String objectType;
+
+	public final long id;
+
+    public final float z;
+
+    public final float y;
+
+    public final float x;
 }
