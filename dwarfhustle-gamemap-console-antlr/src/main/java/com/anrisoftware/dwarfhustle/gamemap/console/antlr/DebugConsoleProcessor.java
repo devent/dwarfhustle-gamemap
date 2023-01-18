@@ -20,10 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 import static com.jme3.math.FastMath.DEG_TO_RAD;
 import static java.util.Optional.of;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.Optional;
-import java.util.Scanner;
 
 import javax.inject.Inject;
 
@@ -41,69 +38,33 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectRotationMessa
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTilesRotationMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugParserServiceFactory;
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.google.inject.assistedinject.Assisted;
 import com.jme3.math.Quaternion;
 
-import akka.actor.typed.ActorRef;
-import lombok.SneakyThrows;
-
 /**
- * Waits for user input and sends debug console events.
+ * Processes one line in the language parser and creates messages.
  *
  * @author Erwin Müller
  */
-public class ConsoleDebugProcess implements Runnable {
+public class DebugConsoleProcessor {
 
 	@Inject
 	private DebugParserServiceFactory parserFactory;
 
 	@Inject
-	@Assisted
-	private ActorRef<Message> actor;
+	private ActorSystemProvider actor;
 
-	private boolean running;
-
-	private DebugConsoleParserService parser;
-
-	public ConsoleDebugProcess() {
-		this.running = true;
+	/**
+	 * Process the line in the language parser and creates messages.
+	 */
+	public void process(String line) {
+		var parser = parserFactory.create();
+		parser.parse(line);
+		parseVerb(parser, Optional.empty()).ifPresent(m -> actor.getMainActor().tell(m));
 	}
 
-	public void setRunning(boolean running) {
-		this.running = running;
-	}
-
-	@Override
-	@SneakyThrows
-	public void run() {
-		var br = new BufferedReader(new InputStreamReader(System.in));
-		var scan = new Scanner(br);
-		try {
-			while (running) {
-				while (!br.ready()) {
-					if (!running) {
-						return;
-					}
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						running = false;
-					}
-				}
-				String readLine = scan.nextLine();
-				this.parser = parserFactory.create();
-				parser.parse(readLine);
-				parseVerb(Optional.empty()).ifPresent(m -> actor.tell(m));
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			scan.close();
-		}
-	}
-
-	private Optional<Message> parseVerb(Optional<Message> o) {
+	private Optional<Message> parseVerb(DebugConsoleParserService parser, Optional<Message> o) {
 		if (parser.verb == null) {
 			return o;
 		}
@@ -111,33 +72,33 @@ public class ConsoleDebugProcess implements Runnable {
 		case "set":
 			switch (parser.object) {
 			case "tiles":
-				return parseSetForTiles(o);
+				return parseSetForTiles(parser, o);
 			case "mark":
-				return parseSetForMark(o);
+				return parseSetForMark(parser, o);
 			default:
-				return parseSetForObject(o);
+				return parseSetForObject(parser, o);
 			}
 		case "add":
-			return parseAddForName(o);
+			return parseAddForName(parser, o);
 		case "apply":
-			return parseApply(o);
+			return parseApply(parser, o);
 		}
 		return o;
 	}
 
-	private Optional<Message> parseApply(Optional<Message> o) {
+	private Optional<Message> parseApply(DebugConsoleParserService parser, Optional<Message> o) {
 		if (StringUtils.isBlank(parser.physics)) {
 			return o;
 		}
 		switch (parser.physics) {
 		case "impulse":
-			return parseApplyImpulse(o);
+			return parseApplyImpulse(parser, o);
 		default:
 			return o;
 		}
 	}
 
-	private Optional<Message> parseApplyImpulse(Optional<Message> o) {
+	private Optional<Message> parseApplyImpulse(DebugConsoleParserService parser, Optional<Message> o) {
 		if (parser.zz == null || parser.yy == null || parser.xx == null) {
 			parser.xx = 0f;
 			parser.yy = 0f;
@@ -147,7 +108,7 @@ public class ConsoleDebugProcess implements Runnable {
 				parser.yy, parser.zz));
 	}
 
-	private Optional<Message> parseAddForName(Optional<Message> o) {
+	private Optional<Message> parseAddForName(DebugConsoleParserService parser, Optional<Message> o) {
 		if (StringUtils.isBlank(parser.objectType)) {
 			return o;
 		}
@@ -158,7 +119,7 @@ public class ConsoleDebugProcess implements Runnable {
 		}
 	}
 
-	private Optional<Message> parseSetForObject(Optional<Message> o) {
+	private Optional<Message> parseSetForObject(DebugConsoleParserService parser, Optional<Message> o) {
 		switch (parser.property) {
 		case "coordinates":
 			switch (parser.object) {
@@ -173,7 +134,7 @@ public class ConsoleDebugProcess implements Runnable {
 			case "tile":
 				return o;
 			default:
-				return parseRotationObject();
+				return parseRotationObject(parser);
 			}
 		case "scale":
 			switch (parser.object) {
@@ -207,12 +168,12 @@ public class ConsoleDebugProcess implements Runnable {
 		return o;
 	}
 
-	private Optional<Message> parseRotationObject() {
+	private Optional<Message> parseRotationObject(DebugConsoleParserService parser) {
 		var q = new Quaternion().fromAngles(parser.xx * DEG_TO_RAD, parser.yy * DEG_TO_RAD, parser.zz * DEG_TO_RAD);
 		return of(new SetObjectRotationMessage(parser.object, parser.id, q.getX(), q.getY(), q.getZ(), q.getW()));
 	}
 
-	private Optional<Message> parseSetForTiles(Optional<Message> o) {
+	private Optional<Message> parseSetForTiles(DebugConsoleParserService parser, Optional<Message> o) {
 		switch (parser.property) {
 		case "coordinates":
 			return o;
@@ -228,7 +189,7 @@ public class ConsoleDebugProcess implements Runnable {
 		return o;
 	}
 
-	private Optional<Message> parseSetForMark(Optional<Message> o) {
+	private Optional<Message> parseSetForMark(DebugConsoleParserService parser, Optional<Message> o) {
 		switch (parser.property) {
 		case "coordinates":
 			return of(new SetMarkCoordinatesMessage(parser.xx, parser.yy, parser.zz));
