@@ -38,24 +38,23 @@
                     <bottom>
                         <VBox BorderPane.alignment="CENTER">
                             <children>
-                                <GridPane id="topPanel" hgap="10.0">
+                                <GridPane id="topPanel" hgap="10.0" prefHeight="32.0" prefWidth="1297.0">
                                     <columnConstraints>
-                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="122.0" minWidth="10.0" prefWidth="122.0" />
-                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="964.0" minWidth="10.0" prefWidth="948.0" />
-                                        <ColumnConstraints hgrow="SOMETIMES" />
-                              <ColumnConstraints hgrow="SOMETIMES" />
+                              <ColumnConstraints hgrow="SOMETIMES" percentWidth="20.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="80.0" />
+                              <ColumnConstraints fillWidth="false" halignment="RIGHT" hgrow="SOMETIMES" percentWidth="20.0" />
                                     </columnConstraints>
                                     <rowConstraints>
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                     </rowConstraints>
                                     <children>
                                         <Label id="fortressNameLabel" fx:id="fortressNameLabel" text="Fortress-Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER" />
-                              <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="3" GridPane.valignment="CENTER">
+                              <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="2" GridPane.valignment="CENTER">
                                  <children>
                                               <Label id="gameTimeLabel" fx:id="gameTimeLabel" alignment="CENTER" text="Game-Time" />
                                     <Button id="settingsButton" fx:id="settingsButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="S" />
                                     <Button id="aboutButton" fx:id="aboutButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="H" />
-                                    <Button id="quitButton" fx:id="quitButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" />
+                                    <Button id="quitButton" fx:id="quitButton" ellipsisString="ffffffffffff" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" />
                                  </children>
                               </HBox>
                                     </children>
