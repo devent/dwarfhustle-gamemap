@@ -65,9 +65,11 @@
     </developers>
 
     <modules>
-        <module>dwarfhustle-gamemap-console-javafx</module>
         <module>dwarfhustle-gamemap-console-antlr</module>
+        <module>dwarfhustle-gamemap-gui-javafx</module>
         <module>dwarfhustle-gamemap-jme</module>
+        <module>dwarfhustle-gamemap-model</module>
+        <module>dwarfhustle-gamemap-assets</module>
     </modules>
 
     <dependencyManagement>

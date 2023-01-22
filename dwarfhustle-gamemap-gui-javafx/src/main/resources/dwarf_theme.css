@@ -1,0 +1,273 @@
+.root {
+    special1: #0755a0;
+    special2: #04478b;
+    special3: #053a70;
+    special4: #04305d;
+    dark1: #586671;
+    dark2: #51626a;
+    dark3: #334350;
+    dark4: #28313a;
+    neutral1: #d3c8b4;
+    neutral2: #ccbea3;
+    neutral3: #968664;
+    neutral4: #3d2c12;
+    neutral5: #d3bb8d;
+    neutral6: #d1b77a;
+    neutral7: #d3b14d;
+    neutral8: #9f6422;
+    highlight1: #d3230c;
+    highlight2: #ad3f26;
+    highlight3: #c95140;
+    highlight4: #a86e63;
+    buttonNormal: linear-gradient(to bottom, neutral5, neutral7);
+    buttonFocused: linear-gradient(to bottom, neutral7, neutral8);
+    buttonArmed: linear-gradient(to bottom, neutral7, neutral8);
+    buttonPressed: linear-gradient(to bottom, neutral8, neutral7);
+    dwarf-box-border: ladder(
+        neutral1,
+        black 20%,
+        derive(neutral1,-15%) 30%
+    );
+    dwarf-inner-border: linear-gradient(to bottom,
+            ladder(
+                neutral1,
+                derive(neutral1,30%) 0%,
+                derive(neutral1,20%) 40%,
+                derive(neutral1,25%) 60%,
+                derive(neutral1,55%) 80%,
+                derive(neutral1,55%) 90%,
+                derive(neutral1,75%) 100%
+            ),
+            ladder(
+                neutral1,
+                derive(neutral1,20%) 0%,
+                derive(neutral1,10%) 20%,
+                derive(neutral1,5%) 40%,
+                derive(neutral1,-2%) 60%,
+                derive(neutral1,-5%) 100%
+            ));
+    dwarf-inner-border-horizontal: linear-gradient(to right, derive(neutral1,55%), derive(neutral1,-5%));
+}
+
+.split-pane > .split-pane-divider {
+    -fx-padding: 0 0.25em 0 0.25em; /* 0 3 0 3 */
+}
+
+/* horizontal the two nodes are placed to the left/right of each other. */
+.split-pane:horizontal > .split-pane-divider {
+   -fx-background-color: dwarf-box-border, dwarf-inner-border-horizontal;
+   -fx-background-insets: 0, 0 1 0 1;
+}
+
+/* vertical the two nodes are placed on top of each other. */
+.split-pane:vertical > .split-pane-divider {
+   -fx-background-color: dwarf-box-border, dwarf-inner-border;
+   -fx-background-insets: 0, 1 0 1 0;
+}
+
+.label {
+    -fx-background-color: transparent;
+    -fx-text-fill: dark4;
+}
+
+.titleLabel {
+	-fx-text-alignment: center;
+	-fx-font-size: 150%;
+}
+
+.subtitleLabel {
+    -fx-text-alignment: center;
+    -fx-font-size: 120%;
+}
+
+.text-input {
+	-fx-control-inner-background: neutral1;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-border-color: dark4;
+	-fx-border-radius: 4;
+	-fx-padding: 0 0 0 0;
+	-fx-pref-width: 50;
+}
+
+.text-input:focused:hover {
+	-fx-border-color: special1;
+}
+
+.combo-box .list-cell {
+	-fx-background-color: neutral1;
+}
+
+.combo-box-base {
+	-fx-background-color: neutral1;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-border-color: dark4;
+}
+
+.button, .toggle-button {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral2, neutral3);
+	-fx-background-insets: 0;
+	-fx-background-radius: 12;
+	-fx-border-style: solid inside solid;
+	-fx-border-width: 1px;
+	-fx-border-radius: 12;
+	-fx-border-color: neutral4;
+	-fx-border-insets: 0;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 0.0, 0.0);
+}
+
+.button:armed, .toggle-button:selected, .toggle-button:armed {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral7, neutral8);
+}
+
+.button:armed, .toggle-button:armed {
+	-fx-background-color: buttonArmed;
+	-fx-border-color: neutral8;
+}
+
+.button:pressed, .toggle-button:pressed {
+	-fx-background-color: buttonPressed;
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral3, neutral2);
+}
+
+.commandButton {
+    -fx-pref-width: 8em;
+}
+
+.list-view {
+    -fx-pref-height: 10em;
+	-fx-background-color: neutral1;
+	-fx-border-style: solid inside solid;
+	-fx-border-width: 1px;
+	-fx-border-color: dark4;
+	-fx-border-radius: 4;
+}
+
+.list-view:focused:hover {
+	-fx-border-color: special1;
+}
+
+.list-cell {
+	-fx-background-color: neutral1;
+	-fx-padding: 0 0 0 0;
+}
+
+.list-cell:empty {
+    -fx-opacity: 0;
+}
+
+.list-cell:even {
+	-fx-background-color: neutral1;
+}
+
+.list-cell:selected:even {
+	-fx-background-color: neutral7;
+	-fx-text-fill: special1;
+}
+
+.list-cell:odd {
+	-fx-background-color: neutral2;
+}
+
+.list-cell:selected:odd {
+	-fx-background-color: neutral7;
+	-fx-text-fill: special1;
+}
+
+.list-cell:objectitems-sep {
+    -fx-background-color: #33CEFF;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+}
+
+.progress-indicator .percentage {
+	-fx-pref-height: 10;
+	-fx-max-height: 10;
+	-fx-fill: null;
+}
+
+.progress-indicator  {
+	-fx-progress-color: special1;
+    -fx-padding: 0 0 -16 0;
+}
+
+.progress-bar .track {
+    -fx-background-image: url("./Images/en/mdpi/paper-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: null;
+    -fx-border-width: null;
+}
+
+.progress-bar .bar {
+	-fx-background-color: special1;
+}
+
+.dwarf-small-buttons {
+    -fx-font-size: 8pt;
+}
+
+#mainPanel {
+    -fx-background-color: transparent;
+    -fx-border-image-source: url("./Images/en/mdpi/stones-background-seamless.png");
+    -fx-border-image-repeat: repeat;
+    -fx-border-image-width: 12;
+    -fx-border-image-insets: 0;
+    -fx-border-image-slice: 16;
+    -fx-padding: 0;
+    -fx-font-family: "Behrensschrift";
+    -fx-font-size: 11pt;
+}
+
+#mainSplit {
+    -fx-background-color: transparent;
+    -fx-border-width: null;
+    -fx-padding: 0;
+}
+
+#statusPanel {
+    -fx-background-image: url("./Images/en/mdpi/stones-2-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: neutral1;
+}
+
+#topPanel {
+    -fx-background-image: url("./Images/en/mdpi/stones-2-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: neutral1;
+}
+
+#leftPane {
+    -fx-background-color: transparent;
+}
+
+#rightPane {
+    -fx-background-image: url("./Images/en/mdpi/paper-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: neutral1;
+}
+
+#pauseButton {
+    -fx-background-color: buttonArmed;
+    -fx-border-color: neutral8;
+}
+
+#pauseButton:armed, #pauseButton:selected, #pauseButton:armed {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral7, neutral8);
+    -fx-border-color: neutral8;
+}
+
+#pauseButton:armed {
+    -fx-background-color: buttonArmed;
+    -fx-border-color: neutral8;
+}
+
+#pauseButton:pressed {
+    -fx-background-color: buttonPressed;
+    -fx-background-color: neutral8;
+}
+
+#fortressNameLabel {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 3.0, 3.0);
+    -fx-font-size: 14pt;
+}

@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
+ * dwarfhustle-gamemap-model - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,21 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.console.actor;
+package com.anrisoftware.dwarfhustle.gamemap.model;
 
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor.ConsoleActorFactory;
-import com.google.inject.AbstractModule;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
+import javax.inject.Inject;
+import javax.inject.Provider;
+
+import com.anrisoftware.resources.texts.external.Texts;
+import com.anrisoftware.resources.texts.external.TextsFactory;
 
 /**
- * @author Erwin Müller
+ * Provides the {@link Texts} from {@code AppTexts.properties}
+ *
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class ConsoleActorModule extends AbstractModule {
+public class AppTextsProvider implements Provider<Texts> {
+
+    private final Texts texts;
+
+    @Inject
+    public AppTextsProvider(TextsFactory images) {
+        this.texts = images.create("AppTexts");
+    }
 
     @Override
-    protected void configure() {
-        install(new FactoryModuleBuilder().implement(ConsoleActor.class, ConsoleActor.class)
-				.build(ConsoleActorFactory.class));
+    public Texts get() {
+        return texts;
     }
 
 }

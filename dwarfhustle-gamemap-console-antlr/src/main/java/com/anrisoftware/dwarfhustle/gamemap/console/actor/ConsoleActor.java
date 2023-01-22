@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-model-db - Manages the compile dependencies for the model.
+ * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify

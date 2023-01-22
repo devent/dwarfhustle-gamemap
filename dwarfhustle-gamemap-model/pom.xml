@@ -1,6 +1,6 @@
 <!--
 
-    dwarfhustle-gamemap-jme - Game map.
+    dwarfhustle-gamemap-model - Game map.
     Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
 
     This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -28,21 +29,9 @@
         <version>0.1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>dwarfhustle-gamemap-jme</artifactId>
+    <artifactId>dwarfhustle-gamemap-model</artifactId>
 
     <dependencies>
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>com.anrisoftware.globalpom</groupId>
-            <artifactId>globalpom-groovytestutils</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Compile dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -50,12 +39,16 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.badlogicgames.ashley</groupId>
-            <artifactId>ashley</artifactId>
+            <groupId>org.jmonkeyengine</groupId>
+            <artifactId>jme3-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
         </dependency>
         <!-- Resources -->
         <dependency>
@@ -78,34 +71,5 @@
             <groupId>com.anrisoftware.resources</groupId>
             <artifactId>resources-binary</artifactId>
         </dependency>
-
-        <!-- Own modules dependencies -->
-        <dependency>
-            <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-jme3-dependencies</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-model-actor</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-gamemap-model</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-gamemap-assets</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-gamemap-gui-javafx</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
-        </dependency>
     </dependencies>
-
 </project>

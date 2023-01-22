@@ -1,6 +1,6 @@
 <!--
 
-    dwarfhustle-gamemap-console-javafx - GUI debug console in Javafx.
+    dwarfhustle-gamemap-assets - Game map.
     Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
 
     This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,5 @@
     <artifactId>dwarfhustle-gamemap</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>dwarfhustle-gamemap-console-javafx</artifactId>
-  <description>GUI debug console in Javafx.</description>
+  <artifactId>dwarfhustle-gamemap-assets</artifactId>
 </project>

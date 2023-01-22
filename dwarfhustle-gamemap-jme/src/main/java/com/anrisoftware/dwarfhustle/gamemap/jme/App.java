@@ -17,58 +17,138 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.Duration.ofMinutes;
+import static java.time.Duration.ofSeconds;
 
-import javax.inject.Inject;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.concurrent.CompletionStage;
 
+import javax.imageio.ImageIO;
+
+import org.apache.commons.io.IOUtils;
+
+import com.anrisoftware.dwarfhustle.gamemap.model.GameMainPanePropertiesProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
+import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
+import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
+import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.jme3.app.LostFocusBehavior;
 import com.jme3.app.SimpleApplication;
-import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
-import com.jme3.scene.Geometry;
-import com.jme3.scene.shape.Box;
+import com.jme3.app.state.ConstantVerifierState;
+import com.jme3.system.AppSettings;
 
-import scala.concurrent.Await;
-import scala.concurrent.duration.Duration;
+import akka.actor.typed.ActorRef;
+import akka.actor.typed.javadsl.AskPattern;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
+@Slf4j
 public class App extends SimpleApplication {
 
 	public static void main(String[] args) {
 		var injector = Guice.createInjector(new AppModule());
 		var app = injector.getInstance(App.class);
-		app.start();
+		app.start(injector);
 	}
 
-	@Inject
-	private ActorSystemProvider actorSystem;
+	private Injector parent;
+
+	private Engine engine;
+
+	private Injector injector;
+
+	private ActorSystemProvider actor;
+
+	private ActorRef<Message> mainWindowActor;
+
+	public App() {
+		super(new ConstantVerifierState());
+	}
+
+	private void start(Injector parent) {
+		this.parent = parent;
+		setupApp();
+		super.start();
+	}
+
+	@SneakyThrows
+	private void setupApp() {
+		this.engine = new Engine();
+		this.injector = parent.createChildInjector(new GamemapJmeModule(this, engine));
+		this.actor = injector.getInstance(ActorSystemProvider.class);
+		var gmpp = injector.getInstance(GameMainPanePropertiesProvider.class);
+		gmpp.load();
+		var gsp = injector.getInstance(GameSettingsProvider.class);
+		gsp.load();
+		setShowSettings(false);
+		var s = new AppSettings(true);
+		loadAppIcon(s);
+		s.setResizable(true);
+		s.setWidth(gsp.get().windowWidth.get());
+		s.setHeight(gsp.get().windowHeight.get());
+		s.setVSync(false);
+		s.setOpenCLSupport(false);
+		setLostFocusBehavior(LostFocusBehavior.PauseOnLostFocus);
+		setSettings(s);
+	}
+
+	private void loadAppIcon(AppSettings s) throws IOException {
+		BufferedImage logo = ImageIO.read(getClass().getResource("/app/logo.png"));
+		s.setIcons(new BufferedImage[] { logo });
+		s.setTitle(IOUtils.toString(getClass().getResource("/app/title.txt"), UTF_8));
+	}
 
 	@Override
 	public void simpleInitApp() {
-		Box b = new Box(1, 1, 1);
-		Geometry geom = new Geometry("Box", b);
-		Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-		mat.setColor("Color", ColorRGBA.Blue);
-		geom.setMaterial(mat);
-		rootNode.attachChild(geom);
+		log.debug("simpleInitApp");
+		GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+			mainWindowActor = ret;
+			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(mainWindowActor,
+					replyTo -> new AttachGuiMessage(replyTo), ofMinutes(1), actor.getActorSystem().scheduler());
+			result.whenComplete((ret1, ex1) -> {
+				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
+			});
+		});
 	}
 
 	@Override
 	public void stop(boolean waitFor) {
+		var gmpp = injector.getInstance(GameMainPanePropertiesProvider.class);
+		var gsp = injector.getInstance(GameSettingsProvider.class);
+		updateCammera(gmpp, gsp);
+		gmpp.save();
+		gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
+		gsp.save();
+		actor.get().tell(new ShutdownMessage());
 		super.stop(waitFor);
-		actorSystem.get().tell(new ShutdownMessage());
-		try {
-			Await.ready(actorSystem.getActorSystem().whenTerminated(), Duration.create(1, TimeUnit.MINUTES));
-		} catch (TimeoutException | InterruptedException e) {
-			e.printStackTrace();
+	}
+
+	private void updateCammera(GameMainPanePropertiesProvider gmpp, GameSettingsProvider gsp) {
+		var camera = getCamera();
+		if (camera == null) {
+			return;
 		}
-		System.exit(0);
+		gmpp.get().setCameraPos(camera.getLocation());
+		gmpp.get().setCameraRot(camera.getRotation());
+		gsp.get().windowWidth.set(camera.getWidth());
+		gsp.get().windowHeight.set(camera.getHeight());
+	}
+
+	@Override
+	public void simpleUpdate(float tpf) {
+		engine.update(tpf);
 	}
 }
