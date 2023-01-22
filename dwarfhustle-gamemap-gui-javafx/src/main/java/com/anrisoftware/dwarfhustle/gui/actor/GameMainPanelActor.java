@@ -31,11 +31,13 @@ import javax.inject.Named;
 import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.GameMainPanePropertiesProvider;
+import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.images.external.IconSize;
@@ -88,12 +90,23 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
     @Inject
     private GameMainPanePropertiesProvider onp;
 
+	@Inject
+	private GlobalKeys globalKeys;
+
+	@Inject
+	@Named("keyMappings")
+	private Map<String, KeyMapping> keyMappings;
+
+	@Inject
+	private GameMainPanePropertiesProvider gmpp;
+
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         runFxThread(() -> {
             var controller = (MainPaneController) initial.controller;
             controller.updateLocale(Locale.US, appIcons, IconSize.SMALL);
             controller.initializeListeners(actor.get(), onp.get());
+			controller.initializeButtons(globalKeys, keyMappings, gmpp.get());
         });
         return getDefaultBehavior()//
         ;
