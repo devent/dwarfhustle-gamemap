@@ -30,7 +30,7 @@ import javax.inject.Named;
 
 import org.eclipse.collections.impl.factory.Maps;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.GameMainPanePropertiesProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage;
@@ -88,7 +88,7 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
     private ActorSystemProvider actor;
 
     @Inject
-    private GameMainPanePropertiesProvider onp;
+	private GameSettingsProvider gsp;
 
 	@Inject
 	private GlobalKeys globalKeys;
@@ -97,16 +97,13 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
 	@Named("keyMappings")
 	private Map<String, KeyMapping> keyMappings;
 
-	@Inject
-	private GameMainPanePropertiesProvider gmpp;
-
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         runFxThread(() -> {
             var controller = (MainPaneController) initial.controller;
             controller.updateLocale(Locale.US, appIcons, IconSize.SMALL);
-            controller.initializeListeners(actor.get(), onp.get());
-			controller.initializeButtons(globalKeys, keyMappings, gmpp.get());
+			controller.initializeListeners(actor.get(), gsp.get());
+			controller.initializeButtons(globalKeys, keyMappings, gsp.get());
         });
         return getDefaultBehavior()//
         ;

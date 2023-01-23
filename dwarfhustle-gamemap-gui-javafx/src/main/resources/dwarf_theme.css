@@ -271,3 +271,25 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 3.0, 3.0);
     -fx-font-size: 14pt;
 }
+
+#commandsSplitTopPane {
+    -fx-background-color: transparent;
+}
+
+#commandsSplitBottomPane {
+    -fx-background-color: transparent;
+}
+
+#commandLineText {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: lightyellow;
+}
+
+#commandLinesList {
+    -fx-background-color: transparent;
+}
+
+#commandsSplit {
+    -fx-background-color: transparent;
+}

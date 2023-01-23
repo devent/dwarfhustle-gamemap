@@ -29,7 +29,6 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.GameMainPanePropertiesProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
@@ -89,8 +88,6 @@ public class App extends SimpleApplication {
 		this.engine = new Engine();
 		this.injector = parent.createChildInjector(new GamemapJmeModule(this, engine));
 		this.actor = injector.getInstance(ActorSystemProvider.class);
-		var gmpp = injector.getInstance(GameMainPanePropertiesProvider.class);
-		gmpp.load();
 		var gsp = injector.getInstance(GameSettingsProvider.class);
 		gsp.load();
 		setShowSettings(false);
@@ -126,23 +123,21 @@ public class App extends SimpleApplication {
 
 	@Override
 	public void stop(boolean waitFor) {
-		var gmpp = injector.getInstance(GameMainPanePropertiesProvider.class);
 		var gsp = injector.getInstance(GameSettingsProvider.class);
-		updateCammera(gmpp, gsp);
-		gmpp.save();
+		updateCammera(gsp);
 		gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
 		gsp.save();
 		actor.get().tell(new ShutdownMessage());
 		super.stop(waitFor);
 	}
 
-	private void updateCammera(GameMainPanePropertiesProvider gmpp, GameSettingsProvider gsp) {
+	private void updateCammera(GameSettingsProvider gsp) {
 		var camera = getCamera();
 		if (camera == null) {
 			return;
 		}
-		gmpp.get().setCameraPos(camera.getLocation());
-		gmpp.get().setCameraRot(camera.getRotation());
+		gsp.get().setCameraPos(camera.getLocation());
+		gsp.get().setCameraRot(camera.getRotation());
 		gsp.get().windowWidth.set(camera.getWidth());
 		gsp.get().windowHeight.set(camera.getHeight());
 	}

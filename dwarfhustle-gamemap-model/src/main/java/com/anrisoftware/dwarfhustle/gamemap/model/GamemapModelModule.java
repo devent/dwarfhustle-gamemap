@@ -38,7 +38,6 @@ public class GamemapModelModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(GameMainPanePropertiesProvider.class).asEagerSingleton();
         bind(GameSettingsProvider.class).asEagerSingleton();
         bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class).asEagerSingleton();
         bind(Images.class).annotatedWith(Names.named("AppIcons")).toProvider(AppIconsProvider.class).asEagerSingleton();

@@ -24,7 +24,7 @@ import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTING
 import java.util.Locale;
 import java.util.Map;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameMainPaneProperties;
+import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.images.external.IconSize;
@@ -34,6 +34,9 @@ import akka.actor.typed.ActorRef;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,13 +48,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MainPaneController {
 
-    @FXML
+	@FXML
 	public BorderPane mainPanel;
 
-    @FXML
+	@FXML
 	public Label fortressNameLabel;
 
-    @FXML
+	@FXML
 	public Label gameTimeLabel;
 
 	@FXML
@@ -63,28 +66,37 @@ public class MainPaneController {
 	@FXML
 	public Button quitButton;
 
-    public void updateLocale(Locale locale, Images images, IconSize iconSize) {
-    }
+	@FXML
+	public SplitPane commandsSplit;
 
-    public void initializeListeners(ActorRef<Message> actor, ObservableGameMainPaneProperties np) {
-        log.debug("initializeListeners");
-        setupImagePropertiesFields(np);
-    }
+	@FXML
+	public ListView<String> commandLinesList;
 
-    public void initializeButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings,
-            ObservableGameMainPaneProperties gmpp) {
+	@FXML
+	public TextField commandLineText;
+
+	public void updateLocale(Locale locale, Images images, IconSize iconSize) {
+	}
+
+	public void initializeListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
+		log.debug("initializeListeners");
+		setupImagePropertiesFields(gs);
+	}
+
+	public void initializeButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings,
+			ObservableGameSettings gs) {
 		quitButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get(QUIT_MAPPING.name()));
-        });
-        settingsButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get(SETTINGS_MAPPING.name()));
-        });
-        aboutButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get(ABOUT_DIALOG_MAPPING.name()));
-        });
-    }
+			globalKeys.runAction(keyMappings.get(QUIT_MAPPING.name()));
+		});
+		settingsButton.setOnAction((e) -> {
+			globalKeys.runAction(keyMappings.get(SETTINGS_MAPPING.name()));
+		});
+		aboutButton.setOnAction((e) -> {
+			globalKeys.runAction(keyMappings.get(ABOUT_DIALOG_MAPPING.name()));
+		});
+	}
 
-    private void setupImagePropertiesFields(ObservableGameMainPaneProperties np) {
-    }
+	private void setupImagePropertiesFields(ObservableGameSettings gs) {
+	}
 
 }
