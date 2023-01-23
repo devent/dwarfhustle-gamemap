@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 
 import javax.imageio.ImageIO;
+import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 
@@ -63,13 +64,18 @@ public class App extends SimpleApplication {
 		app.start(injector);
 	}
 
-	private Injector parent;
-
+	@Inject
 	private Engine engine;
 
-	private Injector injector;
-
+	@Inject
 	private ActorSystemProvider actor;
+
+	@Inject
+	private GameSettingsProvider gsp;
+
+	private Injector parent;
+
+	private Injector injector;
 
 	private ActorRef<Message> mainWindowActor;
 
@@ -85,10 +91,7 @@ public class App extends SimpleApplication {
 
 	@SneakyThrows
 	private void setupApp() {
-		this.engine = new Engine();
-		this.injector = parent.createChildInjector(new GamemapJmeModule(this, engine));
-		this.actor = injector.getInstance(ActorSystemProvider.class);
-		var gsp = injector.getInstance(GameSettingsProvider.class);
+		this.injector = parent.createChildInjector(new GamemapJmeModule(this));
 		gsp.load();
 		setShowSettings(false);
 		var s = new AppSettings(true);
@@ -123,7 +126,6 @@ public class App extends SimpleApplication {
 
 	@Override
 	public void stop(boolean waitFor) {
-		var gsp = injector.getInstance(GameSettingsProvider.class);
 		updateCammera(gsp);
 		gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
 		gsp.save();

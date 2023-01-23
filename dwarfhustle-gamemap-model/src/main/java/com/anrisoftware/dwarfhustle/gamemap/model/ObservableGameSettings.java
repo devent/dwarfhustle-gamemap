@@ -17,8 +17,12 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model;
 
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Set;
+
+import org.eclipse.collections.impl.factory.SortedSets;
 
 import com.anrisoftware.resources.images.external.IconSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -35,7 +39,12 @@ import javafx.beans.property.adapter.JavaBeanDoublePropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanFloatPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanIntegerPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
 
 /**
@@ -88,25 +97,42 @@ public class ObservableGameSettings {
 
 		public float cameraRotW = 0.004027171f;
 
+		public Set<CommandItem> commandsSet = SortedSets.mutable.empty();
+
 	}
 
-    public final ObjectProperty<Locale> locale;
+	/**
+	 * Command item with a time stamp.
+	 *
+	 * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+	 */
+	@Data
+	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+	public static class CommandItem {
 
-    public final ObjectProperty<DateTimeFormatter> gameTimeFormat;
+		@EqualsAndHashCode.Include
+		public final LocalTime time;
 
-    public final FloatProperty tickLength;
+		public final String line;
+	}
 
-    public final FloatProperty tickLongLength;
+	public final ObjectProperty<Locale> locale;
 
-    public final BooleanProperty windowFullscreen;
+	public final ObjectProperty<DateTimeFormatter> gameTimeFormat;
 
-    public final IntegerProperty windowWidth;
+	public final FloatProperty tickLength;
 
-    public final IntegerProperty windowHeight;
+	public final FloatProperty tickLongLength;
 
-    public final ObjectProperty<IconSize> iconSize;
+	public final BooleanProperty windowFullscreen;
 
-    public final ObjectProperty<TextPosition> textPosition;
+	public final IntegerProperty windowWidth;
+
+	public final IntegerProperty windowHeight;
+
+	public final ObjectProperty<IconSize> iconSize;
+
+	public final ObjectProperty<TextPosition> textPosition;
 
 	public final DoubleProperty commandsSplitPosition;
 
@@ -124,18 +150,22 @@ public class ObservableGameSettings {
 
 	public final FloatProperty cameraRotW;
 
-    @SuppressWarnings("unchecked")
-    @SneakyThrows
-    public ObservableGameSettings(GameSettings p) {
-        this.locale = JavaBeanObjectPropertyBuilder.create().bean(p).name("locale").build();
-        this.gameTimeFormat = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTimeFormat").build();
-        this.tickLength = JavaBeanFloatPropertyBuilder.create().bean(p).name("tickLength").build();
-        this.tickLongLength = JavaBeanFloatPropertyBuilder.create().bean(p).name("tickLongLength").build();
-        this.windowFullscreen = JavaBeanBooleanPropertyBuilder.create().bean(p).name("windowFullscreen").build();
-        this.windowWidth = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowWidth").build();
-        this.windowHeight = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowHeight").build();
-        this.iconSize = JavaBeanObjectPropertyBuilder.create().bean(p).name("iconSize").build();
-        this.textPosition = JavaBeanObjectPropertyBuilder.create().bean(p).name("textPosition").build();
+	public ObservableSet<CommandItem> commandsSet;
+
+	public ObservableList<CommandItem> commandsList;
+
+	@SuppressWarnings("unchecked")
+	@SneakyThrows
+	public ObservableGameSettings(GameSettings p) {
+		this.locale = JavaBeanObjectPropertyBuilder.create().bean(p).name("locale").build();
+		this.gameTimeFormat = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTimeFormat").build();
+		this.tickLength = JavaBeanFloatPropertyBuilder.create().bean(p).name("tickLength").build();
+		this.tickLongLength = JavaBeanFloatPropertyBuilder.create().bean(p).name("tickLongLength").build();
+		this.windowFullscreen = JavaBeanBooleanPropertyBuilder.create().bean(p).name("windowFullscreen").build();
+		this.windowWidth = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowWidth").build();
+		this.windowHeight = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowHeight").build();
+		this.iconSize = JavaBeanObjectPropertyBuilder.create().bean(p).name("iconSize").build();
+		this.textPosition = JavaBeanObjectPropertyBuilder.create().bean(p).name("textPosition").build();
 		this.commandsSplitPosition = JavaBeanDoublePropertyBuilder.create().bean(p).name("commandsSplitPosition")
 				.build();
 		this.cameraPosX = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraPosX").build();
@@ -145,18 +175,29 @@ public class ObservableGameSettings {
 		this.cameraRotY = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotY").build();
 		this.cameraRotZ = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotZ").build();
 		this.cameraRotW = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotW").build();
-    }
+		this.commandsSet = FXCollections.observableSet(p.commandsSet);
+		this.commandsList = FXCollections.emptyObservableList();
+		commandsSet.addListener((SetChangeListener<CommandItem>) (change) -> {
+			if (change.wasRemoved()) {
+				var e = change.getElementRemoved();
+				commandsList.remove(e);
+			} else if (change.wasAdded()) {
+				var e = change.getElementAdded();
+				commandsList.add(e);
+			}
+		});
+	}
 
-    public void copy(GameSettings other) {
-        locale.set(other.locale);
-        gameTimeFormat.set(other.gameTimeFormat);
-        tickLength.set(other.tickLength);
-        tickLongLength.set(other.tickLongLength);
-        windowFullscreen.set(other.windowFullscreen);
-        windowWidth.set(other.windowWidth);
-        windowHeight.set(other.windowHeight);
-        iconSize.set(other.iconSize);
-        iconSize.set(other.iconSize);
+	public void copy(GameSettings other) {
+		locale.set(other.locale);
+		gameTimeFormat.set(other.gameTimeFormat);
+		tickLength.set(other.tickLength);
+		tickLongLength.set(other.tickLongLength);
+		windowFullscreen.set(other.windowFullscreen);
+		windowWidth.set(other.windowWidth);
+		windowHeight.set(other.windowHeight);
+		iconSize.set(other.iconSize);
+		iconSize.set(other.iconSize);
 		commandsSplitPosition.set(other.commandsSplitPosition);
 		cameraPosX.set(other.cameraPosX);
 		cameraPosY.set(other.cameraPosY);
@@ -165,6 +206,8 @@ public class ObservableGameSettings {
 		cameraRotY.set(other.cameraRotY);
 		cameraRotZ.set(other.cameraRotZ);
 		cameraRotW.set(other.cameraRotW);
+		commandsSet.addAll(other.commandsSet);
+		commandsList.addAll(other.commandsSet);
 	}
 
 	public Vector3f getCameraPos() {
@@ -186,5 +229,5 @@ public class ObservableGameSettings {
 		cameraRotY.set(r.getY());
 		cameraRotZ.set(r.getZ());
 		cameraRotW.set(r.getW());
-    }
+	}
 }

@@ -23,6 +23,8 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import org.eclipse.collections.impl.set.sorted.mutable.TreeSortedSet;
+
 import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.GameSettings;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -38,51 +40,52 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameSettingsProvider implements Provider<ObservableGameSettings> {
 
-    private final static String GAME_SETTINGS_FILE = GameSettingsProvider.class.getPackageName()
-            + ".game_settings_file";
+	private final static String GAME_SETTINGS_FILE = GameSettingsProvider.class.getPackageName()
+			+ ".game_settings_file";
 
-    private static final File DEFAULT_GAME_SETTINGS_FILE = new File(
+	private static final File DEFAULT_GAME_SETTINGS_FILE = new File(
 			System.getProperty("user.home") + "/.dwarfhustle-gamemap-settings.yaml");
 
-    private final GameSettings p;
+	private final GameSettings p;
 
-    private final ObservableGameSettings op;
+	private final ObservableGameSettings op;
 
-    @Inject
-    private ObjectMapper mapper;
+	@Inject
+	private ObjectMapper mapper;
 
-    public GameSettingsProvider() throws IOException {
-        this.p = new GameSettings();
-        this.op = new ObservableGameSettings(p);
-    }
+	public GameSettingsProvider() throws IOException {
+		this.p = new GameSettings();
+		this.op = new ObservableGameSettings(p);
+	}
 
-    @Override
-    public ObservableGameSettings get() {
-        return op;
-    }
+	@Override
+	public ObservableGameSettings get() {
+		return op;
+	}
 
-    @SneakyThrows
-    public void save() {
-        File file = getFile();
-        log.debug("Save settings to {}", file);
-        mapper.writeValue(file, p);
-    }
+	@SneakyThrows
+	public void save() {
+		File file = getFile();
+		log.debug("Save settings to {}", file);
+		mapper.writeValue(file, p);
+	}
 
-    @SneakyThrows
-    public void load() {
-        var file = getFile();
-        if (file.exists()) {
-            log.debug("Load settings from {}", file);
-            var p = mapper.readValue(file, GameSettings.class);
-            op.copy(p);
-        }
-    }
+	@SneakyThrows
+	public void load() {
+		var file = getFile();
+		if (file.exists()) {
+			log.debug("Load settings from {}", file);
+			var p = mapper.readValue(file, GameSettings.class);
+			p.commandsSet = new TreeSortedSet<>(p.commandsSet);
+			op.copy(p);
+		}
+	}
 
-    private File getFile() {
-        var argsFile = System.getProperty(GAME_SETTINGS_FILE);
-        if (argsFile != null) {
-            return new File(argsFile);
-        }
-        return DEFAULT_GAME_SETTINGS_FILE;
-    }
+	private File getFile() {
+		var argsFile = System.getProperty(GAME_SETTINGS_FILE);
+		if (argsFile != null) {
+			return new File(argsFile);
+		}
+		return DEFAULT_GAME_SETTINGS_FILE;
+	}
 }

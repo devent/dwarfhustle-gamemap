@@ -1,22 +1,3 @@
-<!--
-
-    dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
-    Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
-
-    You should have received a copy of the GNU Affero General Public License
-    along with this program. If not, see <http://www.gnu.org/licenses/>.
-
--->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -28,10 +9,7 @@
         <artifactId>dwarfhustle-gamemap</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </parent>
-
-    <artifactId>dwarfhustle-gamemap-console-antlr</artifactId>
-    <description>Console debug commands defined in ANTLR 4.</description>
-
+    <artifactId>dwarfhustle-gamemap-console</artifactId>
     <dependencies>
         <!-- Test dependencies -->
         <dependency>
@@ -52,10 +30,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-        </dependency>
-        <dependency>
             <!-- Needed for Quaternion -->
             <groupId>org.jmonkeyengine</groupId>
             <artifactId>jme3-core</artifactId>
@@ -74,25 +48,9 @@
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-gamemap-console</artifactId>
+            <artifactId>dwarfhustle-gamemap-model</artifactId>
             <version>0.1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>

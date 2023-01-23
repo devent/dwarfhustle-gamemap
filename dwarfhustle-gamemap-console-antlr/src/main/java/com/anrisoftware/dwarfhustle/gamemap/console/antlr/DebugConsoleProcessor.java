@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectHereMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ApplyImpulseModelMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkCoordinatesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectCoordinatesMessage;
@@ -38,30 +39,32 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectRotationMessa
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTilesRotationMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugParserServiceFactory;
-import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.jme3.math.Quaternion;
+
+import akka.actor.typed.ActorRef;
 
 /**
  * Processes one line in the language parser and creates messages.
  *
  * @author Erwin Müller
  */
-public class DebugConsoleProcessor {
+public class DebugConsoleProcessor implements ConsoleProcessor {
 
 	@Inject
 	private DebugParserServiceFactory parserFactory;
 
 	@Inject
-	private ActorSystemProvider actor;
+	private ActorRef<Message> actor;
 
 	/**
 	 * Process the line in the language parser and creates messages.
 	 */
+	@Override
 	public void process(String line) {
 		var parser = parserFactory.create();
 		parser.parse(line);
-		parseVerb(parser, Optional.empty()).ifPresent(m -> actor.getMainActor().tell(m));
+		parseVerb(parser, Optional.empty()).ifPresent(m -> actor.tell(m));
 	}
 
 	private Optional<Message> parseVerb(DebugConsoleParserService parser, Optional<Message> o) {

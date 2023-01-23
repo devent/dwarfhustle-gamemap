@@ -18,17 +18,8 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme;
 import javax.inject.Named;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.GamemapModelModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
 import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
-import com.anrisoftware.dwarfhustle.model.actor.ModelActorsModule;
-import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
-import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
-import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
-import com.anrisoftware.resources.images.internal.mapcached.ResourcesImagesCachedMapModule;
-import com.anrisoftware.resources.images.internal.scaling.ResourcesSmoothScalingModule;
-import com.anrisoftware.resources.texts.internal.texts.TextsResourcesDefaultModule;
-import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.jme3.app.Application;
@@ -49,21 +40,10 @@ public class GamemapJmeModule extends AbstractModule {
 
     private final SimpleApplication owner;
 
-    private final Engine engine;
-
     @Override
     protected void configure() {
 		install(new GamemapGuiActorsModule());
 		install(new GamemapGuiControllersModule());
-		install(new GamemapModelModule());
-		install(new ModelActorsModule());
-        // Resources
-        install(new ImagesResourcesModule());
-        install(new ResourcesImagesCachedMapModule());
-        install(new ResourcesSmoothScalingModule());
-        install(new TextsResourcesDefaultModule());
-        install(new BinariesResourcesModule());
-        install(new BinariesDefaultMapsModule());
     }
 
     @Provides
@@ -90,11 +70,6 @@ public class GamemapJmeModule extends AbstractModule {
     @Provides
     public Camera getCamera() {
         return owner.getCamera();
-    }
-
-    @Provides
-    public Engine getEngine() {
-        return engine;
     }
 
     @Provides

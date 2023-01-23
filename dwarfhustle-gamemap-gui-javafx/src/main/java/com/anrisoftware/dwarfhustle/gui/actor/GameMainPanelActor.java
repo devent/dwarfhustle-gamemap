@@ -102,8 +102,8 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
         runFxThread(() -> {
             var controller = (MainPaneController) initial.controller;
             controller.updateLocale(Locale.US, appIcons, IconSize.SMALL);
-			controller.initializeListeners(actor.get(), gsp.get());
-			controller.initializeButtons(globalKeys, keyMappings, gsp.get());
+			controller.initListeners(actor.get(), gsp.get());
+			controller.initButtons(globalKeys, keyMappings, gsp.get());
         });
         return getDefaultBehavior()//
         ;

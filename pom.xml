@@ -70,6 +70,7 @@
         <module>dwarfhustle-gamemap-jme</module>
         <module>dwarfhustle-gamemap-model</module>
         <module>dwarfhustle-gamemap-assets</module>
+        <module>dwarfhustle-gamemap-console</module>
     </modules>
 
     <dependencyManagement>

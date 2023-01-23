@@ -15,21 +15,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.console.actor;
+package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor.ConsoleActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugParserServiceFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
+ * @see DebugConsoleProcessor
+ * @see DebugParserServiceFactory
+ *
  * @author Erwin Müller
  */
-public class ConsoleActorModule extends AbstractModule {
+public class GamemapConsoleAntlrModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new FactoryModuleBuilder().implement(ConsoleActor.class, ConsoleActor.class)
-				.build(ConsoleActorFactory.class));
+		bind(ConsoleProcessor.class).to(DebugConsoleProcessor.class);
+        install(new FactoryModuleBuilder().implement(DebugConsoleParserService.class, DebugConsoleParserService.class)
+                .build(DebugParserServiceFactory.class));
     }
-
 }

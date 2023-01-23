@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.CommandItem;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.images.external.IconSize;
@@ -70,7 +71,7 @@ public class MainPaneController {
 	public SplitPane commandsSplit;
 
 	@FXML
-	public ListView<String> commandLinesList;
+	public ListView<CommandItem> commandLinesList;
 
 	@FXML
 	public TextField commandLineText;
@@ -78,13 +79,12 @@ public class MainPaneController {
 	public void updateLocale(Locale locale, Images images, IconSize iconSize) {
 	}
 
-	public void initializeListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
-		log.debug("initializeListeners");
+	public void initListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
+		log.debug("initListeners");
 		setupImagePropertiesFields(gs);
 	}
 
-	public void initializeButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings,
-			ObservableGameSettings gs) {
+	public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings, ObservableGameSettings gs) {
 		quitButton.setOnAction((e) -> {
 			globalKeys.runAction(keyMappings.get(QUIT_MAPPING.name()));
 		});
@@ -94,6 +94,10 @@ public class MainPaneController {
 		aboutButton.setOnAction((e) -> {
 			globalKeys.runAction(keyMappings.get(ABOUT_DIALOG_MAPPING.name()));
 		});
+	}
+
+	public void initCommandLinesList(ObservableGameSettings gs) {
+		commandLinesList.setItems(gs.commandsList);
 	}
 
 	private void setupImagePropertiesFields(ObservableGameSettings gs) {

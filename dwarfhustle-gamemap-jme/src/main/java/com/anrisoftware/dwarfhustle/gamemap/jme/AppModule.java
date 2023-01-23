@@ -17,6 +17,17 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme;
 
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorModule;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;
+import com.anrisoftware.dwarfhustle.gamemap.model.GamemapModelModule;
+import com.anrisoftware.dwarfhustle.model.actor.ModelActorsModule;
+import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
+import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
+import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
+import com.anrisoftware.resources.images.internal.mapcached.ResourcesImagesCachedMapModule;
+import com.anrisoftware.resources.images.internal.scaling.ResourcesSmoothScalingModule;
+import com.anrisoftware.resources.texts.internal.texts.TextsResourcesDefaultModule;
+import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
 
 /**
@@ -28,5 +39,17 @@ public class AppModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
+		install(new ModelActorsModule());
+		install(new GamemapConsoleActorModule());
+		install(new GamemapConsoleAntlrModule());
+		bind(Engine.class).asEagerSingleton();
+		install(new GamemapModelModule());
+		// Resources
+		install(new ImagesResourcesModule());
+		install(new ResourcesImagesCachedMapModule());
+		install(new ResourcesSmoothScalingModule());
+		install(new TextsResourcesDefaultModule());
+		install(new BinariesResourcesModule());
+		install(new BinariesDefaultMapsModule());
 	}
 }
