@@ -102,7 +102,25 @@ public class ConsoleActor {
 	private Behavior<Message> onLine(LineMessage m) {
 		log.debug("onLine {}", m);
 		processor.process(m.line);
+		return Behaviors.same();
+	}
+
+	/**
+	 * Reacts to {@link ParsedLineMessage}. Returns a behavior for the messages from
+	 * {@link #getInitialBehavior()}.
+	 */
+	private Behavior<Message> onParsedLine(ParsedLineMessage m) {
+		log.debug("onParsedLine {}", m);
 		gsp.get().commandsSet.add(new CommandItem(LocalTime.now(), m.line));
+		return Behaviors.same();
+	}
+
+	/**
+	 * Reacts to {@link UnknownLineMessage}. Returns a behavior for the messages
+	 * from {@link #getInitialBehavior()}.
+	 */
+	private Behavior<Message> onUnknownLine(UnknownLineMessage m) {
+		log.debug("onUnknownLine {}", m);
 		return Behaviors.same();
 	}
 
@@ -111,11 +129,15 @@ public class ConsoleActor {
 	 *
 	 * <ul>
 	 * <li>{@link LineMessage}
+	 * <li>{@link ParsedLineMessage}
+	 * <li>{@link UnknownLineMessage}
 	 * </ul>
 	 */
 	private BehaviorBuilder<Message> getInitialBehavior() {
 		return Behaviors.receive(Message.class)//
 				.onMessage(LineMessage.class, this::onLine)//
+				.onMessage(ParsedLineMessage.class, this::onParsedLine)//
+				.onMessage(UnknownLineMessage.class, this::onUnknownLine)//
 		;
 	}
 }

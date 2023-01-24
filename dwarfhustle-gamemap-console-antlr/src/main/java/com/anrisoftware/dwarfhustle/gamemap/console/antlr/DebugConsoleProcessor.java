@@ -30,6 +30,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectHereMess
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ApplyImpulseModelMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkCoordinatesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectCoordinatesMessage;
@@ -38,6 +39,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectPositionMessa
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectRotationMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTilesRotationMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugParserServiceFactory;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.jme3.math.Quaternion;
@@ -64,7 +66,12 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
 	public void process(String line) {
 		var parser = parserFactory.create();
 		parser.parse(line);
-		parseVerb(parser, Optional.empty()).ifPresent(m -> actor.tell(m));
+		parseVerb(parser, Optional.empty()).ifPresentOrElse(m -> {
+			actor.tell(new ParsedLineMessage(line));
+			actor.tell(m);
+		}, () -> {
+			actor.tell(new UnknownLineMessage(line));
+		});
 	}
 
 	private Optional<Message> parseVerb(DebugConsoleParserService parser, Optional<Message> o) {

@@ -24,6 +24,9 @@ import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTING
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings;
 import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.CommandItem;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
@@ -76,12 +79,21 @@ public class MainPaneController {
 	@FXML
 	public TextField commandLineText;
 
+	@FXML
+	public Label statusLabel;
+
 	public void updateLocale(Locale locale, Images images, IconSize iconSize) {
 	}
 
 	public void initListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
 		log.debug("initListeners");
 		setupImagePropertiesFields(gs);
+		commandLineText.setOnAction((e) -> {
+			var text = commandLineText.getText();
+			if (StringUtils.isNotBlank(text)) {
+				actor.tell(new LineMessage(text));
+			}
+		});
 	}
 
 	public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings, ObservableGameSettings gs) {

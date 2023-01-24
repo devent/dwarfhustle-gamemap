@@ -1,24 +1,24 @@
 .root {
-    special1: #0755a0;
-    special2: #04478b;
-    special3: #053a70;
-    special4: #04305d;
-    dark1: #586671;
-    dark2: #51626a;
-    dark3: #334350;
-    dark4: #28313a;
-    neutral1: #d3c8b4;
-    neutral2: #ccbea3;
-    neutral3: #968664;
-    neutral4: #3d2c12;
-    neutral5: #d3bb8d;
-    neutral6: #d1b77a;
-    neutral7: #d3b14d;
-    neutral8: #9f6422;
-    highlight1: #d3230c;
-    highlight2: #ad3f26;
-    highlight3: #c95140;
-    highlight4: #a86e63;
+    special1: #0755a0; // more light blue
+    special2: #04478b; // light blue
+    special3: #053a70; // dark blue
+    special4: #04305d; // very dark blue
+    dark1: #586671; // dark lighter teal
+    dark2: #51626a; // dark teal
+    dark3: #334350; // very dark teal
+    dark4: #28313a; // very dark blue
+    neutral1: #d3c8b4; // more light brown
+    neutral2: #ccbea3; // light brown
+    neutral3: #968664; // dark sand
+    neutral4: #3d2c12; // dark brown
+    neutral5: #d3bb8d; // bleak sand
+    neutral6: #d1b77a; // sand
+    neutral7: #d3b14d; // yellow
+    neutral8: #9f6422; // brown
+    highlight1: #d3230c; // red
+    highlight2: #ad3f26; // dark red
+    highlight3: #c95140; // contains mainly RED
+    highlight4: #a86e63; // Copper Rose color
     buttonNormal: linear-gradient(to bottom, neutral5, neutral7);
     buttonFocused: linear-gradient(to bottom, neutral7, neutral8);
     buttonArmed: linear-gradient(to bottom, neutral7, neutral8);
@@ -287,6 +287,21 @@
 }
 
 #commandLinesList {
+    -fx-background-color: transparent;
+}
+
+#commandLinesList .cell.indexed-cell.list-cell {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+}
+
+#commandLinesList .cell.indexed-cell.list-cell:selected {
+    -fx-text-fill: neutral7;
+    -fx-background-color: transparent;
+}
+
+#commandLinesList .cell.indexed-cell.list-cell:focused {
+    -fx-text-fill: neutral7;
     -fx-background-color: transparent;
 }
 

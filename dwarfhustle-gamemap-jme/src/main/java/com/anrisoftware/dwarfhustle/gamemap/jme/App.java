@@ -30,6 +30,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
@@ -121,6 +122,11 @@ public class App extends SimpleApplication {
 			result.whenComplete((ret1, ex1) -> {
 				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
 			});
+		});
+		ConsoleActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("ConsoleActor.create", ex);
+			}
 		});
 	}
 
