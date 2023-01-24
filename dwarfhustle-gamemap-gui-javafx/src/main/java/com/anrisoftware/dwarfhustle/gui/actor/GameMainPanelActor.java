@@ -103,10 +103,9 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         runFxThread(() -> {
             var controller = (MainPaneController) initial.controller;
-            controller.updateLocale(Locale.US, appIcons, IconSize.SMALL);
+			controller.updateLocale(Locale.US, appIcons, IconSize.SMALL, gsp.get());
 			controller.initListeners(actor.get(), gsp.get());
 			controller.initButtons(globalKeys, keyMappings, gsp.get());
-			controller.initCommandLinesList(gsp.get());
         });
         return getDefaultBehavior()//
         ;

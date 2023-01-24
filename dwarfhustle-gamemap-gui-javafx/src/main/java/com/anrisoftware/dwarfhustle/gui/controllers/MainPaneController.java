@@ -28,7 +28,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings;
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.CommandItem;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.images.external.IconSize;
@@ -38,11 +37,7 @@ import akka.actor.typed.ActorRef;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MultipleSelectionModel;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,51 +68,25 @@ public class MainPaneController {
 	public Button quitButton;
 
 	@FXML
-	public SplitPane commandsSplit;
-
-	@FXML
-	public ListView<CommandItem> commandLinesList;
-
-	@FXML
 	public TextField commandLineText;
 
 	@FXML
 	public Label statusLabel;
 
-	public void updateLocale(Locale locale, Images images, IconSize iconSize) {
+	public void updateLocale(Locale locale, Images images, IconSize iconSize, ObservableGameSettings gs) {
+		commandLineText.setText(gs.lastCommand.get());
 	}
 
 	public void initListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
 		log.debug("initListeners");
 		setupImagePropertiesFields(gs);
 		commandLineText.setOnAction((e) -> {
-			System.out.println("commandLineText.setOnAction()"); // TODO
 			var text = commandLineText.getText();
 			if (StringUtils.isNotBlank(text)) {
 				actor.tell(new LineMessage(text));
 				gs.lastCommand.set(text);
 			}
 		});
-		commandLineText.setOnKeyReleased((e) -> {
-			var model = commandLinesList.getSelectionModel();
-			if (e.getCode() == KeyCode.DOWN) {
-				int lastIndex = model.getSelectedItems().size() - 1;
-				if (model.getSelectedIndex() == lastIndex) {
-					commandLineText.setText(gs.lastCommand.get());
-				} else {
-					model.selectNext();
-					updateCommandLineTextFromList(model);
-				}
-			} else if (e.getCode() == KeyCode.UP) {
-				model.selectPrevious();
-			}
-		});
-	}
-
-	private void updateCommandLineTextFromList(MultipleSelectionModel<CommandItem> model) {
-		var selected = model.getSelectedItem();
-		commandLineText.setText(selected.line);
-		commandLineText.commitValue();
 	}
 
 	public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings, ObservableGameSettings gs) {
@@ -130,10 +99,6 @@ public class MainPaneController {
 		aboutButton.setOnAction((e) -> {
 			globalKeys.runAction(keyMappings.get(ABOUT_DIALOG_MAPPING.name()));
 		});
-	}
-
-	public void initCommandLinesList(ObservableGameSettings gs) {
-		commandLinesList.setItems(gs.commandsList);
 	}
 
 	private void setupImagePropertiesFields(ObservableGameSettings gs) {

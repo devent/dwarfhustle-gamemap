@@ -20,10 +20,6 @@ package com.anrisoftware.dwarfhustle.gamemap.model;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.Set;
-
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.set.sorted.mutable.TreeSortedSet;
 
 import com.anrisoftware.resources.images.external.IconSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,10 +36,6 @@ import javafx.beans.property.adapter.JavaBeanDoublePropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanFloatPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanIntegerPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -100,8 +92,6 @@ public class ObservableGameSettings {
 		public float cameraRotZ = 0.0012241602f;
 
 		public float cameraRotW = 0.004027171f;
-
-		public Set<CommandItem> commandsSet = new TreeSortedSet<>();
 
 		public String lastCommand = "";
 	}
@@ -164,10 +154,6 @@ public class ObservableGameSettings {
 
 	public final FloatProperty cameraRotW;
 
-	public final ObservableSet<CommandItem> commandsSet;
-
-	public final ObservableList<CommandItem> commandsList;
-
 	public final ObjectProperty<String> lastCommand;
 
 	@SuppressWarnings("unchecked")
@@ -191,18 +177,7 @@ public class ObservableGameSettings {
 		this.cameraRotY = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotY").build();
 		this.cameraRotZ = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotZ").build();
 		this.cameraRotW = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotW").build();
-		this.commandsSet = FXCollections.observableSet(p.commandsSet);
-		this.commandsList = FXCollections.observableList(Lists.mutable.empty());
 		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
-		commandsSet.addListener((SetChangeListener<CommandItem>) (change) -> {
-			if (change.wasRemoved()) {
-				var e = change.getElementRemoved();
-				commandsList.remove(e);
-			} else if (change.wasAdded()) {
-				var e = change.getElementAdded();
-				commandsList.add(e);
-			}
-		});
 	}
 
 	public void copy(GameSettings other) {
@@ -223,7 +198,6 @@ public class ObservableGameSettings {
 		cameraRotY.set(other.cameraRotY);
 		cameraRotZ.set(other.cameraRotZ);
 		cameraRotW.set(other.cameraRotW);
-		commandsSet.addAll(other.commandsSet);
 		lastCommand.set(other.lastCommand);
 	}
 

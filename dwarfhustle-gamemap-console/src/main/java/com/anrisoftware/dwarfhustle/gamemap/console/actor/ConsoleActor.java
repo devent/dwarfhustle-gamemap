@@ -20,13 +20,11 @@ package com.anrisoftware.dwarfhustle.gamemap.console.actor;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
 import java.time.Duration;
-import java.time.LocalTime;
 import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.CommandItem;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.google.inject.Injector;
@@ -111,7 +109,6 @@ public class ConsoleActor {
 	 */
 	private Behavior<Message> onParsedLine(ParsedLineMessage m) {
 		log.debug("onParsedLine {}", m);
-		gsp.get().commandsSet.add(new CommandItem(LocalTime.now(), m.line));
 		return Behaviors.same();
 	}
 

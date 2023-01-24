@@ -2,10 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -17,21 +14,11 @@
     <center>
         <VBox id="centerPane" fx:id="centerPane" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
          <children>
-            <SplitPane id="commandsSplit" fx:id="commandsSplit" dividerPositions="0.1763888888888889" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" VBox.vgrow="ALWAYS">
-              <items>
-                <AnchorPane fx:id="commandsSplitTopPane" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
-                     <children>
-                        <VBox layoutX="102.0" layoutY="-49.0" prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                           <children>
-                              <ListView id="commandLinesList" fx:id="commandLinesList" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
-                              <TextField id="commandLineText" fx:id="commandLineText" promptText="Command:" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </AnchorPane>
-                <AnchorPane fx:id="commandsSplitBottomPane" minHeight="0.0" minWidth="0.0" prefHeight="514.0" prefWidth="1254.0" />
-              </items>
-            </SplitPane>
+            <BorderPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+               <top>
+                  <TextField id="commandLineText" fx:id="commandLineText" promptText="Command:" BorderPane.alignment="CENTER" />
+               </top>
+            </BorderPane>
          </children>
         </VBox>
     </center>
