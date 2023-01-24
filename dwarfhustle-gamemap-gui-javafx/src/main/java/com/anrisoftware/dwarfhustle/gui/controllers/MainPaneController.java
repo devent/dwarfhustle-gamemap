@@ -39,8 +39,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,11 +91,33 @@ public class MainPaneController {
 		log.debug("initListeners");
 		setupImagePropertiesFields(gs);
 		commandLineText.setOnAction((e) -> {
+			System.out.println("commandLineText.setOnAction()"); // TODO
 			var text = commandLineText.getText();
 			if (StringUtils.isNotBlank(text)) {
 				actor.tell(new LineMessage(text));
+				gs.lastCommand.set(text);
 			}
 		});
+		commandLineText.setOnKeyReleased((e) -> {
+			var model = commandLinesList.getSelectionModel();
+			if (e.getCode() == KeyCode.DOWN) {
+				int lastIndex = model.getSelectedItems().size() - 1;
+				if (model.getSelectedIndex() == lastIndex) {
+					commandLineText.setText(gs.lastCommand.get());
+				} else {
+					model.selectNext();
+					updateCommandLineTextFromList(model);
+				}
+			} else if (e.getCode() == KeyCode.UP) {
+				model.selectPrevious();
+			}
+		});
+	}
+
+	private void updateCommandLineTextFromList(MultipleSelectionModel<CommandItem> model) {
+		var selected = model.getSelectedItem();
+		commandLineText.setText(selected.line);
+		commandLineText.commitValue();
 	}
 
 	public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings, ObservableGameSettings gs) {

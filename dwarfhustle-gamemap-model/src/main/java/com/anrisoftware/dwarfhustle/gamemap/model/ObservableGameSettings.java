@@ -103,6 +103,7 @@ public class ObservableGameSettings {
 
 		public Set<CommandItem> commandsSet = new TreeSortedSet<>();
 
+		public String lastCommand = "";
 	}
 
 	/**
@@ -163,9 +164,11 @@ public class ObservableGameSettings {
 
 	public final FloatProperty cameraRotW;
 
-	public ObservableSet<CommandItem> commandsSet;
+	public final ObservableSet<CommandItem> commandsSet;
 
-	public ObservableList<CommandItem> commandsList;
+	public final ObservableList<CommandItem> commandsList;
+
+	public final ObjectProperty<String> lastCommand;
 
 	@SuppressWarnings("unchecked")
 	@SneakyThrows
@@ -190,6 +193,7 @@ public class ObservableGameSettings {
 		this.cameraRotW = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotW").build();
 		this.commandsSet = FXCollections.observableSet(p.commandsSet);
 		this.commandsList = FXCollections.observableList(Lists.mutable.empty());
+		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
 		commandsSet.addListener((SetChangeListener<CommandItem>) (change) -> {
 			if (change.wasRemoved()) {
 				var e = change.getElementRemoved();
@@ -220,6 +224,7 @@ public class ObservableGameSettings {
 		cameraRotZ.set(other.cameraRotZ);
 		cameraRotW.set(other.cameraRotW);
 		commandsSet.addAll(other.commandsSet);
+		lastCommand.set(other.lastCommand);
 	}
 
 	public Vector3f getCameraPos() {
