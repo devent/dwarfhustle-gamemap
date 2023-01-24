@@ -22,7 +22,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Set;
 
-import org.eclipse.collections.impl.factory.SortedSets;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.set.sorted.mutable.TreeSortedSet;
 
 import com.anrisoftware.resources.images.external.IconSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -43,9 +44,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 
 /**
  * Settings that apply to all games and can be changed in the game settings
@@ -97,7 +101,7 @@ public class ObservableGameSettings {
 
 		public float cameraRotW = 0.004027171f;
 
-		public Set<CommandItem> commandsSet = SortedSets.mutable.empty();
+		public Set<CommandItem> commandsSet = new TreeSortedSet<>();
 
 	}
 
@@ -107,13 +111,22 @@ public class ObservableGameSettings {
 	 * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
 	 */
 	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
 	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-	public static class CommandItem {
+	@ToString(onlyExplicitlyIncluded = true)
+	public static class CommandItem implements Comparable<CommandItem> {
 
 		@EqualsAndHashCode.Include
-		public final LocalTime time;
+		public LocalTime time;
 
-		public final String line;
+		@ToString.Include
+		public String line;
+
+		@Override
+		public int compareTo(CommandItem o) {
+			return time.compareTo(o.time);
+		}
 	}
 
 	public final ObjectProperty<Locale> locale;
@@ -176,7 +189,7 @@ public class ObservableGameSettings {
 		this.cameraRotZ = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotZ").build();
 		this.cameraRotW = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotW").build();
 		this.commandsSet = FXCollections.observableSet(p.commandsSet);
-		this.commandsList = FXCollections.emptyObservableList();
+		this.commandsList = FXCollections.observableList(Lists.mutable.empty());
 		commandsSet.addListener((SetChangeListener<CommandItem>) (change) -> {
 			if (change.wasRemoved()) {
 				var e = change.getElementRemoved();
@@ -207,7 +220,6 @@ public class ObservableGameSettings {
 		cameraRotZ.set(other.cameraRotZ);
 		cameraRotW.set(other.cameraRotW);
 		commandsSet.addAll(other.commandsSet);
-		commandsList.addAll(other.commandsSet);
 	}
 
 	public Vector3f getCameraPos() {

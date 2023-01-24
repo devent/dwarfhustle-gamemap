@@ -19,11 +19,18 @@ package com.anrisoftware.dwarfhustle.gamemap.model;
 
 import javax.inject.Provider;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.GameSettings;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+/**
+ * Provides the {@link ObjectMapper} to save and load {@link GameSettings}.
+ *
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ */
 public class ObjectMapperProvider implements Provider<ObjectMapper> {
 
     private final ObjectMapper mapper;
@@ -44,6 +51,7 @@ public class ObjectMapperProvider implements Provider<ObjectMapper> {
         addCustomSerializersTo(module);
         var objectMapper = new ObjectMapper(new YAMLFactory());
         objectMapper.registerModule(module);
+		objectMapper.registerModule(new JavaTimeModule());
         return objectMapper;
     }
 

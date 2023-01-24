@@ -125,6 +125,7 @@ public class App extends SimpleApplication {
 	}
 
 	@Override
+	@SneakyThrows
 	public void stop(boolean waitFor) {
 		updateCammera(gsp);
 		gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());

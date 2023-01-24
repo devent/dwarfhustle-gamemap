@@ -23,12 +23,9 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import org.eclipse.collections.impl.set.sorted.mutable.TreeSortedSet;
-
 import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.GameSettings;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -46,46 +43,66 @@ public class GameSettingsProvider implements Provider<ObservableGameSettings> {
 	private static final File DEFAULT_GAME_SETTINGS_FILE = new File(
 			System.getProperty("user.home") + "/.dwarfhustle-gamemap-settings.yaml");
 
-	private final GameSettings p;
+	private final GameSettings gs;
 
-	private final ObservableGameSettings op;
+	private final ObservableGameSettings ogs;
+
+	private File file;
 
 	@Inject
 	private ObjectMapper mapper;
 
-	public GameSettingsProvider() throws IOException {
-		this.p = new GameSettings();
-		this.op = new ObservableGameSettings(p);
+	public GameSettingsProvider() {
+		this(new GameSettings());
 	}
 
-	@Override
-	public ObservableGameSettings get() {
-		return op;
+	public GameSettingsProvider(GameSettings gs) {
+		this.gs = gs;
+		this.ogs = new ObservableGameSettings(gs);
+		this.file = getFile();
 	}
 
-	@SneakyThrows
-	public void save() {
-		File file = getFile();
-		log.debug("Save settings to {}", file);
-		mapper.writeValue(file, p);
-	}
-
-	@SneakyThrows
-	public void load() {
-		var file = getFile();
-		if (file.exists()) {
-			log.debug("Load settings from {}", file);
-			var p = mapper.readValue(file, GameSettings.class);
-			p.commandsSet = new TreeSortedSet<>(p.commandsSet);
-			op.copy(p);
-		}
-	}
-
-	private File getFile() {
+	private static File getFile() {
 		var argsFile = System.getProperty(GAME_SETTINGS_FILE);
 		if (argsFile != null) {
 			return new File(argsFile);
 		}
 		return DEFAULT_GAME_SETTINGS_FILE;
 	}
+
+	@Override
+	public ObservableGameSettings get() {
+		return ogs;
+	}
+
+	public void save() throws IOException {
+		save(file);
+	}
+
+	public void save(File file) throws IOException {
+		log.debug("Save settings to {}", file);
+		mapper.writeValue(file, gs);
+	}
+
+	public String saveAsString() throws IOException {
+		return mapper.writeValueAsString(gs);
+	}
+
+	public void load() throws IOException {
+		load(file);
+	}
+
+	public void load(File file) throws IOException {
+		if (file.exists()) {
+			log.debug("Load settings from {}", file);
+			var p = mapper.readValue(file, GameSettings.class);
+			ogs.copy(p);
+		}
+	}
+
+	public void loadFromString(String s) throws IOException {
+		var p = mapper.readValue(s, GameSettings.class);
+		ogs.copy(p);
+	}
+
 }
