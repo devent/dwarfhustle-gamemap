@@ -22,6 +22,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 
@@ -50,6 +51,9 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.javadsl.AskPattern;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 /**
  *
@@ -59,10 +63,24 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class App extends SimpleApplication {
 
+	@Command(name = "dwarf-hustle game-map", mixinStandardHelpOptions = true)
+	static class AppCommand implements Runnable {
+
+		@Option(names = { "-d", "--dir" }, paramLabel = "GAME-DIR", description = "the game directory")
+		private File gamedir;
+
+		@Override
+		public void run() {
+			System.out.println(gamedir); // TODO
+			var injector = Guice.createInjector(new AppModule());
+			var app = injector.getInstance(App.class);
+			app.start(injector);
+		}
+
+	}
+
 	public static void main(String[] args) {
-		var injector = Guice.createInjector(new AppModule());
-		var app = injector.getInstance(App.class);
-		app.start(injector);
+		new CommandLine(new AppCommand()).execute(args);
 	}
 
 	@Inject
