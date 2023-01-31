@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-console - Game map.
+ * dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,22 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.console.actor;
-
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+package com.anrisoftware.dwarfhustle.gui.messages;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Event that the game object should be added.
+ * Set status message.
  *
- * @author Erwin Müller
+ * @author Erwin Müller {@literal <erwin@mullerlpublic.de}
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class AddGameObjectMessage extends Message {
+public class SetStatusMessage extends GuiMessage {
 
-    public final String name;
-
+	public final String message;
 }

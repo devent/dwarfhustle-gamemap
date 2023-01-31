@@ -21,6 +21,11 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorMod
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;
 import com.anrisoftware.dwarfhustle.gamemap.model.GamemapModelModule;
 import com.anrisoftware.dwarfhustle.model.actor.ModelActorsModule;
+import com.anrisoftware.dwarfhustle.model.api.objects.ApiModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.JcsCacheModule;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbModule;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbModule;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerloomModule;
 import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
@@ -44,6 +49,13 @@ public class AppModule extends AbstractModule {
 		install(new GamemapConsoleAntlrModule());
 		bind(Engine.class).asEagerSingleton();
 		install(new GamemapModelModule());
+		// Model Modules
+		install(new ModelActorsModule());
+		install(new ObjectsDbModule());
+		install(new PowerloomModule());
+		install(new OrientDbModule());
+		install(new ApiModule());
+		install(new JcsCacheModule());
 		// Resources
 		install(new ImagesResourcesModule());
 		install(new ResourcesImagesCachedMapModule());

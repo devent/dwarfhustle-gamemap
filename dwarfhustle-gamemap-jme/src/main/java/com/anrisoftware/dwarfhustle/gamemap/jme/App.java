@@ -24,6 +24,7 @@ import static java.time.Duration.ofSeconds;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import javax.imageio.ImageIO;
@@ -31,6 +32,8 @@ import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 
+import com.anrisoftware.dwarfhustle.gamemap.actors.AppActor;
+import com.anrisoftware.dwarfhustle.gamemap.actors.LoadWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
@@ -39,6 +42,11 @@ import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinis
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -74,7 +82,7 @@ public class App extends SimpleApplication {
 			System.out.println(gamedir); // TODO
 			var injector = Guice.createInjector(new AppModule());
 			var app = injector.getInstance(App.class);
-			app.start(injector);
+			app.start(injector, this);
 		}
 
 	}
@@ -96,14 +104,29 @@ public class App extends SimpleApplication {
 
 	private Injector injector;
 
-	private ActorRef<Message> mainWindowActor;
+	private Optional<ActorRef<Message>> mainWindowActor = Optional.empty();
+
+	private ActorRef<Message> consoleActor;
+
+	private ActorRef<Message> knowledgeActor;
+
+	private ActorRef<Message> dbActor;
+
+	private AppCommand command;
+
+	private ActorRef<Message> objectsActor;
+
+	private WorldMap worldMap;
+
+	private ActorRef<Message> appActor;
 
 	public App() {
 		super(new ConstantVerifierState());
 	}
 
-	private void start(Injector parent) {
+	private void start(Injector parent, AppCommand command) {
 		this.parent = parent;
+		this.command = command;
 		setupApp();
 		super.start();
 	}
@@ -133,18 +156,83 @@ public class App extends SimpleApplication {
 	@Override
 	public void simpleInitApp() {
 		log.debug("simpleInitApp");
-		GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			mainWindowActor = ret;
-			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(mainWindowActor,
-					replyTo -> new AttachGuiMessage(replyTo), ofMinutes(1), actor.getActorSystem().scheduler());
-			result.whenComplete((ret1, ex1) -> {
-				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
-			});
+		createPanel();
+		createConsole();
+		createPowerLoom();
+		createDb();
+	}
+
+	private void createDb() {
+		OrientDbActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("OrientDbActor.create", ex);
+			} else {
+				dbActor = ret;
+				createObjects(ret);
+			}
 		});
+	}
+
+	private void createObjects(ActorRef<Message> db) {
+		ObjectsDbActor.create(injector, ofSeconds(1), db).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("ObjectsDbActor.create", ex);
+			} else {
+				objectsActor = ret;
+				createApp(ret);
+			}
+		});
+	}
+
+	private void createApp(ActorRef<Message> objects) {
+		AppActor.create(injector, ofSeconds(1), objects).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("AppActor.create", ex);
+			} else {
+				appActor = ret;
+				appActor.tell(new LoadWorldMessage(command.gamedir));
+			}
+		});
+	}
+
+	private void createPowerLoom() {
+		PowerLoomKnowledgeActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("PowerLoomKnowledgeActor.create", ex);
+			} else {
+				createKnowledge(ret);
+			}
+		});
+	}
+
+	private void createKnowledge(ActorRef<Message> powerLoom) {
+		KnowledgeBaseActor.create(injector, ofSeconds(1), powerLoom).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("KnowledgeBaseActor.create", ex);
+			} else {
+				knowledgeActor = ret;
+			}
+		});
+	}
+
+	private void createConsole() {
 		ConsoleActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
 			if (ex != null) {
 				log.error("ConsoleActor.create", ex);
+			} else {
+				consoleActor = ret;
 			}
+		});
+	}
+
+	private void createPanel() {
+		GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(ret,
+					replyTo -> new AttachGuiMessage(replyTo), ofMinutes(1), actor.getActorSystem().scheduler());
+			result.whenComplete((ret1, ex1) -> {
+				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
+				mainWindowActor = Optional.of(ret);
+			});
 		});
 	}
 
