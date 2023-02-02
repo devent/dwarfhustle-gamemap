@@ -15,31 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model;
+package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import com.anrisoftware.resources.texts.external.Texts;
-import com.anrisoftware.resources.texts.external.TextsFactory;
+import com.anrisoftware.resources.images.external.Images;
+import com.anrisoftware.resources.images.external.ImagesFactory;
 
 /**
- * Provides the {@link Texts} from {@code AppTexts.properties}
+ * Provides the {@link Images} from {@code AppImages.properties}
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class AppTextsProvider implements Provider<Texts> {
+public class AppImagesProvider implements Provider<Images> {
 
-    private final Texts texts;
+    private final Images images;
 
     @Inject
-    public AppTextsProvider(TextsFactory images) {
-        this.texts = images.create("AppTexts");
+    public AppImagesProvider(ImagesFactory images) {
+        this.images = images.create("AppImages");
     }
 
     @Override
-    public Texts get() {
-        return texts;
+    public Images get() {
+        return images;
     }
 
 }

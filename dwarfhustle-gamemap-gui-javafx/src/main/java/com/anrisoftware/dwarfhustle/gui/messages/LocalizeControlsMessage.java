@@ -19,8 +19,8 @@ package com.anrisoftware.dwarfhustle.gui.messages;
 
 import java.util.Locale;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings;
-import com.anrisoftware.dwarfhustle.gamemap.model.TextPosition;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextPosition;
 import com.anrisoftware.resources.images.external.IconSize;
 
 import lombok.RequiredArgsConstructor;

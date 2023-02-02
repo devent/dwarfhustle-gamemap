@@ -24,7 +24,7 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.google.inject.Injector;

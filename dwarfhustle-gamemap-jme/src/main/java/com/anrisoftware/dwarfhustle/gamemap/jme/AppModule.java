@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorModule;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;
-import com.anrisoftware.dwarfhustle.gamemap.model.GamemapModelModule;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GamemapModelModule;
 import com.anrisoftware.dwarfhustle.model.actor.ModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.ApiModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.JcsCacheModule;

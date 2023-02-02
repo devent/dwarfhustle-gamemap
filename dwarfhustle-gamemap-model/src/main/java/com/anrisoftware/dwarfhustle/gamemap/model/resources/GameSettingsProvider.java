@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model;
+package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.io.IOException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.GameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;

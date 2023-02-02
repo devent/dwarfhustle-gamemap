@@ -24,7 +24,6 @@ import static java.time.Duration.ofSeconds;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import javax.imageio.ImageIO;
@@ -33,20 +32,14 @@ import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.actors.AppActor;
-import com.anrisoftware.dwarfhustle.gamemap.actors.LoadWorldMessage;
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
-import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -55,8 +48,8 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.system.AppSettings;
 
-import akka.actor.typed.ActorRef;
 import akka.actor.typed.javadsl.AskPattern;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
@@ -72,14 +65,14 @@ import picocli.CommandLine.Option;
 public class App extends SimpleApplication {
 
 	@Command(name = "dwarf-hustle game-map", mixinStandardHelpOptions = true)
-	static class AppCommand implements Runnable {
+	@Getter
+	static class AppCommandImpl implements AppCommand, Runnable {
 
 		@Option(names = { "-d", "--dir" }, paramLabel = "GAME-DIR", description = "the game directory")
 		private File gamedir;
 
 		@Override
 		public void run() {
-			System.out.println(gamedir); // TODO
 			var injector = Guice.createInjector(new AppModule());
 			var app = injector.getInstance(App.class);
 			app.start(injector, this);
@@ -88,7 +81,7 @@ public class App extends SimpleApplication {
 	}
 
 	public static void main(String[] args) {
-		new CommandLine(new AppCommand()).execute(args);
+		new CommandLine(new AppCommandImpl()).execute(args);
 	}
 
 	@Inject
@@ -102,29 +95,15 @@ public class App extends SimpleApplication {
 
 	private Injector parent;
 
+	private AppCommandImpl command;
+
 	private Injector injector;
-
-	private Optional<ActorRef<Message>> mainWindowActor = Optional.empty();
-
-	private ActorRef<Message> consoleActor;
-
-	private ActorRef<Message> knowledgeActor;
-
-	private ActorRef<Message> dbActor;
-
-	private AppCommand command;
-
-	private ActorRef<Message> objectsActor;
-
-	private WorldMap worldMap;
-
-	private ActorRef<Message> appActor;
 
 	public App() {
 		super(new ConstantVerifierState());
 	}
 
-	private void start(Injector parent, AppCommand command) {
+	private void start(Injector parent, AppCommandImpl command) {
 		this.parent = parent;
 		this.command = command;
 		setupApp();
@@ -157,70 +136,16 @@ public class App extends SimpleApplication {
 	public void simpleInitApp() {
 		log.debug("simpleInitApp");
 		createPanel();
-		createConsole();
-		createPowerLoom();
-		createDb();
+		createApp();
 	}
 
-	private void createDb() {
-		OrientDbActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("OrientDbActor.create", ex);
-			} else {
-				dbActor = ret;
-				createObjects(ret);
-			}
-		});
-	}
-
-	private void createObjects(ActorRef<Message> db) {
-		ObjectsDbActor.create(injector, ofSeconds(1), db).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("ObjectsDbActor.create", ex);
-			} else {
-				objectsActor = ret;
-				createApp(ret);
-			}
-		});
-	}
-
-	private void createApp(ActorRef<Message> objects) {
-		AppActor.create(injector, ofSeconds(1), objects).whenComplete((ret, ex) -> {
+	private void createApp() {
+		AppActor.create(injector, ofSeconds(1),command).whenComplete((ret, ex) -> {
 			if (ex != null) {
 				log.error("AppActor.create", ex);
+				actor.tell(new AppErrorMessage(ex));
 			} else {
-				appActor = ret;
-				appActor.tell(new LoadWorldMessage(command.gamedir));
-			}
-		});
-	}
-
-	private void createPowerLoom() {
-		PowerLoomKnowledgeActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("PowerLoomKnowledgeActor.create", ex);
-			} else {
-				createKnowledge(ret);
-			}
-		});
-	}
-
-	private void createKnowledge(ActorRef<Message> powerLoom) {
-		KnowledgeBaseActor.create(injector, ofSeconds(1), powerLoom).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("KnowledgeBaseActor.create", ex);
-			} else {
-				knowledgeActor = ret;
-			}
-		});
-	}
-
-	private void createConsole() {
-		ConsoleActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("ConsoleActor.create", ex);
-			} else {
-				consoleActor = ret;
+				log.debug("AppActor created");
 			}
 		});
 	}
@@ -231,7 +156,6 @@ public class App extends SimpleApplication {
 					replyTo -> new AttachGuiMessage(replyTo), ofMinutes(1), actor.getActorSystem().scheduler());
 			result.whenComplete((ret1, ex1) -> {
 				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
-				mainWindowActor = Optional.of(ret);
 			});
 		});
 	}

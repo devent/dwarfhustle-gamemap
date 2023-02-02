@@ -32,7 +32,7 @@ import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage;

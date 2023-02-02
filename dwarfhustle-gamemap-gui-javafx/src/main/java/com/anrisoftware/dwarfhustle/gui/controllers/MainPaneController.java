@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.images.external.IconSize;

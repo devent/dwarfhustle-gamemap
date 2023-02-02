@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model
+package com.anrisoftware.dwarfhustle.gamemap.model.resources
 
 import static org.junit.jupiter.params.provider.Arguments.of
 
@@ -24,7 +24,7 @@ import java.util.stream.Stream
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
-import com.anrisoftware.dwarfhustle.gamemap.model.ObservableGameSettings.GameSettings
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings
 
 import groovy.util.logging.Slf4j
 
