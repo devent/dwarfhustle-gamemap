@@ -23,7 +23,6 @@ import static java.time.Duration.ofSeconds;
 import java.net.URL;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -32,8 +31,14 @@ import javax.inject.Inject;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbEmbeddedMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage.DbErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
@@ -42,9 +47,9 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerM
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractLoadObjectMessage.LoadObjectErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractLoadObjectMessage.LoadObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractObjectsReplyMessage.ObjectsResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.CreateSchemasMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.GameObjectSchema;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadGameObjectMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.schemas.GameObjectSchema;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseMessage.GetMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseMessage.GetReplyMessage;
@@ -232,8 +237,6 @@ public class AppActor {
 
 	private ActorRef<ObjectsResponseMessage> objectsResponseAdapter;
 
-	private Optional<CreateSchemasMessage> createSchemasMessage = Optional.empty();
-
 	private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
 
 	/**
@@ -286,7 +289,20 @@ public class AppActor {
 	private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
 		log.debug("onLoadWorld {}", m);
 		actor.tell(new StartEmbeddedServerMessage(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
-		// objects.tell(new LoadWorldMapMessage(objectsResponseAdapter));
+		return Behaviors.same();
+	}
+
+	/**
+	 * <ul>
+	 * <li>
+	 * </ul>
+	 */
+	private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
+		log.debug("onSetWorldMap {}", m);
+		actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, GameMap.OBJECT_TYPE, (db) -> {
+			var query = "SELECT * from ? where objecttype = ? and mapid = ?";
+			return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.getCurrentMapid());
+		}));
 		return Behaviors.same();
 	}
 
@@ -301,9 +317,18 @@ public class AppActor {
 		if (response instanceof DbErrorMessage) {
 			var rm = (DbErrorMessage) response;
 			log.error("Db error", rm);
+			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
 		} else if (response instanceof StartEmbeddedServerSuccessMessage) {
 			log.debug("Started embedded server");
+			var rm = (StartEmbeddedServerSuccessMessage) response;
+			actor.tell(new ConnectDbEmbeddedMessage(dbResponseAdapter, rm.server, "test", "root", "admin"));
+		} else if (response instanceof ConnectDbSuccessMessage) {
+			log.debug("Connected to embedded server");
+			actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, WorldMap.OBJECT_TYPE, (db) -> {
+				var query = "SELECT * from ? limit 1";
+				return db.query(query, WorldMap.OBJECT_TYPE);
+			}));
 		}
 		return Behaviors.same();
 	}
@@ -316,16 +341,31 @@ public class AppActor {
 	private Behavior<Message> onWrappedObjectsResponse(WrappedObjectsResponse m) {
 		log.debug("onWrappedObjectsResponse {}", m);
 		var response = m.response;
-		var om = createSchemasMessage.get();
 		if (response instanceof LoadObjectErrorMessage) {
 			var rm = (LoadObjectErrorMessage) response;
 			log.error("Objects error", rm);
-			om.replyTo.tell(rm);
+			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
 		} else if (response instanceof LoadObjectSuccessMessage) {
-			om.replyTo.tell(response);
+			var rm = (LoadObjectSuccessMessage) response;
+			if (rm.go instanceof WorldMap) {
+				var wm = (WorldMap) rm.go;
+				actor.tell(new SetWorldMapMessage(wm));
+			} else if (rm.go instanceof GameMap) {
+				System.out.println(rm.go); // TODO
+			}
 		}
 		return Behaviors.same();
+	}
+
+	/**
+	 * <ul>
+	 * <li>
+	 * </ul>
+	 */
+	private Behavior<Message> onShutdown(ShutdownMessage m) {
+		log.debug("onShutdown {}", m);
+		return Behaviors.stopped();
 	}
 
 	/**
@@ -333,6 +373,7 @@ public class AppActor {
 	 *
 	 * <ul>
 	 * <li>{@link LoadWorldMessage}
+	 * <li>{@link ShutdownMessage}
 	 * <li>{@link WrappedDbResponse}
 	 * <li>{@link WrappedObjectsResponse}
 	 * </ul>
@@ -340,6 +381,8 @@ public class AppActor {
 	private BehaviorBuilder<Message> getInitialBehavior() {
 		return Behaviors.receive(Message.class)//
 				.onMessage(LoadWorldMessage.class, this::onLoadWorld)//
+				.onMessage(SetWorldMapMessage.class, this::onSetWorldMap)//
+				.onMessage(ShutdownMessage.class, this::onShutdown)//
 				.onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
 				.onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
 		;
