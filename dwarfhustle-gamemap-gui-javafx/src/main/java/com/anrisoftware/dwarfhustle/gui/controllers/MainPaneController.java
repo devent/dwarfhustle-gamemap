@@ -30,8 +30,10 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
+import com.anrisoftware.resources.texts.external.Texts;
 
 import akka.actor.typed.ActorRef;
 import javafx.fxml.FXML;
@@ -73,7 +75,19 @@ public class MainPaneController {
 	@FXML
 	public Label statusLabel;
 
-	public void updateLocale(Locale locale, Images images, IconSize iconSize, ObservableGameSettings gs) {
+	private Locale locale;
+
+	private Texts texts;
+
+	private Images images;
+
+	private IconSize iconSize;
+
+	public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize, ObservableGameSettings gs) {
+		this.locale = locale;
+		this.texts = texts;
+		this.images = images;
+		this.iconSize = iconSize;
 		commandLineText.setText(gs.lastCommand.get());
 	}
 
@@ -102,6 +116,11 @@ public class MainPaneController {
 	}
 
 	private void setupImagePropertiesFields(ObservableGameSettings gs) {
+	}
+
+	public void setFortressName(GameMap gm) {
+		fortressNameLabel.setText(
+				texts.getResource("fortress_name", locale).getFormattedText(gm.getWorld().getName(), gm.getName()));
 	}
 
 }

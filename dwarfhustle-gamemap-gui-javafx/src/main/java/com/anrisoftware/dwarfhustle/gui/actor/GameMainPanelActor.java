@@ -32,6 +32,7 @@ import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
@@ -44,6 +45,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
+import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 
 import akka.actor.typed.ActorRef;
@@ -83,6 +85,10 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
     }
 
     @Inject
+	@Named("AppTexts")
+	private Texts appTexts;
+
+	@Inject
     @Named("AppIcons")
     private Images appIcons;
 
@@ -103,7 +109,7 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         runFxThread(() -> {
             var controller = (MainPaneController) initial.controller;
-			controller.updateLocale(Locale.US, appIcons, IconSize.SMALL, gsp.get());
+			controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL, gsp.get());
 			controller.initListeners(actor.get(), gsp.get());
 			controller.initButtons(globalKeys, keyMappings, gsp.get());
         });
@@ -201,12 +207,32 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
 		return Behaviors.same();
 	}
 
+	/**
+	 * Processing {@link SetGameMapMessage}.
+	 * <p>
+	 * Updates the fortress name.
+	 * <p>
+	 * Returns a behavior that reacts to the following messages:
+	 * <ul>
+	 * <li>{@link #getBehaviorAfterAttachGui()}
+	 * </ul>
+	 */
+	private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
+		log.debug("onSetGameMap {}", m);
+		runFxThread(() -> {
+			var controller = (MainPaneController) initial.controller;
+			controller.setFortressName(m.gm);
+		});
+		return Behaviors.same();
+	}
+
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
                 .onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
                 .onMessage(AboutDialogOpenTriggeredMessage.class, this::onAboutDialogOpenTriggered)//
 				.onMessage(UnknownLineMessage.class, this::onUnknownLine)//
 				.onMessage(ParsedLineMessage.class, this::onParsedLine)//
+				.onMessage(SetGameMapMessage.class, this::onSetGameMap)//
         ;
     }
 

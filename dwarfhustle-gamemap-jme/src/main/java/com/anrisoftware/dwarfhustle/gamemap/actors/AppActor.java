@@ -23,6 +23,7 @@ import static java.time.Duration.ofSeconds;
 import java.net.URL;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -31,6 +32,7 @@ import javax.inject.Inject;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -239,6 +241,8 @@ public class AppActor {
 
 	private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
 
+	private Optional<WorldMap> world = Optional.empty();
+
 	/**
 	 * Stash behavior. Returns a behavior for the messages:
 	 *
@@ -299,6 +303,7 @@ public class AppActor {
 	 */
 	private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
 		log.debug("onSetWorldMap {}", m);
+		this.world = Optional.of(m.wm);
 		actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, GameMap.OBJECT_TYPE, (db) -> {
 			var query = "SELECT * from ? where objecttype = ? and mapid = ?";
 			return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.getCurrentMapid());
@@ -352,7 +357,9 @@ public class AppActor {
 				var wm = (WorldMap) rm.go;
 				actor.tell(new SetWorldMapMessage(wm));
 			} else if (rm.go instanceof GameMap) {
-				System.out.println(rm.go); // TODO
+				var gm = (GameMap) rm.go;
+				gm.setWorld(world.get());
+				actor.tell(new SetGameMapMessage(gm));
 			}
 		}
 		return Behaviors.same();
