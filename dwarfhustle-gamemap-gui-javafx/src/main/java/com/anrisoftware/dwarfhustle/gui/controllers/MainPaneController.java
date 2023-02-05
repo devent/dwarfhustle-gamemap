@@ -21,6 +21,7 @@ import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.ABOUT_D
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.QUIT_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTINGS_MAPPING;
 
+import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Map;
 
@@ -83,11 +84,14 @@ public class MainPaneController {
 
 	private IconSize iconSize;
 
+	private ObservableGameSettings gs;
+
 	public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize, ObservableGameSettings gs) {
 		this.locale = locale;
 		this.texts = texts;
 		this.images = images;
 		this.iconSize = iconSize;
+		this.gs = gs;
 		commandLineText.setText(gs.lastCommand.get());
 	}
 
@@ -118,9 +122,11 @@ public class MainPaneController {
 	private void setupImagePropertiesFields(ObservableGameSettings gs) {
 	}
 
-	public void setFortressName(GameMap gm) {
-		fortressNameLabel.setText(
-				texts.getResource("fortress_name", locale).getFormattedText(gm.getWorld().getName(), gm.getName()));
+	public void setGameMap(GameMap gm) {
+		var wm = gm.getWorld();
+		fortressNameLabel
+				.setText(texts.getResource("fortress_name", locale).getFormattedText(wm.getName(), gm.getName()));
+		gameTimeLabel.setText(gs.gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));
 	}
 
 }

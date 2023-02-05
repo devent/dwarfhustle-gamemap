@@ -221,7 +221,7 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
 		log.debug("onSetGameMap {}", m);
 		runFxThread(() -> {
 			var controller = (MainPaneController) initial.controller;
-			controller.setFortressName(m.gm);
+			controller.setGameMap(m.gm);
 		});
 		return Behaviors.same();
 	}

@@ -61,7 +61,7 @@ public class ObservableGameSettings {
 		public Locale locale = Locale.US;
 
 		@JsonIgnore
-		public DateTimeFormatter gameTimeFormat = DateTimeFormatter.RFC_1123_DATE_TIME;
+		public DateTimeFormatter gameTimeFormat = DateTimeFormatter.ISO_TIME;
 
 		public float tickLength = 1 / 30f;
 
