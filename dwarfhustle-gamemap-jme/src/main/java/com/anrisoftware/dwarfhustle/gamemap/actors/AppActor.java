@@ -22,7 +22,9 @@ import static java.time.Duration.ofSeconds;
 
 import java.net.URL;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -32,13 +34,22 @@ import javax.inject.Inject;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.cache.AbstractGetMessage.GetMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.AbstractGetMessage.GetReplyMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.AbstractGetMessage.GetSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapBlocksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbEmbeddedMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage;
@@ -53,8 +64,6 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadGameObjectMess
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.schemas.GameObjectSchema;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseMessage.GetMessage;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseMessage.GetReplyMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -111,20 +120,26 @@ public class AppActor {
 		private final ObjectsResponseMessage response;
 	}
 
+	@RequiredArgsConstructor
+	@ToString(callSuper = true)
+	private static class WrappedCacheResponse extends Message {
+		private final CacheResponseMessage response;
+	}
+
 	/**
 	 * Factory to create {@link AppActor}.
 	 *
 	 * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
 	 */
 	public interface AppActorFactory {
-		AppActor create(ActorContext<Message> context, StashBuffer<Message> stash);
+		AppActor create(ActorContext<Message> context, StashBuffer<Message> stash, AppCommand command);
 	}
 
 	/**
 	 * Creates the {@link AppActor}.
 	 */
 	public static Behavior<Message> create(Injector injector, AppCommand command) {
-		return Behaviors.withStash(100, stash -> Behaviors.setup((context) -> {
+		return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
 			context.pipeToSelf(createActors(injector, command, context), (result, cause) -> {
 				if (cause == null) {
 					return result;
@@ -132,7 +147,7 @@ public class AppActor {
 					return new SetupErrorMessage(cause);
 				}
 			});
-			return injector.getInstance(AppActorFactory.class).create(context, stash).start();
+			return injector.getInstance(AppActorFactory.class).create(context, stash, command).start(injector);
 		}));
 	}
 
@@ -228,6 +243,10 @@ public class AppActor {
 	private StashBuffer<Message> buffer;
 
 	@Inject
+	@Assisted
+	private AppCommand command;
+
+	@Inject
 	private ActorSystemProvider actor;
 
 	private ActorRef<Message> objects;
@@ -239,9 +258,15 @@ public class AppActor {
 
 	private ActorRef<ObjectsResponseMessage> objectsResponseAdapter;
 
+	private ActorRef<CacheResponseMessage> cacheResponseAdapter;
+
 	private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
 
 	private Optional<WorldMap> world = Optional.empty();
+
+	private Injector injector;
+
+	private ActorRef<Message> mapBlocks;
 
 	/**
 	 * Stash behavior. Returns a behavior for the messages:
@@ -252,9 +277,11 @@ public class AppActor {
 	 * <li>{@link Message}
 	 * </ul>
 	 */
-	public Behavior<Message> start() {
+	public Behavior<Message> start(Injector injector) {
+		this.injector = injector;
 		this.dbResponseAdapter = context.messageAdapter(DbResponseMessage.class, WrappedDbResponse::new);
 		this.objectsResponseAdapter = context.messageAdapter(ObjectsResponseMessage.class, WrappedObjectsResponse::new);
+		this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
 		return Behaviors.receive(Message.class)//
 				.onMessage(InitialStateMessage.class, this::onInitialState)//
 				.onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -304,7 +331,7 @@ public class AppActor {
 	private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
 		log.debug("onSetWorldMap {}", m);
 		this.world = Optional.of(m.wm);
-		actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, GameMap.OBJECT_TYPE, (db) -> {
+		actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, GameMap.OBJECT_TYPE, db -> {
 			var query = "SELECT * from ? where objecttype = ? and mapid = ?";
 			return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.getCurrentMapid());
 		}));
@@ -316,11 +343,39 @@ public class AppActor {
 	 * <li>
 	 * </ul>
 	 */
+	private Behavior<Message> onLoadMapTiles(LoadMapTilesMessage m) {
+		log.debug("onLoadMapTiles {}", m);
+		Map<String, Object> params = new HashMap<>();
+		params.put("parent_dir", command.getGamedir());
+		params.put("mapid", m.gm.getMapid());
+		params.put("width", m.gm.getWidth());
+		params.put("height", m.gm.getHeight());
+		params.put("depth", m.gm.getDepth());
+		params.put("block_size", m.gm.getBlockSize());
+		var task = MapBlocksJcsCacheActor.create(injector, Duration.ofSeconds(1000), params);
+		task.whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("MapBlocksJcsCacheActor.create", ex);
+			}
+			mapBlocks = ret;
+			var w = m.gm.getWidth();
+			var h = m.gm.getHeight();
+			var d = m.gm.getDepth();
+			var pos = new GameBlockPos(m.gm.getMapid(), 0, 0, 0, 0 + w, 0 + h, 0 + d);
+			mapBlocks.tell(new GetReplyMessage(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
+		});
+		return Behaviors.same();
+	}
+
+	/**
+	 * <ul>
+	 * <li>
+	 * </ul>
+	 */
 	private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
 		log.debug("onWrappedDbResponse {}", m);
 		var response = m.response;
-		if (response instanceof DbErrorMessage) {
-			var rm = (DbErrorMessage) response;
+		if (response instanceof DbErrorMessage rm) {
 			log.error("Db error", rm);
 			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
@@ -330,7 +385,7 @@ public class AppActor {
 			actor.tell(new ConnectDbEmbeddedMessage(dbResponseAdapter, rm.server, "test", "root", "admin"));
 		} else if (response instanceof ConnectDbSuccessMessage) {
 			log.debug("Connected to embedded server");
-			actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, WorldMap.OBJECT_TYPE, (db) -> {
+			actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
 				var query = "SELECT * from ? limit 1";
 				return db.query(query, WorldMap.OBJECT_TYPE);
 			}));
@@ -346,20 +401,37 @@ public class AppActor {
 	private Behavior<Message> onWrappedObjectsResponse(WrappedObjectsResponse m) {
 		log.debug("onWrappedObjectsResponse {}", m);
 		var response = m.response;
-		if (response instanceof LoadObjectErrorMessage) {
-			var rm = (LoadObjectErrorMessage) response;
+		if (response instanceof LoadObjectErrorMessage rm) {
 			log.error("Objects error", rm);
 			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
-		} else if (response instanceof LoadObjectSuccessMessage) {
-			var rm = (LoadObjectSuccessMessage) response;
-			if (rm.go instanceof WorldMap) {
-				var wm = (WorldMap) rm.go;
+		} else if (response instanceof LoadObjectSuccessMessage rm) {
+			if (rm.go instanceof WorldMap wm) {
 				actor.tell(new SetWorldMapMessage(wm));
-			} else if (rm.go instanceof GameMap) {
-				var gm = (GameMap) rm.go;
+			} else if (rm.go instanceof GameMap gm) {
 				gm.setWorld(world.get());
 				actor.tell(new SetGameMapMessage(gm));
+				actor.tell(new LoadMapTilesMessage(gm));
+			}
+		}
+		return Behaviors.same();
+	}
+
+	/**
+	 * <ul>
+	 * <li>
+	 * </ul>
+	 */
+	private Behavior<Message> onWrappedCacheResponse(WrappedCacheResponse m) {
+		log.debug("onWrappedCacheResponse {}", m);
+		var response = m.response;
+		if (response instanceof CacheErrorMessage rm) {
+			log.error("Cache error", rm);
+			actor.tell(new AppErrorMessage(rm.error));
+			return Behaviors.stopped();
+		} else if (response instanceof GetSuccessMessage rm) {
+			if (rm.go instanceof MapBlock mb) {
+				log.debug("MapBlock loaded {}", mb);
 			}
 		}
 		return Behaviors.same();
@@ -379,19 +451,24 @@ public class AppActor {
 	 * Returns a behavior for the messages:
 	 *
 	 * <ul>
+	 * <li>{@link LoadMapTilesMessage}
 	 * <li>{@link LoadWorldMessage}
+	 * <li>{@link SetWorldMapMessage}
 	 * <li>{@link ShutdownMessage}
 	 * <li>{@link WrappedDbResponse}
 	 * <li>{@link WrappedObjectsResponse}
+	 * <li>{@link WrappedCacheResponse}
 	 * </ul>
 	 */
 	private BehaviorBuilder<Message> getInitialBehavior() {
 		return Behaviors.receive(Message.class)//
+				.onMessage(LoadMapTilesMessage.class, this::onLoadMapTiles)//
 				.onMessage(LoadWorldMessage.class, this::onLoadWorld)//
 				.onMessage(SetWorldMapMessage.class, this::onSetWorldMap)//
 				.onMessage(ShutdownMessage.class, this::onShutdown)//
 				.onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
 				.onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
+				.onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
 		;
 	}
 }
