@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme;
+package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 import javax.inject.Named;
 
-import com.anrisoftware.dwarfhustle.gamemap.actors.GamemapActorsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
 import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
 import com.google.inject.AbstractModule;

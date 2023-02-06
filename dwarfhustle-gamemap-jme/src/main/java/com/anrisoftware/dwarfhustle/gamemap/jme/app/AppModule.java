@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme;
+package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorModule;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;

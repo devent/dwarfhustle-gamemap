@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme;
+package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofMinutes;
@@ -31,7 +31,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 
-import com.anrisoftware.dwarfhustle.gamemap.actors.AppActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;

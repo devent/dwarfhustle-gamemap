@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
+ * dwarfhustle-model-db - Manages the compile dependencies for the model.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,24 +15,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.actors;
+package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
 
-import java.io.File;
-
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor.AppActorFactory;
+import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
- * Message to load a world from the directory. The directory must contain the
- * JCS having the generated map and the database.
  *
- * @author Erwin Müller {@literal <erwin@mullerlpublic.de}
+ *
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@RequiredArgsConstructor
-@ToString(callSuper = true)
-public class LoadWorldMessage extends Message {
+public class GamemapActorsModule extends AbstractModule {
 
-	public final File dir;
+	@Override
+	protected void configure() {
+		install(new FactoryModuleBuilder().implement(AppActor.class, AppActor.class).build(AppActorFactory.class));
+	}
 }
