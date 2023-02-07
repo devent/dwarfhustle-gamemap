@@ -26,6 +26,7 @@
 		<appender-ref ref="MVN_STYLE" />
 	</root>
 
+    <logger name="com.jme3.app.state" level="FINEST" />
 	<logger name="com.anrisoftware" level="ALL" />
 
 </configuration>

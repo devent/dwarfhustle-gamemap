@@ -32,6 +32,8 @@ import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.DebugCoordinateAxesState;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.GameMapActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -113,6 +115,7 @@ public class App extends SimpleApplication {
 	@SneakyThrows
 	private void setupApp() {
 		this.injector = parent.createChildInjector(new GamemapJmeModule(this));
+		getStateManager().attach(injector.getInstance(DebugCoordinateAxesState.class));
 		gsp.load();
 		setShowSettings(false);
 		var s = new AppSettings(true);
@@ -127,7 +130,7 @@ public class App extends SimpleApplication {
 	}
 
 	private void loadAppIcon(AppSettings s) throws IOException {
-		BufferedImage logo = ImageIO.read(getClass().getResource("/app/logo.png"));
+		var logo = ImageIO.read(getClass().getResource("/app/logo.png"));
 		s.setIcons(new BufferedImage[] { logo });
 		s.setTitle(IOUtils.toString(getClass().getResource("/app/title.txt"), UTF_8));
 	}
@@ -137,6 +140,7 @@ public class App extends SimpleApplication {
 		log.debug("simpleInitApp");
 		createPanel();
 		createApp();
+		createGameMap();
 	}
 
 	private void createApp() {
@@ -153,10 +157,21 @@ public class App extends SimpleApplication {
 	private void createPanel() {
 		GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
 			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(ret,
-					replyTo -> new AttachGuiMessage(replyTo), ofMinutes(1), actor.getActorSystem().scheduler());
+					AttachGuiMessage::new, ofMinutes(1), actor.getActorSystem().scheduler());
 			result.whenComplete((ret1, ex1) -> {
 				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
 			});
+		});
+	}
+
+	private void createGameMap() {
+		GameMapActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+			if (ex != null) {
+				log.error("GameMapActor.create", ex);
+				actor.tell(new AppErrorMessage(ex));
+			} else {
+				log.debug("GameMapActor created");
+			}
 		});
 	}
 

@@ -19,6 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 import javax.inject.Named;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GamemapActorsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.GamemapJmeMapModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
 import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
 import com.google.inject.AbstractModule;
@@ -46,6 +47,7 @@ public class GamemapJmeModule extends AbstractModule {
 		install(new GamemapGuiActorsModule());
 		install(new GamemapGuiControllersModule());
 		install(new GamemapActorsModule());
+		install(new GamemapJmeMapModule());
     }
 
     @Provides
@@ -54,8 +56,8 @@ public class GamemapJmeModule extends AbstractModule {
     }
 
     @Provides
-    @Named("pivotNode")
-    public Node getPivotNode() {
+	@Named("rootNode")
+	public Node getRootNode() {
         return owner.getRootNode();
     }
 

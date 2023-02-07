@@ -35,6 +35,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -44,9 +45,9 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractGetMessage.GetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractGetMessage.GetReplyMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractGetMessage.GetSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.AbstractCacheGetMessage.CacheGetMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.AbstractCacheGetMessage.CacheGetReplyMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.AbstractCacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapBlocksJcsCacheActor;
@@ -304,8 +305,8 @@ public class AppActor {
 	 * Returns a behavior for the messages:
 	 *
 	 * <ul>
-	 * <li>{@link GetReplyMessage}
-	 * <li>{@link GetMessage}
+	 * <li>{@link CacheGetReplyMessage}
+	 * <li>{@link CacheGetMessage}
 	 * </ul>
 	 */
 	private Behavior<Message> onInitialState(InitialStateMessage m) {
@@ -362,7 +363,7 @@ public class AppActor {
 			var h = m.gm.getHeight();
 			var d = m.gm.getDepth();
 			var pos = new GameBlockPos(m.gm.getMapid(), 0, 0, 0, 0 + w, 0 + h, 0 + d);
-			mapBlocks.tell(new GetReplyMessage(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
+			mapBlocks.tell(new CacheGetReplyMessage(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
 		});
 		return Behaviors.same();
 	}
@@ -429,9 +430,10 @@ public class AppActor {
 			log.error("Cache error", rm);
 			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
-		} else if (response instanceof GetSuccessMessage rm) {
+		} else if (response instanceof CacheGetSuccessMessage rm) {
 			if (rm.go instanceof MapBlock mb) {
 				log.debug("MapBlock loaded {}", mb);
+				actor.tell(new MapBlockLoadedMessage(mb));
 			}
 		}
 		return Behaviors.same();
