@@ -23,9 +23,7 @@ import static java.time.Duration.ofSeconds;
 import java.net.URL;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -38,6 +36,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
@@ -63,7 +62,6 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractLoadObject
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractObjectsReplyMessage.ObjectsResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadGameObjectMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.schemas.GameObjectSchema;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
@@ -193,6 +191,10 @@ public class AppActor {
 				actor.tell(new AppErrorMessage(ex));
 			} else {
 				log.debug("ObjectsDbActor created");
+				if (command.isSkipLoad()) {
+					log.warn("Skip load is set, not loading world.");
+					return;
+				}
 				actor.tell(new LoadWorldMessage(command.getGamedir()));
 			}
 		});
@@ -250,10 +252,8 @@ public class AppActor {
 	@Inject
 	private ActorSystemProvider actor;
 
-	private ActorRef<Message> objects;
-
 	@Inject
-	private List<GameObjectSchema> schemas;
+	private GameSettingsProvider ogs;
 
 	private ActorRef<DbResponseMessage> dbResponseAdapter;
 
@@ -262,8 +262,6 @@ public class AppActor {
 	private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
 	private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
-
-	private Optional<WorldMap> world = Optional.empty();
 
 	private Injector injector;
 
@@ -331,7 +329,7 @@ public class AppActor {
 	 */
 	private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
 		log.debug("onSetWorldMap {}", m);
-		this.world = Optional.of(m.wm);
+		ogs.get().currentWorld.set(m.wm);
 		actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, GameMap.OBJECT_TYPE, db -> {
 			var query = "SELECT * from ? where objecttype = ? and mapid = ?";
 			return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.getCurrentMapid());
@@ -410,7 +408,8 @@ public class AppActor {
 			if (rm.go instanceof WorldMap wm) {
 				actor.tell(new SetWorldMapMessage(wm));
 			} else if (rm.go instanceof GameMap gm) {
-				gm.setWorld(world.get());
+				gm.setWorld(ogs.get().currentWorld.get());
+				ogs.get().currentMap.set(gm);
 				actor.tell(new SetGameMapMessage(gm));
 				actor.tell(new LoadMapTilesMessage(gm));
 			}

@@ -108,16 +108,20 @@ public class GameMapActor {
 	}
 
 	private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
-		var app = injector.getInstance(Application.class);
-		var state = injector.getInstance(GameMapState.class);
-		return CompletableFuture.supplyAsync(() -> attachState(app, state));
+		return CompletableFuture.supplyAsync(() -> attachState(injector));
 	}
 
-	private static Message attachState(Application app, GameMapState state) {
+	private static Message attachState(Injector injector) {
+		var app = injector.getInstance(Application.class);
+		var gameMapState = injector.getInstance(GameMapState.class);
+		var cameraState = injector.getInstance(CameraPanningState.class);
 		try {
 			var f = app.enqueue(() -> {
-				app.getStateManager().attach(state);
-				return new InitialStateMessage(state);
+				app.getStateManager().attach(gameMapState);
+				app.getStateManager().attach(cameraState);
+				var mapRenderSystem = gameMapState.getMapRenderSystem();
+				cameraState.setMapRenderSystem(mapRenderSystem);
+				return new InitialStateMessage(gameMapState);
 			});
 			return f.get();
 		} catch (Exception ex) {

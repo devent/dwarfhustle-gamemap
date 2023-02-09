@@ -21,6 +21,10 @@ public class GameMapState extends BaseAppState {
 	@Inject
 	private MapRenderSystem mapRenderSystem;
 
+	public MapRenderSystem getMapRenderSystem() {
+		return mapRenderSystem;
+	}
+
 	@Override
 	protected void initialize(Application app) {
 	}

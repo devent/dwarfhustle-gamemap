@@ -45,6 +45,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.jme3.app.DebugKeysAppState;
 import com.jme3.app.LostFocusBehavior;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ConstantVerifierState;
@@ -70,8 +71,11 @@ public class App extends SimpleApplication {
 	@Getter
 	static class AppCommandImpl implements AppCommand, Runnable {
 
-		@Option(names = { "-d", "--dir" }, paramLabel = "GAME-DIR", description = "the game directory")
+		@Option(names = { "-dir" }, paramLabel = "GAME-DIR", description = "the game directory")
 		private File gamedir;
+
+		@Option(names = { "-skip" }, paramLabel = "SKIP-LOAD", description = "skip loading of the world")
+		private boolean skipLoad = false;
 
 		@Override
 		public void run() {
@@ -102,7 +106,7 @@ public class App extends SimpleApplication {
 	private Injector injector;
 
 	public App() {
-		super(new ConstantVerifierState());
+		super(new ConstantVerifierState(), new DebugKeysAppState());
 	}
 
 	private void start(Injector parent, AppCommandImpl command) {

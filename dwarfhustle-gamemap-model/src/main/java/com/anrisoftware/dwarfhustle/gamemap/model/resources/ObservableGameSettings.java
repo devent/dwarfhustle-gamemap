@@ -21,6 +21,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jme3.math.Quaternion;
@@ -31,6 +33,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.adapter.JavaBeanBooleanPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanDoublePropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanFloatPropertyBuilder;
@@ -156,6 +159,10 @@ public class ObservableGameSettings {
 
 	public final ObjectProperty<String> lastCommand;
 
+	public final ObjectProperty<WorldMap> currentWorld;
+
+	public final ObjectProperty<GameMap> currentMap;
+
 	@SuppressWarnings("unchecked")
 	@SneakyThrows
 	public ObservableGameSettings(GameSettings p) {
@@ -178,6 +185,8 @@ public class ObservableGameSettings {
 		this.cameraRotZ = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotZ").build();
 		this.cameraRotW = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotW").build();
 		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
+		this.currentWorld = new SimpleObjectProperty<>();
+		this.currentMap = new SimpleObjectProperty<>();
 	}
 
 	public void copy(GameSettings other) {

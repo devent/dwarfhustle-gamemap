@@ -10,4 +10,6 @@ import java.io.File;
 public interface AppCommand {
 
 	File getGamedir();
+
+	boolean isSkipLoad();
 }
