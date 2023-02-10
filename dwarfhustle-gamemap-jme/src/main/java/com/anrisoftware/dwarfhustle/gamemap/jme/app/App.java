@@ -77,6 +77,10 @@ public class App extends SimpleApplication {
 		@Option(names = { "-skip" }, paramLabel = "SKIP-LOAD", description = "skip loading of the world")
 		private boolean skipLoad = false;
 
+		@Option(names = {
+				"-remote" }, paramLabel = "REMOTE-SERVER", description = "using the remote server instead of starting embedded server")
+		private String remoteServer;
+
 		@Override
 		public void run() {
 			var injector = Guice.createInjector(new AppModule());

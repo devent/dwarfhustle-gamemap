@@ -1,0 +1,59 @@
+@startuml
+title AppActor LoadWorldMessage
+
+control MainActor as ma
+participant AppActor as ac
+participant OrientDbActor as orientdba
+participant ObjectsDbActor as objectsdba
+participant MapBlocksJcsCacheActor as mbjca
+
+--> ac : LoadWorldMessage
+
+ac -> ac ++ : onLoadWorld()
+
+alt isUseRemoteServer is true
+ac --> orientdba : ConnectDbRemoteMessage
+ac -> ac ++ : onWrappedDbResponse()
+orientdba --> ac : ConnectDbSuccessMessage
+else
+ac --> orientdba : StartEmbeddedServerMessage
+orientdba --> ac : StartEmbeddedServerSuccessMessage
+ac --> orientdba : ConnectDbEmbeddedMessage
+end
+ac --> objectsdba : LoadGameObjectMessage
+note right: Load WorldMap
+deactivate ac
+deactivate ac
+
+ac -> ac ++ : onWrappedObjectsResponse()
+objectsdba --> ac : LoadObjectSuccessMessage
+alt object is WorldMap
+ac --> ma : SetWorldMapMessage
+else object is GameMap
+ac --> ma : SetGameMapMessage
+ac --> ma : LoadMapTilesMessage
+end
+deactivate ac
+
+--> ac : SetWorldMapMessage
+ac -> ac ++ : onSetWorldMap()
+ac --> objectsdba : LoadGameObjectMessage
+note right: Load GameMap
+deactivate ac
+
+--> ac : LoadMapTilesMessage
+ac -> ac ++ : onLoadMapTiles()
+ac -> mbjca ** : create()
+par whenComplete
+ac --> mbjca : CacheGetReplyMessage
+note right: Load root MapBlock
+deactivate ac
+end
+mbjca --> ac : CacheGetSuccessMessage
+ac -> ac ++ : onWrappedCacheResponse()
+alt object is MapBlock
+ac --> ma : MapBlockLoadedMessage
+end
+deactivate ac
+
+@enduml

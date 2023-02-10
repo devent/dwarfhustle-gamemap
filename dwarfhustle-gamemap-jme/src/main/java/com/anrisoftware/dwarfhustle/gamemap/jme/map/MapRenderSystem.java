@@ -24,13 +24,12 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxFactory;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IntervalIteratingSystem;
+import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
@@ -58,19 +57,24 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 
 	private MapBlockBox rootMapBlockBox;
 
+	private BoundingBox rootWorldBound;
+
+	private float rootWidth;
+
+	private float rootHeight;
+
+	private float rootDepth;
+
 	@Inject
 	public MapRenderSystem(MapBlockBoxFactory mapBlockBoxFactory) {
 		super(Family.all(MapBlockComponent.class).get(), 0.33f);
 		this.mapBlockBoxFactory = mapBlockBoxFactory;
 		this.boxes = Maps.mutable.of();
-		createMapBlockBox(new MapBlockComponent(createDummyMapBlock()));
-	}
-
-	private MapBlock createDummyMapBlock() {
-		var mb = new MapBlock(0);
-		mb.setPos(GameBlockPos.parse("0/0/0/0/64/64/64"));
-		mb.setRoot(true);
-		return mb;
+		this.rootWorldBound = new BoundingBox(Vector3f.ZERO, 64f, 64f, 64f);
+		this.rootWidth = 64f;
+		this.rootHeight = 64f;
+		this.rootDepth = 64f;
+		this.rootMapBlockBox = null;
 	}
 
 	/**
@@ -80,7 +84,7 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 	public void getScreenCoordinatesMap(Camera camera, Vector3f topRight, Vector3f bottomLeft) {
 		var temp = TempVars.get();
 		try {
-			var bb = rootMapBlockBox.getWorldBound();
+			var bb = rootWorldBound;
 			var btr = bb.getMax(temp.vect1);
 			var bbl = bb.getMin(temp.vect2);
 			System.out.println(bb); // TODO
@@ -115,6 +119,10 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 		rootNode.attachChild(box.geo);
 		if (c.mb.isRoot()) {
 			this.rootMapBlockBox = box;
+			this.rootWorldBound = rootMapBlockBox.getWorldBound();
+			this.rootWidth = rootMapBlockBox.c.mb.getWidth();
+			this.rootHeight = rootMapBlockBox.c.mb.getHeight();
+			this.rootDepth = rootMapBlockBox.c.mb.getDepth();
 		}
 	}
 
@@ -123,15 +131,15 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 	}
 
 	public float getWidth() {
-		return rootMapBlockBox.c.mb.getWidth();
+		return rootWidth;
 	}
 
 	public float getHeight() {
-		return rootMapBlockBox.c.mb.getHeight();
+		return rootHeight;
 	}
 
 	public float getDepth() {
-		return rootMapBlockBox.c.mb.getDepth();
+		return rootDepth;
 	}
 
 }

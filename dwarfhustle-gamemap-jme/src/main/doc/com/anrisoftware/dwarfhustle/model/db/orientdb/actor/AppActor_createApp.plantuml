@@ -1,0 +1,29 @@
+@startuml
+title AppActor createApp
+
+participant App as a
+participant AppActor as ac
+participant OrientDbActor as orientdba
+participant ObjectsDbActor as objectsdba
+participant PowerLoomKnowledgeActor as plna
+participant KnowledgeBaseActor as kba
+participant ConsoleActor as ca
+
+a -> a ++ : createApp()
+a -> ac ** : create()
+ac -> ac ++ : createActors()
+ac -> orientdba ** : create()
+ac -> objectsdba ** : create()
+par whenComplete
+alt SkipLoad is false
+ac -> ac : LoadWorldMessage
+end
+end
+ac -> plna ** : create()
+ac -> kba ** : create()
+ac -> ca ** : create()
+
+deactivate ac
+deactivate a
+
+@enduml

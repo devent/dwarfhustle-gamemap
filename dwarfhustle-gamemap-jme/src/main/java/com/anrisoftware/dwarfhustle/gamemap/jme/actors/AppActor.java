@@ -51,6 +51,7 @@ import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapBlocksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbEmbeddedMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbRemoteMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage.DbErrorMessage;
@@ -318,7 +319,12 @@ public class AppActor {
 	 */
 	private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
 		log.debug("onLoadWorld {}", m);
-		actor.tell(new StartEmbeddedServerMessage(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
+		if (command.isUseRemoteServer()) {
+			actor.tell(
+					new ConnectDbRemoteMessage(dbResponseAdapter, command.getRemoteServer(), "test", "root", "admin"));
+		} else {
+			actor.tell(new StartEmbeddedServerMessage(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
+		}
 		return Behaviors.same();
 	}
 
@@ -383,7 +389,7 @@ public class AppActor {
 			var rm = (StartEmbeddedServerSuccessMessage) response;
 			actor.tell(new ConnectDbEmbeddedMessage(dbResponseAdapter, rm.server, "test", "root", "admin"));
 		} else if (response instanceof ConnectDbSuccessMessage) {
-			log.debug("Connected to embedded server");
+			log.debug("Connected to server");
 			actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
 				var query = "SELECT * from ? limit 1";
 				return db.query(query, WorldMap.OBJECT_TYPE);
