@@ -22,11 +22,16 @@
 		<immediateFlush>false</immediateFlush>
 	</appender>
 
-	<root level="ERROR">
-		<appender-ref ref="MVN_STYLE" />
-	</root>
+	<appender name="ASYNC" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
+        <appender-ref ref="MVN_STYLE" />
+    </appender>
+
+    <root level="ERROR">
+        <appender-ref ref="ASYNC" />
+    </root>
 
     <logger name="com.jme3.app.state" level="FINEST" />
 	<logger name="com.anrisoftware" level="ALL" />
+	<logger name="com.anrisoftware.dwarfhustle.model" level="OFF" />
 
 </configuration>

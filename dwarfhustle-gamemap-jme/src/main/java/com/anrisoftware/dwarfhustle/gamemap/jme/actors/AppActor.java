@@ -33,6 +33,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
@@ -44,9 +45,8 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractCacheGetMessage.CacheGetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractCacheGetMessage.CacheGetReplyMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractCacheGetMessage.CacheGetSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapBlocksJcsCacheActor;
@@ -320,8 +320,8 @@ public class AppActor {
 	private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
 		log.debug("onLoadWorld {}", m);
 		if (command.isUseRemoteServer()) {
-			actor.tell(
-					new ConnectDbRemoteMessage(dbResponseAdapter, command.getRemoteServer(), "test", "root", "admin"));
+			actor.tell(new ConnectDbRemoteMessage(dbResponseAdapter, command.getRemoteServer(),
+					command.getRemoteDatabase(), command.getRemoteUser(), command.getRemotePassword()));
 		} else {
 			actor.tell(new StartEmbeddedServerMessage(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
 		}
@@ -367,7 +367,7 @@ public class AppActor {
 			var h = m.gm.getHeight();
 			var d = m.gm.getDepth();
 			var pos = new GameBlockPos(m.gm.getMapid(), 0, 0, 0, 0 + w, 0 + h, 0 + d);
-			mapBlocks.tell(new CacheGetReplyMessage(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
+			mapBlocks.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
 		});
 		return Behaviors.same();
 	}

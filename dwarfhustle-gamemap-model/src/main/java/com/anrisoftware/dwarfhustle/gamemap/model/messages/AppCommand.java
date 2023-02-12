@@ -17,6 +17,12 @@ public interface AppCommand {
 
 	String getRemoteServer();
 
+	String getRemoteUser();
+
+	String getRemotePassword();
+
+	String getRemoteDatabase();
+
 	default boolean isUseRemoteServer() {
 		return StringUtils.isNotBlank(getRemoteServer());
 	}

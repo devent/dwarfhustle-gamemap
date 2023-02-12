@@ -78,8 +78,20 @@ public class App extends SimpleApplication {
 		private boolean skipLoad = false;
 
 		@Option(names = {
-				"-remote" }, paramLabel = "REMOTE-SERVER", description = "using the remote server instead of starting embedded server")
+				"-remote-server" }, paramLabel = "REMOTE-SERVER", description = "using the remote server instead of starting embedded server")
 		private String remoteServer;
+
+		@Option(names = {
+				"-remote-user" }, paramLabel = "REMOTE-USER", description = "using the remote server instead of starting embedded server")
+		private String remoteUser;
+
+		@Option(names = {
+				"-remote-password" }, paramLabel = "REMOTE-PASSWORD", description = "using the remote server instead of starting embedded server")
+		private String remotePassword;
+
+		@Option(names = {
+				"-remote-database" }, paramLabel = "REMOTE-DATABASE", description = "using the remote server instead of starting embedded server")
+		private String remoteDatabase;
 
 		@Override
 		public void run() {
@@ -152,7 +164,7 @@ public class App extends SimpleApplication {
 	}
 
 	private void createApp() {
-		AppActor.create(injector, ofSeconds(1),command).whenComplete((ret, ex) -> {
+		AppActor.create(injector, ofSeconds(1), command).whenComplete((ret, ex) -> {
 			if (ex != null) {
 				log.error("AppActor.create", ex);
 				actor.tell(new AppErrorMessage(ex));
@@ -164,8 +176,8 @@ public class App extends SimpleApplication {
 
 	private void createPanel() {
 		GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(ret,
-					AttachGuiMessage::new, ofMinutes(1), actor.getActorSystem().scheduler());
+			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(ret, AttachGuiMessage::new, ofMinutes(1),
+					actor.getActorSystem().scheduler());
 			result.whenComplete((ret1, ex1) -> {
 				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
 			});
