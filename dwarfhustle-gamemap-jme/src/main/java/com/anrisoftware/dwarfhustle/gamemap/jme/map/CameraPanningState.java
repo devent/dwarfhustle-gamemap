@@ -161,6 +161,8 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     @Override
     protected void onEnable() {
         log.debug("onEnable");
+		camera.setLocation(ogs.getCameraPos());
+		camera.setRotation(ogs.getCameraRot());
         initKeys();
     }
 
@@ -217,9 +219,8 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     private boolean checkZoomAllowed(float m) {
         var location = camera.getLocation();
-		System.out.printf("%s %s %s %f\n", location, mapTopRight, mapBottomLeft, m); // TODO
         if (m > 0) {
-			return location.z + m < mapRenderSystem.getDepth() / 2f;
+			return location.z + m < mapRenderSystem.getDepth();
         } else {
             return location.z + m > 1f;
         }
@@ -274,17 +275,21 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     private boolean canMoveX(float dx, float s) {
         if (dx > 0) {
-			return camera.getWidth() - (mapBottomLeft.x + dx * s) > 50;
+			// right
+			return mapBottomLeft.x + dx * s < 50;
         } else {
-			return (mapTopRight.x - dx * s) - camera.getWidth() > 50;
+			// left
+			return mapTopRight.x - dx * s < 50;
         }
     }
 
     private boolean canMoveY(float dy, float s) {
         if (dy > 0) {
-			return mapTopRight.y + dy * s > 50;
+			// down
+			return mapTopRight.y + dy * s < 50;
         } else {
-			return camera.getHeight() - (mapBottomLeft.y - dy * s) > 50;
+			// up
+			return mapBottomLeft.y - dy * s < 50;
         }
     }
 

@@ -44,7 +44,7 @@ public class MapBlockBox {
 		mat.getAdditionalRenderState().setWireframe(true);
 		mat.getAdditionalRenderState().setLineWidth(4);
 		mat.setColor("Color", ColorRGBA.Red);
-		mat.getAdditionalRenderState().setFaceCullMode(FaceCullMode.Off);
+		mat.getAdditionalRenderState().setFaceCullMode(FaceCullMode.Front);
 		geo.setMaterial(mat);
 		geo.updateModelBound();
 	}

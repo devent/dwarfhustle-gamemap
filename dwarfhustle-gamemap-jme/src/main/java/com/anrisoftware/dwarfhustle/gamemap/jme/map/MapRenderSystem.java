@@ -87,7 +87,6 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 			var bb = rootWorldBound;
 			var btr = bb.getMax(temp.vect1);
 			var bbl = bb.getMin(temp.vect2);
-			System.out.println(bb); // TODO
 			camera.getScreenCoordinates(btr, topRight);
 			camera.getScreenCoordinates(bbl, bottomLeft);
 		} finally {
