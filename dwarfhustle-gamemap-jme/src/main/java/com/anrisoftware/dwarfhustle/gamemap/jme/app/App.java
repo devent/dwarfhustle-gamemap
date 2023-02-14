@@ -210,8 +210,6 @@ public class App extends SimpleApplication {
 		if (camera == null) {
 			return;
 		}
-		gsp.get().setCameraPos(camera.getLocation());
-		gsp.get().setCameraRot(camera.getRotation());
 		gsp.get().windowWidth.set(camera.getWidth());
 		gsp.get().windowHeight.set(camera.getHeight());
 	}

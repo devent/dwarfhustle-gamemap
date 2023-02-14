@@ -69,10 +69,12 @@ import static com.jme3.input.MouseInput.AXIS_WHEEL;
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import static java.lang.Math.abs;
 
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import javax.inject.Inject;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
@@ -118,34 +120,46 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     @Inject
     private Camera camera;
 
-	private MapRenderSystem mapRenderSystem;
+    private MapRenderSystem mapRenderSystem;
 
     private boolean middleMouseDown;
 
-	private final Vector3f mapBottomLeft;
+    private final Vector3f mapBottomLeft;
 
-	private final Vector3f mapTopRight;
+    private final Vector3f mapTopRight;
 
-	private final ObservableGameSettings ogs;
+    private GameMap gm;
+
+    private Optional<Consumer<GameMap>> saveCamera = Optional.empty();
 
     @Inject
-	public CameraPanningState(GameSettingsProvider ogs) {
+    public CameraPanningState() {
         super(CameraPanningState.class.getSimpleName());
         this.middleMouseDown = false;
         this.mouse = new Vector2f();
-		this.mapBottomLeft = new Vector3f();
-		this.mapTopRight = new Vector3f();
-		this.ogs = ogs.get();
+        this.mapBottomLeft = new Vector3f();
+        this.mapTopRight = new Vector3f();
+    }
+
+    public void setSaveCamera(Consumer<GameMap> saveCamera) {
+        this.saveCamera = Optional.of(saveCamera);
     }
 
     public void resetCamera() {
-		camera.setLocation(new Vector3f(0.0f, 0.0f, 10.0f));
-		camera.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
-	}
+        camera.setLocation(new Vector3f(0.0f, 0.0f, 10.0f));
+        camera.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
+    }
 
-	public void setMapRenderSystem(MapRenderSystem mapRenderSystem) {
-		this.mapRenderSystem = mapRenderSystem;
-		updateScreenCoordinatesMap();
+    public void setMapRenderSystem(MapRenderSystem mapRenderSystem) {
+        this.mapRenderSystem = mapRenderSystem;
+        updateScreenCoordinatesMap();
+    }
+
+    public void updateCamera(GameMap gm) {
+        this.gm = gm;
+        camera.setLocation(new Vector3f(gm.getCameraPos()[0], gm.getCameraPos()[1], gm.getCameraPos()[2]));
+        camera.setRotation(
+                new Quaternion(gm.getCameraRot()[0], gm.getCameraRot()[1], gm.getCameraRot()[2], gm.getCameraRot()[3]));
     }
 
     @Override
@@ -161,8 +175,6 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     @Override
     protected void onEnable() {
         log.debug("onEnable");
-		camera.setLocation(ogs.getCameraPos());
-		camera.setRotation(ogs.getCameraRot());
         initKeys();
     }
 
@@ -191,7 +203,10 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     public void onAction(String name, boolean isPressed, float tpf) {
         switch (name) {
         case MIDDLE_BUTTON_MAPPING:
-			updateScreenCoordinatesMap();
+            updateScreenCoordinatesMap();
+            if (!isPressed && middleMouseDown) {
+                saveCamera();
+            }
             middleMouseDown = isPressed;
             return;
         }
@@ -202,7 +217,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         var m = 1f;
         var oldpos = camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2, camera.getHeight() / 2), 0.0f);
         var newpos = camera.getWorldCoordinates(mouse, 0.0f);
-		updateScreenCoordinatesMap();
+        updateScreenCoordinatesMap();
         switch (name) {
         case ZOOM_IN_MAPPING:
             if (checkZoomAllowed(m)) {
@@ -220,7 +235,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     private boolean checkZoomAllowed(float m) {
         var location = camera.getLocation();
         if (m > 0) {
-			return location.z + m < mapRenderSystem.getDepth();
+            return location.z + m < mapRenderSystem.getDepth();
         } else {
             return location.z + m > 1f;
         }
@@ -249,7 +264,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         if (!middleMouseDown) {
             return;
         }
-		updateScreenCoordinatesMap();
+        updateScreenCoordinatesMap();
         float dx = evt.getDX();
         float dy = -evt.getDY();
         var s = calcSpeed(Math.max(abs(dx), abs(dy)));
@@ -260,41 +275,6 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
             dy = 0;
         }
         boundMove(-dx * s, dy * s, 0);
-    }
-
-    private void boundMove(float dx, float dy, float dz) {
-        var pos = camera.getLocation();
-        pos.x += dx;
-        pos.y += dy;
-        pos.z += dz;
-		ogs.cameraPosX.set(pos.x);
-		ogs.cameraPosY.set(pos.y);
-		ogs.cameraPosZ.set(pos.z);
-        camera.update();
-    }
-
-    private boolean canMoveX(float dx, float s) {
-        if (dx > 0) {
-			// right
-			return mapBottomLeft.x + dx * s < 50;
-        } else {
-			// left
-			return mapTopRight.x - dx * s < 50;
-        }
-    }
-
-    private boolean canMoveY(float dy, float s) {
-        if (dy > 0) {
-			// down
-			return mapTopRight.y + dy * s < 50;
-        } else {
-			// up
-			return mapBottomLeft.y - dy * s < 50;
-        }
-    }
-
-    private float calcSpeed(float d) {
-        return camera.getLocation().z * 0.0025f;
     }
 
     @Override
@@ -309,8 +289,47 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     public void onTouchEvent(TouchEvent evt) {
     }
 
-	private void updateScreenCoordinatesMap() {
-		mapRenderSystem.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
+    private void updateScreenCoordinatesMap() {
+        mapRenderSystem.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
+    }
+
+    private void saveCamera() {
+        if (saveCamera.isPresent()) {
+            saveCamera.get().accept(gm);
+        }
+    }
+
+    private void boundMove(float dx, float dy, float dz) {
+        var pos = camera.getLocation();
+        pos.x += dx;
+        pos.y += dy;
+        pos.z += dz;
+        gm.setCameraPos(pos.x, pos.y, pos.z);
+        camera.update();
+    }
+
+    private boolean canMoveX(float dx, float s) {
+        if (dx > 0) {
+            // right
+            return mapBottomLeft.x + dx * s < 50;
+        } else {
+            // left
+            return mapTopRight.x - dx * s < 50;
+        }
+    }
+
+    private boolean canMoveY(float dy, float s) {
+        if (dy > 0) {
+            // down
+            return mapTopRight.y + dy * s < 50;
+        } else {
+            // up
+            return mapBottomLeft.y - dy * s < 50;
+        }
+    }
+
+    private float calcSpeed(float d) {
+        return camera.getLocation().z * 0.0025f;
     }
 
 }

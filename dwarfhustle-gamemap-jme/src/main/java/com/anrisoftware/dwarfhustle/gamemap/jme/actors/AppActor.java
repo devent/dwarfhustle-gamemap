@@ -58,11 +58,11 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage.Db
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerMessage.StartEmbeddedServerSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractLoadObjectMessage.LoadObjectErrorMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractLoadObjectMessage.LoadObjectSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.AbstractObjectsReplyMessage.ObjectsResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadGameObjectMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectErrorMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
@@ -117,7 +117,7 @@ public class AppActor {
 	@RequiredArgsConstructor
 	@ToString(callSuper = true)
 	private static class WrappedObjectsResponse extends Message {
-		private final ObjectsResponseMessage response;
+        private final ObjectsResponseMessage<?> response;
 	}
 
 	@RequiredArgsConstructor
@@ -258,7 +258,8 @@ public class AppActor {
 
 	private ActorRef<DbResponseMessage> dbResponseAdapter;
 
-	private ActorRef<ObjectsResponseMessage> objectsResponseAdapter;
+    @SuppressWarnings("rawtypes")
+    private ActorRef<ObjectsResponseMessage> objectsResponseAdapter;
 
 	private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
@@ -336,7 +337,7 @@ public class AppActor {
 	private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
 		log.debug("onSetWorldMap {}", m);
 		ogs.get().currentWorld.set(m.wm);
-		actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, GameMap.OBJECT_TYPE, db -> {
+        actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, GameMap.OBJECT_TYPE, db -> {
 			var query = "SELECT * from ? where objecttype = ? and mapid = ?";
 			return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.getCurrentMapid());
 		}));
@@ -390,7 +391,7 @@ public class AppActor {
 			actor.tell(new ConnectDbEmbeddedMessage(dbResponseAdapter, rm.server, "test", "root", "admin"));
 		} else if (response instanceof ConnectDbSuccessMessage) {
 			log.debug("Connected to server");
-			actor.tell(new LoadGameObjectMessage(objectsResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
+            actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
 				var query = "SELECT * from ? limit 1";
 				return db.query(query, WorldMap.OBJECT_TYPE);
 			}));
@@ -403,14 +404,14 @@ public class AppActor {
 	 * <li>
 	 * </ul>
 	 */
-	private Behavior<Message> onWrappedObjectsResponse(WrappedObjectsResponse m) {
+    private Behavior<Message> onWrappedObjectsResponse(WrappedObjectsResponse m) {
 		log.debug("onWrappedObjectsResponse {}", m);
 		var response = m.response;
-		if (response instanceof LoadObjectErrorMessage rm) {
+        if (response instanceof LoadObjectErrorMessage<?> rm) {
 			log.error("Objects error", rm);
 			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
-		} else if (response instanceof LoadObjectSuccessMessage rm) {
+        } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
 			if (rm.go instanceof WorldMap wm) {
 				actor.tell(new SetWorldMapMessage(wm));
 			} else if (rm.go instanceof GameMap gm) {
@@ -435,7 +436,7 @@ public class AppActor {
 			log.error("Cache error", rm);
 			actor.tell(new AppErrorMessage(rm.error));
 			return Behaviors.stopped();
-		} else if (response instanceof CacheGetSuccessMessage rm) {
+        } else if (response instanceof CacheGetSuccessMessage<?> rm) {
 			if (rm.go instanceof MapBlock mb) {
 				log.debug("MapBlock loaded {}", mb);
 				actor.tell(new MapBlockLoadedMessage(mb));

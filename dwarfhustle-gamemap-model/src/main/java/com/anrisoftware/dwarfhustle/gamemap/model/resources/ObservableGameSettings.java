@@ -25,8 +25,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Vector3f;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -82,20 +80,6 @@ public class ObservableGameSettings {
 
 		public double commandsSplitPosition = 0.71;
 
-		public float cameraPosX = 0.002901543f;
-
-		public float cameraPosY = -0.013370683f;
-
-		public float cameraPosZ = 28.217747f;
-
-		public float cameraRotX = -4.8154507E-6f;
-
-		public float cameraRotY = 0.9999911f;
-
-		public float cameraRotZ = 0.0012241602f;
-
-		public float cameraRotW = 0.004027171f;
-
 		public String lastCommand = "";
 	}
 
@@ -143,20 +127,6 @@ public class ObservableGameSettings {
 
 	public final DoubleProperty commandsSplitPosition;
 
-	public final FloatProperty cameraPosX;
-
-	public final FloatProperty cameraPosY;
-
-	public final FloatProperty cameraPosZ;
-
-	public final FloatProperty cameraRotX;
-
-	public final FloatProperty cameraRotY;
-
-	public final FloatProperty cameraRotZ;
-
-	public final FloatProperty cameraRotW;
-
 	public final ObjectProperty<String> lastCommand;
 
 	public final ObjectProperty<WorldMap> currentWorld;
@@ -177,13 +147,6 @@ public class ObservableGameSettings {
 		this.textPosition = JavaBeanObjectPropertyBuilder.create().bean(p).name("textPosition").build();
 		this.commandsSplitPosition = JavaBeanDoublePropertyBuilder.create().bean(p).name("commandsSplitPosition")
 				.build();
-		this.cameraPosX = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraPosX").build();
-		this.cameraPosY = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraPosY").build();
-		this.cameraPosZ = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraPosZ").build();
-		this.cameraRotX = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotX").build();
-		this.cameraRotY = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotY").build();
-		this.cameraRotZ = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotZ").build();
-		this.cameraRotW = JavaBeanFloatPropertyBuilder.create().bean(p).name("cameraRotW").build();
 		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
 		this.currentWorld = new SimpleObjectProperty<>();
 		this.currentMap = new SimpleObjectProperty<>();
@@ -200,34 +163,6 @@ public class ObservableGameSettings {
 		iconSize.set(other.iconSize);
 		iconSize.set(other.iconSize);
 		commandsSplitPosition.set(other.commandsSplitPosition);
-		cameraPosX.set(other.cameraPosX);
-		cameraPosY.set(other.cameraPosY);
-		cameraPosZ.set(other.cameraPosZ);
-		cameraRotX.set(other.cameraRotX);
-		cameraRotY.set(other.cameraRotY);
-		cameraRotZ.set(other.cameraRotZ);
-		cameraRotW.set(other.cameraRotW);
 		lastCommand.set(other.lastCommand);
-	}
-
-	public Vector3f getCameraPos() {
-		return new Vector3f(cameraPosX.get(), cameraPosY.get(), cameraPosZ.get());
-	}
-
-	public Quaternion getCameraRot() {
-		return new Quaternion(cameraRotX.get(), cameraRotY.get(), cameraRotZ.get(), cameraRotW.get());
-	}
-
-	public void setCameraPos(Vector3f l) {
-		cameraPosX.set(l.x);
-		cameraPosY.set(l.y);
-		cameraPosZ.set(l.z);
-	}
-
-	public void setCameraRot(Quaternion r) {
-		cameraRotX.set(r.getX());
-		cameraRotY.set(r.getY());
-		cameraRotZ.set(r.getZ());
-		cameraRotW.set(r.getW());
 	}
 }
