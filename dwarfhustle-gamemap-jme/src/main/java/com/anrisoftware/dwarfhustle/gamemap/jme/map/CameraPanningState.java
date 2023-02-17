@@ -162,6 +162,12 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
                 new Quaternion(gm.getCameraRot()[0], gm.getCameraRot()[1], gm.getCameraRot()[2], gm.getCameraRot()[3]));
     }
 
+    private void saveCamera() {
+        if (saveCamera.isPresent()) {
+            saveCamera.get().accept(gm);
+        }
+    }
+
     @Override
     protected void initialize(Application app) {
         log.debug("initialize");
@@ -222,11 +228,13 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         case ZOOM_IN_MAPPING:
             if (checkZoomAllowed(m)) {
                 boundMove(oldpos.x - newpos.x, oldpos.y - newpos.y, m);
+                saveCamera();
             }
             return;
         case ZOOM_OUT_MAPPING:
             if (checkZoomAllowed(-m)) {
                 boundMove(newpos.x - oldpos.x, newpos.y - oldpos.y, -m);
+                saveCamera();
             }
             return;
         }
@@ -291,12 +299,6 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     private void updateScreenCoordinatesMap() {
         mapRenderSystem.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
-    }
-
-    private void saveCamera() {
-        if (saveCamera.isPresent()) {
-            saveCamera.get().accept(gm);
-        }
     }
 
     private void boundMove(float dx, float dy, float dz) {
