@@ -30,8 +30,12 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -217,12 +221,26 @@ public class GameMapActor {
     }
 
     /**
-     * Reacts to the {@link MapBlockLoadedMessage} message. Creates the
-     * {@link MapBlockComponent} for the render to construct map blocks and map
-     * tiles of the game map.
+     * Reacts to the {@link MapBlockLoadedMessage} message. Sends a
+     * {@link AddMapBlockSceneMessage} message to add the {@link MapBlock} to the
+     * scene.
      */
     private Behavior<Message> onMapBlockLoaded(MapBlockLoadedMessage m) {
         log.debug("onMapBlockLoaded {}", m);
+        context.getSelf().tell(new AddMapBlockSceneMessage(m.mb));
+        return Behaviors.same();
+    }
+
+    /**
+     * Reacts to the {@link AddMapBlockSceneMessage} message. Creates the
+     * {@link MapBlockComponent} for the render to construct map blocks and map
+     * tiles of the game map.
+     */
+    private Behavior<Message> onAddMapBlockScene(AddMapBlockSceneMessage m) {
+        // log.debug("onAddMapBlockScene {}", m);
+        m.mb.getBlocks().forEachKey(pos -> {
+            actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
+        });
         app.enqueue(() -> {
             var e = engine.createEntity();
             e.add(new MapBlockComponent(m.mb));
@@ -237,7 +255,15 @@ public class GameMapActor {
      * </ul>
      */
     private Behavior<Message> onWrappedCacheResponse(WrappedCacheResponse m) {
-        log.debug("onWrappedCacheResponse {}", m);
+        // log.debug("onWrappedCacheResponse {}", m);
+        if (m.response instanceof CacheGetSuccessMessage<?> rm) {
+            if (rm.go instanceof MapBlock mb) {
+                context.getSelf().tell(new AddMapBlockSceneMessage(mb));
+            }
+        } else if (m.response instanceof CacheErrorMessage rm) {
+            log.error("Cache error {}", m);
+            return Behaviors.stopped();
+        }
         return Behaviors.same();
     }
 
@@ -264,6 +290,7 @@ public class GameMapActor {
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(MapBlockLoadedMessage.class, this::onMapBlockLoaded)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
+                .onMessage(AddMapBlockSceneMessage.class, this::onAddMapBlockScene)//
         ;
     }
 }

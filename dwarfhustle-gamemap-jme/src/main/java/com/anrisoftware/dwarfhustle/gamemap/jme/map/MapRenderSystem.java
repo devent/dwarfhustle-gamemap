@@ -24,6 +24,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxRootFactory;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
@@ -44,101 +45,108 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MapRenderSystem extends IntervalIteratingSystem {
 
-	private final MapBlockBoxFactory mapBlockBoxFactory;
+    private final MutableMap<MapBlockComponent, MapBlockBox> boxes;
 
-	private final MutableMap<MapBlockComponent, MapBlockBox> boxes;
+    @Inject
+    private MapBlockBoxFactory mapBlockBoxFactory;
 
-	@Inject
-	private Camera camera;
+    @Inject
+    private MapBlockBoxRootFactory mapBlockBoxRootFactory;
 
-	@Inject
-	@Named("rootNode")
-	private Node rootNode;
+    @Inject
+    private Camera camera;
 
-	private MapBlockBox rootMapBlockBox;
+    @Inject
+    @Named("rootNode")
+    private Node rootNode;
 
-	private BoundingBox rootWorldBound;
+    private MapBlockBox rootMapBlockBox;
 
-	private float rootWidth;
+    private BoundingBox rootWorldBound;
 
-	private float rootHeight;
+    private float rootWidth;
 
-	private float rootDepth;
+    private float rootHeight;
 
-	@Inject
-	public MapRenderSystem(MapBlockBoxFactory mapBlockBoxFactory) {
-		super(Family.all(MapBlockComponent.class).get(), 0.33f);
-		this.mapBlockBoxFactory = mapBlockBoxFactory;
-		this.boxes = Maps.mutable.of();
-		this.rootWorldBound = new BoundingBox(Vector3f.ZERO, 64f, 64f, 64f);
-		this.rootWidth = 64f;
-		this.rootHeight = 64f;
-		this.rootDepth = 64f;
-		this.rootMapBlockBox = null;
-	}
+    private float rootDepth;
 
-	/**
-	 * Returns the top right and bottom left of the noise quad in screen
-	 * coordinates.
-	 */
-	public void getScreenCoordinatesMap(Camera camera, Vector3f topRight, Vector3f bottomLeft) {
-		var temp = TempVars.get();
-		try {
-			var bb = rootWorldBound;
-			var btr = bb.getMax(temp.vect1);
-			var bbl = bb.getMin(temp.vect2);
-			camera.getScreenCoordinates(btr, topRight);
-			camera.getScreenCoordinates(bbl, bottomLeft);
-		} finally {
-			temp.release();
-		}
-	}
+    @Inject
+    public MapRenderSystem() {
+        super(Family.all(MapBlockComponent.class).get(), 0.33f);
+        this.boxes = Maps.mutable.of();
+        this.rootWorldBound = new BoundingBox(Vector3f.ZERO, 64f, 64f, 64f);
+        this.rootWidth = 64f;
+        this.rootHeight = 64f;
+        this.rootDepth = 64f;
+        this.rootMapBlockBox = null;
+    }
 
-	@Override
-	public void addedToEngine(Engine engine) {
-		super.addedToEngine(engine);
-		engine.addEntityListener(getFamily(), new EntityListener() {
+    /**
+     * Returns the top right and bottom left of the noise quad in screen
+     * coordinates.
+     */
+    public void getScreenCoordinatesMap(Camera camera, Vector3f topRight, Vector3f bottomLeft) {
+        var temp = TempVars.get();
+        try {
+            var bb = rootWorldBound;
+            var btr = bb.getMax(temp.vect1);
+            var bbl = bb.getMin(temp.vect2);
+            camera.getScreenCoordinates(btr, topRight);
+            camera.getScreenCoordinates(bbl, bottomLeft);
+        } finally {
+            temp.release();
+        }
+    }
 
-			@Override
-			public void entityRemoved(Entity entity) {
-				log.debug("entityRemoved {}", entity);
-			}
+    @Override
+    public void addedToEngine(Engine engine) {
+        super.addedToEngine(engine);
+        engine.addEntityListener(getFamily(), new EntityListener() {
 
-			@Override
-			public void entityAdded(Entity entity) {
-				log.debug("entityAdded {}", entity);
-				createMapBlockBox(MapBlockComponent.m.get(entity));
-			}
-		});
-	}
+            @Override
+            public void entityRemoved(Entity entity) {
+                log.debug("entityRemoved {}", entity);
+            }
 
-	private void createMapBlockBox(MapBlockComponent c) {
-		var box = mapBlockBoxFactory.create(c);
-		boxes.put(c, box);
-		rootNode.attachChild(box.geo);
-		if (c.mb.isRoot()) {
-			this.rootMapBlockBox = box;
-			this.rootWorldBound = rootMapBlockBox.getWorldBound();
-			this.rootWidth = rootMapBlockBox.c.mb.getWidth();
-			this.rootHeight = rootMapBlockBox.c.mb.getHeight();
-			this.rootDepth = rootMapBlockBox.c.mb.getDepth();
-		}
-	}
+            @Override
+            public void entityAdded(Entity entity) {
+                log.debug("entityAdded {}", entity);
+                createMapBlockBox(MapBlockComponent.m.get(entity));
+            }
+        });
+    }
 
-	@Override
-	protected void processEntity(Entity entity) {
-	}
+    private void createMapBlockBox(MapBlockComponent c) {
+        if (c.mb.isRoot()) {
+            var box = mapBlockBoxRootFactory.create(c);
+            boxes.put(c, box);
+            rootNode.attachChild(box.geo);
+            this.rootMapBlockBox = box;
+            this.rootWorldBound = rootMapBlockBox.getWorldBound();
+            this.rootWidth = rootMapBlockBox.c.mb.getWidth();
+            this.rootHeight = rootMapBlockBox.c.mb.getHeight();
+            this.rootDepth = rootMapBlockBox.c.mb.getDepth();
+        } else {
+            var box = mapBlockBoxFactory.create(c);
+            boxes.put(c, box);
+            rootNode.attachChild(box.geo);
+        }
+    }
 
-	public float getWidth() {
-		return rootWidth;
-	}
+    @Override
+    protected void processEntity(Entity entity) {
+    }
 
-	public float getHeight() {
-		return rootHeight;
-	}
+    public float getWidth() {
+        return rootWidth;
+    }
 
-	public float getDepth() {
-		return rootDepth;
-	}
+    public float getHeight() {
+        return rootHeight;
+    }
+
+    public float getDepth() {
+        return rootDepth;
+    }
 
 }
