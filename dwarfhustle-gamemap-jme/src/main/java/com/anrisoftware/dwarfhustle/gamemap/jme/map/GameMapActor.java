@@ -205,6 +205,9 @@ public class GameMapActor {
         this.initialState.cameraPanningState.setSaveCamera(gm -> {
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
         });
+        this.initialState.cameraPanningState.setSaveZ(gm -> {
+            actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
+        });
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }

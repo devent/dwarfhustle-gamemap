@@ -67,6 +67,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
 import static com.jme3.input.MouseInput.AXIS_WHEEL;
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
+import static com.jme3.input.MouseInput.BUTTON_RIGHT;
 import static java.lang.Math.abs;
 
 import java.util.Optional;
@@ -106,11 +107,18 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     private static final String MIDDLE_BUTTON_MAPPING = "MoveMapMouseState_middle";
 
+    private static final String RIGHT_BUTTON_MAPPING = "MoveMapMouseState_right";
+
     private static final String ZOOM_OUT_MAPPING = "MouseMoveMapState_zoomout";
 
     private static final String ZOOM_IN_MAPPING = "MouseMoveMapState_zoomin";
 
-    private static final String[] MAPPINGS = new String[] { MIDDLE_BUTTON_MAPPING, ZOOM_IN_MAPPING, ZOOM_OUT_MAPPING };
+    private static final String Z_IN_MAPPING = "MouseMoveMapState_z_in";
+
+    private static final String Z_OUT_MAPPING = "MouseMoveMapState_z_out";
+
+    private static final String[] MAPPINGS = new String[] { MIDDLE_BUTTON_MAPPING, RIGHT_BUTTON_MAPPING,
+            ZOOM_IN_MAPPING, ZOOM_OUT_MAPPING, Z_IN_MAPPING, Z_OUT_MAPPING };
 
     private final Vector2f mouse;
 
@@ -132,6 +140,10 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     private Optional<Consumer<GameMap>> saveCamera = Optional.empty();
 
+    private Optional<Consumer<GameMap>> saveZ = Optional.empty();
+
+    private boolean rightMouseDown;
+
     @Inject
     public CameraPanningState() {
         super(CameraPanningState.class.getSimpleName());
@@ -143,6 +155,10 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     public void setSaveCamera(Consumer<GameMap> saveCamera) {
         this.saveCamera = Optional.of(saveCamera);
+    }
+
+    public void setSaveZ(Consumer<GameMap> saveZ) {
+        this.saveZ = Optional.of(saveZ);
     }
 
     public void resetCamera() {
@@ -165,6 +181,12 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     private void saveCamera() {
         if (saveCamera.isPresent()) {
             saveCamera.get().accept(gm);
+        }
+    }
+
+    private void saveZ() {
+        if (saveZ.isPresent()) {
+            saveZ.get().accept(gm);
         }
     }
 
@@ -194,8 +216,9 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         inputManager.addListener(this, MAPPINGS);
         inputManager.addRawInputListener(this);
         inputManager.addMapping(MIDDLE_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_MIDDLE));
-        inputManager.addMapping(ZOOM_IN_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, false));
-        inputManager.addMapping(ZOOM_OUT_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, true));
+        inputManager.addMapping(RIGHT_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_RIGHT));
+        inputManager.addMapping(Z_IN_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, false));
+        inputManager.addMapping(Z_OUT_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, true));
     }
 
     private void deleteKeys() {
@@ -215,6 +238,13 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
             }
             middleMouseDown = isPressed;
             return;
+        case RIGHT_BUTTON_MAPPING:
+            updateScreenCoordinatesMap();
+            if (!isPressed && rightMouseDown) {
+                saveCamera();
+            }
+            rightMouseDown = isPressed;
+            return;
         }
     }
 
@@ -225,27 +255,36 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         var newpos = camera.getWorldCoordinates(mouse, 0.0f);
         updateScreenCoordinatesMap();
         switch (name) {
-        case ZOOM_IN_MAPPING:
-            if (checkZoomAllowed(m)) {
-                boundMove(oldpos.x - newpos.x, oldpos.y - newpos.y, m);
-                saveCamera();
+        case Z_IN_MAPPING:
+            if (canZ(m)) {
+                boundZMove(oldpos.y - newpos.y, m);
+                saveZ();
             }
             return;
-        case ZOOM_OUT_MAPPING:
-            if (checkZoomAllowed(-m)) {
-                boundMove(newpos.x - oldpos.x, newpos.y - oldpos.y, -m);
-                saveCamera();
+        case Z_OUT_MAPPING:
+            if (canZ(-m)) {
+                boundZMove(newpos.y - oldpos.y, -m);
+                saveZ();
             }
             return;
         }
     }
 
-    private boolean checkZoomAllowed(float m) {
+    private boolean canZoom(float m) {
         var location = camera.getLocation();
         if (m > 0) {
             return location.z + m < mapRenderSystem.getDepth();
         } else {
             return location.z + m > 1f;
+        }
+    }
+
+    private boolean canZ(float m) {
+        var z = gm.getZ();
+        if (m > 0) {
+            return z + m < gm.getDepth();
+        } else {
+            return z + m >= 0;
         }
     }
 
@@ -269,20 +308,26 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     public void onMouseMotionEvent(MouseMotionEvent evt) {
         mouse.x = evt.getX();
         mouse.y = evt.getY();
-        if (!middleMouseDown) {
+        if (!middleMouseDown && !rightMouseDown) {
             return;
         }
         updateScreenCoordinatesMap();
         float dx = evt.getDX();
         float dy = -evt.getDY();
         var s = calcSpeed(Math.max(abs(dx), abs(dy)));
-        if (!canMoveX(dx, s)) {
-            dx = 0;
+        if (middleMouseDown) {
+            if (!canMoveX(dx, s)) {
+                dx = 0;
+            }
+            if (!canMoveY(dy, s)) {
+                dy = 0;
+            }
+            boundMove(-dx * s, dy * s, 0);
+        } else if (rightMouseDown) {
+            if (canZoom(dy)) {
+                boundMove(0, 0, dy);
+            }
         }
-        if (!canMoveY(dy, s)) {
-            dy = 0;
-        }
-        boundMove(-dx * s, dy * s, 0);
     }
 
     @Override
@@ -308,6 +353,13 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         pos.z += dz;
         gm.setCameraPos(pos.x, pos.y, pos.z);
         camera.update();
+    }
+
+    private void boundZMove(float dy, float d) {
+        var z = gm.getZ();
+        var dd = (int) d;
+        z += dd;
+        gm.setZ(z);
     }
 
     private boolean canMoveX(float dx, float s) {
