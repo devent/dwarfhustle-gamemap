@@ -1,6 +1,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import lombok.ToString;
 @ToString
 @RequiredArgsConstructor
 public class AddMapBlockSceneMessage extends Message {
+
+    public final GameMap gm;
 
     public final MapBlock mb;
 }

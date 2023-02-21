@@ -21,6 +21,9 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.map.GameMapActor.GameMapActorFac
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxRoot;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxRootFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrain.MapTerrainFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainLevel.MapTerrainLevelFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainTile.MapTerrainTileFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
@@ -39,5 +42,11 @@ public class GamemapJmeMapModule extends AbstractModule {
 				.build(MapBlockBoxFactory.class));
         install(new FactoryModuleBuilder().implement(MapBlockBoxRoot.class, MapBlockBoxRoot.class)
                 .build(MapBlockBoxRootFactory.class));
+        install(new FactoryModuleBuilder().implement(MapTerrain.class, MapTerrain.class)
+                .build(MapTerrainFactory.class));
+        install(new FactoryModuleBuilder().implement(MapTerrainLevel.class, MapTerrainLevel.class)
+                .build(MapTerrainLevelFactory.class));
+        install(new FactoryModuleBuilder().implement(MapTerrainTile.class, MapTerrainTile.class)
+                .build(MapTerrainTileFactory.class));
 	}
 }

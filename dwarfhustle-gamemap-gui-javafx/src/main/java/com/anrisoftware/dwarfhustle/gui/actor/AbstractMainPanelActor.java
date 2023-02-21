@@ -17,7 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gui.actor;
 
-
 import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
@@ -54,6 +53,7 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
+import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.receptionist.ServiceKey;
 import javafx.application.Platform;
 import lombok.RequiredArgsConstructor;
@@ -69,10 +69,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractMainPanelActor {
 
-	public interface AbstractMainPanelActorFactory {
+    public interface AbstractMainPanelActorFactory {
 
-		AbstractMainPanelActor create(ActorContext<Message> context, StashBuffer<Message> buffer);
-	}
+        AbstractMainPanelActor create(ActorContext<Message> context, StashBuffer<Message> buffer);
+    }
 
     @RequiredArgsConstructor
     @ToString
@@ -85,7 +85,7 @@ public abstract class AbstractMainPanelActor {
     public static Behavior<Message> create(Injector injector,
             Class<? extends AbstractMainPanelActorFactory> mainPanelActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
-        return Behaviors.withStash(100, stash -> Behaviors.setup((context) -> {
+        return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             startJavafxBuild(injector, context, mainUiResource, panelActors, additionalCss);
             return injector.getInstance(mainPanelActorFactoryType).create(context, stash).start(injector);
         }));
@@ -160,7 +160,7 @@ public abstract class AbstractMainPanelActor {
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.initial = m;
-        initial.actors.forEachValue((a) -> a.tell(m));
+        initial.actors.forEachValue(a -> a.tell(m));
         return buffer.unstashAll(Behaviors.receive(Message.class)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(AttachGuiMessage.class, this::onAttachGui)//
@@ -177,7 +177,10 @@ public abstract class AbstractMainPanelActor {
 
     private Behavior<Message> stashOtherCommand(Message m) {
         log.debug("stashOtherCommand: {}", m);
-        buffer.stash(m);
+        try {
+            buffer.stash(m);
+        } catch (StashOverflowException e) {
+        }
         return Behaviors.same();
     }
 
@@ -191,7 +194,7 @@ public abstract class AbstractMainPanelActor {
         log.debug("onAttachGui {}", m);
         runFxThread(() -> {
             setupUi();
-            initial.actors.forEachValue((a) -> a.tell(m));
+            initial.actors.forEachValue(a -> a.tell(m));
         });
         app.enqueue(() -> {
             app.getStateManager().attach(mainPanelState);

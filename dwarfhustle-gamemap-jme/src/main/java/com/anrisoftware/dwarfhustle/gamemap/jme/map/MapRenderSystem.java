@@ -75,9 +75,6 @@ public class MapRenderSystem extends IntervalIteratingSystem {
         super(Family.all(MapBlockComponent.class).get(), 0.33f);
         this.boxes = Maps.mutable.of();
         this.rootWorldBound = new BoundingBox(Vector3f.ZERO, 64f, 64f, 64f);
-        this.rootWidth = 64f;
-        this.rootHeight = 64f;
-        this.rootDepth = 64f;
         this.rootMapBlockBox = null;
     }
 
@@ -118,18 +115,17 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 
     private void createMapBlockBox(MapBlockComponent c) {
         if (c.mb.isRoot()) {
-            var box = mapBlockBoxRootFactory.create(c);
+            var box = mapBlockBoxRootFactory.create(c, rootNode);
             boxes.put(c, box);
-            rootNode.attachChild(box.geo);
             this.rootMapBlockBox = box;
             this.rootWorldBound = rootMapBlockBox.getWorldBound();
             this.rootWidth = rootMapBlockBox.c.mb.getWidth();
             this.rootHeight = rootMapBlockBox.c.mb.getHeight();
             this.rootDepth = rootMapBlockBox.c.mb.getDepth();
         } else {
-            var box = mapBlockBoxFactory.create(c);
+            var box = mapBlockBoxFactory.create(c, rootNode);
             boxes.put(c, box);
-            rootNode.attachChild(box.geo);
+            rootMapBlockBox.attachChild(box);
         }
     }
 

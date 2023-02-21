@@ -20,6 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -30,6 +31,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
@@ -166,6 +168,8 @@ public class GameMapActor {
 
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
+    private Optional<GameMap> gm = Optional.empty();
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -217,6 +221,7 @@ public class GameMapActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
+        this.gm = Optional.of(m.gm);
         app.enqueue(() -> {
             initialState.cameraPanningState.updateCamera(m.gm);
         });
@@ -230,7 +235,7 @@ public class GameMapActor {
      */
     private Behavior<Message> onMapBlockLoaded(MapBlockLoadedMessage m) {
         log.debug("onMapBlockLoaded {}", m);
-        context.getSelf().tell(new AddMapBlockSceneMessage(m.mb));
+        context.getSelf().tell(new AddMapBlockSceneMessage(gm.get(), m.mb));
         return Behaviors.same();
     }
 
@@ -246,7 +251,7 @@ public class GameMapActor {
         });
         app.enqueue(() -> {
             var e = engine.createEntity();
-            e.add(new MapBlockComponent(m.mb));
+            e.add(new MapBlockComponent(m.gm, m.mb));
             engine.addEntity(e);
         });
         return Behaviors.same();
@@ -261,7 +266,7 @@ public class GameMapActor {
         // log.debug("onWrappedCacheResponse {}", m);
         if (m.response instanceof CacheGetSuccessMessage<?> rm) {
             if (rm.go instanceof MapBlock mb) {
-                context.getSelf().tell(new AddMapBlockSceneMessage(mb));
+                context.getSelf().tell(new AddMapBlockSceneMessage(gm.get(), mb));
             }
         } else if (m.response instanceof CacheErrorMessage rm) {
             log.error("Cache error {}", m);
