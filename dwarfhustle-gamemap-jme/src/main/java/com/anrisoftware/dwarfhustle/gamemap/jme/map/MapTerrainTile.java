@@ -20,25 +20,23 @@ import lombok.ToString;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 public class MapTerrainTile {
 
     public interface MapTerrainTileFactory {
-        MapTerrainTile create(int level);
+        MapTerrainTile create(@Assisted("level") int level, @Assisted("y") int y, @Assisted("x") int x);
     }
 
+    @ToString.Include
     public final Node node;
 
     private Box box;
 
     private Geometry geo;
 
-    private int level;
-
     @Inject
-    public MapTerrainTile(@Assisted int level, AssetManager am) {
-        this.level = level;
-        this.node = new Node(MapTerrainTile.class.getSimpleName() + "_" + level);
+    public MapTerrainTile(@Assisted("level") int level, @Assisted("y") int y, @Assisted("x") int x, AssetManager am) {
+        this.node = new Node(MapTerrainTile.class.getSimpleName() + "_" + level + "_" + y + "_" + x);
         this.box = new Box(0.5f, 0.5f, 0.5f);
         this.geo = new Geometry("box", box);
         var mat = new Material(am, "Common/MatDefs/Misc/Unshaded.j3md");

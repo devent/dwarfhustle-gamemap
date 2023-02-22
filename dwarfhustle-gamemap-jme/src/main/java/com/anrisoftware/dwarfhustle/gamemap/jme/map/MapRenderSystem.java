@@ -20,11 +20,8 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.map.MutableMap;
-
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapBlockBox.MapBlockBoxRootFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrain.MapTerrainFactory;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
@@ -45,13 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MapRenderSystem extends IntervalIteratingSystem {
 
-    private final MutableMap<MapBlockComponent, MapBlockBox> boxes;
-
     @Inject
-    private MapBlockBoxFactory mapBlockBoxFactory;
-
-    @Inject
-    private MapBlockBoxRootFactory mapBlockBoxRootFactory;
+    private MapTerrainFactory terrainFactory;
 
     @Inject
     private Camera camera;
@@ -60,7 +52,8 @@ public class MapRenderSystem extends IntervalIteratingSystem {
     @Named("rootNode")
     private Node rootNode;
 
-    private MapBlockBox rootMapBlockBox;
+    @Inject
+    private GameSettingsProvider gs;
 
     private BoundingBox rootWorldBound;
 
@@ -70,12 +63,12 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 
     private float rootDepth;
 
+    private MapTerrain terrain;
+
     @Inject
     public MapRenderSystem() {
         super(Family.all(MapBlockComponent.class).get(), 0.33f);
-        this.boxes = Maps.mutable.of();
         this.rootWorldBound = new BoundingBox(Vector3f.ZERO, 64f, 64f, 64f);
-        this.rootMapBlockBox = null;
     }
 
     /**
@@ -102,31 +95,28 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 
             @Override
             public void entityRemoved(Entity entity) {
-                log.debug("entityRemoved {}", entity);
             }
 
             @Override
             public void entityAdded(Entity entity) {
-                log.debug("entityAdded {}", entity);
                 createMapBlockBox(MapBlockComponent.m.get(entity));
             }
         });
     }
 
     private void createMapBlockBox(MapBlockComponent c) {
-        if (c.mb.isRoot()) {
-            var box = mapBlockBoxRootFactory.create(c, rootNode);
-            boxes.put(c, box);
-            this.rootMapBlockBox = box;
-            this.rootWorldBound = rootMapBlockBox.getWorldBound();
-            this.rootWidth = rootMapBlockBox.c.mb.getWidth();
-            this.rootHeight = rootMapBlockBox.c.mb.getHeight();
-            this.rootDepth = rootMapBlockBox.c.mb.getDepth();
-        } else {
-            var box = mapBlockBoxFactory.create(c, rootNode);
-            boxes.put(c, box);
-            rootMapBlockBox.attachChild(box);
+        if (!c.mb.isRoot()) {
+            return;
         }
+        var terrain = terrainFactory.create(c.gm);
+        this.terrain = terrain;
+        terrain.setLevels(gs.get().visibleDepthLayers.get());
+        rootNode.attachChild(terrain.node);
+        this.rootWorldBound = terrain.getWorldBound();
+        System.out.println(rootWorldBound); // TODO
+        this.rootWidth = c.mb.getWidth();
+        this.rootHeight = c.mb.getHeight();
+        this.rootDepth = c.mb.getDepth();
     }
 
     @Override

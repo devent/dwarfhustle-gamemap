@@ -81,6 +81,9 @@ public class ObservableGameSettings {
 		public double commandsSplitPosition = 0.71;
 
 		public String lastCommand = "";
+
+        public int visibleDepthLayers = 1;
+
 	}
 
 	/**
@@ -133,6 +136,8 @@ public class ObservableGameSettings {
 
 	public final ObjectProperty<GameMap> currentMap;
 
+    public final IntegerProperty visibleDepthLayers;
+
 	@SuppressWarnings("unchecked")
 	@SneakyThrows
 	public ObservableGameSettings(GameSettings p) {
@@ -148,6 +153,7 @@ public class ObservableGameSettings {
 		this.commandsSplitPosition = JavaBeanDoublePropertyBuilder.create().bean(p).name("commandsSplitPosition")
 				.build();
 		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
+        this.visibleDepthLayers = JavaBeanIntegerPropertyBuilder.create().bean(p).name("visibleDepthLayers").build();
 		this.currentWorld = new SimpleObjectProperty<>();
 		this.currentMap = new SimpleObjectProperty<>();
 	}
@@ -164,5 +170,6 @@ public class ObservableGameSettings {
 		iconSize.set(other.iconSize);
 		commandsSplitPosition.set(other.commandsSplitPosition);
 		lastCommand.set(other.lastCommand);
+        visibleDepthLayers.set(other.visibleDepthLayers);
 	}
 }

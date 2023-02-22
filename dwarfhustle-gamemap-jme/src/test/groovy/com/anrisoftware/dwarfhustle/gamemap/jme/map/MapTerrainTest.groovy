@@ -1,5 +1,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.map
 
+import static org.mockito.Mockito.*
+
 import javax.inject.Singleton
 
 import org.junit.jupiter.api.BeforeAll
@@ -14,8 +16,12 @@ import com.google.inject.Injector
 import com.google.inject.Provides
 import com.jme3.app.Application
 import com.jme3.app.SimpleApplication
+import com.jme3.asset.AssetKey
 import com.jme3.asset.AssetManager
-import com.jme3.asset.DesktopAssetManager
+import com.jme3.material.MatParam
+import com.jme3.material.MaterialDef
+import com.jme3.math.ColorRGBA
+import com.jme3.shader.VarType
 
 /**
  * @see MapTerrain
@@ -38,18 +44,18 @@ class MapTerrainTest {
                     @Provides
                     @Singleton
                     AssetManager getAssetManager() {
-                        new DesktopAssetManager()
+                        def am = mock(AssetManager)
+                        def mdef = mock(MaterialDef)
+                        def matParam = new MatParam(VarType.Vector4, "Color", ColorRGBA.White)
+                        doReturn(matParam).when(mdef).getMaterialParam("Color")
+                        doReturn(mdef).when(am).loadAsset((AssetKey)any())
+                        am
                     }
 
                     @Provides
                     @Singleton
                     Application getApplication() {
-                        new SimpleApplication() {
-
-                                    @Override
-                                    public void simpleInitApp() {
-                                    }
-                                }
+                        mock(SimpleApplication)
                     }
                 })
         this.mapTerrainFactory = injector.getInstance(MapTerrainFactory)

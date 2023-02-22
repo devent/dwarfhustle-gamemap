@@ -8,6 +8,7 @@ import org.eclipse.collections.impl.factory.Stacks;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainLevel.MapTerrainLevelFactory;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.google.inject.assistedinject.Assisted;
+import com.jme3.bounding.BoundingBox;
 import com.jme3.scene.Node;
 
 /**
@@ -68,6 +69,11 @@ public class MapTerrain {
             node.detachChild(tl.node);
             oldLevels.push(tl);
         }
+    }
+
+    public BoundingBox getWorldBound() {
+        node.updateModelBound();
+        return (BoundingBox) node.getWorldBound();
     }
 
 }

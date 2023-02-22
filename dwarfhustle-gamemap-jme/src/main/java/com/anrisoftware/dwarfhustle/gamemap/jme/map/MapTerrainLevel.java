@@ -14,7 +14,7 @@ import lombok.ToString;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 public class MapTerrainLevel {
 
     public interface MapTerrainLevelFactory {
@@ -25,6 +25,7 @@ public class MapTerrainLevel {
 
     public final int level;
 
+    @ToString.Include
     public final Node node;
 
     @Inject
@@ -34,13 +35,13 @@ public class MapTerrainLevel {
         this.node = new Node(MapTerrainLevel.class.getSimpleName() + "-" + level);
         int h = gm.getHeight();
         int w = gm.getWidth();
-        float h2 = gm.getHeight()/2f;
-        float w2 = gm.getWidth()/2f;
+        float h2 = gm.getHeight() / 2f;
+        float w2 = gm.getWidth() / 2f;
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                var tile = tileFactory.create(level);
-                float tx = -w2 + x;
-                float ty = -h2 + y;
+                var tile = tileFactory.create(level, y, x);
+                float tx = -w2 + x + 0.5f;
+                float ty = -h2 + y + 0.5f;
                 tile.node.setLocalTranslation(tx, ty, 0f);
                 node.attachChild(tile.node);
             }

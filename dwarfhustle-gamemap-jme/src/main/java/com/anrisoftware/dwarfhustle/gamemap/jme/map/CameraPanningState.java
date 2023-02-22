@@ -94,6 +94,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
+import com.jme3.util.TempVars;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -251,31 +252,20 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     @Override
     public void onAnalog(String name, float value, float tpf) {
         var m = 1f;
-        var oldpos = camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2, camera.getHeight() / 2), 0.0f);
-        var newpos = camera.getWorldCoordinates(mouse, 0.0f);
         updateScreenCoordinatesMap();
         switch (name) {
         case Z_IN_MAPPING:
             if (canZ(m)) {
-                boundZMove(oldpos.y - newpos.y, m);
+                boundZMove(m);
                 saveZ();
             }
             return;
         case Z_OUT_MAPPING:
             if (canZ(-m)) {
-                boundZMove(newpos.y - oldpos.y, -m);
+                boundZMove(-m);
                 saveZ();
             }
             return;
-        }
-    }
-
-    private boolean canZoom(float m) {
-        var location = camera.getLocation();
-        if (m > 0) {
-            return location.z + m < mapRenderSystem.getDepth();
-        } else {
-            return location.z + m > 1f;
         }
     }
 
@@ -311,22 +301,23 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         if (!middleMouseDown && !rightMouseDown) {
             return;
         }
-        updateScreenCoordinatesMap();
-        float dx = evt.getDX();
-        float dy = -evt.getDY();
-        var s = calcSpeed(Math.max(abs(dx), abs(dy)));
-        if (middleMouseDown) {
-            if (!canMoveX(dx, s)) {
-                dx = 0;
+        var temp = TempVars.get();
+        try {
+            var oldpos = temp.vect1;
+            var newpos = temp.vect2;
+            camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
+            camera.getWorldCoordinates(mouse, 0.0f, newpos);
+            updateScreenCoordinatesMap();
+            float dx = evt.getDX();
+            float dy = -evt.getDY();
+            var s = calcSpeed(Math.max(abs(dx), abs(dy)));
+            if (middleMouseDown) {
+                doMove(dx, dy, s);
+            } else if (rightMouseDown) {
+                doZoom(dx, dy, s, oldpos, newpos);
             }
-            if (!canMoveY(dy, s)) {
-                dy = 0;
-            }
-            boundMove(-dx * s, dy * s, 0);
-        } else if (rightMouseDown) {
-            if (canZoom(dy)) {
-                boundMove(0, 0, dy);
-            }
+        } finally {
+            temp.release();
         }
     }
 
@@ -355,30 +346,68 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         camera.update();
     }
 
-    private void boundZMove(float dy, float d) {
+    private void boundZMove(float d) {
         var z = gm.getZ();
         var dd = (int) d;
         z += dd;
         gm.setZ(z);
     }
 
+    private void doZoom(float dx, float dy, float s, Vector3f oldpos, Vector3f newpos) {
+        var tmpc = camera.clone();
+        var pos = tmpc.getLocation();
+        pos.z += dy * s;
+        var temp = TempVars.get();
+        try {
+            var tmpTopRight = temp.vect1;
+            var tmpBottomLeft = temp.vect2;
+            var topright = temp.vect3.set(2f, 2f, 0f);
+            var bottomleft = temp.vect4.set(-2f, -2f, 0f);
+            tmpc.getScreenCoordinates(topright, tmpTopRight);
+            tmpc.getScreenCoordinates(bottomleft, tmpBottomLeft);
+            if (dy > 0) {
+                // zoom out
+                if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 200) {
+                    boundMove(0f, 0f, dy * s);
+                }
+            } else {
+                // zoom in
+                if (tmpTopRight.x > 0f && tmpBottomLeft.x > 0 && tmpTopRight.x - tmpBottomLeft.x < camera.getWidth()) {
+                    boundMove(0f, 0f, dy * s);
+                }
+            }
+        } finally {
+            temp.release();
+        }
+    }
+
+    private void doMove(float dx, float dy, float s) {
+        if (!canMoveX(dx, s)) {
+            dx = 0;
+        }
+        if (!canMoveY(dy, s)) {
+            dy = 0;
+        }
+        boundMove(-dx * s, dy * s, 0);
+    }
+
     private boolean canMoveX(float dx, float s) {
         if (dx > 0) {
             // right
-            return mapBottomLeft.x + dx * s < 50;
+            return mapBottomLeft.x + dx * s < camera.getWidth() / 2f;
         } else {
             // left
-            return mapTopRight.x - dx * s < 50;
+            return mapTopRight.x - dx * s > camera.getWidth() / 2f;
         }
     }
 
     private boolean canMoveY(float dy, float s) {
         if (dy > 0) {
             // down
-            return mapTopRight.y + dy * s < 50;
+            return mapTopRight.y + dy * s > camera.getHeight() / 2f;
         } else {
             // up
-            return mapBottomLeft.y - dy * s < 50;
+            return mapBottomLeft.y - dy * s < camera.getHeight() / 2f;
         }
     }
 
