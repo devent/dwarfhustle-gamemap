@@ -33,10 +33,10 @@ public class AddModelObjectMessage extends Message {
 
     public final String name;
 
-    public final int z;
+    public final int x;
 
     public final int y;
 
-    public final int x;
+    public final int z;
 
 }

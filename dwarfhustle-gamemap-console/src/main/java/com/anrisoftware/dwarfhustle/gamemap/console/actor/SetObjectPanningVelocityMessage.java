@@ -29,16 +29,16 @@ import lombok.ToString;
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public final class SetObjectPanningVelocityMessage extends Message {
+public class SetObjectPanningVelocityMessage extends Message {
 
     public final String objectType;
 
     public final long id;
 
-    public final float z;
+    public final float x;
 
     public final float y;
 
-    public final float x;
+    public final float z;
 
 }

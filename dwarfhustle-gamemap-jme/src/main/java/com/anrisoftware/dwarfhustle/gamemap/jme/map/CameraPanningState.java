@@ -191,6 +191,12 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         }
     }
 
+    public void setCameraPos(float x, float y, float z) {
+        camera.setLocation(new Vector3f(x, y, z));
+        camera.update();
+        saveCamera();
+    }
+
     @Override
     protected void initialize(Application app) {
         log.debug("initialize");

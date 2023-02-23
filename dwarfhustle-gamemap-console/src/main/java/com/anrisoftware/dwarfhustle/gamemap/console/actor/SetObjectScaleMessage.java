@@ -35,9 +35,9 @@ public class SetObjectScaleMessage extends Message {
 
 	public final long id;
 
-    public final float z;
+    public final float x;
 
     public final float y;
 
-    public final float x;
+    public final float z;
 }

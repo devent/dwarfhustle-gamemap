@@ -31,6 +31,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ApplyImpulseModelMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkCoordinatesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectCoordinatesMessage;
@@ -125,8 +126,8 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
         if (parser.z == null || parser.y == null || parser.x == null) {
             return of(new AddModelObjectHereMessage(parser.objectType));
         } else {
-            return of(new AddModelObjectMessage(parser.objectType, parser.z.intValue(), parser.y.intValue(),
-                    parser.x.intValue()));
+            return of(new AddModelObjectMessage(parser.objectType, parser.x.intValue(), parser.y.intValue(),
+                    parser.z.intValue()));
         }
     }
 
@@ -137,8 +138,8 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
             case "tile":
                 return o;
             default:
-                return of(new SetObjectCoordinatesMessage(parser.object, parser.id, parser.z.intValue(),
-                        parser.y.intValue(), parser.x.intValue(), parser.z, parser.y, parser.x));
+                return of(new SetObjectCoordinatesMessage(parser.object, parser.id, parser.x.intValue(),
+                        parser.y.intValue(), parser.z.intValue(), parser.x, parser.y, parser.y));
             }
         case "rotation":
             switch (parser.object) {
@@ -160,8 +161,13 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
             switch (parser.object) {
             case "tile":
                 return o;
-            default:
+            case "camera":
                 if (parser.x != null || parser.y != null || parser.z != null) {
+                    return of(new SetCameraPositionMessage(parser.x, parser.y, parser.z));
+                }
+                return o;
+            default:
+                if (parser.x != null || parser.y != null || parser.z != null || parser.id != null) {
                     return of(new SetObjectPositionMessage(parser.object, parser.id, parser.x, parser.y, parser.z));
                 }
             }

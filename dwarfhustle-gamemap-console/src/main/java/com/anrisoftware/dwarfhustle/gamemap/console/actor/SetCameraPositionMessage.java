@@ -23,17 +23,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Event that the scale of a game object should be updated.
+ * Event that the position of the camera should be updated.
  *
  * @author Erwin Müller
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class SetObjectPositionMessage extends Message {
-
-	public final String objectType;
-
-	public final long id;
+public class SetCameraPositionMessage extends Message {
 
     public final float x;
 

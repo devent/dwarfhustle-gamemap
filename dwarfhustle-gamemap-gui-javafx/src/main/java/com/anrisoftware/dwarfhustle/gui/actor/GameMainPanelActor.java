@@ -30,8 +30,6 @@ import javax.inject.Named;
 
 import org.eclipse.collections.impl.factory.Maps;
 
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
@@ -169,46 +167,6 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
 	}
 
 	/**
-	 * Processing {@link UnknownLineMessage}.
-	 * <p>
-	 * The message is send after the user enters a command in the text field but the
-	 * text is invalid.
-	 * <p>
-	 * Returns a behavior that reacts to the following messages:
-	 * <ul>
-	 * <li>{@link #getBehaviorAfterAttachGui()}
-	 * </ul>
-	 */
-	private Behavior<Message> onUnknownLine(UnknownLineMessage m) {
-		log.debug("onUnknownLine {}", m);
-		runFxThread(() -> {
-			var controller = (MainPaneController) initial.controller;
-			controller.statusLabel.setText("Unknown command " + m.line);
-		});
-		return Behaviors.same();
-	}
-
-	/**
-	 * Processing {@link ParsedLineMessage}.
-	 * <p>
-	 * The message is send after the user enters a command in the text field with a
-	 * valid command.
-	 * <p>
-	 * Returns a behavior that reacts to the following messages:
-	 * <ul>
-	 * <li>{@link #getBehaviorAfterAttachGui()}
-	 * </ul>
-	 */
-	private Behavior<Message> onParsedLine(ParsedLineMessage m) {
-		log.debug("onParsedLine {}", m);
-		runFxThread(() -> {
-			var controller = (MainPaneController) initial.controller;
-			controller.statusLabel.setText(null);
-		});
-		return Behaviors.same();
-	}
-
-	/**
 	 * Processing {@link SetGameMapMessage}.
 	 * <p>
 	 * Updates the fortress name.
@@ -231,8 +189,6 @@ public class GameMainPanelActor extends AbstractMainPanelActor {
 		return super.getBehaviorAfterAttachGui()//
 				.onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
 				.onMessage(AboutDialogOpenTriggeredMessage.class, this::onAboutDialogOpenTriggered)//
-				.onMessage(UnknownLineMessage.class, this::onUnknownLine)//
-				.onMessage(ParsedLineMessage.class, this::onParsedLine)//
 				.onMessage(SetGameMapMessage.class, this::onSetGameMap)//
 		;
 	}

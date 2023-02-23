@@ -29,22 +29,22 @@ import lombok.ToString;
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public final class SetObjectCoordinatesMessage extends Message {
+public class SetObjectCoordinatesMessage extends Message {
 
     public final String objectType;
 
 	public final long id;
 
-    public final int z;
+    public final int x;
 
     public final int y;
 
-    public final int x;
+    public final int z;
 
-    public final Float zz;
+    public final Float xx;
 
     public final Float yy;
 
-    public final Float xx;
+    public final Float zz;
 
 }

@@ -25,6 +25,8 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
@@ -101,6 +103,44 @@ public class StatusActor {
 				.build();
 	}
 
+    /**
+     * Processing {@link UnknownLineMessage}.
+     * <p>
+     * The message is send after the user enters a command in the text field but the
+     * text is invalid.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * </ul>
+     */
+    private Behavior<Message> onUnknownLine(UnknownLineMessage m) {
+        log.debug("onUnknownLine {}", m);
+        runFxThread(() -> {
+            controller.statusLabel.setText("Unknown command: " + m.line);
+        });
+        return Behaviors.same();
+    }
+
+    /**
+     * Processing {@link ParsedLineMessage}.
+     * <p>
+     * The message is send after the user enters a command in the text field with a
+     * valid command.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * </ul>
+     */
+    private Behavior<Message> onParsedLine(ParsedLineMessage m) {
+        log.debug("onParsedLine {}", m);
+        runFxThread(() -> {
+            controller.statusLabel.setText("Apply command: " + m.line);
+        });
+        return Behaviors.same();
+    }
+
 	/**
 	 * Processing {@link LoadMapTilesMessage}.
 	 * <p>
@@ -143,6 +183,8 @@ public class StatusActor {
 	 */
 	private BehaviorBuilder<Message> getInitialBehavior() {
 		return Behaviors.receive(Message.class)//
+                .onMessage(UnknownLineMessage.class, this::onUnknownLine)//
+                .onMessage(ParsedLineMessage.class, this::onParsedLine)//
 				.onMessage(LoadMapTilesMessage.class, this::onLoadMapTiles)//
 				.onMessage(MapBlockLoadedMessage.class, this::onMapBlockLoaded)//
 		;

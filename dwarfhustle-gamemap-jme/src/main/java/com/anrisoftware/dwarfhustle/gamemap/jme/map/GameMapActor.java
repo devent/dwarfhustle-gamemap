@@ -26,6 +26,7 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -240,6 +241,18 @@ public class GameMapActor {
     }
 
     /**
+     * Sets the camera position according to the {@link SetCameraPositionMessage}
+     * message.
+     */
+    private Behavior<Message> onSetCameraPosition(SetCameraPositionMessage m) {
+        log.debug("onSetCameraPosition {}", m);
+        app.enqueue(() -> {
+            initialState.cameraPanningState.setCameraPos(m.x, m.y, m.z);
+        });
+        return Behaviors.same();
+    }
+
+    /**
      * Reacts to the {@link AddMapBlockSceneMessage} message. Creates the
      * {@link MapBlockComponent} for the render to construct map blocks and map
      * tiles of the game map.
@@ -299,6 +312,7 @@ public class GameMapActor {
                 .onMessage(MapBlockLoadedMessage.class, this::onMapBlockLoaded)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(AddMapBlockSceneMessage.class, this::onAddMapBlockScene)//
+                .onMessage(SetCameraPositionMessage.class, this::onSetCameraPosition)//
         ;
     }
 }
