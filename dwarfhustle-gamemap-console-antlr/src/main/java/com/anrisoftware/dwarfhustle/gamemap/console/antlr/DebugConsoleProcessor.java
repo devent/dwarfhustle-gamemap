@@ -53,160 +53,161 @@ import akka.actor.typed.ActorRef;
  */
 public class DebugConsoleProcessor implements ConsoleProcessor {
 
-	@Inject
-	private DebugParserServiceFactory parserFactory;
+    @Inject
+    private DebugParserServiceFactory parserFactory;
 
-	@Inject
-	private ActorRef<Message> actor;
+    @Inject
+    private ActorRef<Message> actor;
 
-	/**
-	 * Process the line in the language parser and creates messages.
-	 */
-	@Override
-	public void process(String line) {
-		var parser = parserFactory.create();
-		parser.parse(line);
-		parseVerb(parser, Optional.empty()).ifPresentOrElse(m -> {
-			actor.tell(new ParsedLineMessage(line));
-			actor.tell(m);
-		}, () -> {
-			actor.tell(new UnknownLineMessage(line));
-		});
-	}
+    /**
+     * Process the line in the language parser and creates messages.
+     */
+    @Override
+    public void process(String line) {
+        var parser = parserFactory.create();
+        parser.parse(line);
+        parseVerb(parser, Optional.empty()).ifPresentOrElse(m -> {
+            actor.tell(new ParsedLineMessage(line));
+            actor.tell(m);
+        }, () -> {
+            actor.tell(new UnknownLineMessage(line));
+        });
+    }
 
-	private Optional<Message> parseVerb(DebugConsoleParserService parser, Optional<Message> o) {
-		if (parser.verb == null) {
-			return o;
-		}
-		switch (parser.verb) {
-		case "set":
-			switch (parser.object) {
-			case "tiles":
-				return parseSetForTiles(parser, o);
-			case "mark":
-				return parseSetForMark(parser, o);
-			default:
-				return parseSetForObject(parser, o);
-			}
-		case "add":
-			return parseAddForName(parser, o);
-		case "apply":
-			return parseApply(parser, o);
-		}
-		return o;
-	}
+    private Optional<Message> parseVerb(DebugConsoleParserService parser, Optional<Message> o) {
+        if (parser.verb == null) {
+            return o;
+        }
+        switch (parser.verb) {
+        case "set":
+            switch (parser.object) {
+            case "tiles":
+                return parseSetForTiles(parser, o);
+            case "mark":
+                return parseSetForMark(parser, o);
+            default:
+                return parseSetForObject(parser, o);
+            }
+        case "add":
+            return parseAddForName(parser, o);
+        case "apply":
+            return parseApply(parser, o);
+        }
+        return o;
+    }
 
-	private Optional<Message> parseApply(DebugConsoleParserService parser, Optional<Message> o) {
-		if (StringUtils.isBlank(parser.physics)) {
-			return o;
-		}
-		switch (parser.physics) {
-		case "impulse":
-			return parseApplyImpulse(parser, o);
-		default:
-			return o;
-		}
-	}
+    private Optional<Message> parseApply(DebugConsoleParserService parser, Optional<Message> o) {
+        if (StringUtils.isBlank(parser.physics)) {
+            return o;
+        }
+        switch (parser.physics) {
+        case "impulse":
+            return parseApplyImpulse(parser, o);
+        default:
+            return o;
+        }
+    }
 
-	private Optional<Message> parseApplyImpulse(DebugConsoleParserService parser, Optional<Message> o) {
-		if (parser.zz == null || parser.yy == null || parser.xx == null) {
-			parser.xx = 0f;
-			parser.yy = 0f;
-			parser.zz = 0f;
-		}
-		return of(new ApplyImpulseModelMessage(parser.objectType, parser.id, parser.vx, parser.vy, parser.vz, parser.xx,
-				parser.yy, parser.zz));
-	}
+    private Optional<Message> parseApplyImpulse(DebugConsoleParserService parser, Optional<Message> o) {
+        if (parser.z == null || parser.y == null || parser.x == null) {
+            parser.x = 0f;
+            parser.y = 0f;
+            parser.z = 0f;
+        }
+        return of(new ApplyImpulseModelMessage(parser.objectType, parser.id, parser.vx, parser.vy, parser.vz, parser.x,
+                parser.y, parser.z));
+    }
 
-	private Optional<Message> parseAddForName(DebugConsoleParserService parser, Optional<Message> o) {
-		if (StringUtils.isBlank(parser.objectType)) {
-			return o;
-		}
-		if (parser.z == null || parser.y == null || parser.x == null) {
-			return of(new AddModelObjectHereMessage(parser.objectType));
-		} else {
-			return of(new AddModelObjectMessage(parser.objectType, parser.z, parser.y, parser.x));
-		}
-	}
+    private Optional<Message> parseAddForName(DebugConsoleParserService parser, Optional<Message> o) {
+        if (StringUtils.isBlank(parser.objectType)) {
+            return o;
+        }
+        if (parser.z == null || parser.y == null || parser.x == null) {
+            return of(new AddModelObjectHereMessage(parser.objectType));
+        } else {
+            return of(new AddModelObjectMessage(parser.objectType, parser.z.intValue(), parser.y.intValue(),
+                    parser.x.intValue()));
+        }
+    }
 
-	private Optional<Message> parseSetForObject(DebugConsoleParserService parser, Optional<Message> o) {
-		switch (parser.property) {
-		case "coordinates":
-			switch (parser.object) {
-			case "tile":
-				return o;
-			default:
-				return of(new SetObjectCoordinatesMessage(parser.object, parser.id, parser.z, parser.y, parser.x,
-						parser.zz, parser.yy, parser.xx));
-			}
-		case "rotation":
-			switch (parser.object) {
-			case "tile":
-				return o;
-			default:
-				return parseRotationObject(parser);
-			}
-		case "scale":
-			switch (parser.object) {
-			case "tile":
-				return o;
-			default:
-				if (parser.xx != null || parser.yy != null || parser.zz != null) {
-					return of(new SetObjectScaleMessage(parser.object, parser.id, parser.xx, parser.yy, parser.zz));
-				}
-			}
-		case "position":
-			switch (parser.object) {
-			case "tile":
-				return o;
-			default:
-				if (parser.xx != null || parser.yy != null || parser.zz != null) {
-					return of(new SetObjectPositionMessage(parser.object, parser.id, parser.xx, parser.yy, parser.zz));
-				}
-			}
-		case "panningVelocity":
-			switch (parser.object) {
-			case "tile":
-				return o;
-			default:
-				if (parser.xx != null || parser.yy != null || parser.zz != null) {
-					return of(new SetObjectPanningVelocityMessage(parser.object, parser.id, parser.xx, parser.yy,
-							parser.zz));
-				}
-			}
-		}
-		return o;
-	}
+    private Optional<Message> parseSetForObject(DebugConsoleParserService parser, Optional<Message> o) {
+        switch (parser.property) {
+        case "coordinates":
+            switch (parser.object) {
+            case "tile":
+                return o;
+            default:
+                return of(new SetObjectCoordinatesMessage(parser.object, parser.id, parser.z.intValue(),
+                        parser.y.intValue(), parser.x.intValue(), parser.z, parser.y, parser.x));
+            }
+        case "rotation":
+            switch (parser.object) {
+            case "tile":
+                return o;
+            default:
+                return parseRotationObject(parser);
+            }
+        case "scale":
+            switch (parser.object) {
+            case "tile":
+                return o;
+            default:
+                if (parser.x != null || parser.y != null || parser.z != null) {
+                    return of(new SetObjectScaleMessage(parser.object, parser.id, parser.x, parser.y, parser.z));
+                }
+            }
+        case "position":
+            switch (parser.object) {
+            case "tile":
+                return o;
+            default:
+                if (parser.x != null || parser.y != null || parser.z != null) {
+                    return of(new SetObjectPositionMessage(parser.object, parser.id, parser.x, parser.y, parser.z));
+                }
+            }
+        case "panningVelocity":
+            switch (parser.object) {
+            case "tile":
+                return o;
+            default:
+                if (parser.x != null || parser.y != null || parser.z != null) {
+                    return of(new SetObjectPanningVelocityMessage(parser.object, parser.id, parser.x, parser.y,
+                            parser.z));
+                }
+            }
+        }
+        return o;
+    }
 
-	private Optional<Message> parseRotationObject(DebugConsoleParserService parser) {
-		var q = new Quaternion().fromAngles(parser.xx * DEG_TO_RAD, parser.yy * DEG_TO_RAD, parser.zz * DEG_TO_RAD);
-		return of(new SetObjectRotationMessage(parser.object, parser.id, q.getX(), q.getY(), q.getZ(), q.getW()));
-	}
+    private Optional<Message> parseRotationObject(DebugConsoleParserService parser) {
+        var q = new Quaternion().fromAngles(parser.x * DEG_TO_RAD, parser.y * DEG_TO_RAD, parser.z * DEG_TO_RAD);
+        return of(new SetObjectRotationMessage(parser.object, parser.id, q.getX(), q.getY(), q.getZ(), q.getW()));
+    }
 
-	private Optional<Message> parseSetForTiles(DebugConsoleParserService parser, Optional<Message> o) {
-		switch (parser.property) {
-		case "coordinates":
-			return o;
-		case "rotation":
-			switch (parser.object) {
-			case "tile":
-				return of(new SetTilesRotationMessage(parser.xx * DEG_TO_RAD, parser.yy * DEG_TO_RAD,
-						parser.zz * DEG_TO_RAD));
-			default:
-				return o;
-			}
-		}
-		return o;
-	}
+    private Optional<Message> parseSetForTiles(DebugConsoleParserService parser, Optional<Message> o) {
+        switch (parser.property) {
+        case "coordinates":
+            return o;
+        case "rotation":
+            switch (parser.object) {
+            case "tile":
+                return of(new SetTilesRotationMessage(parser.x * DEG_TO_RAD, parser.y * DEG_TO_RAD,
+                        parser.z * DEG_TO_RAD));
+            default:
+                return o;
+            }
+        }
+        return o;
+    }
 
-	private Optional<Message> parseSetForMark(DebugConsoleParserService parser, Optional<Message> o) {
-		switch (parser.property) {
-		case "coordinates":
-			return of(new SetMarkCoordinatesMessage(parser.xx, parser.yy, parser.zz));
-		case "scale":
-			return of(new SetMarkScaleMessage(parser.xx, parser.yy, parser.zz));
-		}
-		return o;
-	}
+    private Optional<Message> parseSetForMark(DebugConsoleParserService parser, Optional<Message> o) {
+        switch (parser.property) {
+        case "coordinates":
+            return of(new SetMarkCoordinatesMessage(parser.x, parser.y, parser.z));
+        case "scale":
+            return of(new SetMarkScaleMessage(parser.x, parser.y, parser.z));
+        }
+        return o;
+    }
 
 }

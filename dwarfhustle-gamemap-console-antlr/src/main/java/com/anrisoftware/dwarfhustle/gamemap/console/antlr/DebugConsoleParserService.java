@@ -17,12 +17,12 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 
+import static java.lang.Float.parseFloat;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.AddContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ApplyContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.CoordinatesContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.IdContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ObjectContext;
@@ -31,9 +31,8 @@ import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.Pan
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PhysicsContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PositionContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.RotationContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.SaveContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ScaleContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.SetContext;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VerbContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VxContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VyContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VzContext;
@@ -76,11 +75,11 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
 
     public Long id;
 
-    public Integer x;
+    public Float x;
 
-    public Integer y;
+    public Float y;
 
-    public Integer z;
+    public Float z;
 
     public Float xx;
 
@@ -106,23 +105,8 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
     }
 
     @Override
-    public void enterAdd(AddContext ctx) {
-        this.verb = "add";
-    }
-
-    @Override
-    public void enterSet(SetContext ctx) {
-        this.verb = "set";
-    }
-
-    @Override
-    public void enterSave(SaveContext ctx) {
-        this.verb = "save";
-    }
-
-    @Override
-    public void enterApply(ApplyContext ctx) {
-        this.verb = "apply";
+    public void enterVerb(VerbContext ctx) {
+        this.verb = ctx.getText();
     }
 
     @Override
@@ -162,17 +146,17 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
 
     @Override
     public void enterX(XContext ctx) {
-        this.x = Integer.parseInt(ctx.getText());
+        this.x = parseFloat(ctx.getText());
     }
 
     @Override
     public void enterY(YContext ctx) {
-        this.y = Integer.parseInt(ctx.getText());
+        this.y = parseFloat(ctx.getText());
     }
 
     @Override
     public void enterZ(ZContext ctx) {
-        this.z = Integer.parseInt(ctx.getText());
+        this.z = parseFloat(ctx.getText());
     }
 
     @Override
@@ -187,22 +171,22 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
 
     @Override
     public void enterXx(XxContext ctx) {
-        this.xx = Float.parseFloat(ctx.getText());
+        this.xx = parseFloat(ctx.getText());
     }
 
     @Override
     public void enterYy(YyContext ctx) {
-        this.yy = Float.parseFloat(ctx.getText());
+        this.yy = parseFloat(ctx.getText());
     }
 
     @Override
     public void enterZz(ZzContext ctx) {
-        this.zz = Float.parseFloat(ctx.getText());
+        this.zz = parseFloat(ctx.getText());
     }
 
     @Override
     public void enterVx(VxContext ctx) {
-        this.vx = Float.parseFloat(ctx.getText());
+        this.vx = parseFloat(ctx.getText());
     }
 
     @Override

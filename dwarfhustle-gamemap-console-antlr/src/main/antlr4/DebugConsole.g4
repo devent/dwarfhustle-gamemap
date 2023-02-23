@@ -1,128 +1,94 @@
 /**
  * Define a grammar called DebugConsole.
  *
- * add Dwarf z=4, y=5, x=6
+ * add Dwarf 4,5,6
  * add Dwarf here
  * set position 4,10,10 to Dwarf with id=445566
+ * set position 0,0,10 to camera
+ * set layers 4 to terrain
  * set coordinates z=4, y=5, x=6 to Dwarf with id = -3466937467377025024
- * apply impulse vx=0.5, vy=0, vz=0 z=4, y=5, x=6 to Dwarf with id = -3466937467377025024
+ * apply impulse 0.5,0,0 to Dwarf with id = -3466937467377025024
  *
  */
 grammar DebugConsole;
 
 sentence
-    : add objectType coordinates
-    | add objectType HERE
-	| set property 'to' object selector?
-	| save object selector?
-	| apply physics vector position? 'to' object selector?
-	;
+    : verb objectType coordinates
+    | verb objectType 'here'
+    | verb property 'to' object selector?
+    | verb object selector?
+    | verb physics vector position? 'to' object selector?
+    ;
+
+verb
+    : 'add'
+    | 'set'
+    | 'save'
+    | 'apply'
+    ;
 
 physics
-	: impulse
-	;
+    : 'impulse'
+    ;
 
-add : 'add' ;
-
-set : 'set' ;
-
-save : 'save' ;
-
-apply : 'apply' ;
-
-impulse : 'impulse' ;
-
-object
-	: TILES
-	| MARK
-	| ID
-	| CAMERA
-	;
-
-TILES: 'tiles' ;
-
-MARK: 'mark' ;
-
-CAMERA: 'camera' ;
-
-HERE: 'here' ;
+object: ID ;
 
 property
-	: 'coordinates' coordinates
-	| 'rotation' rotation
-	| 'scale' scale
+    : 'coordinates' coordinates
+    | 'rotation' rotation
+    | 'scale' scale
     | 'position' position
     | 'panningVelocity' panningVelocity
-	;
-
-coordinates
-	: 'x' '=' x ',' 'y' '=' y ',' 'z' '=' z ('xx' '=' xx ',' 'yy' '=' yy ',' 'zz' '=' zz)?
-	| 'z' '=' z ',' 'y' '=' y ',' 'x' '=' x ('zz' '=' zz ',' 'yy' '=' yy ',' 'xx' '=' xx)?
-	| 'xx' '=' xx ',' 'yy' '=' yy ',' 'zz' '=' zz
-	| 'zz' '=' zz ',' 'yy' '=' yy ',' 'xx' '=' xx
-	;
-
-rotation
-	: 'x' '=' xx ',' 'y' '=' yy ',' 'z' '=' zz
-	| 'z' '=' zz ',' 'y' '=' yy ',' 'x' '=' xx
-	;
-
-scale
-	: 'x' '=' xx ',' 'y' '=' yy ',' 'z' '=' zz
-	| 'z' '=' zz ',' 'y' '=' yy ',' 'x' '=' xx
-	;
-
-position
-    : 'x' '=' xx ',' 'y' '=' yy ',' 'z' '=' zz
-    | 'z' '=' zz ',' 'y' '=' yy ',' 'x' '=' xx
+    | 'layers' layers
     ;
 
-panningVelocity
-    : 'x' '=' xx ',' 'y' '=' yy ',' 'z' '=' zz
-    | 'z' '=' zz ',' 'y' '=' yy ',' 'x' '=' xx
-    ;
+coordinates: x ',' y ',' z (xx ',' yy ',' zz)? ;
 
-vector
-    : 'vx' '=' vx ',' 'vy' '=' vy ',' 'vz' '=' vz
-    | 'vz' '=' vz ',' 'vy' '=' vy ',' 'vx' '=' vx
-    ;
+rotation: x ',' y ',' z ;
 
-x : INT ;
+scale: x ',' y ',' z ;
 
-y : INT ;
+position: x ',' y ',' z ;
 
-z : INT ;
+panningVelocity: x ',' y ',' z ;
 
-xx : FLOAT ;
+vector: vx ',' vy ',' vz ;
 
-yy : FLOAT ;
+x : NUMBER ;
 
-zz : FLOAT ;
+y : NUMBER ;
 
-vx : FLOAT ;
+z : NUMBER ;
 
-vy : FLOAT ;
+xx : NUMBER ;
 
-vz : FLOAT ;
+yy : NUMBER ;
+
+zz : NUMBER ;
+
+vx : NUMBER ;
+
+vy : NUMBER ;
+
+vz : NUMBER ;
 
 selector : 'with' parameter ;
 
 parameter
-	: 'id' '=' id ;
+    : 'id' '=' id ;
 
-id : INT ;
+id : NUMBER ;
 
 objectType: ID ;
 
+layers : NATURAL ;
 
-INT : '-'? DIGIT+ ;
-
-FLOAT: '-'? ('0'..'9')+ ('.' ('0'..'9')+)?;
+NUMBER: '-'? DIGIT+ ('.' DIGIT+ )?;
 
 fragment DIGIT: [0-9];
 
 STRING
-	: '"' (~["\r\n] | '""')* '"';
+    : '"' (~["\r\n] | '""')* '"';
 
 ID
     : ID_CHARS;

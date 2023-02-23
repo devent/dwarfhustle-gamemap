@@ -1,22 +1,4 @@
-/*
- * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
- * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
-
 // Generated from java-escape by ANTLR 4.11.1
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -28,6 +10,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * which can be extended to create a listener which only needs to handle a subset
  * of the available methods.
  */
+@SuppressWarnings("CheckReturnValue")
 public class DebugConsoleBaseListener implements DebugConsoleListener {
 	/**
 	 * {@inheritDoc}
@@ -46,6 +29,18 @@ public class DebugConsoleBaseListener implements DebugConsoleListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterVerb(DebugConsoleParser.VerbContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVerb(DebugConsoleParser.VerbContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterPhysics(DebugConsoleParser.PhysicsContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -53,66 +48,6 @@ public class DebugConsoleBaseListener implements DebugConsoleListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPhysics(DebugConsoleParser.PhysicsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterAdd(DebugConsoleParser.AddContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitAdd(DebugConsoleParser.AddContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSet(DebugConsoleParser.SetContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSet(DebugConsoleParser.SetContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSave(DebugConsoleParser.SaveContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSave(DebugConsoleParser.SaveContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterApply(DebugConsoleParser.ApplyContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitApply(DebugConsoleParser.ApplyContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterImpulse(DebugConsoleParser.ImpulseContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitImpulse(DebugConsoleParser.ImpulseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -365,6 +300,18 @@ public class DebugConsoleBaseListener implements DebugConsoleListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitObjectType(DebugConsoleParser.ObjectTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLayers(DebugConsoleParser.LayersContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLayers(DebugConsoleParser.LayersContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
