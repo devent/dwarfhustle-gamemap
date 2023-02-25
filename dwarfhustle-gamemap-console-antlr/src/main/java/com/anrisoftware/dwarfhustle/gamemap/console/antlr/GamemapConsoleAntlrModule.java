@@ -18,13 +18,13 @@
 package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugParserServiceFactory;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugConsoleParserServiceFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
  * @see DebugConsoleProcessor
- * @see DebugParserServiceFactory
+ * @see DebugConsoleParserServiceFactory
  *
  * @author Erwin Müller
  */
@@ -34,6 +34,6 @@ public class GamemapConsoleAntlrModule extends AbstractModule {
     protected void configure() {
 		bind(ConsoleProcessor.class).to(DebugConsoleProcessor.class);
         install(new FactoryModuleBuilder().implement(DebugConsoleParserService.class, DebugConsoleParserService.class)
-                .build(DebugParserServiceFactory.class));
+                .build(DebugConsoleParserServiceFactory.class));
     }
 }

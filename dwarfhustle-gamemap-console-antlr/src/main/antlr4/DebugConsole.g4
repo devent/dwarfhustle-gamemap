@@ -81,7 +81,7 @@ id : NUMBER ;
 
 objectType: ID ;
 
-layers : NATURAL ;
+layers : NUMBER ;
 
 NUMBER: '-'? DIGIT+ ('.' DIGIT+ )?;
 

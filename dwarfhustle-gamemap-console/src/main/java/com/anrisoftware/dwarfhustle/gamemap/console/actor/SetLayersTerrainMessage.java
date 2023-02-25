@@ -17,30 +17,19 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.console.actor;
 
-import static com.jme3.math.FastMath.DEG_TO_RAD;
-
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Event that the rotation of the tiles should be changed.
+ * Event that the visible layers of the terrain should be changed.
  *
  * @author Erwin Müller
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class SetTilesRotationMessage extends Message {
+public class SetLayersTerrainMessage extends Message {
 
-    public static SetTilesRotationMessage fromAngles(float x, float y, float z) {
-        return new SetTilesRotationMessage(x * DEG_TO_RAD, y * DEG_TO_RAD, z * DEG_TO_RAD);
-    }
-
-    public final float z;
-
-    public final float y;
-
-    public final float x;
-
+    public final int layers;
 }

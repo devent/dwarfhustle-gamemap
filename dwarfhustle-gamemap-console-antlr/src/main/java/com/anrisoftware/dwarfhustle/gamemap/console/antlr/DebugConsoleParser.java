@@ -19,7 +19,7 @@ public class DebugConsoleParser extends Parser {
 	public static final int
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17, 
-		NUMBER=18, STRING=19, ID=20, ID_CHARS=21, WS=22, NATURAL=23;
+		NUMBER=18, STRING=19, ID=20, ID_CHARS=21, WS=22;
 	public static final int
 		RULE_sentence = 0, RULE_verb = 1, RULE_physics = 2, RULE_object = 3, RULE_property = 4, 
 		RULE_coordinates = 5, RULE_rotation = 6, RULE_scale = 7, RULE_position = 8, 
@@ -49,7 +49,7 @@ public class DebugConsoleParser extends Parser {
 		return new String[] {
 			null, null, null, null, null, null, null, null, null, null, null, null, 
 			null, null, null, null, null, null, "NUMBER", "STRING", "ID", "ID_CHARS", 
-			"WS", "NATURAL"
+			"WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -1355,7 +1355,7 @@ public class DebugConsoleParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class LayersContext extends ParserRuleContext {
-		public TerminalNode NATURAL() { return getToken(DebugConsoleParser.NATURAL, 0); }
+		public TerminalNode NUMBER() { return getToken(DebugConsoleParser.NUMBER, 0); }
 		public LayersContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -1377,7 +1377,7 @@ public class DebugConsoleParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(175);
-			match(NATURAL);
+			match(NUMBER);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1392,7 +1392,7 @@ public class DebugConsoleParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u0017\u00b2\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001"+
+		"\u0004\u0001\u0016\u00b2\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001"+
 		"\u0002\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004"+
 		"\u0002\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007"+
 		"\u0002\b\u0007\b\u0002\t\u0007\t\u0002\n\u0007\n\u0002\u000b\u0007\u000b"+
@@ -1488,7 +1488,7 @@ public class DebugConsoleParser extends Parser {
 		"\u0000\u0000\u00a9\u00aa\u0003,\u0016\u0000\u00aa+\u0001\u0000\u0000\u0000"+
 		"\u00ab\u00ac\u0005\u0012\u0000\u0000\u00ac-\u0001\u0000\u0000\u0000\u00ad"+
 		"\u00ae\u0005\u0014\u0000\u0000\u00ae/\u0001\u0000\u0000\u0000\u00af\u00b0"+
-		"\u0005\u0017\u0000\u0000\u00b01\u0001\u0000\u0000\u0000\u0007?DJOQer";
+		"\u0005\u0012\u0000\u0000\u00b01\u0001\u0000\u0000\u0000\u0007?DJOQer";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

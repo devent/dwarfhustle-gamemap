@@ -18,6 +18,11 @@
 package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 
 import static java.lang.Float.parseFloat;
+import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
+import static java.util.Optional.of;
+
+import java.util.Optional;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -25,6 +30,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.CoordinatesContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.IdContext;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.LayersContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ObjectContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ObjectTypeContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PanningVelocityContext;
@@ -43,6 +49,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.YyC
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ZContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ZzContext;
 
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,48 +62,90 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 public class DebugConsoleParserService extends DebugConsoleBaseListener {
 
-	/**
-	 * @author Erwin Müller
-	 */
-	public interface DebugParserServiceFactory {
+    /**
+     * @author Erwin Müller
+     */
+    public interface DebugConsoleParserServiceFactory {
 
-		DebugConsoleParserService create();
-	}
+        DebugConsoleParserService create();
+    }
 
-    public String verb;
+    @RequiredArgsConstructor
+    @ToString
+    public static class TupelXyz {
+        public final float x;
+        public final float y;
+        public final float z;
+    }
 
-    public String property;
+    @RequiredArgsConstructor
+    @ToString
+    public static class TupelObjectIdXyz {
+        public final String object;
+        public final long id;
+        public final float x;
+        public final float y;
+        public final float z;
+    }
 
-    public String object;
+    @RequiredArgsConstructor
+    @ToString
+    public static class TupelXyzXxYyZz {
+        public final float x;
+        public final float y;
+        public final float z;
+        public final float xx;
+        public final float yy;
+        public final float zz;
+    }
 
-	public String objectType;
+    @RequiredArgsConstructor
+    @ToString
+    public static class TupelXyzVxVyVz {
+        public final float x;
+        public final float y;
+        public final float z;
+        public final float vx;
+        public final float vy;
+        public final float vz;
+    }
 
-    public String physics;
+    public Optional<String> verb = Optional.empty();
 
-    public Long id;
+    public Optional<String> property = Optional.empty();
 
-    public Float x;
+    public Optional<String> object = Optional.empty();
 
-    public Float y;
+    public Optional<String> objectType = Optional.empty();
 
-    public Float z;
+    public Optional<String> physics = Optional.empty();
 
-    public Float xx;
+    public Optional<Long> id = Optional.empty();
 
-    public Float yy;
+    public Optional<Float> x = Optional.empty();
 
-    public Float zz;
+    public Optional<Float> y = Optional.empty();
 
-    public Float vx;
+    public Optional<Float> z = Optional.empty();
 
-    public Float vy;
+    public Optional<Float> xx = Optional.empty();
 
-    public Float vz;
+    public Optional<Float> yy = Optional.empty();
+
+    public Optional<Float> zz = Optional.empty();
+
+    public Optional<Float> vx = Optional.empty();
+
+    public Optional<Float> vy = Optional.empty();
+
+    public Optional<Float> vz = Optional.empty();
+
+    public Optional<Integer> layers = Optional.empty();
 
     public DebugConsoleParserService parse(String string) {
-		var lexer = new DebugConsoleLexer(CharStreams.fromString(string));
+        var lexer = new DebugConsoleLexer(CharStreams.fromString(string));
         var tokens = new CommonTokenStream(lexer);
-		var parser = new DebugConsoleParser(tokens);
+        var parser = new DebugConsoleParser(tokens);
         var sentenceContext = parser.sentence();
         var walker = new ParseTreeWalker();
         walker.walk(this, sentenceContext);
@@ -104,98 +153,138 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
         return this;
     }
 
+    public Optional<TupelXyz> getTupelXyz() {
+        if (x.isEmpty() || y.isEmpty() || z.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new TupelXyz(x.get(), y.get(), z.get()));
+        }
+    }
+
+    public Optional<TupelObjectIdXyz> getTupelObjectIdXyz() {
+        if (x.isEmpty() || y.isEmpty() || z.isEmpty() || object.isEmpty() || id.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new TupelObjectIdXyz(object.get(), id.get(), x.get(), y.get(), z.get()));
+        }
+    }
+
+    public Optional<TupelXyzXxYyZz> getTupelXyzXxYyZz() {
+        if (x.isEmpty() || y.isEmpty() || z.isEmpty()) {
+            return Optional.empty();
+        } else if (xx.isEmpty() || yy.isEmpty() || zz.isEmpty()) {
+            return Optional.of(new TupelXyzXxYyZz(x.get(), y.get(), z.get(), 0f, 0f, 0f));
+        } else {
+            return Optional.of(new TupelXyzXxYyZz(x.get(), y.get(), z.get(), xx.get(), yy.get(), zz.get()));
+        }
+    }
+
+    public Optional<TupelXyzVxVyVz> getTupelXyzVxVyVz() {
+        if (x.isEmpty() || y.isEmpty() || z.isEmpty() || vx.isEmpty() || vy.isEmpty() || vz.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new TupelXyzVxVyVz(x.get(), y.get(), z.get(), vx.get(), vy.get(), vz.get()));
+        }
+    }
+
     @Override
     public void enterVerb(VerbContext ctx) {
-        this.verb = ctx.getText();
+        this.verb = of(ctx.getText());
     }
 
     @Override
     public void enterCoordinates(CoordinatesContext ctx) {
-        this.property = "coordinates";
+        this.property = of("coordinates");
     }
 
     @Override
     public void enterPosition(PositionContext ctx) {
-        this.property = "position";
+        this.property = of("position");
     }
 
     @Override
     public void enterRotation(RotationContext ctx) {
-        this.property = "rotation";
+        this.property = of("rotation");
     }
 
     @Override
     public void enterScale(ScaleContext ctx) {
-        this.property = "scale";
+        this.property = of("scale");
     }
 
     @Override
     public void enterPanningVelocity(PanningVelocityContext ctx) {
-        this.property = "panningVelocity";
+        this.property = of("panningVelocity");
     }
 
     @Override
-	public void enterObjectType(ObjectTypeContext ctx) {
-		this.objectType = ctx.getText();
+    public void enterObjectType(ObjectTypeContext ctx) {
+        this.objectType = of(ctx.getText());
     }
 
     @Override
     public void enterPhysics(PhysicsContext ctx) {
-        this.physics = ctx.getText();
+        this.physics = of(ctx.getText());
     }
 
     @Override
     public void enterX(XContext ctx) {
-        this.x = parseFloat(ctx.getText());
+        this.x = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterY(YContext ctx) {
-        this.y = parseFloat(ctx.getText());
+        this.y = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterZ(ZContext ctx) {
-        this.z = parseFloat(ctx.getText());
+        this.z = of(parseFloat(ctx.getText()));
     }
 
     @Override
-	public void enterId(IdContext ctx) {
-        this.id = Long.parseLong(ctx.getText());
+    public void enterId(IdContext ctx) {
+        this.id = of(parseLong(ctx.getText()));
     }
 
     @Override
     public void enterObject(ObjectContext ctx) {
-        this.object = ctx.getText();
+        this.object = of(ctx.getText());
     }
 
     @Override
     public void enterXx(XxContext ctx) {
-        this.xx = parseFloat(ctx.getText());
+        this.xx = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterYy(YyContext ctx) {
-        this.yy = parseFloat(ctx.getText());
+        this.yy = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterZz(ZzContext ctx) {
-        this.zz = parseFloat(ctx.getText());
+        this.zz = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterVx(VxContext ctx) {
-        this.vx = parseFloat(ctx.getText());
+        this.vx = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterVy(VyContext ctx) {
-        this.vy = Float.parseFloat(ctx.getText());
+        this.vy = of(parseFloat(ctx.getText()));
     }
 
     @Override
     public void enterVz(VzContext ctx) {
-        this.vz = Float.parseFloat(ctx.getText());
+        this.vz = of(parseFloat(ctx.getText()));
+    }
+
+    @Override
+    public void enterLayers(LayersContext ctx) {
+        this.property = of("layers");
+        this.layers = of(parseInt(ctx.getText()));
     }
 }

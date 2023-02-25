@@ -17,14 +17,9 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 
-import static com.jme3.math.FastMath.DEG_TO_RAD;
-import static java.util.Optional.of;
-
 import java.util.Optional;
 
 import javax.inject.Inject;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectHereMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectMessage;
@@ -32,6 +27,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.ApplyImpulseModelMessa
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkCoordinatesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectCoordinatesMessage;
@@ -41,11 +37,12 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectRotationMessa
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTilesRotationMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugParserServiceFactory;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugConsoleParserServiceFactory;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.TupelXyz;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.jme3.math.Quaternion;
 
 import akka.actor.typed.ActorRef;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Processes one line in the language parser and creates messages.
@@ -55,7 +52,7 @@ import akka.actor.typed.ActorRef;
 public class DebugConsoleProcessor implements ConsoleProcessor {
 
     @Inject
-    private DebugParserServiceFactory parserFactory;
+    private DebugConsoleParserServiceFactory parserFactory;
 
     @Inject
     private ActorRef<Message> actor;
@@ -67,7 +64,7 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
     public void process(String line) {
         var parser = parserFactory.create();
         parser.parse(line);
-        parseVerb(parser, Optional.empty()).ifPresentOrElse(m -> {
+        new ParseProcess(parser).parseVerb().ifPresentOrElse(m -> {
             actor.tell(new ParsedLineMessage(line));
             actor.tell(m);
         }, () -> {
@@ -75,145 +72,159 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
         });
     }
 
-    private Optional<Message> parseVerb(DebugConsoleParserService parser, Optional<Message> o) {
-        if (parser.verb == null) {
-            return o;
+    @RequiredArgsConstructor
+    private static class ParseProcess {
+
+        private final DebugConsoleParserService parser;
+
+        private Optional<Message> parseVerb() {
+            return parser.verb.map(this::parseVerb);
         }
-        switch (parser.verb) {
-        case "set":
-            switch (parser.object) {
+
+        private Message parseVerb(String verb) {
+            switch (verb) {
+            case "set":
+                return parser.object.map(this::parseSetObject).orElse(null);
+            case "add":
+                return parser.object.map(this::parseAddForName).orElse(null);
+            case "apply":
+                return parser.object.map(this::parseApply).orElse(null);
+            default:
+                return null;
+            }
+        }
+
+        private Message parseSetObject(String object) {
+            switch (object) {
             case "tiles":
-                return parseSetForTiles(parser, o);
+                return parseSetForTiles(object);
             case "mark":
-                return parseSetForMark(parser, o);
+                return parseSetForMark(object);
             default:
-                return parseSetForObject(parser, o);
+                return parseSetForObject(object);
             }
-        case "add":
-            return parseAddForName(parser, o);
-        case "apply":
-            return parseApply(parser, o);
         }
-        return o;
-    }
 
-    private Optional<Message> parseApply(DebugConsoleParserService parser, Optional<Message> o) {
-        if (StringUtils.isBlank(parser.physics)) {
-            return o;
+        private Message parseApply(String object) {
+            return parser.physics.map(this::parseApplyPhysics).orElse(null);
         }
-        switch (parser.physics) {
-        case "impulse":
-            return parseApplyImpulse(parser, o);
-        default:
-            return o;
-        }
-    }
 
-    private Optional<Message> parseApplyImpulse(DebugConsoleParserService parser, Optional<Message> o) {
-        if (parser.z == null || parser.y == null || parser.x == null) {
-            parser.x = 0f;
-            parser.y = 0f;
-            parser.z = 0f;
-        }
-        return of(new ApplyImpulseModelMessage(parser.objectType, parser.id, parser.vx, parser.vy, parser.vz, parser.x,
-                parser.y, parser.z));
-    }
-
-    private Optional<Message> parseAddForName(DebugConsoleParserService parser, Optional<Message> o) {
-        if (StringUtils.isBlank(parser.objectType)) {
-            return o;
-        }
-        if (parser.z == null || parser.y == null || parser.x == null) {
-            return of(new AddModelObjectHereMessage(parser.objectType));
-        } else {
-            return of(new AddModelObjectMessage(parser.objectType, parser.x.intValue(), parser.y.intValue(),
-                    parser.z.intValue()));
-        }
-    }
-
-    private Optional<Message> parseSetForObject(DebugConsoleParserService parser, Optional<Message> o) {
-        switch (parser.property) {
-        case "coordinates":
-            switch (parser.object) {
-            case "tile":
-                return o;
+        private Message parseApplyPhysics(String physics) {
+            switch (physics) {
+            case "impulse":
+                return parseApplyImpulse();
             default:
-                return of(new SetObjectCoordinatesMessage(parser.object, parser.id, parser.x.intValue(),
-                        parser.y.intValue(), parser.z.intValue(), parser.x, parser.y, parser.y));
+                return null;
             }
-        case "rotation":
-            switch (parser.object) {
-            case "tile":
-                return o;
-            default:
-                return parseRotationObject(parser);
+        }
+
+        private Message parseApplyImpulse() {
+            return parser.getTupelXyzVxVyVz().map(t -> new ApplyImpulseModelMessage(parser.objectType.get(),
+                    parser.id.get(), t.vx, t.vy, t.vz, t.x, t.y, t.z)).orElse(null);
+        }
+
+        private Message parseAddForName(String object) {
+            return parser.objectType.map(this::parseAddForObjectType).orElse(null);
+        }
+
+        Message parseAddForObjectType(String objectType) {
+            Optional<TupelXyz> t = parser.getTupelXyz();
+            if (t.isEmpty()) {
+                return new AddModelObjectHereMessage(objectType);
+            } else {
+                return new AddModelObjectMessage(objectType, (int) t.get().x, (int) t.get().y, (int) t.get().z);
             }
-        case "scale":
-            switch (parser.object) {
-            case "tile":
-                return o;
-            default:
-                if (parser.x != null || parser.y != null || parser.z != null) {
-                    return of(new SetObjectScaleMessage(parser.object, parser.id, parser.x, parser.y, parser.z));
+        }
+
+        private Message parseSetForObject(String object) {
+            return parser.property.map(this::parseSetForObjectProperty).orElse(null);
+        }
+
+        Message parseSetForObjectProperty(String property) {
+            switch (property) {
+            case "coordinates":
+                switch (parser.object.get()) {
+                case "tile":
+                    return null;
+                default:
+                    return parser.getTupelXyzXxYyZz().map(t -> new SetObjectCoordinatesMessage(parser.object.get(),
+                            parser.id.get(), (int) t.x, (int) t.y, (int) t.z, t.xx, t.yy, t.zz)).orElse(null);
                 }
-            }
-        case "position":
-            switch (parser.object) {
-            case "tile":
-                return o;
-            case "camera":
-                if (parser.x != null || parser.y != null || parser.z != null) {
-                    return of(new SetCameraPositionMessage(parser.x, parser.y, parser.z));
+            case "rotation":
+                switch (parser.object.get()) {
+                case "tile":
+                    return null;
+                default:
+                    return parser.getTupelObjectIdXyz()
+                            .map(t -> SetObjectRotationMessage.fromAngles(t.object, t.id, t.x, t.y, t.z)).orElse(null);
                 }
-                return o;
+            case "scale":
+                switch (parser.object.get()) {
+                case "tile":
+                    return null;
+                default:
+                    return parser.getTupelXyz()
+                            .map(t -> new SetObjectScaleMessage(parser.object.get(), parser.id.get(), t.x, t.y, t.z))
+                            .orElse(null);
+                }
+            case "position":
+                switch (parser.object.get()) {
+                case "tile":
+                    return null;
+                case "camera":
+                    return parser.getTupelXyz().map(t -> new SetCameraPositionMessage(t.x, t.y, t.z)).orElse(null);
+                default:
+                    return parser.getTupelObjectIdXyz()
+                            .map(t -> new SetObjectPositionMessage(t.object, t.id, t.x, t.y, t.z)).orElse(null);
+                }
+            case "panningVelocity":
+                switch (parser.object.get()) {
+                case "tile":
+                    return null;
+                default:
+                    return parser.getTupelObjectIdXyz()
+                            .map(t -> new SetObjectPanningVelocityMessage(t.object, t.id, t.x, t.y, t.z)).orElse(null);
+                }
+            case "layers":
+                switch (parser.object.get()) {
+                case "terrain":
+                    return parser.layers.map(SetLayersTerrainMessage::new).orElse(null);
+                default:
+                    return null;
+                }
             default:
-                if (parser.x != null || parser.y != null || parser.z != null || parser.id != null) {
-                    return of(new SetObjectPositionMessage(parser.object, parser.id, parser.x, parser.y, parser.z));
-                }
-            }
-        case "panningVelocity":
-            switch (parser.object) {
-            case "tile":
-                return o;
-            default:
-                if (parser.x != null || parser.y != null || parser.z != null) {
-                    return of(new SetObjectPanningVelocityMessage(parser.object, parser.id, parser.x, parser.y,
-                            parser.z));
-                }
+                return null;
             }
         }
-        return o;
-    }
 
-    private Optional<Message> parseRotationObject(DebugConsoleParserService parser) {
-        var q = new Quaternion().fromAngles(parser.x * DEG_TO_RAD, parser.y * DEG_TO_RAD, parser.z * DEG_TO_RAD);
-        return of(new SetObjectRotationMessage(parser.object, parser.id, q.getX(), q.getY(), q.getZ(), q.getW()));
-    }
-
-    private Optional<Message> parseSetForTiles(DebugConsoleParserService parser, Optional<Message> o) {
-        switch (parser.property) {
-        case "coordinates":
-            return o;
-        case "rotation":
-            switch (parser.object) {
-            case "tile":
-                return of(new SetTilesRotationMessage(parser.x * DEG_TO_RAD, parser.y * DEG_TO_RAD,
-                        parser.z * DEG_TO_RAD));
+        private Message parseSetForTiles(String object) {
+            switch (parser.property.get()) {
+            case "coordinates":
+                return null;
+            case "rotation":
+                switch (object) {
+                case "tile":
+                    return parser.getTupelXyz().map(t -> SetTilesRotationMessage.fromAngles(t.x, t.y, t.z))
+                            .orElse(null);
+                default:
+                    return null;
+                }
             default:
-                return o;
+                return null;
             }
         }
-        return o;
-    }
 
-    private Optional<Message> parseSetForMark(DebugConsoleParserService parser, Optional<Message> o) {
-        switch (parser.property) {
-        case "coordinates":
-            return of(new SetMarkCoordinatesMessage(parser.x, parser.y, parser.z));
-        case "scale":
-            return of(new SetMarkScaleMessage(parser.x, parser.y, parser.z));
+        private Message parseSetForMark(String object) {
+            switch (parser.property.get()) {
+            case "coordinates":
+                return parser.getTupelXyz().map(t -> new SetMarkCoordinatesMessage(t.x, t.y, t.z)).orElse(null);
+            case "scale":
+                return parser.getTupelXyz().map(t -> new SetMarkScaleMessage(t.x, t.y, t.z)).orElse(null);
+            default:
+                return null;
+            }
         }
-        return o;
+
     }
 
 }

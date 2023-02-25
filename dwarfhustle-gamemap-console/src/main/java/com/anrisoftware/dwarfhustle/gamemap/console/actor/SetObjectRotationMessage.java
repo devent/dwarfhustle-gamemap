@@ -17,7 +17,10 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.console.actor;
 
+import static com.jme3.math.FastMath.DEG_TO_RAD;
+
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.jme3.math.Quaternion;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -30,6 +33,11 @@ import lombok.ToString;
 @RequiredArgsConstructor
 @ToString(callSuper = true)
 public class SetObjectRotationMessage extends Message {
+
+    public static SetObjectRotationMessage fromAngles(String object, long id, float x, float y, float z) {
+        var q = new Quaternion().fromAngles(x * DEG_TO_RAD, y * DEG_TO_RAD, z * DEG_TO_RAD);
+        return new SetObjectRotationMessage(object, id, q.getX(), q.getY(), q.getZ(), q.getW());
+    }
 
     public final String objectType;
 

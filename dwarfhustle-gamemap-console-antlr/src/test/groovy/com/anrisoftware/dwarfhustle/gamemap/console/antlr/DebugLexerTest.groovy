@@ -33,48 +33,53 @@ import org.junit.jupiter.params.provider.MethodSource
  */
 class DebugLexerTest {
 
-    static double delta = 1e-7d
-
     static parseExpressionsSource() {
         Stream.of(
                 //
+                of('set layers 4 to terrain', { DebugConsoleParserService service ->
+                    assertEquals "set", service.verb.get()
+                    assertEquals "layers", service.property.get()
+                    assertEquals "terrain", service.object.get()
+                    assertEquals 4, service.layers.get()
+                }),
+                //
                 of('set position 0,0,10 to camera', { DebugConsoleParserService service ->
-                    assertEquals "set", service.verb
-                    assertEquals "position", service.property
-                    assertEquals "camera", service.object
-                    assertEquals 0f, service.x
-                    assertEquals 0f, service.y
-                    assertEquals 10f, service.z
+                    assertEquals "set", service.verb.get()
+                    assertEquals "position", service.property.get()
+                    assertEquals "camera", service.object.get()
+                    assertEquals 0f, service.x.get()
+                    assertEquals 0f, service.y.get()
+                    assertEquals 10f, service.z.get()
                 }),
                 //
                 of("set coordinates 4,5,6 to dwarf with id = 445566", { DebugConsoleParserService service ->
-                    assertEquals "coordinates", service.property
-                    assertEquals 4, service.x
-                    assertEquals 5, service.y
-                    assertEquals 6, service.z
-                    assertEquals "dwarf", service.object
-                    assertEquals 445566, service.id
+                    assertEquals "coordinates", service.property.get()
+                    assertEquals 4, service.x.get()
+                    assertEquals 5, service.y.get()
+                    assertEquals 6, service.z.get()
+                    assertEquals "dwarf", service.object.get()
+                    assertEquals 445566, service.id.get()
                 }),
                 //
                 of("set coordinates 4, 5, 6 to dwarf with id = 445566", { DebugConsoleParserService service ->
-                    assertEquals "coordinates", service.property
-                    assertEquals 4, service.x
-                    assertEquals 5, service.y
-                    assertEquals 6, service.z
-                    assertEquals "dwarf", service.object
-                    assertEquals 445566, service.id
+                    assertEquals "coordinates", service.property.get()
+                    assertEquals 4, service.x.get()
+                    assertEquals 5, service.y.get()
+                    assertEquals 6, service.z.get()
+                    assertEquals "dwarf", service.object.get()
+                    assertEquals 445566, service.id.get()
                 }),
                 //
                 of("set coordinates 4,5,6 4.4,5.5,6.6 to dwarf with id = 445566", { DebugConsoleParserService service ->
-                    assertEquals "coordinates", service.property
-                    assertEquals 4, service.x
-                    assertEquals 5, service.y
-                    assertEquals 6, service.z
-                    assertEquals 4.4f, service.xx
-                    assertEquals 5.5f, service.yy
-                    assertEquals 6.6f, service.zz
-                    assertEquals "dwarf", service.object
-                    assertEquals 445566, service.id
+                    assertEquals "coordinates", service.property.get()
+                    assertEquals 4, service.x.get()
+                    assertEquals 5, service.y.get()
+                    assertEquals 6, service.z.get()
+                    assertEquals 4.4f, service.xx.get()
+                    assertEquals 5.5f, service.yy.get()
+                    assertEquals 6.6f, service.zz.get()
+                    assertEquals "dwarf", service.object.get()
+                    assertEquals 445566, service.id.get()
                 }),
                 //
                 of("set rotation 4.4,5.5,6.6 to tiles", { DebugConsoleParserService service ->
@@ -87,61 +92,61 @@ class DebugLexerTest {
                 }),
                 //
                 of("set position 4.4,5.5,6.6 to camera", { DebugConsoleParserService service ->
-                    assertEquals "position", service.property
-                    assertEquals 4.4f, service.x, delta
-                    assertEquals 5.5f, service.y, delta
-                    assertEquals 6.6f, service.z, delta
-                    assertEquals "camera", service.object
+                    assertEquals "position", service.property.get()
+                    assertEquals 4.4f, service.x.get()
+                    assertEquals 5.5f, service.y.get()
+                    assertEquals 6.6f, service.z.get()
+                    assertEquals "camera", service.object.get()
                 }),
                 //
                 of("set panningVelocity 4.4,5.5,6.6 to camera", { DebugConsoleParserService service ->
-                    assertEquals "panningVelocity", service.property
-                    assertEquals 4.4d, service.x, delta
-                    assertEquals 5.5d, service.y, delta
-                    assertEquals 6.6d, service.z, delta
-                    assertEquals "camera", service.object
+                    assertEquals "panningVelocity", service.property.get()
+                    assertEquals 4.4f, service.x.get()
+                    assertEquals 5.5f, service.y.get()
+                    assertEquals 6.6f, service.z.get()
+                    assertEquals "camera", service.object.get()
                 }),
                 //
                 of('add Dwarf 4,5,6', { DebugConsoleParserService service ->
-                    assertEquals "add", service.verb
-                    assertEquals 4, service.x
-                    assertEquals 5, service.y
-                    assertEquals 6, service.z
-                    assertEquals "Dwarf", service.objectType
+                    assertEquals "add", service.verb.get()
+                    assertEquals 4, service.x.get()
+                    assertEquals 5, service.y.get()
+                    assertEquals 6, service.z.get()
+                    assertEquals "Dwarf", service.objectType.get()
                 }),
                 //
                 of('add Dwarf here', { DebugConsoleParserService service ->
-                    assertEquals "add", service.verb
-                    assertEquals null, service.x
-                    assertEquals null, service.y
-                    assertEquals null, service.z
-                    assertEquals "Dwarf", service.objectType
+                    assertEquals "add", service.verb.get()
+                    assertTrue service.x.isEmpty()
+                    assertTrue service.y.isEmpty()
+                    assertTrue service.z.isEmpty()
+                    assertEquals "Dwarf", service.objectType.get()
                 }),
                 //
                 of('apply impulse 0.5, 0.0, 0.0 4.0, 5.0, 6.0 to Dwarf with id = -3466937467377025024', { DebugConsoleParserService service ->
-                    assertEquals "apply", service.verb
-                    assertEquals "impulse", service.physics
-                    assertEquals 0.5f, service.vx
-                    assertEquals 0f, service.vy
-                    assertEquals 0f, service.vz
-                    assertEquals 4f, service.x
-                    assertEquals 5f, service.y
-                    assertEquals 6f, service.z
-                    assertEquals "Dwarf", service.object
-                    assertEquals(-3466937467377025024, service.id)
+                    assertEquals "apply", service.verb.get()
+                    assertEquals "impulse", service.physics.get()
+                    assertEquals 0.5f, service.vx.get()
+                    assertEquals 0f, service.vy.get()
+                    assertEquals 0f, service.vz.get()
+                    assertEquals 4f, service.x.get()
+                    assertEquals 5f, service.y.get()
+                    assertEquals 6f, service.z.get()
+                    assertEquals "Dwarf", service.object.get()
+                    assertEquals(-3466937467377025024, service.id.get())
                 }),
                 //
                 of('apply impulse 0.5, 0.0, 0.0 to Dwarf with id = -3466937467377025024', { DebugConsoleParserService service ->
-                    assertEquals "apply", service.verb
-                    assertEquals "impulse", service.physics
-                    assertEquals 0.5f, service.vx
-                    assertEquals 0f, service.vy
-                    assertEquals 0f, service.vz
-                    assertEquals null, service.x
-                    assertEquals null, service.y
-                    assertEquals null, service.z
-                    assertEquals "Dwarf", service.object
-                    assertEquals(-3466937467377025024, service.id)
+                    assertEquals "apply", service.verb.get()
+                    assertEquals "impulse", service.physics.get()
+                    assertEquals 0.5f, service.vx.get()
+                    assertEquals 0f, service.vy.get()
+                    assertEquals 0f, service.vz.get()
+                    assertTrue service.x.isEmpty()
+                    assertTrue service.y.isEmpty()
+                    assertTrue service.z.isEmpty()
+                    assertEquals "Dwarf", service.object.get()
+                    assertEquals(-3466937467377025024, service.id.get())
                 }),
                 //
                 )
