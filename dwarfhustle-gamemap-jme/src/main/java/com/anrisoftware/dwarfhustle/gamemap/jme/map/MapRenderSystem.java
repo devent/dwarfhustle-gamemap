@@ -27,6 +27,7 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IntervalIteratingSystem;
+import com.jme3.app.Application;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
@@ -54,6 +55,9 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 
     @Inject
     private GameSettingsProvider gs;
+
+    @Inject
+    private Application app;
 
     private BoundingBox rootWorldBound;
 
@@ -113,10 +117,14 @@ public class MapRenderSystem extends IntervalIteratingSystem {
         terrain.setLevels(gs.get().visibleDepthLayers.get());
         rootNode.attachChild(terrain.node);
         this.rootWorldBound = terrain.getWorldBound();
-        System.out.println(rootWorldBound); // TODO
         this.rootWidth = c.mb.getWidth();
         this.rootHeight = c.mb.getHeight();
         this.rootDepth = c.mb.getDepth();
+        gs.get().visibleDepthLayers.addListener((o, ov, nv) -> {
+            app.enqueue(() -> {
+                terrain.setLevels(nv.intValue());
+            });
+        });
     }
 
     @Override

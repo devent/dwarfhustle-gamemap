@@ -57,6 +57,7 @@ public class MapTerrain {
                 tl = oldLevels.pop();
             } else {
                 tl = levelFactory.create(gm, size + i);
+                tl.node.setLocalTranslation(0f, 0f, -1f * (size + i));
             }
             terrainLevels.push(tl);
             node.attachChild(tl.node);

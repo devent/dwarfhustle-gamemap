@@ -29,6 +29,7 @@ import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
@@ -394,6 +395,17 @@ public class AppActor {
      * <li>
      * </ul>
      */
+    private Behavior<Message> onSetLayersTerrain(SetLayersTerrainMessage m) {
+        log.debug("onSetLayersTerrain {}", m);
+        ogs.get().visibleDepthLayers.set(m.layers);
+        return Behaviors.same();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
     private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
         log.debug("onWrappedDbResponse {}", m);
         var response = m.response;
@@ -479,6 +491,7 @@ public class AppActor {
      * <li>{@link LoadWorldMessage}
      * <li>{@link SetWorldMapMessage}
      * <li>{@link ShutdownMessage}
+     * <li>{@link SetLayersTerrainMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedObjectsResponse}
      * <li>{@link WrappedCacheResponse}
@@ -490,6 +503,7 @@ public class AppActor {
                 .onMessage(LoadWorldMessage.class, this::onLoadWorld)//
                 .onMessage(SetWorldMapMessage.class, this::onSetWorldMap)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
+                .onMessage(SetLayersTerrainMessage.class, this::onSetLayersTerrain)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
