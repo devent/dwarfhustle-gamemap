@@ -115,6 +115,8 @@ public class App extends SimpleApplication {
 	@Inject
 	private GameSettingsProvider gsp;
 
+    private GameTickSystem gameTickSystem;
+
 	private Injector parent;
 
 	private AppCommandImpl command;
@@ -163,7 +165,7 @@ public class App extends SimpleApplication {
 		createGameMap();
 	}
 
-	private void createApp() {
+    private void createApp() {
 		AppActor.create(injector, ofSeconds(1), command).whenComplete((ret, ex) -> {
 			if (ex != null) {
 				log.error("AppActor.create", ex);
@@ -198,6 +200,7 @@ public class App extends SimpleApplication {
 	@Override
 	@SneakyThrows
 	public void stop(boolean waitFor) {
+        engine.removeSystem(gameTickSystem);
 		updateCammera(gsp);
 		gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
 		gsp.save();

@@ -84,6 +84,7 @@ public class ObservableGameSettings {
 
         public int visibleDepthLayers = 1;
 
+        public float timeUpdateInterval = 1 / 30f;
 	}
 
 	/**
@@ -138,6 +139,8 @@ public class ObservableGameSettings {
 
     public final IntegerProperty visibleDepthLayers;
 
+    public final FloatProperty timeUpdateInterval;
+
 	@SuppressWarnings("unchecked")
 	@SneakyThrows
 	public ObservableGameSettings(GameSettings p) {
@@ -154,6 +157,7 @@ public class ObservableGameSettings {
 				.build();
 		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
         this.visibleDepthLayers = JavaBeanIntegerPropertyBuilder.create().bean(p).name("visibleDepthLayers").build();
+        this.timeUpdateInterval = JavaBeanFloatPropertyBuilder.create().bean(p).name("timeUpdateInterval").build();
 		this.currentWorld = new SimpleObjectProperty<>();
 		this.currentMap = new SimpleObjectProperty<>();
 	}
@@ -171,5 +175,6 @@ public class ObservableGameSettings {
 		commandsSplitPosition.set(other.commandsSplitPosition);
 		lastCommand.set(other.lastCommand);
         visibleDepthLayers.set(other.visibleDepthLayers);
+        timeUpdateInterval.set(other.timeUpdateInterval);
 	}
 }

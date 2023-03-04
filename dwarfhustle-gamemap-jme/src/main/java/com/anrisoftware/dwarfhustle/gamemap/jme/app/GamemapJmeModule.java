@@ -19,6 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 import javax.inject.Named;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GamemapActorsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.GamemapJmeMapModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
 import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
@@ -29,6 +30,7 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.asset.AssetManager;
 import com.jme3.input.InputManager;
 import com.jme3.renderer.Camera;
+import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,7 @@ public class GamemapJmeModule extends AbstractModule {
 		install(new GamemapGuiControllersModule());
 		install(new GamemapActorsModule());
 		install(new GamemapJmeMapModule());
+        install(new DwarfhustleGamemapJmeLightsModule());
     }
 
     @Provides
@@ -80,4 +83,10 @@ public class GamemapJmeModule extends AbstractModule {
     public com.jme3.opencl.Context getOpenCLContext() {
         return owner.getContext().getOpenCLContext();
     }
+
+    @Provides
+    public ViewPort getViewPort() {
+        return owner.getViewPort();
+    }
+
 }

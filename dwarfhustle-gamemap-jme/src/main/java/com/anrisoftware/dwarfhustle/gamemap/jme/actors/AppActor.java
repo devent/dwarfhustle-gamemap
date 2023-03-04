@@ -23,6 +23,7 @@ import static java.time.Duration.ofSeconds;
 import java.net.URL;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -30,6 +31,8 @@ import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickSystem;
+import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
@@ -67,8 +70,10 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
+import com.badlogic.ashley.core.Engine;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
+import com.jme3.app.Application;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -261,6 +266,12 @@ public class AppActor {
     @Inject
     private AppCachesConfig appCachesConfig;
 
+    @Inject
+    private Application app;
+
+    @Inject
+    private Engine engine;
+
     @SuppressWarnings("rawtypes")
     private ActorRef<DbResponseMessage> dbResponseAdapter;
 
@@ -274,6 +285,10 @@ public class AppActor {
     private Injector injector;
 
     private ActorRef<Message> mapBlocks;
+
+    private GameTickSystem gameTickSystem;
+
+    private Optional<GameMap> gm;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -406,6 +421,33 @@ public class AppActor {
      * <li>
      * </ul>
      */
+    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
+        log.debug("onSetGameMap {}", m);
+        ogs.get().currentMap.set(m.gm);
+        app.enqueue(() -> {
+            this.gameTickSystem = injector.getInstance(GameTickSystem.class);
+            engine.addSystem(gameTickSystem);
+            createSunActor();
+        });
+        return Behaviors.same();
+    }
+
+    private void createSunActor() {
+        SunActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("SunActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("SunActor created");
+            }
+        });
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
     private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
         log.debug("onWrappedDbResponse {}", m);
         var response = m.response;
@@ -444,7 +486,6 @@ public class AppActor {
                 actor.tell(new SetWorldMapMessage(wm));
             } else if (rm.go instanceof GameMap gm) {
                 gm.setWorld(ogs.get().currentWorld.get());
-                ogs.get().currentMap.set(gm);
                 actor.tell(new SetGameMapMessage(gm));
                 actor.tell(new LoadMapTilesMessage(gm));
             }
@@ -480,6 +521,9 @@ public class AppActor {
      */
     private Behavior<Message> onShutdown(ShutdownMessage m) {
         log.debug("onShutdown {}", m);
+        app.enqueue(() -> {
+            engine.removeSystem(gameTickSystem);
+        });
         return Behaviors.stopped();
     }
 
@@ -492,6 +536,7 @@ public class AppActor {
      * <li>{@link SetWorldMapMessage}
      * <li>{@link ShutdownMessage}
      * <li>{@link SetLayersTerrainMessage}
+     * <li>{@link SetGameMapMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedObjectsResponse}
      * <li>{@link WrappedCacheResponse}
@@ -504,6 +549,7 @@ public class AppActor {
                 .onMessage(SetWorldMapMessage.class, this::onSetWorldMap)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(SetLayersTerrainMessage.class, this::onSetLayersTerrain)//
+                .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
