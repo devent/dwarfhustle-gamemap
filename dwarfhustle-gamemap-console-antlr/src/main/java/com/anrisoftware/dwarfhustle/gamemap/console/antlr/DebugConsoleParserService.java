@@ -28,16 +28,15 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.CoordinatesContext;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.HoursContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.IdContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.LayersContext;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.MinutesContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ObjectContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ObjectTypeContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PanningVelocityContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PhysicsContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PositionContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.RotationContext;
-import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.ScaleContext;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.PropertyContext;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.SecondsContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VerbContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VxContext;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParser.VyContext;
@@ -76,6 +75,14 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
         public final float x;
         public final float y;
         public final float z;
+    }
+
+    @RequiredArgsConstructor
+    @ToString
+    public static class TupelTime {
+        public final int hours;
+        public final int minutes;
+        public final int seconds;
     }
 
     @RequiredArgsConstructor
@@ -140,6 +147,12 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
 
     public Optional<Float> vz = Optional.empty();
 
+    public Optional<Integer> hours = Optional.empty();
+
+    public Optional<Integer> minutes = Optional.empty();
+
+    public Optional<Integer> seconds = Optional.empty();
+
     public Optional<Integer> layers = Optional.empty();
 
     public DebugConsoleParserService parse(String string) {
@@ -187,34 +200,22 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
         }
     }
 
+    public Optional<TupelTime> getTupelTime() {
+        if (hours.isEmpty() || minutes.isEmpty() || seconds.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new TupelTime(hours.get(), minutes.get(), seconds.get()));
+        }
+    }
+
     @Override
     public void enterVerb(VerbContext ctx) {
         this.verb = of(ctx.getText());
     }
 
     @Override
-    public void enterCoordinates(CoordinatesContext ctx) {
-        this.property = of("coordinates");
-    }
-
-    @Override
-    public void enterPosition(PositionContext ctx) {
-        this.property = of("position");
-    }
-
-    @Override
-    public void enterRotation(RotationContext ctx) {
-        this.property = of("rotation");
-    }
-
-    @Override
-    public void enterScale(ScaleContext ctx) {
-        this.property = of("scale");
-    }
-
-    @Override
-    public void enterPanningVelocity(PanningVelocityContext ctx) {
-        this.property = of("panningVelocity");
+    public void enterProperty(PropertyContext ctx) {
+        this.property = of(ctx.getChild(0).getText());
     }
 
     @Override
@@ -286,5 +287,20 @@ public class DebugConsoleParserService extends DebugConsoleBaseListener {
     public void enterLayers(LayersContext ctx) {
         this.property = of("layers");
         this.layers = of(parseInt(ctx.getText()));
+    }
+
+    @Override
+    public void enterHours(HoursContext ctx) {
+        this.hours = of(parseInt(ctx.getText()));
+    }
+
+    @Override
+    public void enterMinutes(MinutesContext ctx) {
+        this.minutes = of(parseInt(ctx.getText()));
+    }
+
+    @Override
+    public void enterSeconds(SecondsContext ctx) {
+        this.seconds = of(parseInt(ctx.getText()));
     }
 }

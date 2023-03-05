@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message
 import com.google.inject.AbstractModule
@@ -46,6 +47,15 @@ class DebugConsoleProcessorTest {
 
     static parseExpressionsSource() {
         Stream.of(
+                //
+                of('set time 23:59:59 to world', { List it ->
+                    assertEquals it.size(), 2
+                    assertEquals it[0].class, ParsedLineMessage
+                    assertEquals it[1].class, SetTimeWorldMessage
+                    assertEquals it[1].time.hour, 23
+                    assertEquals it[1].time.minute, 59
+                    assertEquals it[1].time.second, 59
+                }),
                 //
                 of('set xxxx 4 to terrain', { List it ->
                     assertEquals it.size(), 1

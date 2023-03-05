@@ -22,6 +22,7 @@ import static java.time.Duration.ofSeconds;
 
 import java.net.URL;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +32,7 @@ import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickSystem;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
@@ -448,6 +450,17 @@ public class AppActor {
      * <li>
      * </ul>
      */
+    private Behavior<Message> onSetTimeWorld(SetTimeWorldMessage m) {
+        log.debug("onSetTimeWorld {}", m);
+        ogs.get().currentWorld.get().setTime(LocalDateTime.from(ogs.get().currentWorld.get().getTime()).with(m.time));
+        return Behaviors.same();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
     private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
         log.debug("onWrappedDbResponse {}", m);
         var response = m.response;
@@ -537,6 +550,7 @@ public class AppActor {
      * <li>{@link ShutdownMessage}
      * <li>{@link SetLayersTerrainMessage}
      * <li>{@link SetGameMapMessage}
+     * <li>{@link SetTimeWorldMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedObjectsResponse}
      * <li>{@link WrappedCacheResponse}
@@ -550,6 +564,7 @@ public class AppActor {
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(SetLayersTerrainMessage.class, this::onSetLayersTerrain)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
+                .onMessage(SetTimeWorldMessage.class, this::onSetTimeWorld)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//

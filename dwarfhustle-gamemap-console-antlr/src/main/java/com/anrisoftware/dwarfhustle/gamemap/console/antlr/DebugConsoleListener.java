@@ -208,6 +208,46 @@ public interface DebugConsoleListener extends ParseTreeListener {
 	 */
 	void exitVz(DebugConsoleParser.VzContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link DebugConsoleParser#time}.
+	 * @param ctx the parse tree
+	 */
+	void enterTime(DebugConsoleParser.TimeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DebugConsoleParser#time}.
+	 * @param ctx the parse tree
+	 */
+	void exitTime(DebugConsoleParser.TimeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link DebugConsoleParser#hours}.
+	 * @param ctx the parse tree
+	 */
+	void enterHours(DebugConsoleParser.HoursContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DebugConsoleParser#hours}.
+	 * @param ctx the parse tree
+	 */
+	void exitHours(DebugConsoleParser.HoursContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link DebugConsoleParser#minutes}.
+	 * @param ctx the parse tree
+	 */
+	void enterMinutes(DebugConsoleParser.MinutesContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DebugConsoleParser#minutes}.
+	 * @param ctx the parse tree
+	 */
+	void exitMinutes(DebugConsoleParser.MinutesContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link DebugConsoleParser#seconds}.
+	 * @param ctx the parse tree
+	 */
+	void enterSeconds(DebugConsoleParser.SecondsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DebugConsoleParser#seconds}.
+	 * @param ctx the parse tree
+	 */
+	void exitSeconds(DebugConsoleParser.SecondsContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link DebugConsoleParser#selector}.
 	 * @param ctx the parse tree
 	 */

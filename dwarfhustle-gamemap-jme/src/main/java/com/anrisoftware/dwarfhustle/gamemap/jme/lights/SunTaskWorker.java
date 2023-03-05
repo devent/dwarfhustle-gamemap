@@ -81,9 +81,9 @@ public class SunTaskWorker implements Runnable {
         var dc = DirectionalLightComponent.m.get(entity);
         dc.enabled = model.visible;
         dc.shadow = model.visible;
-        dc.d.x = model.x;
-        dc.d.y = model.y;
-        dc.d.z = model.z;
+        dc.d.x = -model.x;
+        dc.d.y = -model.y;
+        dc.d.z = -model.z;
         dc.d.normalizeLocal();
         dc.color.r = model.color[0];
         dc.color.g = model.color[1];

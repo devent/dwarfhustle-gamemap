@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 
+import java.time.LocalTime;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -36,8 +37,10 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectPositionMessa
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectRotationMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTilesRotationMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.DebugConsoleParserServiceFactory;
+import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.TupelTime;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.DebugConsoleParserService.TupelXyz;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 
@@ -100,6 +103,8 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
                 return parseSetForTiles(object);
             case "mark":
                 return parseSetForMark(object);
+            case "world":
+                return parseSetForWorld(object);
             default:
                 return parseSetForObject(object);
             }
@@ -223,6 +228,19 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
             default:
                 return null;
             }
+        }
+
+        private Message parseSetForWorld(String object) {
+            switch (parser.property.get()) {
+            case "time":
+                return parser.getTupelTime().map(this::parseTime).orElse(null);
+            default:
+                return null;
+            }
+        }
+
+        private Message parseTime(TupelTime t) {
+            return new SetTimeWorldMessage(LocalTime.of(t.hours, t.minutes, t.seconds));
         }
 
     }

@@ -7,6 +7,7 @@
  * set position 0,0,10 to camera
  * set layers 4 to terrain
  * set coordinates z=4, y=5, x=6 to Dwarf with id = -3466937467377025024
+ * set time 23:59:59 to world
  * apply impulse 0.5,0,0 to Dwarf with id = -3466937467377025024
  *
  */
@@ -40,6 +41,7 @@ property
     | 'position' position
     | 'panningVelocity' panningVelocity
     | 'layers' layers
+    | 'time' time
     ;
 
 coordinates: x ',' y ',' z (xx ',' yy ',' zz)? ;
@@ -71,6 +73,14 @@ vx : NUMBER ;
 vy : NUMBER ;
 
 vz : NUMBER ;
+
+time : hours ':' minutes ':' seconds ;
+
+hours : NUMBER ;
+
+minutes : NUMBER ;
+
+seconds : NUMBER ;
 
 selector : 'with' parameter ;
 
