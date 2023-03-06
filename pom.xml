@@ -63,14 +63,7 @@
         </developer>
     </developers>
 
-    <modules>
-        <module>dwarfhustle-gamemap-console-antlr</module>
-        <module>dwarfhustle-gamemap-gui-javafx</module>
-        <module>dwarfhustle-gamemap-jme</module>
-        <module>dwarfhustle-gamemap-model</module>
-        <module>dwarfhustle-gamemap-assets</module>
-        <module>dwarfhustle-gamemap-console</module>
-    </modules>
+    <modules></modules>
 
     <dependencyManagement>
         <dependencies>

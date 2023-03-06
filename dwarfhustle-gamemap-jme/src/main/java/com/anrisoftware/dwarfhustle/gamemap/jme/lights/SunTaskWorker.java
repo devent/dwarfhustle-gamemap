@@ -25,7 +25,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.google.inject.assistedinject.Assisted;
-import com.jme3.app.Application;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 
@@ -43,10 +42,6 @@ public class SunTaskWorker implements Runnable {
 
     private final Entity entity;
 
-    private final Application app;
-
-    private final Engine engine;
-
     @Inject
     @Assisted
     private WorldMap wm;
@@ -58,15 +53,16 @@ public class SunTaskWorker implements Runnable {
     @Inject
     private SunModel model;
 
+    private Engine engine;
+
     @Inject
-    public SunTaskWorker(Application app, Engine engine) {
-        this.app = app;
+    public SunTaskWorker(Engine engine) {
         this.engine = engine;
         var dlc = new DirectionalLightComponent(new Vector3f(), new ColorRGBA());
         dlc.enabled = false;
         dlc.shadow = true;
         this.entity = engine.createEntity().add(new AmbientLightComponent(new ColorRGBA())).add(dlc);
-        app.enqueue(() -> engine.addEntity(entity));
+        engine.addEntity(entity);
     }
 
     @Override
@@ -88,9 +84,9 @@ public class SunTaskWorker implements Runnable {
         dc.color.r = model.color[0];
         dc.color.g = model.color[1];
         dc.color.b = model.color[2];
-    }
 
+    }
     public void stop() {
-        app.enqueue(() -> engine.removeEntity(entity));
+        engine.removeEntity(entity);
     }
 }

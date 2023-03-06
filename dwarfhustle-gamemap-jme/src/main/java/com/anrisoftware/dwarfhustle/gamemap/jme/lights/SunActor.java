@@ -190,7 +190,7 @@ public class SunActor {
      * Reacts to the {@link GameTickMessage} message.
      */
     private Behavior<Message> onGameTick(GameTickMessage m) {
-        sunTaskWorker.ifPresent(this::runSunTaskWorker);
+        app.enqueue(this::runSunTaskWorker);
         return Behaviors.same();
     }
 
@@ -224,7 +224,11 @@ public class SunActor {
                 .of(sunTaskWorkerFactory.create(gs.get().currentWorld.get(), gs.get().currentMap.get()));
     }
 
-    private void runSunTaskWorker(SunTaskWorker w) {
+    private void runSunTaskWorker() {
+        sunTaskWorker.ifPresent(this::runSunTaskWorker0);
+    }
+
+    private void runSunTaskWorker0(SunTaskWorker w) {
         w.run();
     }
 
