@@ -20,6 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.GameMapActor.GameMapActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrain.MapTerrainFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainLevel.MapTerrainLevelFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainModel.MapTerrainModelFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainTile.MapTerrainTileFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
@@ -29,7 +30,7 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class GamemapJmeMapModule extends AbstractModule {
+public class DwarfhustleGamemapJmeMapModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
@@ -41,5 +42,7 @@ public class GamemapJmeMapModule extends AbstractModule {
                 .build(MapTerrainLevelFactory.class));
         install(new FactoryModuleBuilder().implement(MapTerrainTile.class, MapTerrainTile.class)
                 .build(MapTerrainTileFactory.class));
+        install(new FactoryModuleBuilder().implement(MapTerrainModel.class, MapTerrainModel.class)
+                .build(MapTerrainModelFactory.class));
 	}
 }

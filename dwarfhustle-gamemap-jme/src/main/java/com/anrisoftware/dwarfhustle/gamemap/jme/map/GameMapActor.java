@@ -28,11 +28,12 @@ import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorSetMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
@@ -40,6 +41,7 @@ import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.badlogic.ashley.core.Engine;
+import com.badlogic.ashley.core.Entity;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -77,6 +79,7 @@ public class GameMapActor {
     private static class InitialStateMessage extends Message {
         public final GameMapState gameMapState;
         public final CameraPanningState cameraPanningState;
+        public final MapCursorState mapCursorState;
     }
 
     @RequiredArgsConstructor
@@ -132,13 +135,13 @@ public class GameMapActor {
         var app = injector.getInstance(Application.class);
         var gameMapState = injector.getInstance(GameMapState.class);
         var cameraState = injector.getInstance(CameraPanningState.class);
+        var mapCursorState = injector.getInstance(MapCursorState.class);
         try {
             var f = app.enqueue(() -> {
                 app.getStateManager().attach(gameMapState);
                 app.getStateManager().attach(cameraState);
-                var mapRenderSystem = gameMapState.getMapRenderSystem();
-                cameraState.setMapRenderSystem(mapRenderSystem);
-                return new InitialStateMessage(gameMapState, cameraState);
+                app.getStateManager().attach(mapCursorState);
+                return new InitialStateMessage(gameMapState, cameraState, mapCursorState);
             });
             return f.get();
         } catch (Exception ex) {
@@ -163,13 +166,16 @@ public class GameMapActor {
     @Inject
     private Application app;
 
+    @Inject
+    private GameSettingsProvider gs;
+
     private Injector injector;
 
-    private InitialStateMessage initialState;
+    private InitialStateMessage is;
 
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
-    private Optional<GameMap> gm = Optional.empty();
+    private Optional<Entity> cursorEntity = Optional.empty();
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -206,11 +212,11 @@ public class GameMapActor {
      */
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
-        this.initialState = m;
-        this.initialState.cameraPanningState.setSaveCamera(gm -> {
+        this.is = m;
+        this.is.cameraPanningState.setSaveCamera(gm -> {
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
         });
-        this.initialState.cameraPanningState.setSaveZ(gm -> {
+        this.is.cameraPanningState.setSaveZ(gm -> {
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
         });
         return buffer.unstashAll(getInitialBehavior()//
@@ -222,9 +228,8 @@ public class GameMapActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
-        this.gm = Optional.of(m.gm);
         app.enqueue(() -> {
-            initialState.cameraPanningState.updateCamera(m.gm);
+            is.cameraPanningState.updateCamera(m.gm);
         });
         return Behaviors.same();
     }
@@ -236,7 +241,18 @@ public class GameMapActor {
      */
     private Behavior<Message> onMapBlockLoaded(MapBlockLoadedMessage m) {
         log.debug("onMapBlockLoaded {}", m);
-        context.getSelf().tell(new AddMapBlockSceneMessage(gm.get(), m.mb));
+        context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), m.mb));
+        app.enqueue(() -> {
+            is.gameMapState.createMapBlockBox(gs.get().currentMap.get(), m.mb);
+            is.cameraPanningState.setTerrainModel(is.gameMapState.getModel());
+            Entity cursor = engine.createEntity();
+            this.cursorEntity = Optional.of(cursor);
+            int z = gs.get().currentMap.get().getCursor().z;
+            int y = gs.get().currentMap.get().getCursor().y;
+            int x = gs.get().currentMap.get().getCursor().x;
+            cursor.add(new MapCursorComponent(z, y, x));
+            engine.addEntity(cursor);
+        });
         return Behaviors.same();
     }
 
@@ -247,7 +263,7 @@ public class GameMapActor {
     private Behavior<Message> onSetCameraPosition(SetCameraPositionMessage m) {
         log.debug("onSetCameraPosition {}", m);
         app.enqueue(() -> {
-            initialState.cameraPanningState.setCameraPos(m.x, m.y, m.z);
+            is.cameraPanningState.setCameraPos(m.x, m.y, m.z);
         });
         return Behaviors.same();
     }
@@ -262,10 +278,19 @@ public class GameMapActor {
         m.mb.getBlocks().forEachKey(pos -> {
             actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
         });
+        return Behaviors.same();
+    }
+
+    /**
+     * Reacts to the {@link MapCursorSetMessage} message.
+     */
+    private Behavior<Message> onMapCursorSet(MapCursorSetMessage m) {
+        // log.debug("onMapCursorSet {}", m);
+        gs.get().currentMap.get().setCursor(m.z, m.y, m.x);
         app.enqueue(() -> {
-            var e = engine.createEntity();
-            e.add(new MapBlockComponent(m.gm, m.mb));
-            engine.addEntity(e);
+            cursorEntity.ifPresent(e -> {
+                e.add(new MapCursorComponent(m.z, m.y, m.x));
+            });
         });
         return Behaviors.same();
     }
@@ -279,7 +304,7 @@ public class GameMapActor {
         // log.debug("onWrappedCacheResponse {}", m);
         if (m.response instanceof CacheGetSuccessMessage<?> rm) {
             if (rm.go instanceof MapBlock mb) {
-                context.getSelf().tell(new AddMapBlockSceneMessage(gm.get(), mb));
+                context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), mb));
             }
         } else if (m.response instanceof CacheErrorMessage rm) {
             log.error("Cache error {}", m);
@@ -313,6 +338,7 @@ public class GameMapActor {
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(AddMapBlockSceneMessage.class, this::onAddMapBlockScene)//
                 .onMessage(SetCameraPositionMessage.class, this::onSetCameraPosition)//
+                .onMessage(MapCursorSetMessage.class, this::onMapCursorSet)//
         ;
     }
 }

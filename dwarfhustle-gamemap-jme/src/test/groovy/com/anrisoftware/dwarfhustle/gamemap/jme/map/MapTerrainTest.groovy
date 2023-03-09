@@ -36,7 +36,7 @@ class MapTerrainTest {
 
     @BeforeAll
     static void setup() {
-        this.injector = Guice.createInjector(new GamemapJmeMapModule(), new ModelActorsModule(), new AbstractModule() {
+        this.injector = Guice.createInjector(new DwarfhustleGamemapJmeMapModule(), new ModelActorsModule(), new AbstractModule() {
                     @Override
                     protected void configure() {
                     }

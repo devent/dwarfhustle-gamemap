@@ -129,7 +129,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     @Inject
     private Camera camera;
 
-    private MapRenderSystem mapRenderSystem;
+    private MapTerrainModel model;
 
     private boolean middleMouseDown;
 
@@ -167,8 +167,8 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
         camera.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
     }
 
-    public void setMapRenderSystem(MapRenderSystem mapRenderSystem) {
-        this.mapRenderSystem = mapRenderSystem;
+    public void setTerrainModel(MapTerrainModel model) {
+        this.model = model;
         updateScreenCoordinatesMap();
     }
 
@@ -276,7 +276,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     }
 
     private boolean canZ(float m) {
-        var z = gm.getZ();
+        var z = gm.getCursor().z;
         if (m > 0) {
             return z + m < gm.getDepth();
         } else {
@@ -340,7 +340,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     }
 
     private void updateScreenCoordinatesMap() {
-        mapRenderSystem.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
+        model.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
     }
 
     private void boundMove(float dx, float dy, float dz) {
@@ -353,10 +353,8 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     }
 
     private void boundZMove(float d) {
-        var z = gm.getZ();
         var dd = (int) d;
-        z += dd;
-        gm.setZ(z);
+        gm.addZ(dd);
     }
 
     private void doZoom(float dx, float dy, float s, Vector3f oldpos, Vector3f newpos) {
@@ -373,7 +371,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
             tmpc.getScreenCoordinates(bottomleft, tmpBottomLeft);
             if (dy > 0) {
                 // zoom out
-                if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 200) {
+                if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 50) {
                     boundMove(0f, 0f, dy * s);
                 }
             } else {
