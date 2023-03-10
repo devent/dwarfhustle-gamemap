@@ -100,15 +100,13 @@ public class PanelControllerBuild {
 
     public CompletableFuture<PanelControllerResult> loadFxml(Executor executor, String fxmlfile,
             String... additionalCss) {
-        return CompletableFuture.supplyAsync(() -> {
-            return loadFxml0(fxmlfile, additionalCss);
-        }, executor);
+        return CompletableFuture.supplyAsync(() -> loadFxml0(fxmlfile, additionalCss), executor);
     }
 
     @SneakyThrows
     private PanelControllerResult loadFxml0(String fxmlfile, String... additionalCss) {
-		log.debug("loadFxml0 {} {}", fxmlfile, additionalCss);
-        loadFone();
+        log.debug("loadFxml0 {} {}", fxmlfile, additionalCss);
+        loadFont();
         var css = new ArrayList<String>();
         css.add(getCss());
         css.addAll(Arrays.asList(additionalCss));
@@ -118,7 +116,7 @@ public class PanelControllerBuild {
         return new PanelControllerResult(loadFxml(loader, fxmlfile), loader.getController());
     }
 
-    private void loadFone() {
+    private void loadFont() {
         // Font.loadFont(MainPanelControllerBuild.class.getResource("/Fonts/Behrensschrift.ttf").toExternalForm(),
         // 14);
     }
@@ -129,7 +127,7 @@ public class PanelControllerBuild {
 
     @SneakyThrows
     private String getCss() {
-		return IOUtils.resourceToURL("/dwarf_theme.css").toExternalForm();
+        return IOUtils.resourceToURL("/dwarf_theme.css").toExternalForm();
     }
 
     @SneakyThrows

@@ -36,6 +36,8 @@ import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
+import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
@@ -51,6 +53,8 @@ import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,138 +63,149 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public class GameMainPanelActor extends AbstractMainPanelActor {
+public class GameMainPanelActor extends AbstractPaneActor {
 
-	public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-			GameMainPanelActor.class.getSimpleName());
+    public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
+            GameMainPanelActor.class.getSimpleName());
 
-	public static final String NAME = GameMainPanelActor.class.getSimpleName();
+    public static final String NAME = GameMainPanelActor.class.getSimpleName();
 
-	public static final int ID = KEY.hashCode();
+    public static final int ID = KEY.hashCode();
 
-	private static final Map<String, PanelActorCreator> panelActors = Maps.mutable.empty();
+    private static final Map<String, PanelActorCreator> panelActors = Maps.mutable.empty();
 
-	static {
-	}
+    static {
+    }
 
-	public interface GameMainPanelActorFactory extends AbstractMainPanelActorFactory {
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    private static class WrappedGuiResponse extends Message {
+        private final AttachGuiFinishedMessage response;
+    }
 
-	}
+    public interface GameMainPanelActorFactory extends AbstractPaneActorFactory {
 
-	public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-		return AbstractMainPanelActor.create(injector, timeout, ID, KEY, NAME, GameMainPanelActorFactory.class,
-				"/main_ui.fxml", panelActors, ADDITIONAL_CSS);
-	}
+    }
 
-	@Inject
-	@Named("AppTexts")
-	private Texts appTexts;
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, GameMainPanelActorFactory.class,
+                "/main_ui.fxml", panelActors, ADDITIONAL_CSS);
+    }
 
-	@Inject
-	@Named("AppIcons")
-	private Images appIcons;
+    @Inject
+    @Named("AppTexts")
+    private Texts appTexts;
 
-	@Inject
-	private ActorSystemProvider actor;
+    @Inject
+    @Named("AppIcons")
+    private Images appIcons;
 
-	@Inject
-	private GameSettingsProvider gsp;
+    @Inject
+    private ActorSystemProvider actor;
 
-	@Inject
-	private GlobalKeys globalKeys;
+    @Inject
+    private GameSettingsProvider gsp;
 
-	@Inject
-	@Named("keyMappings")
-	private Map<String, KeyMapping> keyMappings;
+    @Inject
+    private GlobalKeys globalKeys;
 
-	@Override
-	protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-		StatusActor.create(injector, Duration.ofSeconds(1), (MainPaneController) initial.controller);
-		runFxThread(() -> {
-			var controller = (MainPaneController) initial.controller;
-			controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL, gsp.get());
-			controller.initListeners(actor.get(), gsp.get());
-			controller.initButtons(globalKeys, keyMappings, gsp.get());
-		});
-		return getDefaultBehavior()//
-		;
-	}
+    @Inject
+    @Named("keyMappings")
+    private Map<String, KeyMapping> keyMappings;
 
-	/**
-	 * Processing {@link SettingsDialogOpenTriggeredMessage}.
-	 * <p>
-	 * This message is send after if user wants to open the settings dialog by
-	 * either clicking on the settings button or using a shortcut key binding.
-	 * <p>
-	 * Returns a behavior that reacts to the following messages:
-	 * <ul>
-	 * <li>{@link #getBehaviorAfterAttachGui()}
-	 * <li>{@link SettingsDialogMessage}
-	 * </ul>
-	 */
-	private Behavior<Message> onSettingsDialogOpenTriggered(SettingsDialogOpenTriggeredMessage m) {
-		log.debug("onSettingsDialogOpenTriggered {}", m);
-		return Behaviors.same();
-	}
+    @Override
+    protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
+        StatusActor.create(injector, Duration.ofSeconds(1), (MainPaneController) initial.controller);
+        InfoPanelActor.create(injector, Duration.ofSeconds(1)).whenComplete((v, err) -> {
+            if (err == null) {
+                v.tell(new AttachGuiMessage(null));
+            }
+        });
+        runFxThread(() -> {
+            var controller = (MainPaneController) initial.controller;
+            controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL, gsp.get());
+            controller.initListeners(actor.get(), gsp.get());
+            controller.initButtons(globalKeys, keyMappings, gsp.get());
+        });
+        return getDefaultBehavior()//
+        ;
+    }
 
-	private Behavior<Message> onSettingsDialogClosed(SettingsDialogMessage m) {
-		log.debug("onSettingsDialogClosed {}", m);
-		return getDefaultBehavior().build();
-	}
+    /**
+     * Processing {@link SettingsDialogOpenTriggeredMessage}.
+     * <p>
+     * This message is send after if user wants to open the settings dialog by
+     * either clicking on the settings button or using a shortcut key binding.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * <li>{@link SettingsDialogMessage}
+     * </ul>
+     */
+    private Behavior<Message> onSettingsDialogOpenTriggered(SettingsDialogOpenTriggeredMessage m) {
+        log.debug("onSettingsDialogOpenTriggered {}", m);
+        return Behaviors.same();
+    }
 
-	/**
-	 * Processing {@link AboutDialogOpenTriggeredMessage}.
-	 * <p>
-	 * This message is send after if user wants to open the about dialog by either
-	 * clicking on the About button or using a shortcut key binding.
-	 * <p>
-	 * Returns a behavior that reacts to the following messages:
-	 * <ul>
-	 * <li>{@link #getBehaviorAfterAttachGui()}
-	 * <li>{@link AboutDialogMessage}
-	 * </ul>
-	 */
-	private Behavior<Message> onAboutDialogOpenTriggered(AboutDialogOpenTriggeredMessage m) {
-		log.debug("onAboutDialogOpenTriggered {}", m);
-		return Behaviors.same();
-	}
+    private Behavior<Message> onSettingsDialogClosed(SettingsDialogMessage m) {
+        log.debug("onSettingsDialogClosed {}", m);
+        return getDefaultBehavior().build();
+    }
 
-	private Behavior<Message> onAboutDialog(AboutDialogMessage m) {
-		log.debug("onAboutDialog {}", m);
-		return getDefaultBehavior().build();
-	}
+    /**
+     * Processing {@link AboutDialogOpenTriggeredMessage}.
+     * <p>
+     * This message is send after if user wants to open the about dialog by either
+     * clicking on the About button or using a shortcut key binding.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * <li>{@link AboutDialogMessage}
+     * </ul>
+     */
+    private Behavior<Message> onAboutDialogOpenTriggered(AboutDialogOpenTriggeredMessage m) {
+        log.debug("onAboutDialogOpenTriggered {}", m);
+        return Behaviors.same();
+    }
 
-	private void forwardMessage(Message m) {
-		initial.actors.forEach(a -> {
-			a.tell(m);
-		});
-	}
+    private Behavior<Message> onAboutDialog(AboutDialogMessage m) {
+        log.debug("onAboutDialog {}", m);
+        return getDefaultBehavior().build();
+    }
 
-	/**
-	 * Processing {@link SetGameMapMessage}.
-	 * <p>
-	 * Updates the fortress name.
-	 * <p>
-	 * Returns a behavior that reacts to the following messages:
-	 * <ul>
-	 * <li>{@link #getBehaviorAfterAttachGui()}
-	 * </ul>
-	 */
-	private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
-		log.debug("onSetGameMap {}", m);
-		runFxThread(() -> {
-			var controller = (MainPaneController) initial.controller;
-			controller.setGameMap(m.gm);
-		});
-		return Behaviors.same();
-	}
+    private void forwardMessage(Message m) {
+        initial.actors.forEach(a -> {
+            a.tell(m);
+        });
+    }
 
-	private BehaviorBuilder<Message> getDefaultBehavior() {
-		return super.getBehaviorAfterAttachGui()//
-				.onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
-				.onMessage(AboutDialogOpenTriggeredMessage.class, this::onAboutDialogOpenTriggered)//
-				.onMessage(SetGameMapMessage.class, this::onSetGameMap)//
-		;
-	}
+    /**
+     * Processing {@link SetGameMapMessage}.
+     * <p>
+     * Updates the fortress name.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * </ul>
+     */
+    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
+        log.debug("onSetGameMap {}", m);
+        runFxThread(() -> {
+            var controller = (MainPaneController) initial.controller;
+            controller.setGameMap(m.gm);
+        });
+        return Behaviors.same();
+    }
+
+    private BehaviorBuilder<Message> getDefaultBehavior() {
+        return super.getBehaviorAfterAttachGui()//
+                .onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
+                .onMessage(AboutDialogOpenTriggeredMessage.class, this::onAboutDialogOpenTriggered)//
+                .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
+        ;
+    }
 
 }

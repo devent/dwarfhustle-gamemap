@@ -67,11 +67,11 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public abstract class AbstractMainPanelActor {
+public abstract class AbstractPaneActor {
 
-    public interface AbstractMainPanelActorFactory {
+    public interface AbstractPaneActorFactory {
 
-        AbstractMainPanelActor create(ActorContext<Message> context, StashBuffer<Message> buffer);
+        AbstractPaneActor create(ActorContext<Message> context, StashBuffer<Message> buffer);
     }
 
     @RequiredArgsConstructor
@@ -83,17 +83,40 @@ public abstract class AbstractMainPanelActor {
     }
 
     public static Behavior<Message> create(Injector injector,
-            Class<? extends AbstractMainPanelActorFactory> mainPanelActorFactoryType, String mainUiResource,
+            Class<? extends AbstractPaneActorFactory> paneActorFactoryType, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
+            String... additionalCss) {
+        return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
+            startJavafxBuild(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
+            return injector.getInstance(paneActorFactoryType).create(context, stash).start(injector);
+        }));
+    }
+
+    public static Behavior<Message> create(Injector injector,
+            Class<? extends AbstractPaneActorFactory> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             startJavafxBuild(injector, context, mainUiResource, panelActors, additionalCss);
-            return injector.getInstance(mainPanelActorFactoryType).create(context, stash).start(injector);
+            return injector.getInstance(paneActorFactoryType).create(context, stash).start(injector);
         }));
     }
 
     private static void startJavafxBuild(Injector injector, ActorContext<Message> context, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
+            String... additionalCss) {
+        extracted(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
+    }
+
+    private static void startJavafxBuild(Injector injector, ActorContext<Message> context, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
-        var build = injector.getInstance(PanelControllerInitializeFxBuild.class);
+        extracted(injector, context, mainUiResource, panelActors, PanelControllerInitializeFxBuild.class,
+                additionalCss);
+    }
+
+    private static void extracted(Injector injector, ActorContext<Message> context, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
+            String... additionalCss) {
+        var build = injector.getInstance(panelControllerBuildClass);
         context.pipeToSelf(build.loadFxml(context.getExecutionContext(), mainUiResource, additionalCss),
                 (result, cause) -> {
                     if (cause == null) {
@@ -116,12 +139,20 @@ public abstract class AbstractMainPanelActor {
     }
 
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
-            ServiceKey<Message> key, String name,
-            Class<? extends AbstractMainPanelActorFactory> mainPanelActorFactoryType, String mainUiResource,
-            Map<String, PanelActorCreator> panelActors, String... additionalCss) {
+            ServiceKey<Message> key, String name, Class<? extends AbstractPaneActorFactory> mainPanelActorFactoryType,
+            String mainUiResource, Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         return createNamedActor(system, timeout, id, key, name,
                 create(injector, mainPanelActorFactoryType, mainUiResource, panelActors, additionalCss));
+    }
+
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
+            ServiceKey<Message> key, String name, Class<? extends AbstractPaneActorFactory> mainPanelActorFactoryType,
+            String mainUiResource, Map<String, PanelActorCreator> panelActors,
+            Class<? extends PanelControllerBuild> panelControllerBuildClass, String... additionalCss) {
+        var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
+        return createNamedActor(system, timeout, id, key, name, create(injector, mainPanelActorFactoryType,
+                mainUiResource, panelActors, panelControllerBuildClass, additionalCss));
     }
 
     @Inject
@@ -184,26 +215,32 @@ public abstract class AbstractMainPanelActor {
         return Behaviors.same();
     }
 
-    private Behavior<Message> onShutdown(ShutdownMessage m) {
+    protected Behavior<Message> onShutdown(ShutdownMessage m) {
         log.debug("onShutdown {}", m);
         Platform.exit();
         return Behaviors.stopped();
     }
 
-    private Behavior<Message> onAttachGui(AttachGuiMessage m) {
+    protected Behavior<Message> onAttachGui(AttachGuiMessage m) {
         log.debug("onAttachGui {}", m);
         runFxThread(() -> {
             setupUi();
             initial.actors.forEachValue(a -> a.tell(m));
         });
         app.enqueue(() -> {
-            app.getStateManager().attach(mainPanelState);
-            var entity = engine.createEntity();
-            entity.add(new PanelComponent(context.getSelf()));
-            engine.addEntity(entity);
+            attachPaneState();
         });
-        m.replyTo.tell(new AttachGuiFinishedMessage());
+        if (m.replyTo != null) {
+            m.replyTo.tell(new AttachGuiFinishedMessage());
+        }
         return getBehaviorAfterAttachGui().build();
+    }
+
+    protected void attachPaneState() {
+        app.getStateManager().attach(mainPanelState);
+        var entity = engine.createEntity();
+        entity.add(new PanelComponent(context.getSelf()));
+        engine.addEntity(entity);
     }
 
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
@@ -214,21 +251,19 @@ public abstract class AbstractMainPanelActor {
         ;
     }
 
-    private void setupUi() {
+    protected void setupUi() {
         var pane = initial.root;
         pane.setPrefSize(app.getCamera().getWidth(), app.getCamera().getHeight());
-        if (JavaFxUI.getInstance() != null) {
-            JavaFxUI.getInstance().attachChild(pane);
-        }
+        JavaFxUI.getInstance().attachChild(pane);
     }
 
-    private Behavior<Message> onGameQuit(GameQuitMessage m) {
+    protected Behavior<Message> onGameQuit(GameQuitMessage m) {
         log.debug("onGameQuit {}", m);
         app.enqueue(() -> app.stop());
         return Behaviors.same();
     }
 
-    private Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
+    protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
         log.debug("onMainWindowResized {}", m);
         runFxThread(() -> {
             initial.root.setPrefSize(m.width, m.height);

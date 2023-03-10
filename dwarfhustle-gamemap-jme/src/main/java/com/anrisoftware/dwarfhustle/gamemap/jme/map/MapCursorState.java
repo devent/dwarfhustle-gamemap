@@ -70,7 +70,8 @@ import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorSetMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.google.common.base.Objects;
 import com.jme3.app.Application;
@@ -225,16 +226,21 @@ public class MapCursorState extends BaseAppState implements ActionListener, RawI
             if (results.size() > 0) {
                 var target = results.getClosestCollision().getGeometry();
                 var parent = target.getParent();
-                if (Objects.equal(parent.getUserData("name"), MapTerrainTile.NAME)) {
+                String name = parent.getUserData("name");
+                if (Objects.equal(name, MapTerrainTile.NAME)) {
                     int x = parent.getUserData("x");
                     int y = parent.getUserData("y");
                     int level = parent.getUserData("level");
                     if (cursorX != x || cursorY != y) {
                         this.cursorX = x;
                         this.cursorY = y;
-                        actor.tell(new MapCursorSetMessage(level, y, x));
+                        actor.tell(new MapTileUnderCursorMessage(level, y, x));
                     }
                 }
+            } else {
+                this.cursorX = -1;
+                this.cursorY = -1;
+                actor.tell(new MapTileEmptyUnderCursorMessage());
             }
         } finally {
             temp.release();
