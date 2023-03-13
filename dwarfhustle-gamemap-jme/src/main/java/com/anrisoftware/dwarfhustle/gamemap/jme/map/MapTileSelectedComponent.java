@@ -7,15 +7,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Map cursor.
+ * Map tile selected under the mouse cursor.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
 @RequiredArgsConstructor
-public class MapCursorComponent implements Component {
+public class MapTileSelectedComponent implements Component {
 
-	public static final ComponentMapper<MapCursorComponent> m = ComponentMapper.getFor(MapCursorComponent.class);
+    public static final ComponentMapper<MapTileSelectedComponent> m = ComponentMapper
+            .getFor(MapTileSelectedComponent.class);
 
     public final int level;
 

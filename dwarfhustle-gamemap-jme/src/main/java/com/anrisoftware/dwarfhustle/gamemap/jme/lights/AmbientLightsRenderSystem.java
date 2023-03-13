@@ -88,8 +88,10 @@ public class AmbientLightsRenderSystem extends IntervalIteratingSystem {
     @Override
     public void processEntity(Entity entity) {
         var c = AmbientLightComponent.m.get(entity);
-        AmbientLight light = lights.get(entity);
-        light.setColor(c.color);
+        if (lights.containsKey(entity)) {
+            var light = lights.get(entity);
+            light.setColor(c.color);
+        }
     }
 
     private void addLight(Entity entity) {

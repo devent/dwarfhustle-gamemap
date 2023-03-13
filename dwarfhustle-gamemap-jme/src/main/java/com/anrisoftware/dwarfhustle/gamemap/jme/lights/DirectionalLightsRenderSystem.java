@@ -106,13 +106,15 @@ public class DirectionalLightsRenderSystem extends IntervalIteratingSystem {
     @Override
     public void processEntity(Entity entity) {
         var c = DirectionalLightComponent.m.get(entity);
-        DirectionalLight light = lights.get(entity);
-        light.setColor(c.color);
-        light.setDirection(c.d);
-        light.setEnabled(c.enabled);
-        var filter = filters.get(entity);
-        if (filter != null) {
-            filter.setEnabled(c.shadow);
+        if (lights.containsKey(entity)) {
+            var light = lights.get(entity);
+            light.setColor(c.color);
+            light.setDirection(c.d);
+            light.setEnabled(c.enabled);
+            var filter = filters.get(entity);
+            if (filter != null) {
+                filter.setEnabled(c.shadow);
+            }
         }
     }
 

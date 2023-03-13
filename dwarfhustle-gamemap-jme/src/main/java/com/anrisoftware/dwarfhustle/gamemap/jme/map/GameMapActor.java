@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorSetMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -52,6 +53,7 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
+import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -90,6 +92,11 @@ public class GameMapActor {
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
+    private static class UpdateModelMessage extends Message {
+    }
+
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
     private static class WrappedCacheResponse extends Message {
         private final CacheResponseMessage response;
     }
@@ -100,14 +107,14 @@ public class GameMapActor {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface GameMapActorFactory {
-        GameMapActor create(ActorContext<Message> context, StashBuffer<Message> stash);
+        GameMapActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timers);
     }
 
     /**
      * Creates the {@link GameMapActor}.
      */
     public static Behavior<Message> create(Injector injector) {
-        return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
+        return Behaviors.withTimers(timers -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
                     return result;
@@ -115,8 +122,8 @@ public class GameMapActor {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return injector.getInstance(GameMapActorFactory.class).create(context, stash).start(injector);
-        }));
+            return injector.getInstance(GameMapActorFactory.class).create(context, stash, timers).start(injector);
+        })));
     }
 
     /**
@@ -156,6 +163,10 @@ public class GameMapActor {
     @Inject
     @Assisted
     private StashBuffer<Message> buffer;
+
+    @Inject
+    @Assisted
+    private TimerScheduler<Message> timers;
 
     @Inject
     private ActorSystemProvider actor;
@@ -251,7 +262,9 @@ public class GameMapActor {
             int y = gs.get().currentMap.get().getCursor().y;
             int x = gs.get().currentMap.get().getCursor().x;
             cursor.add(new MapCursorComponent(z, y, x));
+            cursor.add(new MapTileSelectedComponent(z, y, x));
             engine.addEntity(cursor);
+            timers.startTimerAtFixedRate(new UpdateModelMessage(), Duration.ofMillis(10));
         });
         return Behaviors.same();
     }
@@ -286,12 +299,35 @@ public class GameMapActor {
      */
     private Behavior<Message> onMapCursorSet(MapCursorSetMessage m) {
         // log.debug("onMapCursorSet {}", m);
-        gs.get().currentMap.get().setCursor(m.z, m.y, m.x);
+        var gm = gs.get().currentMap.get();
+        gm.setCursor(gm.getCursorZ(), m.y, m.x);
         app.enqueue(() -> {
             cursorEntity.ifPresent(e -> {
-                e.add(new MapCursorComponent(m.z, m.y, m.x));
+                e.add(new MapCursorComponent(m.level, m.y, m.x));
             });
         });
+        return Behaviors.same();
+    }
+
+    /**
+     * Reacts to the {@link MapTileUnderCursorMessage} message.
+     */
+    private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
+        // log.debug("onMapTileUnderCursor {}", m);
+        app.enqueue(() -> {
+            cursorEntity.ifPresent(e -> {
+                e.add(new MapTileSelectedComponent(m.level, m.y, m.x));
+            });
+        });
+        return Behaviors.same();
+    }
+
+    /**
+     * Reacts to the {@link UpdateModelMessage} message.
+     */
+    private Behavior<Message> onUpdateModel(UpdateModelMessage m) {
+        // log.debug("onUpdateModel {}", m);
+        is.gameMapState.getModel().update();
         return Behaviors.same();
     }
 
@@ -320,6 +356,7 @@ public class GameMapActor {
      */
     private Behavior<Message> onShutdown(ShutdownMessage m) {
         log.debug("onShutdown {}", m);
+        timers.cancelAll();
         return Behaviors.stopped();
     }
 
@@ -339,6 +376,8 @@ public class GameMapActor {
                 .onMessage(AddMapBlockSceneMessage.class, this::onAddMapBlockScene)//
                 .onMessage(SetCameraPositionMessage.class, this::onSetCameraPosition)//
                 .onMessage(MapCursorSetMessage.class, this::onMapCursorSet)//
+                .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
+                .onMessage(UpdateModelMessage.class, this::onUpdateModel)//
         ;
     }
 }

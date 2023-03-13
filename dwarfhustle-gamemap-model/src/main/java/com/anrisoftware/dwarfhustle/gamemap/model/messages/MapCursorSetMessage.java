@@ -14,7 +14,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class MapCursorSetMessage extends Message {
 
-    public final int z;
+    public final int level;
 
     public final int y;
 

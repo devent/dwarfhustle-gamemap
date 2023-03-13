@@ -204,9 +204,6 @@ public class MapCursorState extends BaseAppState implements ActionListener, RawI
     public void onMouseMotionEvent(MouseMotionEvent evt) {
         mouse.x = evt.getX();
         mouse.y = evt.getY();
-        if (evt.getTime() - motionTime < 600000) {
-            return;
-        }
         pickObject();
         motionTime = evt.getTime();
         if (leftMouseDown) {

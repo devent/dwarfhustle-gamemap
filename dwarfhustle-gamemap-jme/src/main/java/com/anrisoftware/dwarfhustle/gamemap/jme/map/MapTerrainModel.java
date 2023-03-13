@@ -1,5 +1,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
+import org.eclipse.collections.api.map.primitive.IntObjectMap;
+
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
 import com.jme3.bounding.BoundingBox;
@@ -19,7 +21,7 @@ public class MapTerrainModel {
         MapTerrainModel create();
     }
 
-    private int tileCursorZ;
+    private int tileCursorLevel;
 
     private int tileCursorY;
 
@@ -33,17 +35,36 @@ public class MapTerrainModel {
 
     private float rootDepth;
 
-    public void setTileCursor(int z, int y, int x) {
-        this.tileCursorZ = z;
+    private int tileMouseLevel;
+
+    private int tileMouseY;
+
+    private int tileMouseX;
+
+    private MapTerrain terrain;
+
+    public void setTileCursor(int level, int y, int x) {
+        this.tileCursorLevel = level;
         this.tileCursorY = y;
         this.tileCursorX = x;
     }
 
-    public boolean isTileCurser(int z, int y, int x) {
-        return tileCursorZ == z && tileCursorY == y && tileCursorX == x;
+    public boolean isTileCursor(int level, int y, int x) {
+        return tileCursorLevel == level && tileCursorY == y && tileCursorX == x;
+    }
+
+    public void setTileMouse(int level, int y, int x) {
+        this.tileMouseLevel = level;
+        this.tileMouseY = y;
+        this.tileMouseX = x;
+    }
+
+    public boolean isTileMouse(int level, int y, int x) {
+        return tileMouseLevel == level && tileMouseY == y && tileMouseX == x;
     }
 
     public void setTerrain(MapTerrain terrain, MapBlock mb) {
+        this.terrain = terrain;
         this.rootWorldBound = terrain.getWorldBound();
         this.rootWidth = mb.getWidth();
         this.rootHeight = mb.getHeight();
@@ -79,4 +100,25 @@ public class MapTerrainModel {
         }
     }
 
+    public synchronized void update() {
+        terrain.getLevels().each(this::updateLevel);
+    }
+
+    private void updateLevel(MapTerrainLevel level) {
+        level.yxtiles.each(this::updateTiles);
+    }
+
+    private void updateTiles(IntObjectMap<MapTerrainTile> tiles) {
+        tiles.each(this::updateTile);
+    }
+
+    private void updateTile(MapTerrainTile tile) {
+        int level = tile.level;
+        int y = tile.y;
+        int x = tile.x;
+        int bits = 0;
+        bits |= isTileMouse(level, y, x) ? MapTerrainTile.focused : 0;
+        bits |= isTileCursor(level, y, x) ? MapTerrainTile.selected : 0;
+        tile.propertiesBits.replace(bits);
+    }
 }

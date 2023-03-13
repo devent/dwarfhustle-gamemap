@@ -52,7 +52,7 @@ public class MapTerrainLevel {
             MutableIntObjectMap<MapTerrainTile> xtiles = IntObjectMaps.mutable.empty();
             yxtiles.put(y, xtiles);
             for (int x = 0; x < w; x++) {
-                var tile = tileFactory.create(model, level, y, x);
+                var tile = tileFactory.create(level, y, x);
                 xtiles.put(x, tile);
                 float tx = w2 + x * 2f + 0.5f;
                 float ty = h2 + y * 2f + 0.5f;

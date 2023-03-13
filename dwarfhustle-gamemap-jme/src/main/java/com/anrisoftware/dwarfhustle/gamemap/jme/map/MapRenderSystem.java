@@ -38,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MapRenderSystem extends IntervalIteratingSystem {
 
-    @Inject
     private GameSettingsProvider gs;
 
     @Inject
@@ -49,8 +48,10 @@ public class MapRenderSystem extends IntervalIteratingSystem {
     private MapTerrainModel model;
 
     @Inject
-    public MapRenderSystem() {
-        super(Family.all(MapCursorComponent.class).get(), 0.33f);
+    public MapRenderSystem(GameSettingsProvider gs) {
+        super(Family.all(MapCursorComponent.class, MapTileSelectedComponent.class).get(),
+                gs.get().timeUpdateInterval.get());
+        this.gs = gs;
     }
 
     public void setTerrain(MapTerrain terrain) {
@@ -78,8 +79,10 @@ public class MapRenderSystem extends IntervalIteratingSystem {
 
     @Override
     protected void processEntity(Entity entity) {
-        var c = MapCursorComponent.m.get(entity);
-        model.setTileCursor(c.z, c.y, c.x);
+        var cc = MapCursorComponent.m.get(entity);
+        model.setTileCursor(cc.level, cc.y, cc.x);
+        var sc = MapTileSelectedComponent.m.get(entity);
+        model.setTileMouse(sc.level, sc.y, sc.x);
         terrain.getLevels().each(this::updateLevel);
     }
 
