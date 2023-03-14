@@ -17,24 +17,18 @@
  */
 package com.anrisoftware.dwarfhustle.gui.controllers;
 
-import java.util.Locale;
-import java.util.Map;
+import javax.inject.Inject;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings;
-import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.resources.images.external.IconSize;
-import com.anrisoftware.resources.images.external.Images;
-import com.anrisoftware.resources.texts.external.Texts;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.google.inject.Injector;
 
-import akka.actor.typed.ActorRef;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controller for {@code info_ui.fxml}
+ * Controller for {@code info_pane_ui.fxml}
  *
  * @author Erwin Müller
  */
@@ -45,35 +39,18 @@ public class InfoPaneController {
     public BorderPane infoPane;
 
     @FXML
-    public ListView<String> infoList;
+    public ListView<MapTileItem> infoList;
 
-	private Locale locale;
+    @Inject
+    private GameSettingsProvider gs;
 
-	private Texts texts;
+    @Inject
+    private MapTileItemCellFactory mapTileItemCellFactory;
 
-	private Images images;
-
-	private IconSize iconSize;
-
-	private ObservableGameSettings gs;
-
-	public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize, ObservableGameSettings gs) {
-		this.locale = locale;
-		this.texts = texts;
-		this.images = images;
-		this.iconSize = iconSize;
-		this.gs = gs;
-	}
-
-	public void initListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
-		log.debug("initListeners");
-		setupImagePropertiesFields(gs);
-	}
-
-	public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings, ObservableGameSettings gs) {
-	}
-
-	private void setupImagePropertiesFields(ObservableGameSettings gs) {
-	}
-
+    public void setup(Injector injector) {
+        log.debug("setup()");
+        mapTileItemCellFactory.setInjector(injector);
+        infoList.setCellFactory(mapTileItemCellFactory);
+        infoList.getItems().clear();
+    }
 }

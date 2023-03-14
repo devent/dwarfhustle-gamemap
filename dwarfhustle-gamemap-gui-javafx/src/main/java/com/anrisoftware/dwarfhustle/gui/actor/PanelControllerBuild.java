@@ -31,6 +31,7 @@ import org.apache.commons.io.IOUtils;
 
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil;
+import com.google.inject.Injector;
 import com.jayfella.jme.jfx.JavaFxUI;
 import com.jme3.app.Application;
 
@@ -39,6 +40,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -80,11 +82,12 @@ public class PanelControllerBuild {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     @RequiredArgsConstructor
-    public static class PanelControllerResult {
+    @ToString
+    public static class PanelControllerResult<T> {
 
         public final Region root;
 
-        public final Object controller;
+        public final T controller;
 
     }
 
@@ -98,13 +101,13 @@ public class PanelControllerBuild {
         this.globalKeys = globalKeys;
     }
 
-    public CompletableFuture<PanelControllerResult> loadFxml(Executor executor, String fxmlfile,
-            String... additionalCss) {
-        return CompletableFuture.supplyAsync(() -> loadFxml0(fxmlfile, additionalCss), executor);
+    public <T> CompletableFuture<PanelControllerResult<T>> loadFxml(Injector injector, Executor executor,
+            String fxmlfile, String... additionalCss) {
+        return CompletableFuture.supplyAsync(() -> loadFxml0(injector, fxmlfile, additionalCss), executor);
     }
 
     @SneakyThrows
-    private PanelControllerResult loadFxml0(String fxmlfile, String... additionalCss) {
+    private <T> PanelControllerResult<T> loadFxml0(Injector injector, String fxmlfile, String... additionalCss) {
         log.debug("loadFxml0 {} {}", fxmlfile, additionalCss);
         loadFont();
         var css = new ArrayList<String>();
@@ -113,7 +116,10 @@ public class PanelControllerBuild {
         initializeFx(css);
         var loader = new FXMLLoader();
         loader.setLocation(getClass().getResource(fxmlfile));
-        return new PanelControllerResult(loadFxml(loader, fxmlfile), loader.getController());
+        Pane root = loadFxml(loader, fxmlfile);
+        T controller = loader.getController();
+        injector.injectMembers(controller);
+        return new PanelControllerResult<>(root, controller);
     }
 
     private void loadFont() {

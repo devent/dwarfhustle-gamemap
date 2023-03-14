@@ -32,11 +32,17 @@ import org.eclipse.collections.impl.factory.Maps;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
+import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.controllers.MapTileItem;
+import com.anrisoftware.dwarfhustle.gui.controllers.MapTileItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
+import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
@@ -58,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public class InfoPanelActor extends AbstractPaneActor {
+public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
             InfoPanelActor.class.getSimpleName());
@@ -72,13 +78,12 @@ public class InfoPanelActor extends AbstractPaneActor {
     static {
     }
 
-    public interface InfoPanelActorFactory extends AbstractPaneActorFactory {
-
+    public interface InfoPanelActorFactory extends AbstractPaneActorFactory<InfoPaneController> {
     }
 
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, InfoPanelActorFactory.class, "/info_ui.fxml",
-                panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, InfoPanelActorFactory.class,
+                "/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
     }
 
     @Inject
@@ -91,6 +96,8 @@ public class InfoPanelActor extends AbstractPaneActor {
 
     private InfoPaneController controller;
 
+    private PanelControllerResult<MapTileItemWidgetController> mapTileItemWidget;
+
     @Inject
     public void setTextsFactory(TextsFactory texts) {
         this.texts = texts.create("InfoPanelActor_Texts");
@@ -98,22 +105,35 @@ public class InfoPanelActor extends AbstractPaneActor {
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        this.controller = (InfoPaneController) initial.controller;
+        this.controller = initial.controller;
         runFxThread(() -> {
-            var controller = (InfoPaneController) initial.controller;
+            var controller = initial.controller;
         });
+        var builder = injector.getInstance(PanelControllerBuild.class);
+        builder.<MapTileItemWidgetController>loadFxml(injector, context.getExecutionContext(),
+                "/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
+                    if (err == null) {
+                        mapTileItemWidget = res;
+                        var controller = initial.controller;
+                        controller.setup(injector);
+                    }
+                });
         return getDefaultBehavior()//
         ;
     }
 
     private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
         // log.debug("onMapTileUnderCursor {}", m);
+        var mt = new MapTile(1);
+        mt.setMaterial("Soil");
+        mt.setPos(new GameMapPos(1, 5, 5, 5));
+        var p = new Person(1);
+        p.setFirstName("Gorbir");
+        p.setLastName("Shatterfeet");
         runFxThread(() -> {
             controller.infoList.getItems().clear();
-            controller.infoList.getItems().add("Tile 10/10");
-            controller.infoList.getItems().add("Natural Loam Roof");
-            controller.infoList.getItems().add("Natural Loam Floor");
-            controller.infoList.getItems().add("Dark");
+            controller.infoList.getItems().add(new MapTileItem(mt));
+            controller.infoList.getItems().add(new MapTileItem(p));
             controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             controller.infoPane.setVisible(true);
         });

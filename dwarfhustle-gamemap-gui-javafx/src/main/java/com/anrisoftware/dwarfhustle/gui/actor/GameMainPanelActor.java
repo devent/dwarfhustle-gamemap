@@ -29,7 +29,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.eclipse.collections.impl.factory.Maps;
+import org.scenicview.ScenicView;
 
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
@@ -47,6 +49,8 @@ import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
+import com.jayfella.jme.jfx.JavaFxUI;
+import com.jme3.app.Application;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -63,7 +67,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public class GameMainPanelActor extends AbstractPaneActor {
+public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
             GameMainPanelActor.class.getSimpleName());
@@ -83,7 +87,7 @@ public class GameMainPanelActor extends AbstractPaneActor {
         private final AttachGuiFinishedMessage response;
     }
 
-    public interface GameMainPanelActorFactory extends AbstractPaneActorFactory {
+    public interface GameMainPanelActorFactory extends AbstractPaneActorFactory<MainPaneController> {
 
     }
 
@@ -101,6 +105,9 @@ public class GameMainPanelActor extends AbstractPaneActor {
     private Images appIcons;
 
     @Inject
+    private Application app;
+
+    @Inject
     private ActorSystemProvider actor;
 
     @Inject
@@ -113,16 +120,18 @@ public class GameMainPanelActor extends AbstractPaneActor {
     @Named("keyMappings")
     private Map<String, KeyMapping> keyMappings;
 
+    private boolean scenicViewShown = false;
+
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        StatusActor.create(injector, Duration.ofSeconds(1), (MainPaneController) initial.controller);
+        StatusActor.create(injector, Duration.ofSeconds(1), initial.controller);
         InfoPanelActor.create(injector, Duration.ofSeconds(1)).whenComplete((v, err) -> {
             if (err == null) {
                 v.tell(new AttachGuiMessage(null));
             }
         });
         runFxThread(() -> {
-            var controller = (MainPaneController) initial.controller;
+            var controller = initial.controller;
             controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL, gsp.get());
             controller.initListeners(actor.get(), gsp.get());
             controller.initButtons(globalKeys, keyMappings, gsp.get());
@@ -194,8 +203,31 @@ public class GameMainPanelActor extends AbstractPaneActor {
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
-            var controller = (MainPaneController) initial.controller;
+            var controller = initial.controller;
             controller.setGameMap(m.gm);
+        });
+        return Behaviors.same();
+    }
+
+    /**
+     * Processing {@link OpenSceneMessage}.
+     * <p>
+     * Opens the JavaFX scene viewer.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * </ul>
+     */
+    private Behavior<Message> onOpenScene(OpenSceneMessage m) {
+        log.debug("onOpenScene {}", m);
+        runFxThread(() -> {
+            if (scenicViewShown) {
+                return;
+            }
+            ScenicView.show(JavaFxUI.getInstance().getScene());
+            app.setPauseOnLostFocus(false);
+            scenicViewShown = true;
         });
         return Behaviors.same();
     }
@@ -205,6 +237,7 @@ public class GameMainPanelActor extends AbstractPaneActor {
                 .onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
                 .onMessage(AboutDialogOpenTriggeredMessage.class, this::onAboutDialogOpenTriggered)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
+                .onMessage(OpenSceneMessage.class, this::onOpenScene)//
         ;
     }
 

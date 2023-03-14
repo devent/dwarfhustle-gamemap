@@ -19,7 +19,8 @@ public class DebugConsoleParser extends Parser {
 	public static final int
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17, 
-		T__17=18, T__18=19, NUMBER=20, STRING=21, ID=22, ID_CHARS=23, WS=24;
+		T__17=18, T__18=19, T__19=20, NUMBER=21, STRING=22, ID=23, ID_CHARS=24, 
+		WS=25;
 	public static final int
 		RULE_sentence = 0, RULE_verb = 1, RULE_physics = 2, RULE_object = 3, RULE_property = 4, 
 		RULE_coordinates = 5, RULE_rotation = 6, RULE_scale = 7, RULE_position = 8, 
@@ -40,17 +41,18 @@ public class DebugConsoleParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "'here'", "'to'", "'add'", "'set'", "'save'", "'apply'", "'impulse'", 
-			"'coordinates'", "'rotation'", "'scale'", "'position'", "'panningVelocity'", 
-			"'layers'", "'time'", "','", "':'", "'with'", "'id'", "'='"
+			null, "'here'", "'to'", "'add'", "'set'", "'save'", "'apply'", "'open'", 
+			"'impulse'", "'coordinates'", "'rotation'", "'scale'", "'position'", 
+			"'panningVelocity'", "'layers'", "'time'", "','", "':'", "'with'", "'id'", 
+			"'='"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
 			null, null, null, null, null, null, null, null, null, null, null, null, 
-			null, null, null, null, null, null, null, null, "NUMBER", "STRING", "ID", 
-			"ID_CHARS", "WS"
+			null, null, null, null, null, null, null, null, null, "NUMBER", "STRING", 
+			"ID", "ID_CHARS", "WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -191,7 +193,7 @@ public class DebugConsoleParser extends Parser {
 				setState(71);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if (_la==T__16) {
+				if (_la==T__17) {
 					{
 					setState(70);
 					selector();
@@ -210,7 +212,7 @@ public class DebugConsoleParser extends Parser {
 				setState(76);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if (_la==T__16) {
+				if (_la==T__17) {
 					{
 					setState(75);
 					selector();
@@ -245,7 +247,7 @@ public class DebugConsoleParser extends Parser {
 				setState(87);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if (_la==T__16) {
+				if (_la==T__17) {
 					{
 					setState(86);
 					selector();
@@ -292,7 +294,7 @@ public class DebugConsoleParser extends Parser {
 			{
 			setState(91);
 			_la = _input.LA(1);
-			if ( !(((_la) & ~0x3f) == 0 && ((1L << _la) & 120L) != 0) ) {
+			if ( !(((_la) & ~0x3f) == 0 && ((1L << _la) & 248L) != 0) ) {
 			_errHandler.recoverInline(this);
 			}
 			else {
@@ -336,7 +338,7 @@ public class DebugConsoleParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(93);
-			match(T__6);
+			match(T__7);
 			}
 		}
 		catch (RecognitionException re) {
@@ -432,65 +434,65 @@ public class DebugConsoleParser extends Parser {
 			setState(111);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
-			case T__7:
+			case T__8:
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(97);
-				match(T__7);
+				match(T__8);
 				setState(98);
 				coordinates();
 				}
 				break;
-			case T__8:
+			case T__9:
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(99);
-				match(T__8);
+				match(T__9);
 				setState(100);
 				rotation();
 				}
 				break;
-			case T__9:
+			case T__10:
 				enterOuterAlt(_localctx, 3);
 				{
 				setState(101);
-				match(T__9);
+				match(T__10);
 				setState(102);
 				scale();
 				}
 				break;
-			case T__10:
+			case T__11:
 				enterOuterAlt(_localctx, 4);
 				{
 				setState(103);
-				match(T__10);
+				match(T__11);
 				setState(104);
 				position();
 				}
 				break;
-			case T__11:
+			case T__12:
 				enterOuterAlt(_localctx, 5);
 				{
 				setState(105);
-				match(T__11);
+				match(T__12);
 				setState(106);
 				panningVelocity();
 				}
 				break;
-			case T__12:
+			case T__13:
 				enterOuterAlt(_localctx, 6);
 				{
 				setState(107);
-				match(T__12);
+				match(T__13);
 				setState(108);
 				layers();
 				}
 				break;
-			case T__13:
+			case T__14:
 				enterOuterAlt(_localctx, 7);
 				{
 				setState(109);
-				match(T__13);
+				match(T__14);
 				setState(110);
 				time();
 				}
@@ -554,11 +556,11 @@ public class DebugConsoleParser extends Parser {
 			setState(113);
 			x();
 			setState(114);
-			match(T__14);
+			match(T__15);
 			setState(115);
 			y();
 			setState(116);
-			match(T__14);
+			match(T__15);
 			setState(117);
 			z();
 			setState(124);
@@ -569,11 +571,11 @@ public class DebugConsoleParser extends Parser {
 				setState(118);
 				xx();
 				setState(119);
-				match(T__14);
+				match(T__15);
 				setState(120);
 				yy();
 				setState(121);
-				match(T__14);
+				match(T__15);
 				setState(122);
 				zz();
 				}
@@ -626,11 +628,11 @@ public class DebugConsoleParser extends Parser {
 			setState(126);
 			x();
 			setState(127);
-			match(T__14);
+			match(T__15);
 			setState(128);
 			y();
 			setState(129);
-			match(T__14);
+			match(T__15);
 			setState(130);
 			z();
 			}
@@ -680,11 +682,11 @@ public class DebugConsoleParser extends Parser {
 			setState(132);
 			x();
 			setState(133);
-			match(T__14);
+			match(T__15);
 			setState(134);
 			y();
 			setState(135);
-			match(T__14);
+			match(T__15);
 			setState(136);
 			z();
 			}
@@ -734,11 +736,11 @@ public class DebugConsoleParser extends Parser {
 			setState(138);
 			x();
 			setState(139);
-			match(T__14);
+			match(T__15);
 			setState(140);
 			y();
 			setState(141);
-			match(T__14);
+			match(T__15);
 			setState(142);
 			z();
 			}
@@ -788,11 +790,11 @@ public class DebugConsoleParser extends Parser {
 			setState(144);
 			x();
 			setState(145);
-			match(T__14);
+			match(T__15);
 			setState(146);
 			y();
 			setState(147);
-			match(T__14);
+			match(T__15);
 			setState(148);
 			z();
 			}
@@ -842,11 +844,11 @@ public class DebugConsoleParser extends Parser {
 			setState(150);
 			vx();
 			setState(151);
-			match(T__14);
+			match(T__15);
 			setState(152);
 			vy();
 			setState(153);
-			match(T__14);
+			match(T__15);
 			setState(154);
 			vz();
 			}
@@ -1238,11 +1240,11 @@ public class DebugConsoleParser extends Parser {
 			setState(174);
 			hours();
 			setState(175);
-			match(T__15);
+			match(T__16);
 			setState(176);
 			minutes();
 			setState(177);
-			match(T__15);
+			match(T__16);
 			setState(178);
 			seconds();
 			}
@@ -1398,7 +1400,7 @@ public class DebugConsoleParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(186);
-			match(T__16);
+			match(T__17);
 			setState(187);
 			parameter();
 			}
@@ -1440,9 +1442,9 @@ public class DebugConsoleParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(189);
-			match(T__17);
-			setState(190);
 			match(T__18);
+			setState(190);
+			match(T__19);
 			setState(191);
 			id();
 			}
@@ -1573,7 +1575,7 @@ public class DebugConsoleParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u0018\u00c8\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001"+
+		"\u0004\u0001\u0019\u00c8\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001"+
 		"\u0002\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004"+
 		"\u0002\u0005\u0007\u0005\u0002\u0006\u0007\u0006\u0002\u0007\u0007\u0007"+
 		"\u0002\b\u0007\b\u0002\t\u0007\t\u0002\n\u0007\n\u0002\u000b\u0007\u000b"+
@@ -1606,7 +1608,7 @@ public class DebugConsoleParser extends Parser {
 		"\u0019\u0001\u0019\u0001\u0019\u0001\u0019\u0001\u001a\u0001\u001a\u0001"+
 		"\u001b\u0001\u001b\u0001\u001c\u0001\u001c\u0001\u001c\u0000\u0000\u001d"+
 		"\u0000\u0002\u0004\u0006\b\n\f\u000e\u0010\u0012\u0014\u0016\u0018\u001a"+
-		"\u001c\u001e \"$&(*,.02468\u0000\u0001\u0001\u0000\u0003\u0006\u00b9\u0000"+
+		"\u001c\u001e \"$&(*,.02468\u0000\u0001\u0001\u0000\u0003\u0007\u00b9\u0000"+
 		"Y\u0001\u0000\u0000\u0000\u0002[\u0001\u0000\u0000\u0000\u0004]\u0001"+
 		"\u0000\u0000\u0000\u0006_\u0001\u0000\u0000\u0000\bo\u0001\u0000\u0000"+
 		"\u0000\nq\u0001\u0000\u0000\u0000\f~\u0001\u0000\u0000\u0000\u000e\u0084"+
@@ -1635,55 +1637,55 @@ public class DebugConsoleParser extends Parser {
 		"\u0000Y:\u0001\u0000\u0000\u0000Y>\u0001\u0000\u0000\u0000YB\u0001\u0000"+
 		"\u0000\u0000YI\u0001\u0000\u0000\u0000YN\u0001\u0000\u0000\u0000Z\u0001"+
 		"\u0001\u0000\u0000\u0000[\\\u0007\u0000\u0000\u0000\\\u0003\u0001\u0000"+
-		"\u0000\u0000]^\u0005\u0007\u0000\u0000^\u0005\u0001\u0000\u0000\u0000"+
-		"_`\u0005\u0016\u0000\u0000`\u0007\u0001\u0000\u0000\u0000ab\u0005\b\u0000"+
-		"\u0000bp\u0003\n\u0005\u0000cd\u0005\t\u0000\u0000dp\u0003\f\u0006\u0000"+
-		"ef\u0005\n\u0000\u0000fp\u0003\u000e\u0007\u0000gh\u0005\u000b\u0000\u0000"+
-		"hp\u0003\u0010\b\u0000ij\u0005\f\u0000\u0000jp\u0003\u0012\t\u0000kl\u0005"+
-		"\r\u0000\u0000lp\u00038\u001c\u0000mn\u0005\u000e\u0000\u0000np\u0003"+
-		"(\u0014\u0000oa\u0001\u0000\u0000\u0000oc\u0001\u0000\u0000\u0000oe\u0001"+
-		"\u0000\u0000\u0000og\u0001\u0000\u0000\u0000oi\u0001\u0000\u0000\u0000"+
-		"ok\u0001\u0000\u0000\u0000om\u0001\u0000\u0000\u0000p\t\u0001\u0000\u0000"+
-		"\u0000qr\u0003\u0016\u000b\u0000rs\u0005\u000f\u0000\u0000st\u0003\u0018"+
-		"\f\u0000tu\u0005\u000f\u0000\u0000u|\u0003\u001a\r\u0000vw\u0003\u001c"+
-		"\u000e\u0000wx\u0005\u000f\u0000\u0000xy\u0003\u001e\u000f\u0000yz\u0005"+
-		"\u000f\u0000\u0000z{\u0003 \u0010\u0000{}\u0001\u0000\u0000\u0000|v\u0001"+
-		"\u0000\u0000\u0000|}\u0001\u0000\u0000\u0000}\u000b\u0001\u0000\u0000"+
-		"\u0000~\u007f\u0003\u0016\u000b\u0000\u007f\u0080\u0005\u000f\u0000\u0000"+
-		"\u0080\u0081\u0003\u0018\f\u0000\u0081\u0082\u0005\u000f\u0000\u0000\u0082"+
-		"\u0083\u0003\u001a\r\u0000\u0083\r\u0001\u0000\u0000\u0000\u0084\u0085"+
-		"\u0003\u0016\u000b\u0000\u0085\u0086\u0005\u000f\u0000\u0000\u0086\u0087"+
-		"\u0003\u0018\f\u0000\u0087\u0088\u0005\u000f\u0000\u0000\u0088\u0089\u0003"+
-		"\u001a\r\u0000\u0089\u000f\u0001\u0000\u0000\u0000\u008a\u008b\u0003\u0016"+
-		"\u000b\u0000\u008b\u008c\u0005\u000f\u0000\u0000\u008c\u008d\u0003\u0018"+
-		"\f\u0000\u008d\u008e\u0005\u000f\u0000\u0000\u008e\u008f\u0003\u001a\r"+
-		"\u0000\u008f\u0011\u0001\u0000\u0000\u0000\u0090\u0091\u0003\u0016\u000b"+
-		"\u0000\u0091\u0092\u0005\u000f\u0000\u0000\u0092\u0093\u0003\u0018\f\u0000"+
-		"\u0093\u0094\u0005\u000f\u0000\u0000\u0094\u0095\u0003\u001a\r\u0000\u0095"+
-		"\u0013\u0001\u0000\u0000\u0000\u0096\u0097\u0003\"\u0011\u0000\u0097\u0098"+
-		"\u0005\u000f\u0000\u0000\u0098\u0099\u0003$\u0012\u0000\u0099\u009a\u0005"+
-		"\u000f\u0000\u0000\u009a\u009b\u0003&\u0013\u0000\u009b\u0015\u0001\u0000"+
-		"\u0000\u0000\u009c\u009d\u0005\u0014\u0000\u0000\u009d\u0017\u0001\u0000"+
-		"\u0000\u0000\u009e\u009f\u0005\u0014\u0000\u0000\u009f\u0019\u0001\u0000"+
-		"\u0000\u0000\u00a0\u00a1\u0005\u0014\u0000\u0000\u00a1\u001b\u0001\u0000"+
-		"\u0000\u0000\u00a2\u00a3\u0005\u0014\u0000\u0000\u00a3\u001d\u0001\u0000"+
-		"\u0000\u0000\u00a4\u00a5\u0005\u0014\u0000\u0000\u00a5\u001f\u0001\u0000"+
-		"\u0000\u0000\u00a6\u00a7\u0005\u0014\u0000\u0000\u00a7!\u0001\u0000\u0000"+
-		"\u0000\u00a8\u00a9\u0005\u0014\u0000\u0000\u00a9#\u0001\u0000\u0000\u0000"+
-		"\u00aa\u00ab\u0005\u0014\u0000\u0000\u00ab%\u0001\u0000\u0000\u0000\u00ac"+
-		"\u00ad\u0005\u0014\u0000\u0000\u00ad\'\u0001\u0000\u0000\u0000\u00ae\u00af"+
-		"\u0003*\u0015\u0000\u00af\u00b0\u0005\u0010\u0000\u0000\u00b0\u00b1\u0003"+
-		",\u0016\u0000\u00b1\u00b2\u0005\u0010\u0000\u0000\u00b2\u00b3\u0003.\u0017"+
-		"\u0000\u00b3)\u0001\u0000\u0000\u0000\u00b4\u00b5\u0005\u0014\u0000\u0000"+
-		"\u00b5+\u0001\u0000\u0000\u0000\u00b6\u00b7\u0005\u0014\u0000\u0000\u00b7"+
-		"-\u0001\u0000\u0000\u0000\u00b8\u00b9\u0005\u0014\u0000\u0000\u00b9/\u0001"+
-		"\u0000\u0000\u0000\u00ba\u00bb\u0005\u0011\u0000\u0000\u00bb\u00bc\u0003"+
-		"2\u0019\u0000\u00bc1\u0001\u0000\u0000\u0000\u00bd\u00be\u0005\u0012\u0000"+
-		"\u0000\u00be\u00bf\u0005\u0013\u0000\u0000\u00bf\u00c0\u00034\u001a\u0000"+
-		"\u00c03\u0001\u0000\u0000\u0000\u00c1\u00c2\u0005\u0014\u0000\u0000\u00c2"+
-		"5\u0001\u0000\u0000\u0000\u00c3\u00c4\u0005\u0016\u0000\u0000\u00c47\u0001"+
-		"\u0000\u0000\u0000\u00c5\u00c6\u0005\u0014\u0000\u0000\u00c69\u0001\u0000"+
-		"\u0000\u0000\u0007GLRWYo|";
+		"\u0000\u0000]^\u0005\b\u0000\u0000^\u0005\u0001\u0000\u0000\u0000_`\u0005"+
+		"\u0017\u0000\u0000`\u0007\u0001\u0000\u0000\u0000ab\u0005\t\u0000\u0000"+
+		"bp\u0003\n\u0005\u0000cd\u0005\n\u0000\u0000dp\u0003\f\u0006\u0000ef\u0005"+
+		"\u000b\u0000\u0000fp\u0003\u000e\u0007\u0000gh\u0005\f\u0000\u0000hp\u0003"+
+		"\u0010\b\u0000ij\u0005\r\u0000\u0000jp\u0003\u0012\t\u0000kl\u0005\u000e"+
+		"\u0000\u0000lp\u00038\u001c\u0000mn\u0005\u000f\u0000\u0000np\u0003(\u0014"+
+		"\u0000oa\u0001\u0000\u0000\u0000oc\u0001\u0000\u0000\u0000oe\u0001\u0000"+
+		"\u0000\u0000og\u0001\u0000\u0000\u0000oi\u0001\u0000\u0000\u0000ok\u0001"+
+		"\u0000\u0000\u0000om\u0001\u0000\u0000\u0000p\t\u0001\u0000\u0000\u0000"+
+		"qr\u0003\u0016\u000b\u0000rs\u0005\u0010\u0000\u0000st\u0003\u0018\f\u0000"+
+		"tu\u0005\u0010\u0000\u0000u|\u0003\u001a\r\u0000vw\u0003\u001c\u000e\u0000"+
+		"wx\u0005\u0010\u0000\u0000xy\u0003\u001e\u000f\u0000yz\u0005\u0010\u0000"+
+		"\u0000z{\u0003 \u0010\u0000{}\u0001\u0000\u0000\u0000|v\u0001\u0000\u0000"+
+		"\u0000|}\u0001\u0000\u0000\u0000}\u000b\u0001\u0000\u0000\u0000~\u007f"+
+		"\u0003\u0016\u000b\u0000\u007f\u0080\u0005\u0010\u0000\u0000\u0080\u0081"+
+		"\u0003\u0018\f\u0000\u0081\u0082\u0005\u0010\u0000\u0000\u0082\u0083\u0003"+
+		"\u001a\r\u0000\u0083\r\u0001\u0000\u0000\u0000\u0084\u0085\u0003\u0016"+
+		"\u000b\u0000\u0085\u0086\u0005\u0010\u0000\u0000\u0086\u0087\u0003\u0018"+
+		"\f\u0000\u0087\u0088\u0005\u0010\u0000\u0000\u0088\u0089\u0003\u001a\r"+
+		"\u0000\u0089\u000f\u0001\u0000\u0000\u0000\u008a\u008b\u0003\u0016\u000b"+
+		"\u0000\u008b\u008c\u0005\u0010\u0000\u0000\u008c\u008d\u0003\u0018\f\u0000"+
+		"\u008d\u008e\u0005\u0010\u0000\u0000\u008e\u008f\u0003\u001a\r\u0000\u008f"+
+		"\u0011\u0001\u0000\u0000\u0000\u0090\u0091\u0003\u0016\u000b\u0000\u0091"+
+		"\u0092\u0005\u0010\u0000\u0000\u0092\u0093\u0003\u0018\f\u0000\u0093\u0094"+
+		"\u0005\u0010\u0000\u0000\u0094\u0095\u0003\u001a\r\u0000\u0095\u0013\u0001"+
+		"\u0000\u0000\u0000\u0096\u0097\u0003\"\u0011\u0000\u0097\u0098\u0005\u0010"+
+		"\u0000\u0000\u0098\u0099\u0003$\u0012\u0000\u0099\u009a\u0005\u0010\u0000"+
+		"\u0000\u009a\u009b\u0003&\u0013\u0000\u009b\u0015\u0001\u0000\u0000\u0000"+
+		"\u009c\u009d\u0005\u0015\u0000\u0000\u009d\u0017\u0001\u0000\u0000\u0000"+
+		"\u009e\u009f\u0005\u0015\u0000\u0000\u009f\u0019\u0001\u0000\u0000\u0000"+
+		"\u00a0\u00a1\u0005\u0015\u0000\u0000\u00a1\u001b\u0001\u0000\u0000\u0000"+
+		"\u00a2\u00a3\u0005\u0015\u0000\u0000\u00a3\u001d\u0001\u0000\u0000\u0000"+
+		"\u00a4\u00a5\u0005\u0015\u0000\u0000\u00a5\u001f\u0001\u0000\u0000\u0000"+
+		"\u00a6\u00a7\u0005\u0015\u0000\u0000\u00a7!\u0001\u0000\u0000\u0000\u00a8"+
+		"\u00a9\u0005\u0015\u0000\u0000\u00a9#\u0001\u0000\u0000\u0000\u00aa\u00ab"+
+		"\u0005\u0015\u0000\u0000\u00ab%\u0001\u0000\u0000\u0000\u00ac\u00ad\u0005"+
+		"\u0015\u0000\u0000\u00ad\'\u0001\u0000\u0000\u0000\u00ae\u00af\u0003*"+
+		"\u0015\u0000\u00af\u00b0\u0005\u0011\u0000\u0000\u00b0\u00b1\u0003,\u0016"+
+		"\u0000\u00b1\u00b2\u0005\u0011\u0000\u0000\u00b2\u00b3\u0003.\u0017\u0000"+
+		"\u00b3)\u0001\u0000\u0000\u0000\u00b4\u00b5\u0005\u0015\u0000\u0000\u00b5"+
+		"+\u0001\u0000\u0000\u0000\u00b6\u00b7\u0005\u0015\u0000\u0000\u00b7-\u0001"+
+		"\u0000\u0000\u0000\u00b8\u00b9\u0005\u0015\u0000\u0000\u00b9/\u0001\u0000"+
+		"\u0000\u0000\u00ba\u00bb\u0005\u0012\u0000\u0000\u00bb\u00bc\u00032\u0019"+
+		"\u0000\u00bc1\u0001\u0000\u0000\u0000\u00bd\u00be\u0005\u0013\u0000\u0000"+
+		"\u00be\u00bf\u0005\u0014\u0000\u0000\u00bf\u00c0\u00034\u001a\u0000\u00c0"+
+		"3\u0001\u0000\u0000\u0000\u00c1\u00c2\u0005\u0015\u0000\u0000\u00c25\u0001"+
+		"\u0000\u0000\u0000\u00c3\u00c4\u0005\u0017\u0000\u0000\u00c47\u0001\u0000"+
+		"\u0000\u0000\u00c5\u00c6\u0005\u0015\u0000\u0000\u00c69\u0001\u0000\u0000"+
+		"\u0000\u0007GLRWYo|";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

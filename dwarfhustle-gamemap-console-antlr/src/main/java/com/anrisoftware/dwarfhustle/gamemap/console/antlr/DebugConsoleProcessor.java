@@ -26,6 +26,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectHereMess
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ApplyImpulseModelMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
@@ -92,6 +93,17 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
                 return parser.object.map(this::parseAddForName).orElse(null);
             case "apply":
                 return parser.object.map(this::parseApply).orElse(null);
+            case "open":
+                return parser.object.map(this::parseOpen).orElse(null);
+            default:
+                return null;
+            }
+        }
+
+        private Message parseOpen(String object) {
+            switch (object) {
+            case "scene":
+                return new OpenSceneMessage();
             default:
                 return null;
             }

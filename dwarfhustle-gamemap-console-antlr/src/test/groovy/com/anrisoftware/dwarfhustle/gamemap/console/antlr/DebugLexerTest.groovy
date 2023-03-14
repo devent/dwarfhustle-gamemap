@@ -36,6 +36,11 @@ class DebugLexerTest {
     static parseExpressionsSource() {
         Stream.of(
                 //
+                of('open scene', { DebugConsoleParserService service ->
+                    assertEquals "open", service.verb.get()
+                    assertEquals "scene", service.object.get()
+                }),
+                //
                 of('set time 23:59:59 to world', { DebugConsoleParserService service ->
                     assertEquals "set", service.verb.get()
                     assertEquals "time", service.property.get()

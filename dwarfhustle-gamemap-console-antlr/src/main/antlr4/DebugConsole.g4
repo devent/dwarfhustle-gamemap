@@ -9,7 +9,7 @@
  * set coordinates z=4, y=5, x=6 to Dwarf with id = -3466937467377025024
  * set time 23:59:59 to world
  * apply impulse 0.5,0,0 to Dwarf with id = -3466937467377025024
- *
+ * open scene
  */
 grammar DebugConsole;
 
@@ -26,6 +26,7 @@ verb
     | 'set'
     | 'save'
     | 'apply'
+    | 'open'
     ;
 
 physics

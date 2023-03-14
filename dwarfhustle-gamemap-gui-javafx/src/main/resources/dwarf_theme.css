@@ -47,6 +47,7 @@
                 derive(neutral1,-5%) 100%
             ));
     dwarf-inner-border-horizontal: linear-gradient(to right, derive(neutral1,55%), derive(neutral1,-5%));
+    -fx-font-size: 12pt;
 }
 
 .split-pane > .split-pane-divider {
@@ -66,8 +67,12 @@
 }
 
 .label {
+    -fx-font-family: "Behrensschrift";
     -fx-background-color: transparent;
     -fx-text-fill: dark4;
+}
+
+.list-view {
 }
 
 .titleLabel {
@@ -149,6 +154,7 @@
 }
 
 .list-cell {
+    -fx-font-family: "Behrensschrift";
 	-fx-background-color: neutral1;
 	-fx-padding: 0 0 0 0;
 }
@@ -216,7 +222,6 @@
     -fx-border-image-slice: 16;
     -fx-padding: 0;
     -fx-font-family: "Behrensschrift";
-    -fx-font-size: 11pt;
 }
 
 #mainSplit {
@@ -264,12 +269,65 @@
 
 #pauseButton:pressed {
     -fx-background-color: buttonPressed;
-    -fx-background-color: neutral8;
+    -fx-border-color: neutral8;
 }
 
 #fortressNameLabel {
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 3.0, 3.0);
-    -fx-font-size: 14pt;
+    -fx-font-size: 200%;
+}
+
+#infoPane {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-font-family: "Behrensschrift";
+}
+
+#infoPane .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+#infoPane .viewport {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+#infoList {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+#infoList .list-cell {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.objectInfoPane {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.objectInfoList {
+    -fx-background-color: transparent;
+    -fx-text-fill: neutral5;
+    -fx-border-width: 0;
+}
+
+.objectInfoList .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: neutral5;
+    -fx-border-width: 0;
+}
+
+.objectInfoTitle {
+    -fx-text-fill: neutral5;
+    -fx-font-size: 150%;
+}
+
+.objectInfoPane {
+    -fx-background-color: special3;
+    -fx-padding: 0 0 0 0;
 }
 
 #commandsSplitTopPane {

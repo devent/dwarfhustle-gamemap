@@ -87,6 +87,5 @@ public class MapTerrainTile {
         } else if (propertiesBits.contains(focused)) {
             m.setTexture("EmissiveMap", focusedTexture);
         }
-
     }
 }

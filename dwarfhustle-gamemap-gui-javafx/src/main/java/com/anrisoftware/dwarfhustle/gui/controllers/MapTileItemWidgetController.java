@@ -15,28 +15,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gui.actor;
+package com.anrisoftware.dwarfhustle.gui.controllers;
 
-import org.eclipse.collections.api.map.ImmutableMap;
+import javax.inject.Inject;
 
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 
-import akka.actor.typed.ActorRef;
-import javafx.scene.layout.Region;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.BorderPane;
+import lombok.extern.slf4j.Slf4j;
 
 /**
+ * Controller for {@code map_tile_item_widget_ui.fxml}
  *
- * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ * @author Erwin Müller
  */
-@RequiredArgsConstructor
-@ToString
-public class InitialStateMessage<T> extends Message {
+@Slf4j
+public class MapTileItemWidgetController {
 
-    public final T controller;
+    @FXML
+    public BorderPane objectInfoPane;
 
-    public final Region root;
+    @FXML
+    public Label objectInfoTitle;
 
-    public final ImmutableMap<String, ActorRef<Message>> actors;
+    @FXML
+    public ListView<String> objectInfoList;
+
+    @Inject
+    private GameSettingsProvider gs;
+
 }

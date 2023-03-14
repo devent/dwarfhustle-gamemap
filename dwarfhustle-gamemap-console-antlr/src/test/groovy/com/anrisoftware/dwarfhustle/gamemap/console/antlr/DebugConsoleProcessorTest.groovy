@@ -26,6 +26,7 @@ import java.util.stream.Stream
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage
@@ -47,6 +48,12 @@ class DebugConsoleProcessorTest {
 
     static parseExpressionsSource() {
         Stream.of(
+                //
+                of('open scene', { List it ->
+                    assertEquals it.size(), 2
+                    assertEquals it[0].class, ParsedLineMessage
+                    assertEquals it[1].class, OpenSceneMessage
+                }),
                 //
                 of('set time 23:59:59 to world', { List it ->
                     assertEquals it.size(), 2

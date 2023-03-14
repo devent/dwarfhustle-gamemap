@@ -41,6 +41,7 @@ import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
+import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
@@ -51,6 +52,7 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.system.AppSettings;
 
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.javadsl.AskPattern;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -67,158 +69,174 @@ import picocli.CommandLine.Option;
 @Slf4j
 public class App extends SimpleApplication {
 
-	@Command(name = "dwarf-hustle game-map", mixinStandardHelpOptions = true)
-	@Getter
-	static class AppCommandImpl implements AppCommand, Runnable {
+    @Command(name = "dwarf-hustle game-map", mixinStandardHelpOptions = true)
+    @Getter
+    static class AppCommandImpl implements AppCommand, Runnable {
 
-		@Option(names = { "-dir" }, paramLabel = "GAME-DIR", description = "the game directory")
-		private File gamedir;
+        @Option(names = { "-dir" }, paramLabel = "GAME-DIR", description = "the game directory")
+        private File gamedir;
 
-		@Option(names = { "-skip" }, paramLabel = "SKIP-LOAD", description = "skip loading of the world")
-		private boolean skipLoad = false;
+        @Option(names = { "-skip" }, paramLabel = "SKIP-LOAD", description = "skip loading of the world")
+        private boolean skipLoad = false;
 
-		@Option(names = {
-				"-remote-server" }, paramLabel = "REMOTE-SERVER", description = "using the remote server instead of starting embedded server")
-		private String remoteServer;
+        @Option(names = {
+                "-remote-server" }, paramLabel = "REMOTE-SERVER", description = "using the remote server instead of starting embedded server")
+        private String remoteServer;
 
-		@Option(names = {
-				"-remote-user" }, paramLabel = "REMOTE-USER", description = "using the remote server instead of starting embedded server")
-		private String remoteUser;
+        @Option(names = {
+                "-remote-user" }, paramLabel = "REMOTE-USER", description = "using the remote server instead of starting embedded server")
+        private String remoteUser;
 
-		@Option(names = {
-				"-remote-password" }, paramLabel = "REMOTE-PASSWORD", description = "using the remote server instead of starting embedded server")
-		private String remotePassword;
+        @Option(names = {
+                "-remote-password" }, paramLabel = "REMOTE-PASSWORD", description = "using the remote server instead of starting embedded server")
+        private String remotePassword;
 
-		@Option(names = {
-				"-remote-database" }, paramLabel = "REMOTE-DATABASE", description = "using the remote server instead of starting embedded server")
-		private String remoteDatabase;
+        @Option(names = {
+                "-remote-database" }, paramLabel = "REMOTE-DATABASE", description = "using the remote server instead of starting embedded server")
+        private String remoteDatabase;
 
-		@Override
-		public void run() {
-			var injector = Guice.createInjector(new AppModule());
-			var app = injector.getInstance(App.class);
-			app.start(injector, this);
-		}
+        @Override
+        public void run() {
+            var injector = Guice.createInjector(new AppModule());
+            var app = injector.getInstance(App.class);
+            app.start(injector, this);
+        }
 
-	}
+    }
 
-	public static void main(String[] args) {
-		new CommandLine(new AppCommandImpl()).execute(args);
-	}
+    public static void main(String[] args) {
+        new CommandLine(new AppCommandImpl()).execute(args);
+    }
 
-	@Inject
-	private Engine engine;
+    @Inject
+    private Engine engine;
 
-	@Inject
-	private ActorSystemProvider actor;
+    @Inject
+    private ActorSystemProvider actor;
 
-	@Inject
-	private GameSettingsProvider gsp;
+    @Inject
+    private GameSettingsProvider gsp;
 
     private GameTickSystem gameTickSystem;
 
-	private Injector parent;
+    private Injector parent;
 
-	private AppCommandImpl command;
+    private AppCommandImpl command;
 
-	private Injector injector;
+    private Injector injector;
 
-	public App() {
-		super(new ConstantVerifierState(), new DebugKeysAppState());
-	}
+    public App() {
+        super(new ConstantVerifierState(), new DebugKeysAppState());
+    }
 
-	private void start(Injector parent, AppCommandImpl command) {
-		this.parent = parent;
-		this.command = command;
-		setupApp();
-		super.start();
-	}
+    private void start(Injector parent, AppCommandImpl command) {
+        this.parent = parent;
+        this.command = command;
+        setupApp();
+        super.start();
+    }
 
-	@SneakyThrows
-	private void setupApp() {
-		this.injector = parent.createChildInjector(new GamemapJmeModule(this));
-		getStateManager().attach(injector.getInstance(DebugCoordinateAxesState.class));
-		gsp.load();
-		setShowSettings(false);
-		var s = new AppSettings(true);
-		loadAppIcon(s);
-		s.setResizable(true);
-		s.setWidth(gsp.get().windowWidth.get());
-		s.setHeight(gsp.get().windowHeight.get());
-		s.setVSync(false);
-		s.setOpenCLSupport(false);
-		setLostFocusBehavior(LostFocusBehavior.PauseOnLostFocus);
-		setSettings(s);
-	}
+    @SneakyThrows
+    private void setupApp() {
+        this.injector = parent.createChildInjector(new GamemapJmeModule(this));
+        getStateManager().attach(injector.getInstance(DebugCoordinateAxesState.class));
+        gsp.load();
+        setShowSettings(false);
+        var s = new AppSettings(true);
+        loadAppIcon(s);
+        s.setResizable(true);
+        s.setWidth(gsp.get().windowWidth.get());
+        s.setHeight(gsp.get().windowHeight.get());
+        s.setVSync(false);
+        s.setOpenCLSupport(false);
+        setLostFocusBehavior(LostFocusBehavior.PauseOnLostFocus);
+        setSettings(s);
+    }
 
-	private void loadAppIcon(AppSettings s) throws IOException {
-		var logo = ImageIO.read(getClass().getResource("/app/logo.png"));
-		s.setIcons(new BufferedImage[] { logo });
-		s.setTitle(IOUtils.toString(getClass().getResource("/app/title.txt"), UTF_8));
-	}
+    private void loadAppIcon(AppSettings s) throws IOException {
+        var logo = ImageIO.read(getClass().getResource("/app/logo.png"));
+        s.setIcons(new BufferedImage[] { logo });
+        s.setTitle(IOUtils.toString(getClass().getResource("/app/title.txt"), UTF_8));
+    }
 
-	@Override
-	public void simpleInitApp() {
-		log.debug("simpleInitApp");
-		createPanel();
-		createApp();
-		createGameMap();
-	}
+    @Override
+    public void simpleInitApp() {
+        log.debug("simpleInitApp");
+        createPanel();
+        createApp();
+        createGameMap();
+    }
 
     private void createApp() {
-		AppActor.create(injector, ofSeconds(1), command).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("AppActor.create", ex);
-				actor.tell(new AppErrorMessage(ex));
-			} else {
-				log.debug("AppActor created");
-			}
-		});
-	}
+        AppActor.create(injector, ofSeconds(1), command).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("AppActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("AppActor created");
+            }
+        });
+    }
 
-	private void createPanel() {
-		GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(ret, AttachGuiMessage::new, ofMinutes(1),
-					actor.getActorSystem().scheduler());
-			result.whenComplete((ret1, ex1) -> {
-				inputManager.deleteMapping(INPUT_MAPPING_EXIT);
-			});
-		});
-	}
+    private void createPanel() {
+        GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("GameMainPanelActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("GameMainPanelActor created");
+                attachGui(ret);
+            }
+        });
+    }
 
-	private void createGameMap() {
-		GameMapActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("GameMapActor.create", ex);
-				actor.tell(new AppErrorMessage(ex));
-			} else {
-				log.debug("GameMapActor created");
-			}
-		});
-	}
+    private void attachGui(ActorRef<Message> receiver) {
+        CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(receiver, AttachGuiMessage::new, ofMinutes(1),
+                actor.getActorSystem().scheduler());
+        result.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("AttachGuiMessage", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("AttachGuiMessage {}", ret);
+                inputManager.deleteMapping(INPUT_MAPPING_EXIT);
+            }
+        });
+    }
 
-	@Override
-	@SneakyThrows
-	public void stop(boolean waitFor) {
+    private void createGameMap() {
+        GameMapActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("GameMapActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("GameMapActor created");
+            }
+        });
+    }
+
+    @Override
+    @SneakyThrows
+    public void stop(boolean waitFor) {
         engine.removeSystem(gameTickSystem);
-		updateCammera(gsp);
-		gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
-		gsp.save();
-		actor.get().tell(new ShutdownMessage());
-		super.stop(waitFor);
-	}
+        updateCammera(gsp);
+        gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
+        gsp.save();
+        actor.get().tell(new ShutdownMessage());
+        super.stop(waitFor);
+    }
 
-	private void updateCammera(GameSettingsProvider gsp) {
-		var camera = getCamera();
-		if (camera == null) {
-			return;
-		}
-		gsp.get().windowWidth.set(camera.getWidth());
-		gsp.get().windowHeight.set(camera.getHeight());
-	}
+    private void updateCammera(GameSettingsProvider gsp) {
+        var camera = getCamera();
+        if (camera == null) {
+            return;
+        }
+        gsp.get().windowWidth.set(camera.getWidth());
+        gsp.get().windowHeight.set(camera.getHeight());
+    }
 
-	@Override
-	public void simpleUpdate(float tpf) {
-		engine.update(tpf);
-	}
+    @Override
+    public void simpleUpdate(float tpf) {
+        engine.update(tpf);
+    }
 }

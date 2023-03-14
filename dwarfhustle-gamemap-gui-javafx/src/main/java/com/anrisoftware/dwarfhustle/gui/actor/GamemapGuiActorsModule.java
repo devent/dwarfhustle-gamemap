@@ -20,7 +20,10 @@ package com.anrisoftware.dwarfhustle.gui.actor;
 import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor.GameMainPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.actor.InfoPanelActor.InfoPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.actor.StatusActor.StatusActorFactory;
+import com.anrisoftware.dwarfhustle.gui.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
@@ -31,11 +34,13 @@ public class GamemapGuiActorsModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new FactoryModuleBuilder().implement(AbstractPaneActor.class, GameMainPanelActor.class)
-                .build(GameMainPanelActorFactory.class));
-		install(new FactoryModuleBuilder().implement(StatusActor.class, StatusActor.class)
-				.build(StatusActorFactory.class));
-        install(new FactoryModuleBuilder().implement(AbstractPaneActor.class, InfoPanelActor.class)
-                .build(InfoPanelActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends MainPaneController>>() {
+                }, GameMainPanelActor.class).build(GameMainPanelActorFactory.class));
+        install(new FactoryModuleBuilder().implement(StatusActor.class, StatusActor.class)
+                .build(StatusActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends InfoPaneController>>() {
+                }, InfoPanelActor.class).build(InfoPanelActorFactory.class));
     }
 }

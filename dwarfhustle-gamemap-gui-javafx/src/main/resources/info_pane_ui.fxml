@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
-
 
 <BorderPane id="infoPane" fx:id="infoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.controllers.InfoPaneController">
    <center>
-      <ScrollPane BorderPane.alignment="CENTER">
-         <content>
-            <ListView id="infoList" fx:id="infoList" prefHeight="200.0" prefWidth="200.0" />
-         </content>
-      </ScrollPane>
+      <ListView id="infoList" fx:id="infoList" focusTraversable="false" BorderPane.alignment="CENTER" />
    </center>
 </BorderPane>

@@ -30,6 +30,7 @@ import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerInitializeFxBuild;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
@@ -67,11 +68,11 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public abstract class AbstractPaneActor {
+public abstract class AbstractPaneActor<T> {
 
-    public interface AbstractPaneActorFactory {
+    public interface AbstractPaneActorFactory<T> {
 
-        AbstractPaneActor create(ActorContext<Message> context, StashBuffer<Message> buffer);
+        AbstractPaneActor<? extends T> create(ActorContext<Message> context, StashBuffer<Message> buffer);
     }
 
     @RequiredArgsConstructor
@@ -82,8 +83,8 @@ public abstract class AbstractPaneActor {
 
     }
 
-    public static Behavior<Message> create(Injector injector,
-            Class<? extends AbstractPaneActorFactory> paneActorFactoryType, String mainUiResource,
+    public static <T> Behavior<Message> create(Injector injector,
+            Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
@@ -92,8 +93,8 @@ public abstract class AbstractPaneActor {
         }));
     }
 
-    public static Behavior<Message> create(Injector injector,
-            Class<? extends AbstractPaneActorFactory> paneActorFactoryType, String mainUiResource,
+    public static <T> Behavior<Message> create(Injector injector,
+            Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             startJavafxBuild(injector, context, mainUiResource, panelActors, additionalCss);
@@ -104,32 +105,35 @@ public abstract class AbstractPaneActor {
     private static void startJavafxBuild(Injector injector, ActorContext<Message> context, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {
-        extracted(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
+        startJavafxBuild0(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
     }
 
     private static void startJavafxBuild(Injector injector, ActorContext<Message> context, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
-        extracted(injector, context, mainUiResource, panelActors, PanelControllerInitializeFxBuild.class,
+        startJavafxBuild0(injector, context, mainUiResource, panelActors, PanelControllerInitializeFxBuild.class,
                 additionalCss);
     }
 
-    private static void extracted(Injector injector, ActorContext<Message> context, String mainUiResource,
+    private static <T> void startJavafxBuild0(Injector injector, ActorContext<Message> context, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {
         var build = injector.getInstance(panelControllerBuildClass);
-        context.pipeToSelf(build.loadFxml(context.getExecutionContext(), mainUiResource, additionalCss),
+        context.pipeToSelf(build.loadFxml(injector, context.getExecutionContext(), mainUiResource, additionalCss),
                 (result, cause) -> {
                     if (cause == null) {
                         var actors = spawnPanelActors(injector, context, panelActors, result);
-                        return new InitialStateMessage(result.controller, result.root, actors);
+                        log.debug("build.loadFxml done");
+                        return new InitialStateMessage<>(result.controller, result.root, actors);
                     } else {
+                        log.error("build.loadFxml", cause);
                         return new SetupUiErrorMessage(cause);
                     }
                 });
     }
 
-    private static ImmutableMap<String, ActorRef<Message>> spawnPanelActors(Injector injector,
-            ActorContext<Message> context, Map<String, PanelActorCreator> panelActors, PanelControllerResult result) {
+    private static <T> ImmutableMap<String, ActorRef<Message>> spawnPanelActors(Injector injector,
+            ActorContext<Message> context, Map<String, PanelActorCreator> panelActors,
+            PanelControllerResult<T> result) {
         MutableMap<String, ActorRef<Message>> actors = Maps.mutable.empty();
         panelActors.forEach((name, a) -> {
             var actor = context.spawn(a.create(injector), name);
@@ -138,18 +142,20 @@ public abstract class AbstractPaneActor {
         return actors.toImmutable();
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
-            ServiceKey<Message> key, String name, Class<? extends AbstractPaneActorFactory> mainPanelActorFactoryType,
-            String mainUiResource, Map<String, PanelActorCreator> panelActors, String... additionalCss) {
+    public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
+            ServiceKey<Message> key, String name,
+            Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         return createNamedActor(system, timeout, id, key, name,
                 create(injector, mainPanelActorFactoryType, mainUiResource, panelActors, additionalCss));
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
-            ServiceKey<Message> key, String name, Class<? extends AbstractPaneActorFactory> mainPanelActorFactoryType,
-            String mainUiResource, Map<String, PanelActorCreator> panelActors,
-            Class<? extends PanelControllerBuild> panelControllerBuildClass, String... additionalCss) {
+    public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
+            ServiceKey<Message> key, String name,
+            Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
+            String... additionalCss) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         return createNamedActor(system, timeout, id, key, name, create(injector, mainPanelActorFactoryType,
                 mainUiResource, panelActors, panelControllerBuildClass, additionalCss));
@@ -172,7 +178,7 @@ public abstract class AbstractPaneActor {
     @Inject
     protected Engine engine;
 
-    protected InitialStateMessage initial;
+    protected InitialStateMessage<T> initial;
 
     protected Injector injector;
 
@@ -181,14 +187,22 @@ public abstract class AbstractPaneActor {
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupUiErrorMessage.class, this::onSetupUiError)//
+                .onMessage(GameTickMessage.class, this::onIgnore)//
                 .onMessage(Message.class, this::stashOtherCommand)//
                 .build();
     }
 
     /**
+     * Ignores the message.
+     */
+    private Behavior<Message> onIgnore(Message m) {
+        return Behaviors.same();
+    }
+
+    /**
      * Unstash all messages in the buffer.
      */
-    private Behavior<Message> onInitialState(InitialStateMessage m) {
+    private Behavior<Message> onInitialState(InitialStateMessage<T> m) {
         log.debug("onInitialState");
         this.initial = m;
         initial.actors.forEachValue(a -> a.tell(m));
@@ -199,10 +213,11 @@ public abstract class AbstractPaneActor {
     }
 
     /**
-     * Throws database error.
+     * Throws setup errors.
      */
     @SneakyThrows
     private Behavior<Message> onSetupUiError(SetupUiErrorMessage m) {
+        log.error("onSetupUiError", m);
         throw m.cause;
     }
 

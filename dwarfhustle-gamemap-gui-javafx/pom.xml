@@ -39,6 +39,11 @@
             <artifactId>globalpom-groovytestutils</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testfx</groupId>
+            <artifactId>testfx-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Compile dependencies -->
         <dependency>
@@ -49,6 +54,11 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.palexdev</groupId>
+            <artifactId>scenicview</artifactId>
+            <version>17.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.jmejfx</groupId>
