@@ -20,19 +20,20 @@ package com.anrisoftware.dwarfhustle.gui.controllers;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
+import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
-import lombok.extern.slf4j.Slf4j;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * Controller for {@code map_tile_item_widget_ui.fxml}
  *
  * @author Erwin Müller
  */
-@Slf4j
 public class MapTileItemWidgetController {
 
     @FXML
@@ -42,9 +43,27 @@ public class MapTileItemWidgetController {
     public Label objectInfoTitle;
 
     @FXML
-    public ListView<String> objectInfoList;
+    public VBox objectInfoBox;
 
     @Inject
     private GameSettingsProvider gs;
 
+    public void setup(MapTileItem item) {
+        if (item.item instanceof MapTile mt) {
+            objectInfoTitle.setText("Tile");
+            objectInfoBox.getChildren().clear();
+            objectInfoBox.getChildren().add(new Label("\u2022" + mt.getMaterial()));
+            objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+            return;
+        }
+        if (item.item instanceof Person p) {
+            objectInfoTitle.setText("Person");
+            objectInfoBox.getChildren().clear();
+            objectInfoBox.getChildren().add(new Label("\u2022" + p.getFirstName()));
+            objectInfoBox.getChildren().add(new Label("\u2022" + p.getSecondName()));
+            objectInfoBox.getChildren().add(new Label("\u2022" + p.getLastName()));
+            objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+            return;
+        }
+    }
 }

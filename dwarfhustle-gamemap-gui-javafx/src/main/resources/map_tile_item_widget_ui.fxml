@@ -2,26 +2,18 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="objectInfoPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="114.0" prefWidth="176.0" styleClass="objectInfoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.controllers.MapTileItemWidgetController">
+<BorderPane fx:id="objectInfoPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" styleClass="objectInfoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.controllers.MapTileItemWidgetController">
    <top>
       <Label fx:id="objectInfoTitle" styleClass="objectInfoTitle" text="Label" BorderPane.alignment="CENTER_LEFT" />
    </top>
    <center>
-      <HBox BorderPane.alignment="CENTER">
-         <children>
-            <ListView fx:id="objectInfoList" focusTraversable="false" styleClass="objectInfoList">
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets>
-               <HBox.margin>
-                  <Insets left="25.0" />
-               </HBox.margin>
-            </ListView>
-         </children>
-      </HBox>
+      <VBox fx:id="objectInfoBox" styleClass="objectInfoBox" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets left="25.0" />
+         </BorderPane.margin>
+      </VBox>
    </center>
 </BorderPane>

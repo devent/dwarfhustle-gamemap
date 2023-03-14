@@ -131,9 +131,9 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         p.setFirstName("Gorbir");
         p.setLastName("Shatterfeet");
         runFxThread(() -> {
-            controller.infoList.getItems().clear();
-            controller.infoList.getItems().add(new MapTileItem(mt));
-            controller.infoList.getItems().add(new MapTileItem(p));
+            controller.items.clear();
+            controller.items.add(new MapTileItem(mt));
+            controller.items.add(new MapTileItem(p));
             controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             controller.infoPane.setVisible(true);
         });
@@ -143,7 +143,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
         // log.debug("onMapTileEmptyUnderCursor {}", m);
         runFxThread(() -> {
-            controller.infoList.getItems().clear();
+            controller.items.clear();
             controller.infoPane.setVisible(false);
         });
         return Behaviors.same();

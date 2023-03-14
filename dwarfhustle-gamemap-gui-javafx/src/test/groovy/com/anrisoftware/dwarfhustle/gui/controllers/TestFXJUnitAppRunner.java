@@ -55,7 +55,6 @@ public class TestFXJUnitAppRunner extends ApplicationTest {
     @Override
     public void start(Stage primaryStage) {
         loadInfoPane(primaryStage);
-        controller.setup(injector);
         primaryStage.show();
     }
 
@@ -66,20 +65,23 @@ public class TestFXJUnitAppRunner extends ApplicationTest {
         scene.getStylesheets().add("dwarf_theme.css");
         controller = loader.getController();
         injector.injectMembers(controller);
+        controller.setup(injector);
     }
 
     @Test
     public void testBlueHasOnlyOneEntry() {
-        var mt = new MapTile(1);
-        mt.setMaterial("Soil");
-        mt.setPos(new GameMapPos(1, 5, 5, 5));
-        var p = new Person(1);
-        p.setFirstName("Gorbir");
-        p.setLastName("Shatterfeet");
-        controller.infoList.getItems().clear();
-        controller.infoList.getItems().add(new MapTileItem(mt));
-        controller.infoList.getItems().add(new MapTileItem(p));
-        clickOn(controller.infoList, Motion.DIRECT, MouseButton.PRIMARY);
+        interact(() -> {
+            var mt = new MapTile(1);
+            mt.setMaterial("Soil");
+            mt.setPos(new GameMapPos(1, 5, 5, 5));
+            var p = new Person(1);
+            p.setFirstName("Gorbir");
+            p.setLastName("Shatterfeet");
+            controller.items.clear();
+            controller.items.add(new MapTileItem(mt));
+            controller.items.add(new MapTileItem(p));
+        });
+        clickOn(controller.infoBox, Motion.DIRECT, MouseButton.PRIMARY);
         interact(() -> ScenicView.show(scene));
         sleep(600, TimeUnit.SECONDS);
     }
