@@ -143,7 +143,9 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
         // log.debug("onMapTileEmptyUnderCursor {}", m);
         runFxThread(() -> {
-            controller.items.clear();
+            if (controller.items != null) {
+                controller.items.clear();
+            }
             controller.infoPane.setVisible(false);
         });
         return Behaviors.same();

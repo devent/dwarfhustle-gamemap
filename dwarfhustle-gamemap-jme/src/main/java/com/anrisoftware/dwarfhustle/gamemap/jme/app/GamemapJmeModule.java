@@ -16,15 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
+
 import javax.inject.Named;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GamemapActorsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.ObjectsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.DwarfhustleGamemapJmeMapModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
 import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 import com.jme3.app.Application;
 import com.jme3.app.SimpleApplication;
 import com.jme3.asset.AssetManager;
@@ -46,11 +51,13 @@ public class GamemapJmeModule extends AbstractModule {
 
     @Override
     protected void configure() {
-		install(new GamemapGuiActorsModule());
-		install(new GamemapGuiControllersModule());
-		install(new GamemapActorsModule());
-		install(new DwarfhustleGamemapJmeMapModule());
+        install(new GamemapGuiActorsModule());
+        install(new GamemapGuiControllersModule());
+        install(new GamemapActorsModule());
+        install(new DwarfhustleGamemapJmeMapModule());
         install(new DwarfhustleGamemapJmeLightsModule());
+        bind(new TypeLiteral<GameObjects<Long, GameObject>>() {
+        }).toProvider(ObjectsProvider.class);
     }
 
     @Provides
@@ -59,8 +66,8 @@ public class GamemapJmeModule extends AbstractModule {
     }
 
     @Provides
-	@Named("rootNode")
-	public Node getRootNode() {
+    @Named("rootNode")
+    public Node getRootNode() {
         return owner.getRootNode();
     }
 

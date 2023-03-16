@@ -64,4 +64,5 @@ public class AppModule extends AbstractModule {
 		install(new BinariesResourcesModule());
 		install(new BinariesDefaultMapsModule());
 	}
+
 }
