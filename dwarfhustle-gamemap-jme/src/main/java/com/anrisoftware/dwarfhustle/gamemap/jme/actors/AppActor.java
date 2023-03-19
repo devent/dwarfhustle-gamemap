@@ -52,10 +52,9 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.MapBlocksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.ObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbEmbeddedMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbRemoteMessage;
@@ -68,6 +67,7 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerM
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectsMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
@@ -376,7 +376,7 @@ public class AppActor {
         log.debug("onLoadMapTiles {}", m);
         appCachesConfig.create(command.getGamedir(), m.gm);
         createObjectsCache(m);
-        createMapBlocksCache(m);
+        loadMapBlocks(m);
         return Behaviors.same();
     }
 
@@ -386,25 +386,22 @@ public class AppActor {
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
+            } else {
+                log.debug("ObjectsJcsCacheActor created");
             }
         });
     }
 
-    private void createMapBlocksCache(LoadMapTilesMessage m) {
-        var params = new HashMap<String, Object>();
-        params.put("gameMap", m.gm);
-        var task = MapBlocksJcsCacheActor.create(injector, Duration.ofSeconds(30), params);
-        task.whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("MapBlocksJcsCacheActor.create", ex);
-            }
-            mapBlocks = ret;
+    private void loadMapBlocks(LoadMapTilesMessage m) {
+        actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, db -> {
             var w = m.gm.getWidth();
             var h = m.gm.getHeight();
             var d = m.gm.getDepth();
-            var pos = new GameBlockPos(m.gm.getMapid(), 0, 0, 0, 0 + w, 0 + h, 0 + d);
-            mapBlocks.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
-        });
+            var p = new GameBlockPos(m.gm.getMapid(), 0, 0, 0, w, h, d);
+            var query = "SELECT * from ? where objecttype = ? and mapid = ? and sx = ? and sy = ? and sz = ? and ex = ? and ey = ? and ez = ? limit 1";
+            return db.query(query, MapBlock.OBJECT_TYPE, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(),
+                    p.getZ(), p.getEndPos().getX(), p.getEndPos().getY(), p.getEndPos().getZ());
+        }));
     }
 
     /**
@@ -496,14 +493,33 @@ public class AppActor {
             return Behaviors.stopped();
         } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
             if (rm.go instanceof WorldMap wm) {
+                actor.tell(new CachePutMessage<>(cacheResponseAdapter, wm.getId(), wm));
                 actor.tell(new SetWorldMapMessage(wm));
             } else if (rm.go instanceof GameMap gm) {
                 gm.setWorld(ogs.get().currentWorld.get());
+                actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
                 actor.tell(new SetGameMapMessage(gm));
                 actor.tell(new LoadMapTilesMessage(gm));
+            } else if (rm.go instanceof MapBlock mb) {
+                actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
+                if (!mb.getBlocks().isEmpty()) {
+                    retrieveChildMapBlocks(mb.getPos());
+                }
             }
         }
         return Behaviors.same();
+    }
+
+    private void retrieveChildMapBlocks(GameBlockPos p) {
+        actor.tell(new LoadObjectsMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, go -> {
+            var mb = (MapBlock) go;
+            actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
+            actor.tell(new MapBlockLoadedMessage(mb));
+        }, db -> {
+            var query = "SELECT * from ? where mapid = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ?";
+            return db.query(query, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(), p.getZ(),
+                    p.getEndPos().getX(), p.getEndPos().getY(), p.getEndPos().getZ());
+        }));
     }
 
     /**
@@ -518,11 +534,6 @@ public class AppActor {
             log.error("Cache error", rm);
             actor.tell(new AppErrorMessage(rm.error));
             return Behaviors.stopped();
-        } else if (response instanceof CacheGetSuccessMessage<?> rm) {
-            if (rm.go instanceof MapBlock mb) {
-                log.debug("MapBlock loaded {}", mb);
-                actor.tell(new MapBlockLoadedMessage(mb));
-            }
         }
         return Behaviors.same();
     }

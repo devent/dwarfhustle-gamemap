@@ -1,6 +1,5 @@
 @startuml
 title AppActor createApp
-
 participant App as a
 participant AppActor as ac
 participant OrientDbActor as orientdba
@@ -8,22 +7,50 @@ participant ObjectsDbActor as objectsdba
 participant PowerLoomKnowledgeActor as plna
 participant KnowledgeBaseActor as kba
 participant ConsoleActor as ca
+control actor
 
 a -> a ++ : createApp()
 a -> ac ** : create()
 ac -> ac ++ : createActors()
-ac -> orientdba ** : create()
-ac -> objectsdba ** : create()
+
 par whenComplete
-alt SkipLoad is false
+alt cause is not null
+ac --> ac : SetupErrorMessage
+else
+
+ac -> ac ++ : createDb()
+ac -> orientdba ** : create()
+
+par whenComplete
+alt ex is not null
+ac --> actor : AppErrorMessage
+else
+
+ac -> ac ++ : createObjects()
+ac -> objectsdba ** : create()
+
+par whenComplete
+alt ex is not null
+ac --> actor : AppErrorMessage
+else
+alt #APPLICATION SkipLoad is false
 ac -> ac : LoadWorldMessage
 end
 end
+end
+end
+end
+end
+end
+deactivate ac
+
 ac -> plna ** : create()
 ac -> kba ** : create()
 ac -> ca ** : create()
 
 deactivate ac
+deactivate ac
+
 deactivate a
 
 @enduml

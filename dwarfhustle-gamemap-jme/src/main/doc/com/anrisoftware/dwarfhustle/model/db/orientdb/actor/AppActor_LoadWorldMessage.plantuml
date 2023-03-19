@@ -6,54 +6,39 @@ participant AppActor as ac
 participant OrientDbActor as orientdba
 participant ObjectsDbActor as objectsdba
 participant MapBlocksJcsCacheActor as mbjca
+control Actor
+participant GameSettings
 
 --> ac : LoadWorldMessage
 
 ac -> ac ++ : onLoadWorld()
-
-alt isUseRemoteServer is true
-ac --> orientdba : ConnectDbRemoteMessage
-ac -> ac ++ : onWrappedDbResponse()
-orientdba --> ac : ConnectDbSuccessMessage
-else
-ac --> orientdba : StartEmbeddedServerMessage
-orientdba --> ac : StartEmbeddedServerSuccessMessage
-ac --> orientdba : ConnectDbEmbeddedMessage
-end
-ac --> objectsdba : LoadGameObjectMessage
-note right: Load WorldMap
+    alt isUseRemoteServer is true
+        ac --> orientdba : ConnectDbRemoteMessage
+        ac -> ac ++ : onWrappedDbResponse()
+        orientdba --> ac : ConnectDbSuccessMessage
+    else
+        ac --> orientdba : StartEmbeddedServerMessage
+        orientdba --> ac : StartEmbeddedServerSuccessMessage
+        ac --> orientdba : ConnectDbEmbeddedMessage
+    end
+    ac --> Actor : LoadObjectMessage
+    note left
+    Load WorldMap
+    end note
+    deactivate ac
 deactivate ac
-deactivate ac
 
-ac -> ac ++ : onWrappedObjectsResponse()
 objectsdba --> ac : LoadObjectSuccessMessage
-alt object is WorldMap
-ac --> ma : SetWorldMapMessage
-else object is GameMap
-ac --> ma : SetGameMapMessage
-ac --> ma : LoadMapTilesMessage
-end
+    ac -> ac ++ : onWrappedObjectsResponse()
+    alt game object is WorldMap case
+    ac --> Actor : CachePutMessage
+    ac --> Actor : SetWorldMapMessage
+    end
 deactivate ac
 
 --> ac : SetWorldMapMessage
 ac -> ac ++ : onSetWorldMap()
-ac --> objectsdba : LoadGameObjectMessage
-note right: Load GameMap
-deactivate ac
-
---> ac : LoadMapTilesMessage
-ac -> ac ++ : onLoadMapTiles()
-ac -> mbjca ** : create()
-par whenComplete
-ac --> mbjca : CacheGetReplyMessage
-note right: Load root MapBlock
-deactivate ac
-end
-mbjca --> ac : CacheGetSuccessMessage
-ac -> ac ++ : onWrappedCacheResponse()
-alt object is MapBlock
-ac --> ma : MapBlockLoadedMessage
-end
+ac -> GameSettings : setCurrentWorld()
 deactivate ac
 
 @enduml

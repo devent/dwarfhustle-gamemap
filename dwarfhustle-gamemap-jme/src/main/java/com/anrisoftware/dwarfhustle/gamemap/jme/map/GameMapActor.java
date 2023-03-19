@@ -252,6 +252,13 @@ public class GameMapActor {
      */
     private Behavior<Message> onMapBlockLoaded(MapBlockLoadedMessage m) {
         log.debug("onMapBlockLoaded {}", m);
+        if (m.mb.isRoot()) {
+            addMapBlockScene(m);
+        }
+        return Behaviors.same();
+    }
+
+    private void addMapBlockScene(MapBlockLoadedMessage m) {
         context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), m.mb));
         app.enqueue(() -> {
             is.gameMapState.createMapBlockBox(gs.get().currentMap.get(), m.mb);
@@ -266,7 +273,6 @@ public class GameMapActor {
             engine.addEntity(cursor);
             timers.startTimerAtFixedRate(new UpdateModelMessage(), Duration.ofMillis(10));
         });
-        return Behaviors.same();
     }
 
     /**

@@ -98,9 +98,10 @@ public class MapTerrainModel {
         this.rootHeight = mb.getHeight();
         this.rootDepth = mb.getDepth();
         this.tiles = Lists.mutable.empty();
+        var gm = gs.get().currentMap.get();
         for (int i = 0; i < gs.get().visibleDepthLayers.get(); i++) {
             tiles.add(Lists.mutable.empty());
-            for (int y = 0; y < mb.getHeight(); y++) {
+            for (int y = 0; y < gm.getHeight(); y++) {
                 tiles.get(i).add(Lists.mutable.empty());
             }
         }
