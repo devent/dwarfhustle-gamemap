@@ -39,8 +39,8 @@ public class ObjectsProvider implements Provider<GameObjects<Long, GameObject>> 
     @SneakyThrows
     private GameObjects<Long, GameObject> retrieveCache() {
         var timeout = Duration.ofSeconds(1);
-        CompletionStage<CacheRetrieveResponseMessage<Long, GameObject>> result = AskPattern.ask(actor.get(),
-                replyTo -> new CacheRetrieveMessage<>(replyTo, ObjectsJcsCacheActor.ID), timeout,
+        CompletionStage<CacheRetrieveResponseMessage> result = AskPattern.ask(actor.get(),
+                replyTo -> new CacheRetrieveMessage(replyTo, ObjectsJcsCacheActor.ID), timeout,
                 actor.getActorSystem().scheduler());
         var ret = result.toCompletableFuture().get();
         return new GameObjects<>() {

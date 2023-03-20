@@ -125,7 +125,6 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
         // log.debug("onMapTileUnderCursor {}", m);
         var mt = new MapTile(1);
-        mt.setMaterial("Soil");
         mt.setPos(new GameMapPos(1, 5, 5, 5));
         var p = new Person(1);
         p.setFirstName("Gorbir");

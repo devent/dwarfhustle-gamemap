@@ -23,7 +23,6 @@ import static java.time.Duration.ofSeconds;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -70,8 +69,8 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectsMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsResponseMessage;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.KnowledgeBaseActor;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerLoomKnowledgeActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeBaseActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -381,8 +380,7 @@ public class AppActor {
     }
 
     private void createObjectsCache(LoadMapTilesMessage m) {
-        var params = new HashMap<String, Object>();
-        var task = ObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30), params);
+        var task = ObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);

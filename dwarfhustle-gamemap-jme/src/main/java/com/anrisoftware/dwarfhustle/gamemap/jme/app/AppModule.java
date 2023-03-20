@@ -25,7 +25,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ApiModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.JcsCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbModule;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbModule;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.PowerloomModule;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerloomModule;
 import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
