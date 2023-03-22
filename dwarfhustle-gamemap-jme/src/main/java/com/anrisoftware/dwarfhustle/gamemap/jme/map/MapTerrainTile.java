@@ -3,6 +3,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.asset.AssetManager;
 import com.jme3.scene.Geometry;
