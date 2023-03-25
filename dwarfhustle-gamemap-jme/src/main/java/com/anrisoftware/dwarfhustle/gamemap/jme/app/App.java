@@ -163,8 +163,6 @@ public class App extends SimpleApplication {
     public void simpleInitApp() {
         log.debug("simpleInitApp");
         createPanel();
-        createApp();
-        createGameMap();
     }
 
     private void createApp() {
@@ -200,6 +198,8 @@ public class App extends SimpleApplication {
             } else {
                 log.debug("AttachGuiMessage {}", ret);
                 inputManager.deleteMapping(INPUT_MAPPING_EXIT);
+                createApp();
+                createGameMap();
             }
         });
     }
