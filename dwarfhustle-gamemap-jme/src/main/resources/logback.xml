@@ -32,6 +32,6 @@
 
     <logger name="com.jme3.app.state" level="FINEST" />
 	<logger name="com.anrisoftware" level="ALL" />
-	<logger name="com.anrisoftware.dwarfhustle.model" level="OFF" />
+	<logger name="com.anrisoftware.dwarfhustle.model" level="ERROR" />
 
 </configuration>

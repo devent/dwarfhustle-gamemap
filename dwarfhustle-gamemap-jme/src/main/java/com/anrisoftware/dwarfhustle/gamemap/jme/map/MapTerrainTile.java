@@ -40,7 +40,7 @@ public class MapTerrainTile {
 
     public final int x;
 
-    private Texture materialTexture;
+    public Texture materialTexture;
 
     private Texture emptyTexture;
 

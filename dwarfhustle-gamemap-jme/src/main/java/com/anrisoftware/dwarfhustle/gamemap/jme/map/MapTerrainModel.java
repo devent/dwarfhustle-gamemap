@@ -4,7 +4,9 @@ import javax.inject.Inject;
 
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
@@ -12,9 +14,11 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
+import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
+import com.jme3.texture.Texture;
 import com.jme3.util.TempVars;
 
 /**
@@ -65,6 +69,8 @@ public class MapTerrainModel {
 
     @Inject
     private GameObjects<Long, GameObject> objects;
+
+    private MutableLongObjectMap<Texture> materialsTextures = LongObjectMaps.mutable.empty();
 
     public void setObjects(GameObjects<Long, GameObject> objects) {
         this.objects = objects;
@@ -159,6 +165,12 @@ public class MapTerrainModel {
         }
     }
 
+    @Inject
+    public void setAssetManager(AssetManager am) {
+        materialsTextures.put(882, am.loadTexture("Textures/tiles/gas/oxygen/oxygen-01.png"));
+        materialsTextures.put(882, am.loadTexture("Textures/tiles/granite/granite-01.png"));
+    }
+
     public synchronized void update() {
         this.currentZ = gs.get().currentMap.get().getCursorZ();
         terrain.getLevels().each(this::updateLevel);
@@ -184,7 +196,8 @@ public class MapTerrainModel {
         int z = level + currentZ;
         if (z == currentZ) {
             var mt = tiles.get(level).get(y).get(x);
-            var mat = objects.get(mt.getMaterial());
+            var tex = materialsTextures.get(mt.getMaterial());
+            tile.materialTexture = tex;
         }
     }
 
