@@ -42,6 +42,7 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
+import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.receptionist.ServiceKey;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -167,7 +168,11 @@ public class SunActor {
 
     private Behavior<Message> stashOtherCommand(Message m) {
         log.debug("stashOtherCommand: {}", m);
-        buffer.stash(m);
+        try {
+            buffer.stash(m);
+        } catch (StashOverflowException e) {
+            log.warn("Stash message overflow");
+        }
         return Behaviors.same();
     }
 

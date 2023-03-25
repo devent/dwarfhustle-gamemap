@@ -40,6 +40,8 @@ public class MapTerrainTile {
 
     public final int x;
 
+    private Texture materialTexture;
+
     private Texture emptyTexture;
 
     private Texture selectedTexture;
@@ -79,6 +81,7 @@ public class MapTerrainTile {
 
     public void update() {
         var m = geo.getMaterial();
+        m.setTexture("BaseColorMap", materialTexture);
         if (propertiesBits.same(empty)) {
             m.setTexture("EmissiveMap", emptyTexture);
         } else if (propertiesBits.contains(selected | focused)) {

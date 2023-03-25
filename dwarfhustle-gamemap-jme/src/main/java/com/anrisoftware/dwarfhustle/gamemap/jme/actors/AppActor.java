@@ -23,7 +23,6 @@ import static java.time.Duration.ofSeconds;
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -67,14 +66,18 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectsMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectsMessage.LoadObjectsErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeBaseActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
+import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
+import com.orientechnologies.orient.core.sql.executor.OResultSet;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -131,7 +134,7 @@ public class AppActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class WrappedCacheResponse extends Message {
-        private final CacheResponseMessage response;
+        private final CacheResponseMessage<?> response;
     }
 
     /**
@@ -217,14 +220,27 @@ public class AppActor {
                 actor.tell(new AppErrorMessage(ex));
             } else {
                 log.debug("PowerLoomKnowledgeActor created");
-                createKnowledge(injector, ret);
+                createKnowledgeCache(injector, ret);
             }
         });
     }
 
-    private static void createKnowledge(Injector injector, ActorRef<Message> powerLoom) {
+    private static void createKnowledgeCache(Injector injector, ActorRef<Message> powerLoom) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        KnowledgeBaseActor.create(injector, ofSeconds(1), powerLoom).whenComplete((ret, ex) -> {
+        KnowledgeJcsCacheActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("KnowledgeJcsCacheActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("KnowledgeJcsCacheActor created");
+                createKnowledge(injector, powerLoom, ret);
+            }
+        });
+    }
+
+    private static void createKnowledge(Injector injector, ActorRef<Message> powerLoom, ActorRef<Message> cache) {
+        var actor = injector.getInstance(ActorSystemProvider.class);
+        KnowledgeBaseActor.create(injector, ofSeconds(1), powerLoom, cache).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("KnowledgeBaseActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
@@ -279,17 +295,20 @@ public class AppActor {
     @SuppressWarnings("rawtypes")
     private ActorRef<ObjectsResponseMessage> objectsResponseAdapter;
 
+    @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
     private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
 
     private Injector injector;
 
-    private ActorRef<Message> mapBlocks;
-
     private GameTickSystem gameTickSystem;
 
-    private Optional<GameMap> gm;
+    private int currentMapBlocksLoaded;
+
+    private int currentMapBlocksCount;
+
+    private MapBlock currentMapRootBlock;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -486,7 +505,11 @@ public class AppActor {
         log.debug("onWrappedObjectsResponse {}", m);
         var response = m.response;
         if (response instanceof LoadObjectErrorMessage<?> rm) {
-            log.error("Objects error", rm.error);
+            log.error("Load object error", rm.error);
+            actor.tell(new AppErrorMessage(rm.error));
+            return Behaviors.stopped();
+        } else if (response instanceof LoadObjectsErrorMessage<?> rm) {
+            log.error("Load objects error", rm.error);
             actor.tell(new AppErrorMessage(rm.error));
             return Behaviors.stopped();
         } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
@@ -500,7 +523,12 @@ public class AppActor {
                 actor.tell(new LoadMapTilesMessage(gm));
             } else if (rm.go instanceof MapBlock mb) {
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
+                if (mb.isRoot()) {
+                    currentMapRootBlock = mb;
+                }
                 if (!mb.getBlocks().isEmpty()) {
+                    currentMapBlocksLoaded = 0;
+                    currentMapBlocksCount = ogs.get().currentMap.get().getBlocksCount();
                     retrieveChildMapBlocks(mb.getPos());
                 }
             }
@@ -512,12 +540,17 @@ public class AppActor {
         actor.tell(new LoadObjectsMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, go -> {
             var mb = (MapBlock) go;
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
-            actor.tell(new MapBlockLoadedMessage(mb));
-        }, db -> {
-            var query = "SELECT * from ? where mapid = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ?";
-            return db.query(query, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(), p.getZ(),
-                    p.getEndPos().getX(), p.getEndPos().getY(), p.getEndPos().getZ());
-        }));
+            currentMapBlocksLoaded++;
+            if (currentMapBlocksLoaded == currentMapBlocksCount) {
+                actor.tell(new MapBlockLoadedMessage(currentMapRootBlock));
+            }
+        }, db -> createQuery(p, db)));
+    }
+
+    private OResultSet createQuery(GameBlockPos p, ODatabaseDocument db) {
+        var query = "SELECT * from ? where mapid = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ?";
+        return db.query(query, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(), p.getZ(), p.getEndPos().getX(),
+                p.getEndPos().getY(), p.getEndPos().getZ());
     }
 
     /**
@@ -526,9 +559,9 @@ public class AppActor {
      * </ul>
      */
     private Behavior<Message> onWrappedCacheResponse(WrappedCacheResponse m) {
-        log.debug("onWrappedCacheResponse {}", m);
+        // log.debug("onWrappedCacheResponse {}", m);
         var response = m.response;
-        if (response instanceof CacheErrorMessage rm) {
+        if (response instanceof CacheErrorMessage<?> rm) {
             log.error("Cache error", rm);
             actor.tell(new AppErrorMessage(rm.error));
             return Behaviors.stopped();

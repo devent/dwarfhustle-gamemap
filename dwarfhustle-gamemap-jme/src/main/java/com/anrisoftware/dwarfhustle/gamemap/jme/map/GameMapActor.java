@@ -98,7 +98,7 @@ public class GameMapActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class WrappedCacheResponse extends Message {
-        private final CacheResponseMessage response;
+        private final CacheResponseMessage<?> response;
     }
 
     /**
@@ -180,10 +180,9 @@ public class GameMapActor {
     @Inject
     private GameSettingsProvider gs;
 
-    private Injector injector;
-
     private InitialStateMessage is;
 
+    @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
     private Optional<Entity> cursorEntity = Optional.empty();
@@ -198,7 +197,6 @@ public class GameMapActor {
      * </ul>
      */
     public Behavior<Message> start(Injector injector) {
-        this.injector = injector;
         this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
@@ -348,7 +346,7 @@ public class GameMapActor {
             if (rm.go instanceof MapBlock mb) {
                 context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), mb));
             }
-        } else if (m.response instanceof CacheErrorMessage rm) {
+        } else if (m.response instanceof CacheErrorMessage<?> rm) {
             log.error("Cache error {}", m);
             return Behaviors.stopped();
         }

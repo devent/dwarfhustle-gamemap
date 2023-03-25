@@ -226,6 +226,7 @@ public abstract class AbstractPaneActor<T> {
         try {
             buffer.stash(m);
         } catch (StashOverflowException e) {
+            log.warn("Stash message overflow");
         }
         return Behaviors.same();
     }

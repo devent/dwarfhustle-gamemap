@@ -182,7 +182,10 @@ public class MapTerrainModel {
 
     private void updateTexture(MapTerrainTile tile, int level, int y, int x) {
         int z = level + currentZ;
-        var mt = tiles.get(level).get(y).get(x);
+        if (z == currentZ) {
+            var mt = tiles.get(level).get(y).get(x);
+            var mat = objects.get(mt.getMaterial());
+        }
     }
 
     private void updateProperties(MapTerrainTile tile, int level, int y, int x) {
