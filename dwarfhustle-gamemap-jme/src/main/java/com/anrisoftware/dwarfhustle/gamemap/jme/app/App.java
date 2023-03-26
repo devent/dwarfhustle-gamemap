@@ -49,6 +49,7 @@ import com.google.inject.Injector;
 import com.jme3.app.DebugKeysAppState;
 import com.jme3.app.LostFocusBehavior;
 import com.jme3.app.SimpleApplication;
+import com.jme3.app.StatsAppState;
 import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.system.AppSettings;
 
@@ -126,7 +127,7 @@ public class App extends SimpleApplication {
     private Injector injector;
 
     public App() {
-        super(new ConstantVerifierState(), new DebugKeysAppState());
+        super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState());
     }
 
     private void start(Injector parent, AppCommandImpl command) {

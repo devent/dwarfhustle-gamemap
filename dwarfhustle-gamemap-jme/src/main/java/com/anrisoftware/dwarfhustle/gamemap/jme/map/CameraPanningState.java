@@ -354,7 +354,7 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
 
     private void boundZMove(float d) {
         var dd = (int) d;
-        gm.addZ(dd);
+        gm.addCursorZ(dd);
     }
 
     private void doZoom(float dx, float dy, float s, Vector3f oldpos, Vector3f newpos) {
