@@ -110,7 +110,7 @@
 	-fx-border-color: dark4;
 }
 
-.button, .toggle-button {
+.button, .toggle-button, .scroll-bar .decrement-button, .scroll-bar .increment-button, .scroll-bar .thumb {
     -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral2, neutral3);
 	-fx-background-insets: 0;
 	-fx-background-radius: 12;
@@ -329,6 +329,17 @@
 .objectInfoPane {
     -fx-background-color: special4;
     -fx-padding: 0 0 0 0;
+}
+
+#levelBar {
+    -fx-background-color: transparent;
+    -fx-border-color: neutral3;
+    -fx-background-radius: 0.0em;
+    -fx-border-radius: 2.0em;
+}
+
+#levelLabel {
+    -fx-background-color: transparent;
 }
 
 #commandsSplitTopPane {

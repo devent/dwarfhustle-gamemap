@@ -32,8 +32,8 @@ import org.eclipse.collections.impl.factory.Maps;
 import org.scenicview.ScenicView;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage;
@@ -45,6 +45,9 @@ import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage.SettingsD
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -87,6 +90,12 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         private final AttachGuiFinishedMessage response;
     }
 
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    private static class WrappedCacheResponse extends Message {
+        private final CacheResponseMessage<?> response;
+    }
+
     public interface GameMainPanelActorFactory extends AbstractPaneActorFactory<MainPaneController> {
 
     }
@@ -111,9 +120,6 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
     private ActorSystemProvider actor;
 
     @Inject
-    private GameSettingsProvider gsp;
-
-    @Inject
     private GlobalKeys globalKeys;
 
     @Inject
@@ -122,8 +128,12 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
 
     private boolean scenicViewShown = false;
 
+    @SuppressWarnings("rawtypes")
+    private ActorRef<CacheResponseMessage> cacheResponseAdapter;
+
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
+        this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         StatusActor.create(injector, Duration.ofSeconds(1), initial.controller);
         InfoPanelActor.create(injector, Duration.ofSeconds(1)).whenComplete((v, err) -> {
             if (err == null) {
@@ -132,12 +142,16 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         });
         runFxThread(() -> {
             var controller = initial.controller;
-            controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL, gsp.get());
-            controller.initListeners(actor.get(), gsp.get());
-            controller.initButtons(globalKeys, keyMappings, gsp.get());
+            controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
+            controller.initListeners(this::saveGameMap);
+            controller.initButtons(globalKeys, keyMappings);
         });
         return getDefaultBehavior()//
         ;
+    }
+
+    private void saveGameMap(GameMap gm) {
+        actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
     }
 
     /**
@@ -232,12 +246,31 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         return Behaviors.same();
     }
 
+    /**
+     * Processing {@link MapCursorUpdateMessage}.
+     * <p>
+     * Update the value and text of the level scroll bar and level label.
+     * <p>
+     * Returns a behavior that reacts to the following messages:
+     * <ul>
+     * <li>{@link #getBehaviorAfterAttachGui()}
+     * </ul>
+     */
+    private Behavior<Message> onMapCursorUpdate(MapCursorUpdateMessage m) {
+        log.debug("onMapCursorUpdate {}", m);
+        runFxThread(() -> {
+            initial.controller.updateMapCursor(m.cursor);
+        });
+        return Behaviors.same();
+    }
+
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
                 .onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
                 .onMessage(AboutDialogOpenTriggeredMessage.class, this::onAboutDialogOpenTriggered)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(OpenSceneMessage.class, this::onOpenScene)//
+                .onMessage(MapCursorUpdateMessage.class, this::onMapCursorUpdate)//
         ;
     }
 

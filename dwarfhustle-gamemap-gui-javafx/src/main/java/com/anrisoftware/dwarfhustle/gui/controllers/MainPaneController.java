@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.controllers;
 
+import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.ABOUT_DIALOG_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.QUIT_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTINGS_MAPPING;
@@ -24,22 +25,26 @@ import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTING
 import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
+
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 
-import akka.actor.typed.ActorRef;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
@@ -52,81 +57,110 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MainPaneController {
 
-	@FXML
-	public BorderPane mainPanel;
+    @FXML
+    public BorderPane mainPanel;
 
-	@FXML
-	public Label fortressNameLabel;
+    @FXML
+    public Label fortressNameLabel;
 
-	@FXML
-	public Label gameTimeLabel;
+    @FXML
+    public Label gameTimeLabel;
 
-	@FXML
-	public Button settingsButton;
+    @FXML
+    public Button settingsButton;
 
-	@FXML
-	public Button aboutButton;
+    @FXML
+    public Button aboutButton;
 
-	@FXML
-	public Button quitButton;
+    @FXML
+    public Button quitButton;
 
-	@FXML
-	public TextField commandLineText;
+    @FXML
+    public TextField commandLineText;
 
-	@FXML
-	public Label statusLabel;
+    @FXML
+    public Label statusLabel;
 
-	private Locale locale;
+    @FXML
+    public ScrollBar levelBar;
 
-	private Texts texts;
+    @FXML
+    public Label levelLabel;
 
-	private Images images;
+    private Locale locale;
 
-	private IconSize iconSize;
+    private Texts texts;
 
-	private ObservableGameSettings gs;
+    private Images images;
 
-	public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize, ObservableGameSettings gs) {
-		this.locale = locale;
-		this.texts = texts;
-		this.images = images;
-		this.iconSize = iconSize;
-		this.gs = gs;
-		commandLineText.setText(gs.lastCommand.get());
-	}
+    private IconSize iconSize;
 
-	public void initListeners(ActorRef<Message> actor, ObservableGameSettings gs) {
-		log.debug("initListeners");
-		setupImagePropertiesFields(gs);
-		commandLineText.setOnAction((e) -> {
-			var text = commandLineText.getText();
-			if (StringUtils.isNotBlank(text)) {
-				actor.tell(new LineMessage(text));
-				gs.lastCommand.set(text);
-			}
-		});
-	}
+    @Inject
+    private ActorSystemProvider actor;
 
-	public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings, ObservableGameSettings gs) {
-		quitButton.setOnAction((e) -> {
-			globalKeys.runAction(keyMappings.get(QUIT_MAPPING.name()));
-		});
-		settingsButton.setOnAction((e) -> {
-			globalKeys.runAction(keyMappings.get(SETTINGS_MAPPING.name()));
-		});
-		aboutButton.setOnAction((e) -> {
-			globalKeys.runAction(keyMappings.get(ABOUT_DIALOG_MAPPING.name()));
-		});
-	}
+    @Inject
+    private GameSettingsProvider gs;
 
-	private void setupImagePropertiesFields(ObservableGameSettings gs) {
-	}
+    public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize) {
+        this.locale = locale;
+        this.texts = texts;
+        this.images = images;
+        this.iconSize = iconSize;
+        commandLineText.setText(gs.get().lastCommand.get());
+    }
 
-	public void setGameMap(GameMap gm) {
-		var wm = gm.getWorld();
-		fortressNameLabel
-				.setText(texts.getResource("fortress_name", locale).getFormattedText(wm.getName(), gm.getName()));
-		gameTimeLabel.setText(gs.gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));
-	}
+    public void initListeners(Consumer<GameMap> saveZ) {
+        log.debug("initListeners");
+        setupImagePropertiesFields();
+        commandLineText.setOnAction(e -> {
+            var text = commandLineText.getText();
+            if (StringUtils.isNotBlank(text)) {
+                actor.tell(new LineMessage(text));
+                gs.get().lastCommand.set(text);
+            }
+        });
+        gs.get().currentMap.addListener((o, ov, nv) -> {
+            runFxThread(() -> {
+                levelBar.setMin(1);
+                levelBar.setMax(nv.getDepth());
+                levelBar.setValue(nv.getCursorZ());
+                levelLabel.setText(Integer.toString(nv.getCursorZ()));
+            });
+        });
+        levelBar.valueProperty().addListener((o, ov, nv) -> {
+            runFxThread(() -> {
+                levelLabel.setText(Integer.toString(nv.intValue()));
+                gs.get().currentMap.get().setCursorZ(nv.intValue() - 1);
+                saveZ.accept(gs.get().currentMap.get());
+            });
+        });
+    }
+
+    public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
+        quitButton.setOnAction(e -> {
+            globalKeys.runAction(keyMappings.get(QUIT_MAPPING.name()));
+        });
+        settingsButton.setOnAction(e -> {
+            globalKeys.runAction(keyMappings.get(SETTINGS_MAPPING.name()));
+        });
+        aboutButton.setOnAction(e -> {
+            globalKeys.runAction(keyMappings.get(ABOUT_DIALOG_MAPPING.name()));
+        });
+    }
+
+    private void setupImagePropertiesFields() {
+    }
+
+    public void setGameMap(GameMap gm) {
+        var wm = gm.getWorld();
+        fortressNameLabel
+                .setText(texts.getResource("fortress_name", locale).getFormattedText(wm.getName(), gm.getName()));
+        gameTimeLabel.setText(gs.get().gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));
+    }
+
+    public void updateMapCursor(MapCursor cursor) {
+        levelBar.setValue(cursor.z + 1);
+        levelLabel.setText(Integer.toString(cursor.z + 1));
+    }
 
 }
