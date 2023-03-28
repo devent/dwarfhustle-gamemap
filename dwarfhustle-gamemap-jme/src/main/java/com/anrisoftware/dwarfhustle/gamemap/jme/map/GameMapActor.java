@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorSetMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -227,6 +228,7 @@ public class GameMapActor {
         });
         this.is.cameraPanningState.setSaveZ(gm -> {
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
+            actor.tell(new MapCursorUpdateMessage(gm.getCursor()));
         });
         return buffer.unstashAll(getInitialBehavior()//
                 .build());

@@ -2,6 +2,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
 import javax.inject.Inject;
 
+import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
@@ -71,6 +72,10 @@ public class MapTerrainModel {
     private GameObjects<Long, GameObject> objects;
 
     private MutableLongObjectMap<Texture> materialsTextures = LongObjectMaps.mutable.empty();
+
+    private Texture unknownTextures;
+
+    private Function0<? extends Texture> returnUnknownTextures;
 
     public void setObjects(GameObjects<Long, GameObject> objects) {
         this.objects = objects;
@@ -167,8 +172,69 @@ public class MapTerrainModel {
 
     @Inject
     public void setAssetManager(AssetManager am) {
-        materialsTextures.put(882, am.loadTexture("Textures/tiles/gas/oxygen/oxygen-01.png"));
-        materialsTextures.put(882, am.loadTexture("Textures/tiles/granite/granite-01.png"));
+        // Sedimentary
+        materialsTextures.put(812, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // siltstone
+        materialsTextures.put(811, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // shale
+        materialsTextures.put(810, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // sandstone
+        materialsTextures.put(809, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // rock_salt
+        materialsTextures.put(808, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // mudsone
+        materialsTextures.put(807, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // limestone
+        materialsTextures.put(806, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // dolomite
+        materialsTextures.put(805, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // conglomerate
+        materialsTextures.put(804, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // claystone
+        materialsTextures.put(803, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // chert
+        materialsTextures.put(802, am.loadTexture("Textures/tiles/unknown/unknown-02.png")); // chalk
+        // IgneousIntrusive
+        materialsTextures.put(816, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(815, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(814, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        // IgneousExtrusive
+        materialsTextures.put(822, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(821, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(820, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(819, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(818, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        // Metamorphic
+        materialsTextures.put(829, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(828, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(827, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(826, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(825, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(824, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        // special
+        materialsTextures.put(800, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        // soil
+        materialsTextures.put(879, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(878, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(877, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(876, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(875, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(874, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(873, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(872, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(871, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(870, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(869, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(868, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(866, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(865, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(864, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(863, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(775, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(860, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(858, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(856, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(854, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(776, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        // gas
+        materialsTextures.put(887, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(886, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(884, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(884, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(882, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        materialsTextures.put(881, am.loadTexture("Textures/tiles/unknown/unknown-02.png"));
+        unknownTextures = am.loadTexture("Textures/tiles/unknown/unknown-02.png");
+        returnUnknownTextures = () -> unknownTextures;
     }
 
     public synchronized void update() {
@@ -196,7 +262,8 @@ public class MapTerrainModel {
         int z = level + currentZ;
         if (z == currentZ) {
             var mt = tiles.get(level).get(y).get(x);
-            var tex = materialsTextures.get(mt.getMaterial());
+            long material = mt.getMaterial();
+            var tex = materialsTextures.getIfAbsent(material, returnUnknownTextures);
             tile.materialTexture = tex;
         }
     }

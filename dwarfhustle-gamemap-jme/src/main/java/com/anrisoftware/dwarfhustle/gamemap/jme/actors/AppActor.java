@@ -445,17 +445,23 @@ public class AppActor {
     }
 
     /**
-     * <ul>
-     * <li>
-     * </ul>
+     * Reacts on the {@link LoadMapTilesMessage} and starts the loading of the root
+     * map block.
      */
     private Behavior<Message> onLoadMapTiles(LoadMapTilesMessage m) {
         log.debug("onLoadMapTiles {}", m);
-        loadMapBlocks(m);
+        loadMapBlockRoot(m);
         return Behaviors.same();
     }
 
-    private void loadMapBlocks(LoadMapTilesMessage m) {
+    /**
+     * Starts the loading of the map blocks by first retrieving the root map block
+     * from the database. On success the method
+     * {@link #onWrappedObjectsResponse(WrappedObjectsResponse)} with the message
+     * {@link LoadObjectSuccessMessage} with a {@link MapBlock} object should be
+     * called.
+     */
+    private void loadMapBlockRoot(LoadMapTilesMessage m) {
         actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, db -> {
             var w = m.gm.getWidth();
             var h = m.gm.getHeight();
@@ -528,9 +534,25 @@ public class AppActor {
     }
 
     /**
-     * <ul>
-     * <li>
-     * </ul>
+     * Reacts to the {@link WrappedObjectsResponse} message from the objects actor.
+     * <dl>
+     * <dt>{@link LoadObjectErrorMessage}</dt>
+     * <dd>Sends the {@link AppErrorMessage} and stops the actor.</dd>
+     * <dt>{@link LoadObjectsErrorMessage}</dt>
+     * <dd>Sends the {@link AppErrorMessage} and stops the actor.</dd>
+     * <dt>{@link LoadObjectSuccessMessage}</dt>
+     * <dd>Depending on the returned game object:
+     * <dl>
+     * </dl>
+     * <dt>{@link WorldMap}</dt>
+     * <dd>Caches the world map. Sends the {@link SetWorldMapMessage} message.</dd>
+     * <dt>{@link GameMap}</dt>
+     * <dd>Caches the game map. Sends the {@link SetGameMapMessage} message. Sends
+     * the {@link LoadKnowledgeMessage}.</dd>
+     * <dt>{@link MapBlock}</dt>
+     * <dd>Caches the map block. Retrieves all child map blocks from the root map
+     * block.</dd>
+     * </dl>
      */
     private Behavior<Message> onWrappedObjectsResponse(WrappedObjectsResponse m) {
         log.debug("onWrappedObjectsResponse {}", m);
@@ -631,6 +653,7 @@ public class AppActor {
             actor.tell(new AppErrorMessage(rm.error));
             return Behaviors.stopped();
         } else if (m.response instanceof KnowledgeResponseSuccessMessage rm) {
+            rm.go.objects.forEach(System.out::println);
             materialsLoaded++;
             if (materialsLoaded == 7) {
                 context.getSelf().tell(new LoadMapTilesMessage(ogs.get().currentMap.get()));
