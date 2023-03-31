@@ -1,61 +1,138 @@
-import org.eclipse.collections.impl.factory.primitive.LongObjectMaps
-
-materialsTextures = LongObjectMaps.mutable.empty()
-materialsTextures[816] = "Textures/tiles/sedimentary/siltstone/siltstone-01.png" // siltstone
-materialsTextures[815] = "Textures/tiles/sedimentary/shale/shale-1-1024.png" // shale
-materialsTextures[814] = "Textures/tiles/sedimentary/sandstone/sandstone-06.png" // sandstone
-materialsTextures[813] = "Textures/tiles/sedimentary/rock_salt/rock_salt-1-1024.png" // rock_salt
-materialsTextures[812] = "Textures/tiles/sedimentary/mudstone/placeholder-1-1024.png" // mudstone
-materialsTextures[811] = "Textures/tiles/sedimentary/limestone/placeholder-1-1024.png" // limestone
-materialsTextures[810] = "Textures/tiles/sedimentary/dolomite/placeholder-1-1024.png" // dolomite
-materialsTextures[809] = "Textures/tiles/sedimentary/conglomerate/conglomerate-1-1024.png" // conglomerate
-materialsTextures[808] = "Textures/tiles/sedimentary/claystone/claystone-1-1024.png" // claystone
-materialsTextures[807] = "Textures/tiles/sedimentary/chert/chert-1-1024.png" // chert
-materialsTextures[806] = "Textures/tiles/sedimentary/chalk/chalk-1-1024.png" // chalk
+/*
+ * Dwarf Hustle Game Map - Game map.
+ * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+rid = [:]
+rid["siltstone"] = 816
+rid["shale"] = 815
+rid["sandstone"] = 814
+rid["rock_salt"] = 813
+rid["mudstone"] = 812
+rid["limestone"] = 811
+rid["dolomite"] = 810
+rid["conglomerate"] = 809
+rid["claystone"] = 808
+rid["chert"] = 807
+rid["chalk"] = 806
 // IgneousIntrusive
-materialsTextures[820] = "Textures/tiles/igneous_intrusive/granite/granite-2-1024.png" // granite
-materialsTextures[819] = "Textures/tiles/igneous_intrusive/gabbro/gabbro-1-1024.png" // gabbro
-materialsTextures[818] = "Textures/tiles/igneous_intrusive/diorite/diorite-1-1024.png" // diorite
+rid["granite"] = 820
+rid["gabbro"] = 819
+rid["diorite"] = 818
 // IgneousExtrusive
-materialsTextures[826] = "Textures/tiles/igneous_extrusive/rhyolite/" // rhyolite
-materialsTextures[825] = "Textures/tiles/igneous_extrusive/obsidian/" // obsidian
-materialsTextures[824] = "Textures/tiles/igneous_extrusive/dacite/" // dacite
-materialsTextures[823] = "Textures/tiles/igneous_extrusive/basalt/" // basalt
-materialsTextures[822] = "Textures/tiles/igneous_extrusive/andesite/" // andesite
+rid["rhyolite"] = 826
+rid["obsidian"] = 825
+rid["dacite"] = 824
+rid["basalt"] = 823
+rid["andesite"] = 822
 // Metamorphic
-materialsTextures[833] = "Textures/tiles/metamorphic/slate/" // slate
-materialsTextures[832] = "Textures/tiles/metamorphic/schist/" // schist
-materialsTextures[831] = "Textures/tiles/metamorphic/quartzite/" // quartzite
-materialsTextures[830] = "Textures/tiles/metamorphic/phyllite/" // phyllite
-materialsTextures[829] = "Textures/tiles/metamorphic/marble/" // marble
-materialsTextures[828] = "Textures/tiles/metamorphic/gneiss/" // gneiss
+rid["slate"] = 833
+rid["schist"] = 832
+rid["quartzite"] = 831
+rid["phyllite"] = 830
+rid["marble"] = 829
+rid["gneiss"] = 828
 // special
-materialsTextures[804] = "Textures/tiles/special_stone_layer/magma/magma-01.png" // magma
+rid["magma"] = 804
 // soil
-materialsTextures[883] = "Textures/tiles/soil/" // silt_loam
-materialsTextures[882] = "Textures/tiles/soil/" // silty_clay_loam
-materialsTextures[881] = "Textures/tiles/soil/" // silt
-materialsTextures[880] = "Textures/tiles/soil/" // sandy_loam
-materialsTextures[879] = "Textures/tiles/soil/" // sandy_clay_loam
-materialsTextures[878] = "Textures/tiles/soil/" // peat
-materialsTextures[877] = "Textures/tiles/soil/" // loamy_sand
-materialsTextures[876] = "Textures/tiles/soil/" // loam
-materialsTextures[874] = "Textures/tiles/soil/" // calcareous_ooze
-materialsTextures[873] = "Textures/tiles/soil/" // siliceous_ooze
-materialsTextures[872] = "Textures/tiles/soil/" // pelagic_clay
-materialsTextures[870] = "Textures/tiles/soil/" // yellow_sand
-materialsTextures[869] = "Textures/tiles/soil/" // white_sand
-materialsTextures[868] = "Textures/tiles/soil/" // red_sand
-materialsTextures[867] = "Textures/tiles/soil/" // black_sand
-materialsTextures[778] = "Textures/tiles/soil/" // sand
-materialsTextures[864] = "Textures/tiles/soil/" // fire_clay
-materialsTextures[862] = "Textures/tiles/soil/" // silty_clay
-materialsTextures[860] = "Textures/tiles/soil/" // sandy_clay
-materialsTextures[858] = "Textures/tiles/soil/" // clay_loam
-materialsTextures[779] = "Textures/tiles/soil/" // clay
+rid["silt_loam"] = 884
+rid["silty_clay_loam"] = 883
+rid["silt"] = 882
+rid["sandy_loam"] = 881
+rid["sandy_clay_loam"] = 880
+rid["peat"] = 879
+rid["loamy_sand"] = 878
+rid["loam"] = 877
+rid["calcareous_ooze"] = 874
+rid["siliceous_ooze"] = 873
+rid["pelagic_clay"] = 872
+rid["yellow_sand"] = 870
+rid["white_sand"] = 869
+rid["red_sand"] = 868
+rid["black_sand"] = 867
+rid["sand"] = 778
+rid["fire_clay"] = 864
+rid["silty_clay"] = 862
+rid["sandy_clay"] = 860
+rid["clay_loam"] = 858
+rid["clay"] = 779
 // gas
-materialsTextures[891] = "Textures/tiles/gas/sulfur_dioxide/sulfur_dioxide-1-1024.png" // sulfur_dioxide
-materialsTextures[890] = "Textures/tiles/gas/carbon_dioxide/carbon_dioxide-1-1024.png" // carbon_dioxide
-materialsTextures[888] = "Textures/tiles/gas/polluted_oxygen/polluted_oxygen-1-1024.png" // polluted_oxygen
-materialsTextures[886] = "Textures/tiles/gas/oxygen/oxygen-01.png" // oxygen
-materialsTextures[885] = "Textures/tiles/gas/vacuum/vacuum-01.png" // vacuum
+rid["sulfur_dioxide"] = 892
+rid["carbon_dioxide"] = 891
+rid["polluted_oxygen"] = 889
+rid["oxygen"] = 887
+rid["vacuum"] = 886
+
+materialsTextures = [:]
+materialsTextures[rid["siltstone"]] = [baseColorMap: "Textures/Tiles/Sedimentary/siltstone-1.png"]
+materialsTextures[rid["shale"]] = [baseColorMap: "Textures/Tiles/Sedimentary/shale-1-1024.png"]
+materialsTextures[rid["sandstone"]] = [baseColorMap: "Textures/Tiles/Sedimentary/sandstone-01.png"]
+materialsTextures[rid["rock_salt"]] = [baseColorMap: "Textures/Tiles/Sedimentary/rock_salt-1-1024.png"]
+materialsTextures[rid["mudstone"]] = [baseColorMap: "Textures/Tiles/Sedimentary/placeholder-1-1024.png"]
+materialsTextures[rid["limestone"]] = [baseColorMap: "Textures/Tiles/Sedimentary/placeholder-1-1024.png"]
+materialsTextures[rid["dolomite"]] = [baseColorMap: "Textures/Tiles/Sedimentary/placeholder-1-1024.png"]
+materialsTextures[rid["conglomerate"]] = [baseColorMap: "Textures/Tiles/Sedimentary/conglomerate-1-1024.png"]
+materialsTextures[rid["claystone"]] = [baseColorMap: "Textures/Tiles/Sedimentary/claystone-1-1024.png"]
+materialsTextures[rid["chert"]] = [baseColorMap: "Textures/Tiles/Sedimentary/chert-1-1024.png"]
+materialsTextures[rid["chalk"]] = [baseColorMap: "Textures/Tiles/Sedimentary/chalk-1-1024.png"]
+// IgneousIntrusive
+materialsTextures[rid["granite"]] = [baseColorMap: "Textures/Tiles/IgneousIntrusive/granite-2-1024.png"]
+materialsTextures[rid["gabbro"]] = [baseColorMap: "Textures/Tiles/IgneousIntrusive/gabbro-1-1024.png"]
+materialsTextures[rid["diorite"]] = [baseColorMap: "Textures/Tiles/IgneousIntrusive/diorite-1-1024.png"]
+// IgneousExtrusive
+materialsTextures[rid["rhyolite"]] = [baseColorMap: "Textures/Tiles/IgneousExtrusive/rhyolite-5-1024.png"]
+materialsTextures[rid["obsidian"]] = [baseColorMap: "Textures/Tiles/IgneousExtrusive/obsidian-1-1024.png"]
+materialsTextures[rid["dacite"]] = [baseColorMap: "Textures/Tiles/IgneousExtrusive/dacite-1-1024.png"]
+materialsTextures[rid["basalt"]] = [baseColorMap: "Textures/Tiles/IgneousExtrusive/basalt-1-1024.png"]
+materialsTextures[rid["andesite"]] = [baseColorMap: "Textures/Tiles/IgneousExtrusive/andesite-1-1024.png"]
+// Metamorphic
+materialsTextures[rid["slate"]] = [baseColorMap: "Textures/Tiles/Metamorphic/slate-1-1024.png"]
+materialsTextures[rid["schist"]] = [baseColorMap: "Textures/Tiles/Metamorphic/schist-2-1024.png"]
+materialsTextures[rid["quartzite"]] = [baseColorMap: "Textures/Tiles/Metamorphic/quartzite-2-1024.png"]
+materialsTextures[rid["phyllite"]] = [baseColorMap: "Textures/Tiles/Metamorphic/phyllite-1-1024.png"]
+materialsTextures[rid["marble"]] = [baseColorMap: "Textures/Tiles/Metamorphic/marble-1-1024.png"]
+materialsTextures[rid["gneiss"]] = [baseColorMap: "Textures/Tiles/Metamorphic/gneiss-1-1024.png"]
+// special
+materialsTextures[rid["magma"]] = [baseColorMap: "Textures/Tiles/SpecialStoneLayer/magma-01.png"]
+// soil
+materialsTextures[rid["silt_loam"]] = [baseColorMap: "Textures/Tiles/Soil/silt_loam-1-1024.png"]
+materialsTextures[rid["silty_clay_loam"]] = [baseColorMap: "Textures/Tiles/Soil/silty_clay_loam-1-1024.png"]
+materialsTextures[rid["silt"]] = [baseColorMap: "Textures/Tiles/Soil/silt-1-1024.png"]
+materialsTextures[rid["sandy_loam"]] = [baseColorMap: "Textures/Tiles/Soil/sandy_loam-1-1024.png"]
+materialsTextures[rid["sandy_clay_loam"]] = [baseColorMap: "Textures/Tiles/Soil/sandy_clay_loam-1-1024.png"]
+materialsTextures[rid["peat"]] = [baseColorMap: "Textures/Tiles/Soil/peat-1-1024.png"]
+materialsTextures[rid["loamy_sand"]] = [baseColorMap: "Textures/Tiles/Soil/loamy_sand-1-1024.png"]
+materialsTextures[rid["loam"]] = [baseColorMap: "Textures/Tiles/Soil/loam-3-1024.png"]
+materialsTextures[rid["calcareous_ooze"]] = [baseColorMap: "Textures/Tiles/Soil/calcareous_ooze-1-1024.png"]
+materialsTextures[rid["siliceous_ooze"]] = [baseColorMap: "Textures/Tiles/Soil/siliceous_ooze-1-1024.png"]
+materialsTextures[rid["pelagic_clay"]] = [baseColorMap: "Textures/Tiles/Soil/pelagic_clay-1-1024.png"]
+materialsTextures[rid["yellow_sand"]] = [baseColorMap: "Textures/Tiles/Soil/yellow_sand.png"]
+materialsTextures[rid["white_sand"]] = [baseColorMap: "Textures/Tiles/Soil/white_sand.png"]
+materialsTextures[rid["red_sand"]] = [baseColorMap: "Textures/Tiles/Soil/red_sand.png"]
+materialsTextures[rid["black_sand"]] = [baseColorMap: "Textures/Tiles/Soil/black_sand.png"]
+materialsTextures[rid["sand"]] = [baseColorMap: "Textures/Tiles/Soil/sand.png"]
+materialsTextures[rid["fire_clay"]] = [baseColorMap: "Textures/Tiles/Soil/fire_clay-128.jpg"]
+materialsTextures[rid["silty_clay"]] = [baseColorMap: "Textures/Tiles/Soil/silty_clay.jpg"]
+materialsTextures[rid["sandy_clay"]] = [baseColorMap: "Textures/Tiles/Soil/sandy_clay.jpg"]
+materialsTextures[rid["clay_loam"]] = [baseColorMap: "Textures/Tiles/Soil/clay_loam-128.jpg"]
+materialsTextures[rid["clay"]] = [baseColorMap: "Textures/Tiles/Soil/clay-128.jpg"]
+// gas
+materialsTextures[rid["sulfur_dioxide"]] = [baseColorMap: "Textures/Tiles/Gas/sulfur_dioxide-1-1024.png", render: [baseColor: [0f, 0f, 0f, 0f], "glossiness": 0f, "metallic": 0f, "roughness": 0f]]
+materialsTextures[rid["carbon_dioxide"]] = [baseColorMap: "Textures/Tiles/Gas/carbon_dioxide-1-1024.png", render: [baseColor: [0f, 0f, 0f, 0f], "glossiness": 0f, "metallic": 0f, "roughness": 0f]]
+materialsTextures[rid["polluted_oxygen"]] = [baseColorMap: "Textures/Tiles/Gas/polluted_oxygen-1-1024.png", render: [baseColor: [0f, 0f, 0f, 0f], "glossiness": 0f, "metallic": 0f, "roughness": 0f]]
+materialsTextures[rid["oxygen"]] = [baseColorMap: "Textures/Tiles/Gas/oxygen-01.png", render: [baseColor: [0f, 0f, 0f, 0f], "glossiness": 0f, "metallic": 0f, "roughness": 0f]]
+materialsTextures[rid["vacuum"]] = [baseColorMap: "Textures/Tiles/Gas/vacuum-01.png", render: [baseColor: [0f, 0f, 0f, 0f], "glossiness": 0f, "metallic": 0f, "roughness": 0f]]
+
+materialsTextures

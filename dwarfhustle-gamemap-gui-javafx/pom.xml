@@ -1,6 +1,6 @@
 <!--
 
-    dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
+    Dwarf Hustle Game Map - Game map.
     Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
 
     This program is free software: you can redistribute it and/or modify
@@ -72,6 +72,7 @@
             <groupId>com.badlogicgames.ashley</groupId>
             <artifactId>ashley</artifactId>
         </dependency>
+
         <!-- Resources -->
         <dependency>
             <groupId>com.anrisoftware.resources</groupId>

@@ -15,22 +15,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model.messages;
+package com.anrisoftware.dwarfhustle.gamemap.jme.map
 
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import org.junit.jupiter.api.Test
 
 /**
- * Message to set the {@link GameMap}.
+ * @see TexturesMap
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@RequiredArgsConstructor
-@ToString(callSuper = true)
-public class SetGameMapMessage extends Message {
+class TexturesMapTest {
 
-	public final GameMap gm;
+    @Test
+    void load_textures_map() {
+        def engine = new GroovyScriptEngine([
+            MapTerrainModel.class.getResource("/TexturesMap.groovy")
+        ] as URL[])
+        def binding = new Binding();
+        def res = engine.run("TexturesMap.groovy", binding);
+        assert res.size() == 52
+    }
 }

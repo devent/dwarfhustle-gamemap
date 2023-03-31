@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
+ * Dwarf Hustle Game Map - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify

@@ -1,6 +1,6 @@
 <!--
 
-    dwarfhustle-gamemap-assets - Game map.
+    Dwarf Hustle Game Map - Game map.
     Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
 
     This program is free software: you can redistribute it and/or modify
@@ -31,10 +31,6 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.collections</groupId>
-            <artifactId>eclipse-collections</artifactId>
         </dependency>
     </dependencies>
 </project>
