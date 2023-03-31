@@ -105,6 +105,7 @@ public class GameMapState extends BaseAppState {
         gs.get().visibleDepthLayers.addListener((o, ov, nv) -> {
             app.enqueue(() -> {
                 terrain.setLevels(nv.intValue());
+                model.setTerrain(terrain, mb);
             });
         });
     }

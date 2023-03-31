@@ -71,21 +71,25 @@ public class MapTerrainTile {
 
     private Texture baseColorMapTexture;
 
-    private ColorRGBA specularColor;
+    private ColorRGBA specularColor = new ColorRGBA();
 
-    private ColorRGBA baseColor;
+    private ColorRGBA baseColor = new ColorRGBA();
 
-    private float roughness;
+    private float roughness = 1f;
 
-    private float metallic;
+    private float metallic = 1f;
 
-    private float glossiness;
+    private float glossiness = 1f;
+
+    private static final int PROPERTY_POS_HIDDEN = 0;
 
     public static final int empty = 0x00000000;
 
-    public static final int selected = 0x00000001;
+    private static final int hidden = 0x00000001;
 
-    public static final int focused = 0x00000002;
+    public static final int selected = 0x00000002;
+
+    public static final int focused = 0x00000004;
 
     @Inject
     public MapTerrainTile(@Assisted("level") int level, @Assisted("y") int y, @Assisted("x") int x, AssetManager am) {
@@ -156,12 +160,22 @@ public class MapTerrainTile {
         this.dirty = true;
     }
 
+    public void setPropertyHidden(boolean b) {
+        if (propertiesBits.get(PROPERTY_POS_HIDDEN) != b) {
+            propertiesBits.set(b, PROPERTY_POS_HIDDEN);
+            this.dirty = true;
+        }
+    }
+
     public void update() {
         if (dirty) {
             this.dirty = false;
+            if (propertiesBits.same(hidden)) {
+
+            }
             var m = geo.getMaterial();
             m.setTexture("BaseColorMap", baseColorMapTexture);
-            m.setColor("Specular", new ColorRGBA(0, 0, 0, 0));
+            m.setColor("Specular", specularColor);
             m.setColor("BaseColor", baseColor);
             m.setFloat("Glossiness", glossiness);
             m.setFloat("Metallic", metallic);

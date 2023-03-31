@@ -25,6 +25,7 @@ import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainTile.MapTerrainTileFactory;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.scene.Node;
 
@@ -43,6 +44,12 @@ public class MapTerrainLevel {
         MapTerrainLevel create(MapTerrainModel model, GameMap gm, int level);
     }
 
+    private static final int PROPERTY_POS_HIDDEN = 0;
+
+    public static final int PROPERTY_FLAG_EMPTY = 0x00000000;
+
+    private static final int PROPERTY_MASK_HIDDEN = 0x00000001;
+
     public final GameMap gm;
 
     public final int level;
@@ -52,6 +59,14 @@ public class MapTerrainLevel {
 
     public final IntObjectMap<IntObjectMap<MapTerrainTile>> yxtiles;
 
+    private boolean dirty = true;
+
+    public PropertiesSet propertiesBits = new PropertiesSet();
+
+    private Node tilesNode;
+
+    private boolean tilesAttached;
+
     @Inject
     @SneakyThrows
     public MapTerrainLevel(@Assisted MapTerrainModel model, @Assisted GameMap gm, @Assisted int level,
@@ -59,6 +74,7 @@ public class MapTerrainLevel {
         this.gm = gm;
         this.level = level;
         this.node = new Node(MapTerrainLevel.class.getSimpleName() + "-" + level);
+        this.tilesNode = new Node(MapTerrainLevel.class.getSimpleName() + "-" + level + "-tiles");
         MutableIntObjectMap<IntObjectMap<MapTerrainTile>> yxtiles = IntObjectMaps.mutable.empty();
         this.yxtiles = yxtiles;
         int h = gm.getHeight();
@@ -74,8 +90,36 @@ public class MapTerrainLevel {
                 float tx = w2 + x * 2f + 0.5f;
                 float ty = h2 + y * 2f + 0.5f;
                 tile.node.setLocalTranslation(tx, ty, 0f);
-                node.attachChild(tile.node);
+                tilesNode.attachChild(tile.node);
+            }
+        }
+        node.attachChild(tilesNode);
+        this.tilesAttached = true;
+    }
+
+    public void setPropertiesBits(int bits) {
+        this.propertiesBits.replace(bits);
+        this.dirty = true;
+    }
+
+    public void setPropertyHidden(boolean b) {
+        if (propertiesBits.get(PROPERTY_POS_HIDDEN) != b) {
+            propertiesBits.set(b, PROPERTY_POS_HIDDEN);
+            this.dirty = true;
+        }
+    }
+
+    public void update() {
+        if (dirty) {
+            this.dirty = false;
+            if (tilesAttached && propertiesBits.same(PROPERTY_MASK_HIDDEN)) {
+                node.detachChild(tilesNode);
+                this.tilesAttached = false;
+            } else if (tilesAttached) {
+                node.attachChild(tilesNode);
+                this.tilesAttached = true;
             }
         }
     }
+
 }

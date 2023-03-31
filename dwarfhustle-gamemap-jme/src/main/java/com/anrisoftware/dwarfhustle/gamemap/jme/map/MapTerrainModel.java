@@ -28,10 +28,12 @@ import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongFloatMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.primitive.LongFloatMaps;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
@@ -90,7 +92,7 @@ public class MapTerrainModel {
 
     private MapTerrain terrain;
 
-    private int currentZ;
+    private int currentZ = -1;
 
     private MapBlock mb;
 
@@ -117,6 +119,8 @@ public class MapTerrainModel {
     private Texture unknownTextures;
 
     private AssetManager am;
+
+    private GameMap gm;
 
     public void setObjects(GameObjects<Long, GameObject> objects) {
         this.objects = objects;
@@ -149,37 +153,18 @@ public class MapTerrainModel {
         this.rootWidth = mb.getWidth();
         this.rootHeight = mb.getHeight();
         this.rootDepth = mb.getDepth();
-        this.tiles = Lists.mutable.empty();
-        var gm = gs.get().currentMap.get();
-        for (int i = 0; i < gs.get().visibleDepthLayers.get(); i++) {
-            tiles.add(Lists.mutable.empty());
+        int visible = gs.get().visibleDepthLayers.get();
+        this.tiles = Lists.mutable.ofInitialCapacity(visible);
+        this.gm = gs.get().currentMap.get();
+        for (int i = 0; i < visible; i++) {
+            tiles.add(Lists.mutable.ofInitialCapacity(gm.getHeight()));
             for (int y = 0; y < gm.getHeight(); y++) {
-                tiles.get(i).add(Lists.mutable.empty());
+                tiles.get(i).add(Lists.mutable.ofInitialCapacity(gm.getWidth()));
+                for (int x = 0; x < gm.getWidth(); x++) {
+                    tiles.get(i).get(y).add(null);
+                }
             }
         }
-        loadMapTiles(mb);
-    }
-
-    private void loadMapTiles(MapBlock mb) {
-        this.currentZ = gs.get().currentMap.get().getCursorZ();
-        terrain.getLevels().forEach(this::loadMapTilesLevel);
-    }
-
-    private void loadMapTilesLevel(MapTerrainLevel level) {
-        level.yxtiles.forEach(this::loadMapTilesXy);
-    }
-
-    private void loadMapTilesXy(IntObjectMap<MapTerrainTile> tiles) {
-        tiles.forEach(this::loadMapTilesY);
-    }
-
-    private void loadMapTilesY(MapTerrainTile tile) {
-        var pos = new GameMapPos(mb.getPos().getMapid(), tile.x, tile.y, currentZ + tile.level);
-        tiles.get(tile.level).get(tile.y).add(mb.findMapTile(pos, this::retrieveMapBlock));
-    }
-
-    private MapBlock retrieveMapBlock(long id) {
-        return (MapBlock) objects.get(id);
     }
 
     public float getWidth() {
@@ -229,14 +214,15 @@ public class MapTerrainModel {
         long id = texentry.getKey();
         var value = texentry.getValue();
         loadTexture(value, id, "baseColorMap");
-        if (value.containsKey("render")) {
-            var render = (Map<String, Object>) value.get("render");
-            putColor(specularColor, render, id, "specular", new ColorRGBA());
-            putColor(baseColor, render, id, "baseColor", new ColorRGBA());
-            putFloat(metallic, render, id, "metallic", 1f);
-            putFloat(glossiness, render, id, "glossiness", 1f);
-            putFloat(roughness, render, id, "roughness", 1f);
+        var render = (Map<String, Object>) value.get("render");
+        if (render == null) {
+            render = Maps.mutable.empty();
         }
+        putColor(specularColor, render, id, "specular", new ColorRGBA());
+        putColor(baseColor, render, id, "baseColor", new ColorRGBA());
+        putFloat(metallic, render, id, "metallic", 1f);
+        putFloat(glossiness, render, id, "glossiness", 1f);
+        putFloat(roughness, render, id, "roughness", 1f);
     }
 
     private void putFloat(MutableLongFloatMap dest, Map<String, Object> map, long id, String name, float f) {
@@ -275,12 +261,23 @@ public class MapTerrainModel {
     }
 
     public synchronized void update() {
-        this.currentZ = gs.get().currentMap.get().getCursorZ();
+        int z = gs.get().currentMap.get().getCursorZ();
+        if (currentZ != z) {
+            this.currentZ = z;
+            loadMapTiles(mb);
+        }
         terrain.getLevels().each(this::updateLevel);
     }
 
     private void updateLevel(MapTerrainLevel level) {
-        level.yxtiles.each(this::updateTiles);
+        if (level.level + currentZ >= gm.getDepth()) {
+            level.setPropertyHidden(true);
+            level.update();
+        } else {
+            level.setPropertyHidden(false);
+            level.update();
+            level.yxtiles.each(this::updateTiles);
+        }
     }
 
     private void updateTiles(IntObjectMap<MapTerrainTile> tiles) {
@@ -296,18 +293,17 @@ public class MapTerrainModel {
     }
 
     private void updateTexture(MapTerrainTile tile, int level, int y, int x) {
-        int z = level + currentZ;
-        if (z == currentZ) {
-            var mt = tiles.get(level).get(y).get(x);
-            long material = mt.getMaterial();
-            var baseColorMap = baseColorMapTextures.get(material);
-            tile.setBaseColorMap(baseColorMap);
-            tile.setSpecularColor(specularColor.get(material));
-            tile.setBaseColor(baseColor.get(material));
-            tile.setRoughness(roughness.get(material));
-            tile.setMetallic(metallic.get(material));
-            tile.setGlossiness(glossiness.get(material));
-        }
+        var mt = tiles.get(level).get(y).get(x);
+        long material = mt.getMaterial();
+        tile.setBaseColorMap(baseColorMapTextures.get(material));
+        tile.setSpecularColor(specularColor.get(material));
+        tile.setBaseColor(baseColor.get(material));
+        tile.setRoughness(roughness.get(material));
+        tile.setMetallic(metallic.get(material));
+        tile.setGlossiness(glossiness.get(material));
+        tile.setRoughness(1f);
+        tile.setMetallic(0f);
+        tile.setGlossiness(1f);
     }
 
     private void updateProperties(MapTerrainTile tile, int level, int y, int x) {
@@ -316,4 +312,26 @@ public class MapTerrainModel {
         bits |= isTileCursor(level, y, x) ? MapTerrainTile.selected : 0;
         tile.setPropertiesBits(bits);
     }
+
+    private void loadMapTiles(MapBlock mb) {
+        terrain.getLevels().forEach(this::loadMapTilesLevel);
+    }
+
+    private void loadMapTilesLevel(MapTerrainLevel level) {
+        level.yxtiles.forEach(this::loadMapTilesXy);
+    }
+
+    private void loadMapTilesXy(IntObjectMap<MapTerrainTile> tiles) {
+        tiles.forEach(this::loadMapTilesY);
+    }
+
+    private void loadMapTilesY(MapTerrainTile tile) {
+        var pos = new GameMapPos(mb.getPos().getMapid(), tile.x, tile.y, currentZ + tile.level);
+        tiles.get(tile.level).get(tile.y).set(tile.x, mb.findMapTile(pos, this::retrieveMapBlock));
+    }
+
+    private MapBlock retrieveMapBlock(long id) {
+        return (MapBlock) objects.get(id);
+    }
+
 }

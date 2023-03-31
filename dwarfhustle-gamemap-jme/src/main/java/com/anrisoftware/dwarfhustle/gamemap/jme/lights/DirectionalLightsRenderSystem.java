@@ -111,6 +111,7 @@ public class DirectionalLightsRenderSystem extends IntervalIteratingSystem {
             light.setColor(c.color);
             light.setDirection(c.d);
             light.setEnabled(c.enabled);
+            light.setEnabled(true);
             var filter = filters.get(entity);
             if (filter != null) {
                 filter.setEnabled(c.shadow);
