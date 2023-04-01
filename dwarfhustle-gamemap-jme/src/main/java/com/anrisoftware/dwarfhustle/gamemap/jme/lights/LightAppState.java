@@ -71,8 +71,12 @@ public class LightAppState extends BaseAppState {
         log.debug("onEnable");
         engine.addSystem(ambientLightsSystem);
         engine.addSystem(dirLightsRenderSystem);
-        var box = new Box(getApplication().getAssetManager(), new Vector3f(0, 0, 0));
-        sceneNode.attachChild(box.node);
+        var box1 = new Box(getApplication().getAssetManager(), new Vector3f(0f, 0f, 0f));
+        sceneNode.attachChild(box1.node);
+        var box2 = new Box(getApplication().getAssetManager(), new Vector3f(1f, 1f, 1f));
+        sceneNode.attachChild(box2.node);
+        var box3 = new Box(getApplication().getAssetManager(), new Vector3f(2f, 2f, 2f));
+        sceneNode.attachChild(box3.node);
     }
 
     @Override

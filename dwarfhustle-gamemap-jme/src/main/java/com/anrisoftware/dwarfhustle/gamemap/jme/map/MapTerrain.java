@@ -28,8 +28,11 @@ import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainLevel.MapTerrainLevelFactory;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.google.inject.assistedinject.Assisted;
+import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
+import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
+import com.jme3.scene.shape.Quad;
 
 /**
  * Game map terrain having multiple z levels.
@@ -59,12 +62,24 @@ public class MapTerrain {
     @Assisted
     private MapTerrainModel model;
 
+    private Node background;
+
     @Inject
-    public MapTerrain(@Assisted GameMap gm) {
+    public MapTerrain(@Assisted GameMap gm, AssetManager as) {
         this.gm = gm;
         this.node = new Node(MapTerrain.class.getSimpleName());
         this.currentLevels = Stacks.mutable.empty();
         this.oldLevels = Stacks.mutable.empty();
+        this.background = createBackground(as);
+        node.attachChild(background);
+    }
+
+    private Node createBackground(AssetManager as) {
+        var plane = new Quad(gm.getWidth(), gm.getHeight());
+        var geo = new Geometry("background", plane);
+        var node = new Node("background");
+        // node.attachChild(geo);
+        return node;
     }
 
     public IntObjectMap<MapTerrainLevel> getLevels() {
@@ -86,8 +101,8 @@ public class MapTerrain {
             if (!oldLevels.isEmpty()) {
                 tl = oldLevels.pop();
             } else {
-                tl = levelFactory.create(model, gm, size + i);
-                tl.node.setLocalTranslation(0f, 0f, -1f * (size + i));
+                tl = levelFactory.create(model, gm, levels - i - 1);
+                tl.node.setLocalTranslation(0f, 0f, 1f * (size + i));
             }
             currentLevels.push(tl);
             node.attachChild(tl.node);

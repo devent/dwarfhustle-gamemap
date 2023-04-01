@@ -28,7 +28,6 @@ import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongFloatMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.primitive.LongFloatMaps;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
@@ -209,20 +208,15 @@ public class MapTerrainModel {
         unknownTextures = am.loadTexture("Textures/Tiles/Unknown/unknown-02.png");
     }
 
-    @SuppressWarnings("unchecked")
     private void loadTextureMap(Map.Entry<Integer, Map<String, Object>> texentry) {
         long id = texentry.getKey();
         var value = texentry.getValue();
         loadTexture(value, id, "baseColorMap");
-        var render = (Map<String, Object>) value.get("render");
-        if (render == null) {
-            render = Maps.mutable.empty();
-        }
-        putColor(specularColor, render, id, "specular", new ColorRGBA());
-        putColor(baseColor, render, id, "baseColor", new ColorRGBA());
-        putFloat(metallic, render, id, "metallic", 1f);
-        putFloat(glossiness, render, id, "glossiness", 1f);
-        putFloat(roughness, render, id, "roughness", 1f);
+        putColor(specularColor, value, id, "specular", new ColorRGBA());
+        putColor(baseColor, value, id, "baseColor", new ColorRGBA());
+        putFloat(metallic, value, id, "metallic", 1f);
+        putFloat(glossiness, value, id, "glossiness", 1f);
+        putFloat(roughness, value, id, "roughness", 1f);
     }
 
     private void putFloat(MutableLongFloatMap dest, Map<String, Object> map, long id, String name, float f) {
@@ -301,9 +295,6 @@ public class MapTerrainModel {
         tile.setRoughness(roughness.get(material));
         tile.setMetallic(metallic.get(material));
         tile.setGlossiness(glossiness.get(material));
-        tile.setRoughness(1f);
-        tile.setMetallic(0f);
-        tile.setGlossiness(1f);
     }
 
     private void updateProperties(MapTerrainTile tile, int level, int y, int x) {

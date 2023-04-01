@@ -24,8 +24,8 @@ import javax.inject.Inject;
 import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.asset.AssetManager;
+import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
-import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.texture.Texture;
@@ -103,9 +103,9 @@ public class MapTerrainTile {
         this.level = level;
         this.y = y;
         this.x = x;
-        geo.setQueueBucket(Bucket.Transparent);
         geo.updateModelBound();
-        // geo.getMaterial().getAdditionalRenderState().setWireframe(true);
+        geo.getMaterial().getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
+        geo.getMaterial().getAdditionalRenderState().setWireframe(false);
         node.setUserData("name", NAME);
         node.setUserData("level", level);
         node.setUserData("y", y);
@@ -170,9 +170,6 @@ public class MapTerrainTile {
     public void update() {
         if (dirty) {
             this.dirty = false;
-            if (propertiesBits.same(hidden)) {
-
-            }
             var m = geo.getMaterial();
             m.setTexture("BaseColorMap", baseColorMapTexture);
             m.setColor("Specular", specularColor);
@@ -182,12 +179,16 @@ public class MapTerrainTile {
             m.setFloat("Roughness", roughness);
             if (propertiesBits.same(empty)) {
                 m.setTexture("EmissiveMap", emptyTexture);
+                geo.getMaterial().getAdditionalRenderState().setBlendMode(BlendMode.Alpha);
             } else if (propertiesBits.contains(selected | focused)) {
                 m.setTexture("EmissiveMap", selectedFocusedTexture);
+                geo.getMaterial().getAdditionalRenderState().setBlendMode(BlendMode.PremultAlpha);
             } else if (propertiesBits.contains(selected)) {
                 m.setTexture("EmissiveMap", selectedTexture);
+                geo.getMaterial().getAdditionalRenderState().setBlendMode(BlendMode.PremultAlpha);
             } else if (propertiesBits.contains(focused)) {
                 m.setTexture("EmissiveMap", focusedTexture);
+                geo.getMaterial().getAdditionalRenderState().setBlendMode(BlendMode.PremultAlpha);
             }
         }
     }

@@ -27,6 +27,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainTile.MapTerrainTil
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.google.inject.assistedinject.Assisted;
+import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.scene.Node;
 
 import lombok.SneakyThrows;
@@ -77,23 +78,24 @@ public class MapTerrainLevel {
         this.tilesNode = new Node(MapTerrainLevel.class.getSimpleName() + "-" + level + "-tiles");
         MutableIntObjectMap<IntObjectMap<MapTerrainTile>> yxtiles = IntObjectMaps.mutable.empty();
         this.yxtiles = yxtiles;
-        int h = gm.getHeight();
         int w = gm.getWidth();
-        float h2 = -h / 2f;
+        int h = gm.getHeight();
         float w2 = -w / 2f;
+        float h2 = h / 2f;
         for (int y = 0; y < h; y++) {
             MutableIntObjectMap<MapTerrainTile> xtiles = IntObjectMaps.mutable.empty();
             yxtiles.put(y, xtiles);
             for (int x = 0; x < w; x++) {
                 var tile = tileFactory.create(level, y, x);
                 xtiles.put(x, tile);
-                float tx = w2 + x * 2f + 0.5f;
-                float ty = h2 + y * 2f + 0.5f;
+                float tx = w2 + x * 2f - 1f;
+                float ty = h2 - y * 2f + 1f;
                 tile.node.setLocalTranslation(tx, ty, 0f);
                 tilesNode.attachChild(tile.node);
             }
         }
         node.attachChild(tilesNode);
+        node.setQueueBucket(Bucket.Transparent);
         this.tilesAttached = true;
     }
 
@@ -115,7 +117,7 @@ public class MapTerrainLevel {
             if (tilesAttached && propertiesBits.same(PROPERTY_MASK_HIDDEN)) {
                 node.detachChild(tilesNode);
                 this.tilesAttached = false;
-            } else if (tilesAttached) {
+            } else if (!tilesAttached) {
                 node.attachChild(tilesNode);
                 this.tilesAttached = true;
             }
