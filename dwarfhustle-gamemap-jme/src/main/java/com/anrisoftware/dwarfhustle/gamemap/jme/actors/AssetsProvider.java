@@ -38,15 +38,15 @@ import lombok.SneakyThrows;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class ObjectsProvider implements Provider<GameObjects<Long, GameObject>> {
+public class AssetsProvider implements Provider<GameObjects> {
 
     @Inject
     private ActorSystemProvider actor;
 
-    private GameObjects<Long, GameObject> objects;
+    private GameObjects objects;
 
     @Override
-    public GameObjects<Long, GameObject> get() {
+    public GameObjects get() {
         if (objects == null) {
             this.objects = retrieveCache();
         }
@@ -54,16 +54,16 @@ public class ObjectsProvider implements Provider<GameObjects<Long, GameObject>> 
     }
 
     @SneakyThrows
-    private GameObjects<Long, GameObject> retrieveCache() {
+    private GameObjects retrieveCache() {
         var timeout = Duration.ofSeconds(1);
         CompletionStage<CacheRetrieveResponseMessage> result = AskPattern.ask(actor.get(),
                 replyTo -> new CacheRetrieveMessage(replyTo, ObjectsJcsCacheActor.ID), timeout,
                 actor.getActorSystem().scheduler());
         var ret = result.toCompletableFuture().get();
-        return new GameObjects<>() {
+        return new GameObjects() {
 
             @Override
-            public GameObject get(Long key) {
+            public GameObject get(long key) {
                 return ret.cache.get(key);
             }
         };

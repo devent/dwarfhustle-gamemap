@@ -12,7 +12,7 @@ import lombok.ToString;
 @RequiredArgsConstructor
 @EqualsAndHashCode
 @ToString
-public abstract class TextureKey<T> {
+public abstract class AssetKey<T> {
 
     /**
      * Texture key for a material texture. The material is identified by a long
@@ -20,7 +20,7 @@ public abstract class TextureKey<T> {
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
-    public static class MaterialTextureKey extends TextureKey<Long> {
+    public static class MaterialTextureKey extends AssetKey<Long> {
 
         public MaterialTextureKey(Long key) {
             super(key);

@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import java.util.function.Consumer;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 
@@ -27,7 +27,7 @@ import akka.actor.typed.ActorRef;
 import lombok.ToString;
 
 /**
- * Message to retrieve a {@link TextureObject} with a {@link TextureKey} from
+ * Message to retrieve a {@link TextureObject} with a {@link AssetKey} from
  * the cache.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
@@ -36,7 +36,7 @@ import lombok.ToString;
 public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends AssetsMessage<T> {
 
     /**
-     * Response message that the {@link TextureObject} with the {@link TextureKey}
+     * Response message that the {@link TextureObject} with the {@link AssetKey}
      * was retrieved.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
@@ -54,7 +54,7 @@ public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends Asset
 
     /**
      * Response message that there was an error retrieving a {@link TextureObject}
-     * with the {@link TextureKey}.
+     * with the {@link AssetKey}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
@@ -72,15 +72,15 @@ public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends Asset
     private final static Consumer<GameObject> EMPTY_CONSUMER = go -> {
     };
 
-    public final TextureKey<?> key;
+    public final AssetKey<?> key;
 
     public final Consumer<GameObject> consumer;
 
-    public GetTextureMessage(ActorRef<T> replyTo, TextureKey<?> key) {
+    public GetTextureMessage(ActorRef<T> replyTo, AssetKey<?> key) {
         this(replyTo, key, EMPTY_CONSUMER);
     }
 
-    public GetTextureMessage(ActorRef<T> replyTo, TextureKey<?> key, Consumer<GameObject> consumer) {
+    public GetTextureMessage(ActorRef<T> replyTo, AssetKey<?> key, Consumer<GameObject> consumer) {
         super(replyTo);
         this.key = key;
         this.consumer = consumer;

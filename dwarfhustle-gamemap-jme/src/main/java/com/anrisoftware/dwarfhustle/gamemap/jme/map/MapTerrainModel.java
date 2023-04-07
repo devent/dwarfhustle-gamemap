@@ -23,10 +23,12 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
 
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GameAssets;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey.MaterialTextureKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
@@ -85,12 +87,19 @@ public class MapTerrainModel {
     private MutableList<MutableList<MutableList<MapTile>>> tiles;
 
     @Inject
-    private GameObjects<Long, GameObject> objects;
+    private GameObjects gameObjects;
+
+    @Inject
+    private GameAssets gameAssets;
 
     private GameMap gm;
 
-    public void setObjects(GameObjects<Long, GameObject> objects) {
-        this.objects = objects;
+    public void setGameObjects(GameObjects objects) {
+        this.gameObjects = objects;
+    }
+
+    public void setGameAssets(GameAssets assets) {
+        this.gameAssets = assets;
     }
 
     public void setTileCursor(int level, int y, int x) {
@@ -198,12 +207,13 @@ public class MapTerrainModel {
     private void updateTexture(MapTerrainTile tile, int level, int y, int x) {
         var mt = tiles.get(level).get(y).get(x);
         long material = mt.getMaterial();
-        // tile.setBaseColorMap(baseColorMapTextures.get(material));
-        // tile.setSpecularColor(specularColor.get(material));
-        // tile.setBaseColor(baseColor.get(material));
-        // tile.setRoughness(roughness.get(material));
-        // tile.setMetallic(metallic.get(material));
-        // tile.setGlossiness(glossiness.get(material));
+        var tex = (TextureObject) gameAssets.get(new MaterialTextureKey(material));
+        tile.setBaseColorMap(tex.tex);
+        tile.setSpecularColor(tex.specular);
+        tile.setBaseColor(tex.baseColor);
+        tile.setRoughness(tex.roughness);
+        tile.setMetallic(tex.metallic);
+        tile.setGlossiness(tex.glossiness);
     }
 
     private void updateProperties(MapTerrainTile tile, int level, int y, int x) {
@@ -231,7 +241,7 @@ public class MapTerrainModel {
     }
 
     private MapBlock retrieveMapBlock(long id) {
-        return (MapBlock) objects.get(id);
+        return (MapBlock) gameObjects.get(id);
     }
 
 }

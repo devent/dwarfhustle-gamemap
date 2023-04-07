@@ -39,8 +39,8 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage.Get
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureKey.MaterialTextureKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey.MaterialTextureKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -69,7 +69,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Cache for {@link GameObject} game objects.
+ * Cache for game assets.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -96,7 +96,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
 
     public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
             CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
-        return AbstractJcsCacheActor.create(injector, actorFactory, TextureKey.class, initCacheAsync);
+        return AbstractJcsCacheActor.create(injector, actorFactory, AssetKey.class, initCacheAsync);
     }
 
     /**

@@ -27,6 +27,7 @@ import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunTaskWorker.SunTaskWorkerFactory;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -67,13 +68,13 @@ public class SunActor {
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class InitialStateMessage extends Message {
+    private static class InitialStateMessage extends GameMapMessage {
         public final LightAppState lightAppState;
     }
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class SetupErrorMessage extends Message {
+    private static class SetupErrorMessage extends GameMapMessage {
         public final Throwable cause;
     }
 
@@ -83,22 +84,24 @@ public class SunActor {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface SunActorFactory {
-        SunActor create(ActorContext<Message> context, StashBuffer<Message> stash);
+        SunActor create(ActorContext<GameMapMessage> context, StashBuffer<GameMapMessage> stash);
     }
 
     /**
      * Creates the {@link SunActor}.
      */
-    public static Behavior<Message> create(Injector injector) {
+    @SuppressWarnings("unchecked")
+    public static Behavior<GameMapMessage> create(Injector injector) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
-                    return result;
+                    return (GameMapMessage) result;
                 } else {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return injector.getInstance(SunActorFactory.class).create(context, stash).start(injector);
+            return (Behavior<GameMapMessage>) injector.getInstance(SunActorFactory.class).create(context, stash)
+                    .start(injector);
         }));
     }
 
@@ -110,11 +113,12 @@ public class SunActor {
         return createNamedActor(system, timeout, ID, KEY, NAME, create(injector));
     }
 
-    private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
+    private static CompletionStage<? extends Message> createState(Injector injector,
+            ActorContext<? extends Message> context) {
         return CompletableFuture.supplyAsync(() -> attachState(injector));
     }
 
-    private static Message attachState(Injector injector) {
+    private static GameMapMessage attachState(Injector injector) {
         var app = injector.getInstance(Application.class);
         var lightAppState = injector.getInstance(LightAppState.class);
         try {
@@ -130,11 +134,11 @@ public class SunActor {
 
     @Inject
     @Assisted
-    private ActorContext<Message> context;
+    private ActorContext<GameMapMessage> context;
 
     @Inject
     @Assisted
-    private StashBuffer<Message> buffer;
+    private StashBuffer<GameMapMessage> buffer;
 
     @Inject
     private SunTaskWorkerFactory sunTaskWorkerFactory;
@@ -158,15 +162,15 @@ public class SunActor {
      * <li>{@link Message}
      * </ul>
      */
-    public Behavior<Message> start(Injector injector) {
-        return Behaviors.receive(Message.class)//
+    public Behavior<? extends Message> start(Injector injector) {
+        return Behaviors.receive(GameMapMessage.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
-                .onMessage(Message.class, this::stashOtherCommand)//
+                .onMessage(GameMapMessage.class, this::stashOtherCommand)//
                 .build();
     }
 
-    private Behavior<Message> stashOtherCommand(Message m) {
+    private Behavior<GameMapMessage> stashOtherCommand(GameMapMessage m) {
         log.debug("stashOtherCommand: {}", m);
         try {
             buffer.stash(m);
@@ -176,7 +180,7 @@ public class SunActor {
         return Behaviors.same();
     }
 
-    private Behavior<Message> onSetupError(SetupErrorMessage m) {
+    private Behavior<GameMapMessage> onSetupError(SetupErrorMessage m) {
         log.debug("onSetupError: {}", m);
         return Behaviors.stopped();
     }
@@ -184,7 +188,7 @@ public class SunActor {
     /**
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
      */
-    private Behavior<Message> onInitialState(InitialStateMessage m) {
+    private Behavior<GameMapMessage> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.initialState = m;
         return buffer.unstashAll(getInitialBehavior()//
@@ -194,19 +198,9 @@ public class SunActor {
     /**
      * Reacts to the {@link GameTickMessage} message.
      */
-    private Behavior<Message> onGameTick(GameTickMessage m) {
+    private Behavior<GameMapMessage> onGameTick(GameTickMessage m) {
         app.enqueue(this::runSunTaskWorker);
         return Behaviors.same();
-    }
-
-    /**
-     * <ul>
-     * <li>
-     * </ul>
-     */
-    private Behavior<Message> onShutdown(ShutdownMessage m) {
-        log.debug("onShutdown {}", m);
-        return Behaviors.stopped();
     }
 
     /**
@@ -216,10 +210,9 @@ public class SunActor {
      * <li>{@link ShutdownMessage}
      * </ul>
      */
-    private BehaviorBuilder<Message> getInitialBehavior() {
+    private BehaviorBuilder<GameMapMessage> getInitialBehavior() {
         app.enqueue(this::createSunTaskWorker);
-        return Behaviors.receive(Message.class)//
-                .onMessage(ShutdownMessage.class, this::onShutdown)//
+        return Behaviors.receive(GameMapMessage.class)//
                 .onMessage(GameTickMessage.class, this::onGameTick)//
         ;
     }
