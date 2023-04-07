@@ -35,7 +35,10 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickSystem;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadMapTilesMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
@@ -159,6 +162,12 @@ public class AppActor {
         private final KnowledgeResponseMessage response;
     }
 
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    private static class WrappedAssetsResponse extends Message {
+        private final AssetsResponseMessage<?> response;
+    }
+
     /**
      * Factory to create {@link AppActor}.
      *
@@ -198,10 +207,35 @@ public class AppActor {
     }
 
     private static Message createActors0(Injector injector, AppCommand command) {
+        injector.getInstance(AppCachesConfig.class).create(command.getGamedir());
         createDb(injector, command);
         createPowerLoom(injector);
         createConsole(injector);
+        createObjectsCache(injector);
+        createAssetsActor(injector);
         return new InitialStateMessage();
+    }
+
+    private static void createObjectsCache(Injector injector) {
+        var task = ObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ObjectsJcsCacheActor.create", ex);
+            } else {
+                log.debug("ObjectsJcsCacheActor created");
+            }
+        });
+    }
+
+    private static void createAssetsActor(Injector injector) {
+        var task = AssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("AssetsActor.create", ex);
+            } else {
+                log.debug("AssetsActor created");
+            }
+        });
     }
 
     private static void createDb(Injector injector, AppCommand command) {
@@ -303,9 +337,6 @@ public class AppActor {
     private GameSettingsProvider ogs;
 
     @Inject
-    private AppCachesConfig appCachesConfig;
-
-    @Inject
     private Application app;
 
     @Inject
@@ -334,7 +365,8 @@ public class AppActor {
 
     private MapBlock currentMapRootBlock;
 
-    private int materialsLoaded;
+    @SuppressWarnings("rawtypes")
+    private ActorRef<AssetsResponseMessage> assetsResponseAdapter;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -352,6 +384,7 @@ public class AppActor {
         this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         this.knowledgeResponseAdapter = context.messageAdapter(KnowledgeResponseMessage.class,
                 WrappedKnowledgeResponse::new);
+        this.assetsResponseAdapter = context.messageAdapter(AssetsResponseMessage.class, WrappedAssetsResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -389,6 +422,14 @@ public class AppActor {
      */
     private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
         log.debug("onLoadWorld {}", m);
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Sedimentary.TYPE));
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, IgneousIntrusive.TYPE));
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, IgneousExtrusive.TYPE));
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Metamorphic.TYPE));
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, SpecialStoneLayer.TYPE));
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Soil.TYPE));
+        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Gas.TYPE));
+        actor.tell(new LoadTexturesMessage<>(assetsResponseAdapter));
         if (command.isUseRemoteServer()) {
             actor.tell(new ConnectDbRemoteMessage<>(dbResponseAdapter, command.getRemoteServer(),
                     command.getRemoteDatabase(), command.getRemoteUser(), command.getRemotePassword()));
@@ -418,39 +459,9 @@ public class AppActor {
      * <li>
      * </ul>
      */
-    private Behavior<Message> onLoadKnowledge(LoadKnowledgeMessage m) {
-        log.debug("onLoadKnowledge {}", m);
-        appCachesConfig.create(command.getGamedir(), m.gm);
-        materialsLoaded = 0;
-        createObjectsCache(m);
-        return Behaviors.same();
-    }
-
-    private void createObjectsCache(LoadKnowledgeMessage m) {
-        var task = ObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30));
-        task.whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("ObjectsJcsCacheActor.create", ex);
-            } else {
-                log.debug("ObjectsJcsCacheActor created");
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Sedimentary.TYPE));
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, IgneousIntrusive.TYPE));
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, IgneousExtrusive.TYPE));
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Metamorphic.TYPE));
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, SpecialStoneLayer.TYPE));
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Soil.TYPE));
-                actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Gas.TYPE));
-            }
-        });
-    }
-
-    /**
-     * Reacts on the {@link LoadMapTilesMessage} and starts the loading of the root
-     * map block.
-     */
-    private Behavior<Message> onLoadMapTiles(LoadMapTilesMessage m) {
-        log.debug("onLoadMapTiles {}", m);
-        loadMapBlockRoot(m);
+    private Behavior<Message> onSetLayersTerrain(SetLayersTerrainMessage m) {
+        log.debug("onSetLayersTerrain {}", m);
+        ogs.get().visibleDepthLayers.set(m.layers);
         return Behaviors.same();
     }
 
@@ -461,7 +472,13 @@ public class AppActor {
      * {@link LoadObjectSuccessMessage} with a {@link MapBlock} object should be
      * called.
      */
-    private void loadMapBlockRoot(LoadMapTilesMessage m) {
+    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
+        log.debug("onSetGameMap {}", m);
+        loadRootMapBlock(m);
+        return Behaviors.same();
+    }
+
+    private void loadRootMapBlock(SetGameMapMessage m) {
         actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, db -> {
             var w = m.gm.getWidth();
             var h = m.gm.getHeight();
@@ -471,29 +488,6 @@ public class AppActor {
             return db.query(query, MapBlock.OBJECT_TYPE, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(),
                     p.getZ(), p.getEndPos().getX(), p.getEndPos().getY(), p.getEndPos().getZ());
         }));
-    }
-
-    /**
-     * <ul>
-     * <li>
-     * </ul>
-     */
-    private Behavior<Message> onSetLayersTerrain(SetLayersTerrainMessage m) {
-        log.debug("onSetLayersTerrain {}", m);
-        ogs.get().visibleDepthLayers.set(m.layers);
-        return Behaviors.same();
-    }
-
-    /**
-     * <ul>
-     * <li>
-     * </ul>
-     */
-    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
-        log.debug("onSetGameMap {}", m);
-        appCachesConfig.create(command.getGamedir(), m.gm);
-        ogs.get().currentMap.set(m.gm);
-        return Behaviors.same();
     }
 
     /**
@@ -548,7 +542,7 @@ public class AppActor {
      * <dd>Caches the world map. Sends the {@link SetWorldMapMessage} message.</dd>
      * <dt>{@link GameMap}</dt>
      * <dd>Caches the game map. Sends the {@link SetGameMapMessage} message. Sends
-     * the {@link LoadKnowledgeMessage}.</dd>
+     * the {@link LoadMapTilesMessage}.</dd>
      * <dt>{@link MapBlock}</dt>
      * <dd>Caches the map block. Retrieves all child map blocks from the root map
      * block.</dd>
@@ -567,13 +561,14 @@ public class AppActor {
             return Behaviors.stopped();
         } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
             if (rm.go instanceof WorldMap wm) {
+                ogs.get().currentWorld.set(wm);
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, wm.getId(), wm));
                 actor.tell(new SetWorldMapMessage(wm));
             } else if (rm.go instanceof GameMap gm) {
                 gm.setWorld(ogs.get().currentWorld.get());
+                ogs.get().currentMap.set(gm);
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
                 actor.tell(new SetGameMapMessage(gm));
-                actor.tell(new LoadKnowledgeMessage(gm));
             } else if (rm.go instanceof MapBlock mb) {
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
                 if (mb.isRoot()) {
@@ -654,10 +649,22 @@ public class AppActor {
             return Behaviors.stopped();
         } else if (m.response instanceof KnowledgeResponseSuccessMessage rm) {
             rm.go.objects.forEach(System.out::println);
-            materialsLoaded++;
-            if (materialsLoaded == 7) {
-                context.getSelf().tell(new LoadMapTilesMessage(ogs.get().currentMap.get()));
-            }
+        }
+        return Behaviors.same();
+    }
+
+    /**
+     * Handles {@link WrappedAssetsResponse}. Returns a behavior for the messages
+     * from {@link #getInitialBehavior()}.
+     */
+    private Behavior<Message> onWrappedAssetsResponse(WrappedAssetsResponse m) {
+        log.debug("onWrappedAssetsResponse {}", m);
+        if (m.response instanceof LoadTexturesErrorMessage<?> rm) {
+            log.error("Error load textures", rm.e);
+            actor.tell(new AppErrorMessage(rm.e));
+            return Behaviors.stopped();
+        } else if (m.response instanceof LoadTexturesSuccessMessage<?> rm) {
+
         }
         return Behaviors.same();
     }
@@ -686,26 +693,25 @@ public class AppActor {
      * <li>{@link SetLayersTerrainMessage}
      * <li>{@link SetGameMapMessage}
      * <li>{@link SetTimeWorldMessage}
-     * <li>{@link LoadKnowledgeMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedObjectsResponse}
      * <li>{@link WrappedCacheResponse}
+     * <li>{@link WrappedAssetsResponse}
      * </ul>
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
-                .onMessage(LoadMapTilesMessage.class, this::onLoadMapTiles)//
                 .onMessage(LoadWorldMessage.class, this::onLoadWorld)//
                 .onMessage(SetWorldMapMessage.class, this::onSetWorldMap)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(SetLayersTerrainMessage.class, this::onSetLayersTerrain)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(SetTimeWorldMessage.class, this::onSetTimeWorld)//
-                .onMessage(LoadKnowledgeMessage.class, this::onLoadKnowledge)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(WrappedKnowledgeResponse.class, this::onWrappedKnowledgeResponse)//
+                .onMessage(WrappedAssetsResponse.class, this::onWrappedAssetsResponse)//
         ;
     }
 }

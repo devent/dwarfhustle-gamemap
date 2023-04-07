@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor.AppActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AssetsJcsCacheActor.AssetsJcsCacheActorFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
@@ -31,5 +32,7 @@ public class GamemapActorsModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		install(new FactoryModuleBuilder().implement(AppActor.class, AppActor.class).build(AppActorFactory.class));
+        install(new FactoryModuleBuilder().implement(AssetsJcsCacheActor.class, AssetsJcsCacheActor.class)
+                .build(AssetsJcsCacheActorFactory.class));
 	}
 }

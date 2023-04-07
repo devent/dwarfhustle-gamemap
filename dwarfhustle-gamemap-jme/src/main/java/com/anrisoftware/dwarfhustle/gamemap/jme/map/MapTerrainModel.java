@@ -17,19 +17,11 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-
 import javax.inject.Inject;
 
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
-import org.eclipse.collections.api.map.primitive.MutableLongFloatMap;
-import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.primitive.LongFloatMaps;
-import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
@@ -38,19 +30,11 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
-import com.jme3.asset.AssetManager;
-import com.jme3.asset.AssetNotFoundException;
-import com.jme3.asset.plugins.ZipLocator;
 import com.jme3.bounding.BoundingBox;
-import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
-import com.jme3.texture.Texture;
 import com.jme3.util.TempVars;
 
-import groovy.lang.Binding;
-import groovy.util.GroovyScriptEngine;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -102,22 +86,6 @@ public class MapTerrainModel {
 
     @Inject
     private GameObjects<Long, GameObject> objects;
-
-    private MutableLongObjectMap<Texture> baseColorMapTextures = LongObjectMaps.mutable.empty();
-
-    private MutableLongObjectMap<ColorRGBA> specularColor = LongObjectMaps.mutable.empty();
-
-    private MutableLongObjectMap<ColorRGBA> baseColor = LongObjectMaps.mutable.empty();
-
-    private MutableLongFloatMap metallic = LongFloatMaps.mutable.empty();
-
-    private MutableLongFloatMap glossiness = LongFloatMaps.mutable.empty();
-
-    private MutableLongFloatMap roughness = LongFloatMaps.mutable.empty();
-
-    private Texture unknownTextures;
-
-    private AssetManager am;
 
     private GameMap gm;
 
@@ -195,65 +163,6 @@ public class MapTerrainModel {
         }
     }
 
-    @Inject
-    @SneakyThrows
-    public void setAssetManager(AssetManager am) {
-        this.am = am;
-        am.registerLocator("../dwarfhustle-assetpack.zip", ZipLocator.class);
-        var engine = new GroovyScriptEngine(new URL[] { MapTerrainModel.class.getResource("/TexturesMap.groovy") });
-        var binding = new Binding();
-        @SuppressWarnings("unchecked")
-        var res = (Map<Integer, Map<String, Object>>) engine.run("TexturesMap.groovy", binding);
-        res.entrySet().parallelStream().forEach(this::loadTextureMap);
-        unknownTextures = am.loadTexture("Textures/Tiles/Unknown/unknown-02.png");
-    }
-
-    private void loadTextureMap(Map.Entry<Integer, Map<String, Object>> texentry) {
-        long id = texentry.getKey();
-        var value = texentry.getValue();
-        loadTexture(value, id, "baseColorMap");
-        putColor(specularColor, value, id, "specular", new ColorRGBA());
-        putColor(baseColor, value, id, "baseColor", new ColorRGBA());
-        putFloat(metallic, value, id, "metallic", 1f);
-        putFloat(glossiness, value, id, "glossiness", 1f);
-        putFloat(roughness, value, id, "roughness", 1f);
-    }
-
-    private void putFloat(MutableLongFloatMap dest, Map<String, Object> map, long id, String name, float f) {
-        var vv = (Float) map.get(name);
-        if (vv != null) {
-            float v = vv;
-            dest.put(id, v);
-        } else {
-            dest.put(id, f);
-        }
-    }
-
-    private void putColor(MutableLongObjectMap<ColorRGBA> dest, Map<String, Object> map, long id, String name,
-            ColorRGBA d) {
-        @SuppressWarnings("unchecked")
-        var vv = (List<Float>) map.get(name);
-        if (vv != null) {
-            var v = new ColorRGBA(vv.get(0), vv.get(1), vv.get(2), vv.get(3));
-            dest.put(id, v);
-        } else {
-            dest.put(id, d);
-        }
-    }
-
-    private void loadTexture(Map<String, Object> map, long id, String name) {
-        var texname = (String) map.get(name);
-        Texture tex = null;
-        log.trace("Loading {} texture {}:={}", name, id, texname);
-        try {
-            tex = am.loadTexture(texname);
-        } catch (AssetNotFoundException e) {
-            tex = unknownTextures;
-            log.error("Error loading texture", e);
-        }
-        baseColorMapTextures.put(id, tex);
-    }
-
     public synchronized void update() {
         int z = gs.get().currentMap.get().getCursorZ();
         if (currentZ != z) {
@@ -289,12 +198,12 @@ public class MapTerrainModel {
     private void updateTexture(MapTerrainTile tile, int level, int y, int x) {
         var mt = tiles.get(level).get(y).get(x);
         long material = mt.getMaterial();
-        tile.setBaseColorMap(baseColorMapTextures.get(material));
-        tile.setSpecularColor(specularColor.get(material));
-        tile.setBaseColor(baseColor.get(material));
-        tile.setRoughness(roughness.get(material));
-        tile.setMetallic(metallic.get(material));
-        tile.setGlossiness(glossiness.get(material));
+        // tile.setBaseColorMap(baseColorMapTextures.get(material));
+        // tile.setSpecularColor(specularColor.get(material));
+        // tile.setBaseColor(baseColor.get(material));
+        // tile.setRoughness(roughness.get(material));
+        // tile.setMetallic(metallic.get(material));
+        // tile.setGlossiness(glossiness.get(material));
     }
 
     private void updateProperties(MapTerrainTile tile, int level, int y, int x) {

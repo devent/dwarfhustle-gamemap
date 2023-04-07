@@ -1,44 +1,128 @@
 @startuml
 title AppActor LoadWorldMessage
 
-control MainActor as ma
+control Actor
+participant GameSettings
 participant AppActor as ac
 participant OrientDbActor as orientdba
 participant ObjectsDbActor as objectsdba
 participant MapBlocksJcsCacheActor as mbjca
-control Actor
-participant GameSettings
 
 --> ac : LoadWorldMessage
 
 ac -> ac ++ : onLoadWorld()
+    ac --> Actor : KnowledgeGetMessage{7}
+    ac --> Actor : LoadTexturesMessage
+
     alt isUseRemoteServer is true
         ac --> orientdba : ConnectDbRemoteMessage
-        ac -> ac ++ : onWrappedDbResponse()
-        orientdba --> ac : ConnectDbSuccessMessage
     else
         ac --> orientdba : StartEmbeddedServerMessage
-        orientdba --> ac : StartEmbeddedServerSuccessMessage
-        ac --> orientdba : ConnectDbEmbeddedMessage
+        orientdba --> Actor : StartEmbeddedServerSuccessMessage
     end
-    ac --> Actor : LoadObjectMessage
-    note left
-    Load WorldMap
-    end note
     deactivate ac
 deactivate ac
 
-objectsdba --> ac : LoadObjectSuccessMessage
-    ac -> ac ++ : onWrappedObjectsResponse()
-    alt game object is WorldMap case
-    ac --> Actor : CachePutMessage
-    ac --> Actor : SetWorldMapMessage
-    end
+orientdba --> ac ++ : ConnectDbSuccessMessage
+orientdba --> ac : ConnectDbEmbeddedMessage
+    ac -> ac ++ : onWrappedDbResponse()
+        alt response is DbErrorMessage
+            ac --> Actor : AppErrorMessage
+        else response is StartEmbeddedServerSuccessMessage
+            ac --> Actor : ConnectDbEmbeddedMessage
+        else response is ConnectDbSuccessMessage
+            ac --> Actor : LoadObjectMessage
+            note left
+            Load WorldMap
+            end note
+        end
+    deactivate ac
 deactivate ac
 
---> ac : SetWorldMapMessage
-ac -> ac ++ : onSetWorldMap()
-ac -> GameSettings : setCurrentWorld()
+
+objectsdba --> ac ++ : LoadObjectSuccessMessage
+        note left
+        Loaded WorldMap
+        end note
+    ac -> ac ++ : onWrappedObjectsResponse()
+        ac -> GameSettings : setCurrentWorld()
+        ac --> Actor : CachePutMessage
+        note left
+            WorldMap
+        end note
+        ac --> Actor : SetWorldMapMessage
+    deactivate ac
+deactivate ac
+
+--> ac ++ : SetWorldMapMessage
+    ac -> ac ++ : onSetWorldMap()
+        ac --> Actor : LoadObjectMessage
+        note left
+        Load GameMap
+        end note
+    deactivate ac
+deactivate ac
+
+objectsdba --> ac ++ : LoadObjectSuccessMessage
+        note left
+        Loaded GameMap
+        end note
+    ac -> ac ++ : onWrappedObjectsResponse()
+        ac -> GameSettings : setCurrentMap()
+        ac --> Actor : CachePutMessage
+        note left
+            GameMap
+        end note
+        ac --> Actor : SetGameMapMessage
+    deactivate ac
+deactivate ac
+
+--> ac ++ : SetGameMapMessage
+    ac -> ac ++ : onSetGameMap()
+        ac --> Actor : LoadObjectMessage
+        note left
+        Load root MapBlock
+        end note
+    deactivate ac
+deactivate ac
+
+objectsdba --> ac ++ : LoadObjectSuccessMessage
+        note left
+        Loaded root MapBlock
+        end note
+    ac -> ac ++ : onWrappedObjectsResponse()
+        ac --> Actor : CachePutMessage
+        note left
+            root MapBlock
+        end note
+        ac -> ac ++ : retrieveChildMapBlocks()
+            ac --> Actor : LoadObjectsMessage
+            note left
+            MapBlock(s)
+            end note
+            par
+                loop until currentMapBlocksLoaded != currentMapBlocksCount
+                    ac --> Actor : CachePutMessage
+                    note left
+                    MapBlock
+                    end note
+                end
+                ac -> ac ++ : mapBlockLoaded()
+                    par #APPLICATION JME-Thread
+                        ac -> GameTickSystem ** : create
+                        ac -> Engine : addSytem()
+                    end
+                    ac -> ac ++ : createSunActor()
+                        ac -> SunActor ** : create()
+                    deactivate ac
+                    ac --> Actor : MapBlockLoadedMessage
+                    note left
+                    root MapBlock
+                    end note
+                deactivate ac
+            end
+        deactivate ac
+    deactivate ac
 deactivate ac
 
 @enduml

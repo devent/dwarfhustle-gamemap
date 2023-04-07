@@ -1,17 +1,20 @@
 @startuml
 title AppActor createApp
+control actor
 participant App as a
 participant AppActor as ac
+participant AppCachesConfig as acc
 participant OrientDbActor as orientdba
 participant ObjectsDbActor as objectsdba
 participant PowerLoomKnowledgeActor as plna
+participant KnowledgeJcsCacheActor as kjca
 participant KnowledgeBaseActor as kba
 participant ConsoleActor as ca
-control actor
 
 a -> a ++ : createApp()
 a -> ac ** : create()
 ac -> ac ++ : createActors()
+ac -> acc ** : create()
 
 par whenComplete
 alt cause is not null
@@ -33,8 +36,8 @@ par whenComplete
 alt ex is not null
 ac --> actor : AppErrorMessage
 else
-alt #APPLICATION SkipLoad is false
-ac -> ac : LoadWorldMessage
+alt #Lime SkipLoad is false
+ac --> actor : LoadWorldMessage
 end
 end
 end
@@ -45,7 +48,30 @@ end
 deactivate ac
 
 ac -> plna ** : create()
+par whenComplete
+alt ex is not null
+ac --> actor : AppErrorMessage
+else
+
+ac -> ac ++ : createKnowledgeCache()
+ac -> kjca ** : create()
+
+par whenComplete
+alt ex is not null
+ac --> actor : AppErrorMessage
+else
+
+ac -> ac ++ : createKnowledge()
 ac -> kba ** : create()
+
+end
+end
+
+deactivate ac
+deactivate ac
+deactivate ac
+
+
 ac -> ca ** : create()
 
 deactivate ac
