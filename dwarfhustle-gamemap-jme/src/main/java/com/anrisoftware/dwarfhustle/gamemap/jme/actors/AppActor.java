@@ -33,6 +33,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessag
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickSystem;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
+import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
@@ -58,7 +59,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
