@@ -57,13 +57,14 @@ import com.anrisoftware.dwarfhustle.model.api.materials.Soil;
 import com.anrisoftware.dwarfhustle.model.api.materials.SpecialStoneLayer;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.ObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbEmbeddedMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbRemoteMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbSuccessMessage;
@@ -217,7 +218,7 @@ public class AppActor {
     }
 
     private static void createObjectsCache(Injector injector) {
-        var task = ObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        var task = StoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
@@ -422,13 +423,13 @@ public class AppActor {
      */
     private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
         log.debug("onLoadWorld {}", m);
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Sedimentary.TYPE));
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, IgneousIntrusive.TYPE));
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, IgneousExtrusive.TYPE));
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Metamorphic.TYPE));
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, SpecialStoneLayer.TYPE));
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Soil.TYPE));
-        actor.tell(new KnowledgeGetMessage<>(knowledgeResponseAdapter, Gas.TYPE));
+        actor.tell(createKgMessage(Sedimentary.class, Sedimentary.TYPE));
+        actor.tell(createKgMessage(IgneousIntrusive.class, IgneousIntrusive.TYPE));
+        actor.tell(createKgMessage(IgneousExtrusive.class, IgneousExtrusive.TYPE));
+        actor.tell(createKgMessage(Metamorphic.class, Metamorphic.TYPE));
+        actor.tell(createKgMessage(SpecialStoneLayer.class, SpecialStoneLayer.TYPE));
+        actor.tell(createKgMessage(Soil.class, Soil.TYPE));
+        actor.tell(createKgMessage(Gas.class, Gas.TYPE));
         actor.tell(new LoadTexturesMessage<>(assetsResponseAdapter));
         if (command.isUseRemoteServer()) {
             actor.tell(new ConnectDbRemoteMessage<>(dbResponseAdapter, command.getRemoteServer(),
@@ -437,6 +438,11 @@ public class AppActor {
             actor.tell(new StartEmbeddedServerMessage<>(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
         }
         return Behaviors.same();
+    }
+
+    private KnowledgeGetMessage<KnowledgeResponseMessage> createKgMessage(Class<? extends GameObject> typeClass,
+            String type) {
+        return new KnowledgeGetMessage<>(knowledgeResponseAdapter, typeClass, type);
     }
 
     /**

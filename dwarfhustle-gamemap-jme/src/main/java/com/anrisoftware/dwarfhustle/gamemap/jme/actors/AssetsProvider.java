@@ -28,7 +28,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheRetrieveMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheRetrieveMessage.CacheRetrieveResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.ObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 
 import akka.actor.typed.javadsl.AskPattern;
 import lombok.SneakyThrows;
@@ -57,7 +57,7 @@ public class AssetsProvider implements Provider<GameObjects> {
     private GameObjects retrieveCache() {
         var timeout = Duration.ofSeconds(1);
         CompletionStage<CacheRetrieveResponseMessage> result = AskPattern.ask(actor.get(),
-                replyTo -> new CacheRetrieveMessage(replyTo, ObjectsJcsCacheActor.ID), timeout,
+                replyTo -> new CacheRetrieveMessage(replyTo, StoredObjectsJcsCacheActor.ID), timeout,
                 actor.getActorSystem().scheduler());
         var ret = result.toCompletableFuture().get();
         return new GameObjects() {

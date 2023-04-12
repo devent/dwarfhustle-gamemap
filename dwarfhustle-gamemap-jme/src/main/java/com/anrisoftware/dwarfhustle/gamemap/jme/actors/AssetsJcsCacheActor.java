@@ -161,7 +161,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
 
     @Override
     @SneakyThrows
-    protected GameObject retrieveValueFromDb(String type, Object key) {
+    protected GameObject getValueFromDb(Class<? extends GameObject> typeClass, String type, Object key) {
         if (key instanceof MaterialTextureKey tk) {
             var to = loadTextureObject(materialTexturesMap.get(tk.key.intValue()), tk.key);
             return to;

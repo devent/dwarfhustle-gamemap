@@ -295,7 +295,7 @@ public class GameMapActor {
     private Behavior<Message> onAddMapBlockScene(AddMapBlockSceneMessage m) {
         // log.debug("onAddMapBlockScene {}", m);
         m.mb.getBlocks().forEachKey(pos -> {
-            actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.OBJECT_TYPE, pos));
+            actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.class, MapBlock.OBJECT_TYPE, pos));
         });
         return Behaviors.same();
     }
