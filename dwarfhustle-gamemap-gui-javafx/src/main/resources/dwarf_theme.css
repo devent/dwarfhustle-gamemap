@@ -357,6 +357,7 @@
 
 #levelLabel {
     -fx-background-color: transparent;
+    -fx-text-fill: neutral7;
 }
 
 #commandsSplitTopPane {

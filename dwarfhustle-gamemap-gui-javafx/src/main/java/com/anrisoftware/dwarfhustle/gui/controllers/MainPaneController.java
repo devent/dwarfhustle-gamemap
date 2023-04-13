@@ -123,8 +123,8 @@ public class MainPaneController {
             runFxThread(() -> {
                 levelBar.setMin(1);
                 levelBar.setMax(nv.getDepth());
-                levelBar.setValue(nv.getCursorZ());
-                levelLabel.setText(Integer.toString(nv.getCursorZ()));
+                levelBar.setValue(nv.getCursorZ() + 1);
+                levelLabel.setText(Integer.toString(nv.getCursorZ() + 1));
             });
         });
         levelBar.valueProperty().addListener((o, ov, nv) -> {
