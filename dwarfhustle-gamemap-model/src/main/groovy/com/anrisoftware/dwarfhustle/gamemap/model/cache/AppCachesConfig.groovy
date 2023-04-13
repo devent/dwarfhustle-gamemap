@@ -21,6 +21,8 @@ import java.time.Duration
 
 import org.apache.commons.jcs3.JCS
 
+import com.anrisoftware.dwarfhustle.model.db.cache.JcsCacheConfig
+
 /**
  * Creates application caches configuration based on parameters.
  *

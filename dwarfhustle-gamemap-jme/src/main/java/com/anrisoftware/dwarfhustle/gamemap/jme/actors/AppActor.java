@@ -136,7 +136,6 @@ public class AppActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class LoadKnowledgeMessage extends Message {
-        public final GameMap gm;
     }
 
     @RequiredArgsConstructor
@@ -303,6 +302,7 @@ public class AppActor {
                 actor.tell(new AppErrorMessage(ex));
             } else {
                 log.debug("KnowledgeBaseActor created");
+                actor.tell(new LoadKnowledgeMessage());
             }
         });
     }
@@ -423,13 +423,6 @@ public class AppActor {
      */
     private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
         log.debug("onLoadWorld {}", m);
-        actor.tell(createKgMessage(Sedimentary.class, Sedimentary.TYPE));
-        actor.tell(createKgMessage(IgneousIntrusive.class, IgneousIntrusive.TYPE));
-        actor.tell(createKgMessage(IgneousExtrusive.class, IgneousExtrusive.TYPE));
-        actor.tell(createKgMessage(Metamorphic.class, Metamorphic.TYPE));
-        actor.tell(createKgMessage(SpecialStoneLayer.class, SpecialStoneLayer.TYPE));
-        actor.tell(createKgMessage(Soil.class, Soil.TYPE));
-        actor.tell(createKgMessage(Gas.class, Gas.TYPE));
         actor.tell(new LoadTexturesMessage<>(assetsResponseAdapter));
         if (command.isUseRemoteServer()) {
             actor.tell(new ConnectDbRemoteMessage<>(dbResponseAdapter, command.getRemoteServer(),
@@ -438,11 +431,6 @@ public class AppActor {
             actor.tell(new StartEmbeddedServerMessage<>(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
         }
         return Behaviors.same();
-    }
-
-    private KnowledgeGetMessage<KnowledgeResponseMessage> createKgMessage(Class<? extends GameObject> typeClass,
-            String type) {
-        return new KnowledgeGetMessage<>(knowledgeResponseAdapter, typeClass, type);
     }
 
     /**
@@ -505,6 +493,28 @@ public class AppActor {
         log.debug("onSetTimeWorld {}", m);
         ogs.get().currentWorld.get().setTime(LocalDateTime.from(ogs.get().currentWorld.get().getTime()).with(m.time));
         return Behaviors.same();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
+    private Behavior<Message> onLoadKnowledge(LoadKnowledgeMessage m) {
+        log.debug("onLoadKnowledge {}", m);
+        actor.tell(createKgMessage(Sedimentary.class, Sedimentary.TYPE));
+        actor.tell(createKgMessage(IgneousIntrusive.class, IgneousIntrusive.TYPE));
+        actor.tell(createKgMessage(IgneousExtrusive.class, IgneousExtrusive.TYPE));
+        actor.tell(createKgMessage(Metamorphic.class, Metamorphic.TYPE));
+        actor.tell(createKgMessage(SpecialStoneLayer.class, SpecialStoneLayer.TYPE));
+        actor.tell(createKgMessage(Soil.class, Soil.TYPE));
+        actor.tell(createKgMessage(Gas.class, Gas.TYPE));
+        return Behaviors.same();
+    }
+
+    private KnowledgeGetMessage<KnowledgeResponseMessage> createKgMessage(Class<? extends GameObject> typeClass,
+            String type) {
+        return new KnowledgeGetMessage<>(knowledgeResponseAdapter, typeClass, type);
     }
 
     /**
@@ -699,6 +709,7 @@ public class AppActor {
      * <li>{@link SetLayersTerrainMessage}
      * <li>{@link SetGameMapMessage}
      * <li>{@link SetTimeWorldMessage}
+     * <li>{@link LoadKnowledgeMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedObjectsResponse}
      * <li>{@link WrappedCacheResponse}
@@ -713,6 +724,7 @@ public class AppActor {
                 .onMessage(SetLayersTerrainMessage.class, this::onSetLayersTerrain)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(SetTimeWorldMessage.class, this::onSetTimeWorld)//
+                .onMessage(LoadKnowledgeMessage.class, this::onLoadKnowledge)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//

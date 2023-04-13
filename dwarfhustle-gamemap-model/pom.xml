@@ -109,5 +109,9 @@
             <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-model-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-model-db</artifactId>
+        </dependency>
     </dependencies>
 </project>
