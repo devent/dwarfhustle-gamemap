@@ -67,6 +67,7 @@ public class MapTerrainTile {
 
     private Texture focusedTexture;
 
+    @ToString.Include
     private boolean dirty = true;
 
     private Texture baseColorMapTexture;
@@ -156,8 +157,10 @@ public class MapTerrainTile {
     }
 
     public void setPropertiesBits(int bits) {
-        this.propertiesBits.replace(bits);
-        this.dirty = true;
+        if (propertiesBits.bits != bits) {
+            this.propertiesBits.replace(bits);
+            this.dirty = true;
+        }
     }
 
     public void setPropertyHidden(boolean b) {

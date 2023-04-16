@@ -44,6 +44,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey.MaterialTex
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
@@ -231,7 +232,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     private void loadTextureMap(Map.Entry<Integer, Map<String, Object>> texentry) {
         long id = texentry.getKey();
         var to = loadTextureObject(texentry.getValue(), id);
-        cache.put(new MaterialTextureKey(id), to);
+        cache.put(new MaterialTextureKey(KnowledgeObject.rid2Id(id)), to);
     }
 
     private TextureObject loadTextureObject(Map<String, Object> map, long id) {
