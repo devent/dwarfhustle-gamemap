@@ -123,41 +123,41 @@ public class AppActor {
     public static final int ID = KEY.hashCode();
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class InitialStateMessage extends Message {
     }
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class SetupErrorMessage extends Message {
         public final Throwable cause;
     }
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class LoadKnowledgeMessage extends Message {
     }
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class WrappedDbResponse extends Message {
         private final DbResponseMessage<?> response;
     }
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class WrappedObjectsResponse extends Message {
         private final ObjectsResponseMessage<?> response;
     }
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class WrappedCacheResponse extends Message {
         private final CacheResponseMessage<?> response;
     }
 
     @RequiredArgsConstructor
-    @ToString(callSuper = true)
+    @ToString
     private static class WrappedKnowledgeResponse extends Message {
         private final KnowledgeResponseMessage response;
     }
@@ -496,9 +496,10 @@ public class AppActor {
     }
 
     /**
-     * <ul>
-     * <li>
-     * </ul>
+     * Sends {@link KnowledgeGetMessage} to pre-cache knowledge objects. Should
+     * return with {@link KnowledgeResponseSuccessMessage} or
+     * {@link KnowledgeResponseErrorMessage} that is received on
+     * {@link #onWrappedKnowledgeResponse(WrappedKnowledgeResponse)}.
      */
     private Behavior<Message> onLoadKnowledge(LoadKnowledgeMessage m) {
         log.debug("onLoadKnowledge {}", m);
@@ -664,7 +665,6 @@ public class AppActor {
             actor.tell(new AppErrorMessage(rm.error));
             return Behaviors.stopped();
         } else if (m.response instanceof KnowledgeResponseSuccessMessage rm) {
-            rm.go.objects.forEach(System.out::println);
         }
         return Behaviors.same();
     }

@@ -95,19 +95,6 @@ public class GameMapState extends BaseAppState {
     }
 
     public void createMapBlockBox(GameMap gm, MapBlock mb) {
-        this.model = modelFactory.create();
-        this.terrain = terrainFactory.create(model, gm);
-        terrain.setLevels(gs.get().visibleDepthLayers.get());
-        rootNode.attachChild(terrain.node);
-        model.setTerrain(terrain, mb);
-        mapRenderSystem.setModel(model);
-        mapRenderSystem.setTerrain(terrain);
-        gs.get().visibleDepthLayers.addListener((o, ov, nv) -> {
-            app.enqueue(() -> {
-                terrain.setLevels(nv.intValue());
-                model.setTerrain(terrain, mb);
-            });
-        });
     }
 
 }

@@ -17,54 +17,52 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
-import com.jme3.math.ColorRGBA;
-import com.jme3.texture.Texture;
-
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Texture with additional material parameters.
+ * Abstract texture key.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@NoArgsConstructor
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-@Getter
-@Setter
-public class TextureObject extends AssetObject {
+@RequiredArgsConstructor
+@EqualsAndHashCode
+@ToString
+public abstract class AssetCacheKey<T> {
 
-    private static final long serialVersionUID = 1L;
+    /**
+     * Cache key for a material texture. The material is identified by a long
+     * integer key.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    public static class MaterialCacheKey extends AssetCacheKey<Long> {
 
-    public static final String OBJECT_TYPE = TextureObject.class.getSimpleName();
+        public MaterialCacheKey(long key) {
+            super(key);
+        }
 
-    public Texture tex;
-
-    public ColorRGBA specular;
-
-    public ColorRGBA baseColor;
-
-    public float metallic;
-
-    public float glossiness;
-
-    public float roughness;
-
-    public TextureObject(byte[] idbuf) {
-        super(idbuf);
+        public long getKey() {
+            return key;
+        }
     }
 
-    public TextureObject(long id) {
-        super(id);
+    /**
+     * Cache key for a model. The model is identified by a long integer key.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    public static class ModelCacheKey extends AssetCacheKey<Long> {
+
+        public ModelCacheKey(long key) {
+            super(key);
+        }
+
+        public long getKey() {
+            return key;
+        }
     }
 
-    @Override
-    public String getObjectType() {
-        return TextureObject.OBJECT_TYPE;
-    }
-
+    public final T key;
 }

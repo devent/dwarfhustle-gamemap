@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+import com.jme3.scene.Spatial;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -26,7 +26,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Game asset object.
+ * Model with additional material parameters.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -35,23 +35,25 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
-public class AssetObject extends GameObject {
+public class ModelCacheObject extends AssetCacheObject {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String OBJECT_TYPE = AssetObject.class.getSimpleName();
+    public static final String OBJECT_TYPE = ModelCacheObject.class.getSimpleName();
 
-    public AssetObject(byte[] idbuf) {
+    public Spatial model;
+
+    public ModelCacheObject(byte[] idbuf) {
         super(idbuf);
     }
 
-    public AssetObject(long id) {
+    public ModelCacheObject(long id) {
         super(id);
     }
 
     @Override
     public String getObjectType() {
-        return AssetObject.OBJECT_TYPE;
+        return ModelCacheObject.OBJECT_TYPE;
     }
 
 }

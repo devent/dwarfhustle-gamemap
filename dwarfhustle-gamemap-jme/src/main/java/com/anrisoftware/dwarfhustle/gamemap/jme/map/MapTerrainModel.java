@@ -24,9 +24,9 @@ import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.impl.factory.Lists;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GameAssets;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey.MaterialTextureKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.MaterialCacheKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
@@ -207,7 +207,7 @@ public class MapTerrainModel {
     private void updateTexture(MapTerrainTile tile, int level, int y, int x) {
         var mt = tiles.get(level).get(y).get(x);
         long material = mt.getMaterial();
-        var tex = (TextureObject) gameAssets.get(new MaterialTextureKey(material));
+        var tex = (TextureCacheObject) gameAssets.get(new MaterialCacheKey(material));
         tile.setBaseColorMap(tex.tex);
         tile.setSpecularColor(tex.specular);
         tile.setBaseColor(tex.baseColor);

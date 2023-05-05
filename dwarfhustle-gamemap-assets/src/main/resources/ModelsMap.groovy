@@ -15,34 +15,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model.resources;
+rid = [:]
+// TileType
+rid["tile-tile"] = 816
+rid["tile-mined"] = 815
+rid["tile-ramp"] = 814
+rid["tile-floor"] = 813
 
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+models = [:]
+models[rid["tile-tile"]] = [baseColorMap: "Textures/Tiles/Sedimentary/siltstone-1.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
+models[rid["tile-mined"]] = [baseColorMap: "Textures/Tiles/Sedimentary/shale-1-1024.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
+models[rid["tile-ramp"]] = [baseColorMap: "Textures/Tiles/Sedimentary/sandstone-01.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
+models[rid["tile-floor"]] = [baseColorMap: "Textures/Tiles/Sedimentary/rock_salt-1-1024.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
 
-/**
- * Abstract texture key.
- *
- * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
- */
-@RequiredArgsConstructor
-@EqualsAndHashCode
-@ToString
-public abstract class AssetKey<T> {
-
-    /**
-     * Texture key for a material texture. The material is identified by a long
-     * integer key.
-     *
-     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
-     */
-    public static class MaterialTextureKey extends AssetKey<Long> {
-
-        public MaterialTextureKey(Long key) {
-            super(key);
-        }
-    }
-
-    public final T key;
-}
+models

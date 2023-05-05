@@ -19,43 +19,36 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
-import java.net.URL;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import javax.inject.Inject;
-
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.apache.commons.jcs3.access.exception.CacheException;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainModel;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage.GetTextureSuccessMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey.MaterialTextureKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.MaterialCacheKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage;
 import com.google.inject.Injector;
-import com.jme3.asset.AssetManager;
-import com.jme3.asset.AssetNotFoundException;
-import com.jme3.asset.plugins.ZipLocator;
-import com.jme3.math.ColorRGBA;
-import com.jme3.texture.Texture;
+import com.jme3.scene.Spatial;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -64,8 +57,6 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.receptionist.ServiceKey;
-import groovy.lang.Binding;
-import groovy.util.GroovyScriptEngine;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -97,7 +88,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
 
     public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
             CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
-        return AbstractJcsCacheActor.create(injector, actorFactory, AssetKey.class, initCacheAsync);
+        return AbstractJcsCacheActor.create(injector, actorFactory, AssetCacheKey.class, initCacheAsync);
     }
 
     /**
@@ -124,12 +115,11 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
         return initCache;
     }
 
-    @Inject
-    private AssetManager am;
+    private AssetsLoadMaterialTextures loadMaterialTextures;
 
-    private Texture unknownTextures;
+    private Map<Integer, Map<String, Object>> modelsMap;
 
-    private Map<Integer, Map<String, Object>> materialTexturesMap;
+    private Spatial unknownModel;
 
     @Override
     protected Behavior<Message> initialStage(InitialStateMessage m) {
@@ -144,8 +134,8 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
 
     @Override
     protected void retrieveValueFromDb(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
-        if (m.key instanceof MaterialTextureKey tkey) {
-            var to = loadTextureObject(materialTexturesMap.get(tkey.key.intValue()), tkey.key);
+        if (m.key instanceof MaterialCacheKey tkey) {
+            var to = loadMaterialTextures.loadTextureObject(tkey.getKey());
             consumer.accept(to);
         }
     }
@@ -163,19 +153,11 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     @Override
     @SneakyThrows
     protected GameObject getValueFromDb(Class<? extends GameObject> typeClass, String type, Object key) {
-        if (key instanceof MaterialTextureKey tk) {
-            var to = loadTextureObject(materialTexturesMap.get(tk.key.intValue()), tk.key);
+        if (key instanceof MaterialCacheKey tk) {
+            var to = loadMaterialTextures.loadTextureObject(tk.key);
             return to;
         }
         throw new IllegalArgumentException();
-    }
-
-    @Override
-    protected BehaviorBuilder<Message> getInitialBehavior() {
-        return super.getInitialBehavior()//
-                .onMessage(LoadTexturesMessage.class, this::onLoadTextures)//
-                .onMessage(GetTextureMessage.class, this::onGetTexture)//
-        ;
     }
 
     /**
@@ -187,7 +169,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     private Behavior<Message> onLoadTextures(@SuppressWarnings("rawtypes") LoadTexturesMessage m) {
         log.debug("onLoadTextures {}", m);
         try {
-            loadMaterialTextures();
+            loadMaterialTextures.loadMaterialTextures(cache);
             m.replyTo.tell(new LoadTexturesSuccessMessage<>(m));
         } catch (Throwable e) {
             log.error("onLoadTextures", e);
@@ -204,78 +186,80 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     @SuppressWarnings("unchecked")
     private Behavior<Message> onGetTexture(@SuppressWarnings("rawtypes") GetTextureMessage m) {
         log.debug("onGetTexture {}", m);
-        var to = (TextureObject) cache.get(m.key, () -> retriveTexture(m));
+        var to = (TextureCacheObject) cache.get(m.key, () -> retrieveTexture(m));
         m.consumer.accept(to);
         m.replyTo.tell(new GetTextureSuccessMessage<>(m, to));
         return Behaviors.stopped();
     }
 
-    private TextureObject retriveTexture(GetTextureMessage<?> m) {
-        if (m.key instanceof MaterialTextureKey tk) {
-            var to = loadTextureObject(materialTexturesMap.get(tk.key.intValue()), tk.key);
+    private TextureCacheObject retrieveTexture(GetTextureMessage<?> m) {
+        if (m.key instanceof MaterialCacheKey tk) {
+            var to = loadMaterialTextures.loadTextureObject(tk.key);
             return to;
         }
         throw new IllegalArgumentException();
     }
 
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
     @SuppressWarnings("unchecked")
-    @SneakyThrows
-    private void loadMaterialTextures() {
-        am.registerLocator("../dwarfhustle-assetpack.zip", ZipLocator.class);
-        var engine = new GroovyScriptEngine(new URL[] { MapTerrainModel.class.getResource("/TexturesMap.groovy") });
-        var binding = new Binding();
-        unknownTextures = am.loadTexture("Textures/Tiles/Unknown/unknown-02.png");
-        this.materialTexturesMap = (Map<Integer, Map<String, Object>>) engine.run("TexturesMap.groovy", binding);
-        materialTexturesMap.entrySet().parallelStream().forEach(this::loadTextureMap);
-    }
-
-    private void loadTextureMap(Map.Entry<Integer, Map<String, Object>> texentry) {
-        long id = texentry.getKey();
-        var to = loadTextureObject(texentry.getValue(), id);
-        cache.put(new MaterialTextureKey(KnowledgeObject.rid2Id(id)), to);
-    }
-
-    private TextureObject loadTextureObject(Map<String, Object> map, long id) {
-        var to = new TextureObject();
-        to.tex = loadTexture(map, id, "baseColorMap");
-        to.specular = putColor(map, id, "specular", new ColorRGBA());
-        to.baseColor = putColor(map, id, "baseColor", new ColorRGBA());
-        to.metallic = putFloat(map, id, "metallic", 1f);
-        to.glossiness = putFloat(map, id, "glossiness", 1f);
-        to.roughness = putFloat(map, id, "roughness", 1f);
-        return to;
-    }
-
-    private float putFloat(Map<String, Object> map, long id, String name, float f) {
-        var vv = (Float) map.get(name);
-        if (vv != null) {
-            return vv;
-        } else {
-            return f;
-        }
-    }
-
-    private ColorRGBA putColor(Map<String, Object> map, long id, String name, ColorRGBA d) {
-        @SuppressWarnings("unchecked")
-        var vv = (List<Float>) map.get(name);
-        if (vv != null) {
-            return new ColorRGBA(vv.get(0), vv.get(1), vv.get(2), vv.get(3));
-        } else {
-            return d;
-        }
-    }
-
-    private Texture loadTexture(Map<String, Object> map, long id, String name) {
-        var texname = (String) map.get(name);
-        Texture tex = null;
-        log.trace("Loading {} texture {}:={}", name, id, texname);
+    private Behavior<Message> onLoadModels(@SuppressWarnings("rawtypes") LoadModelsMessage m) {
+        log.debug("onLoadModels {}", m);
         try {
-            tex = am.loadTexture(texname);
-        } catch (AssetNotFoundException e) {
-            tex = unknownTextures;
-            log.error("Error loading texture", e);
+            //loadModels();
+            m.replyTo.tell(new LoadModelsSuccessMessage<>(m));
+        } catch (Throwable e) {
+            log.error("onLoadModels", e);
+            m.replyTo.tell(new LoadModelsErrorMessage<>(m, e));
         }
-        return tex;
+        return Behaviors.same();
+    }
+
+//    @SuppressWarnings("unchecked")
+//    @SneakyThrows
+//    private void loadModels() {
+//        var engine = new GroovyScriptEngine(new URL[] { MapTerrainModel.class.getResource("/ModelsMap.groovy") });
+//        var binding = new Binding();
+//        this.modelsMap = (Map<Integer, Map<String, Object>>) engine.run("ModelsMap.groovy", binding);
+//        unknownModel = am.loadModel("Models/Tiles/Unknown/unknown-02.png");
+//        modelsMap.entrySet().parallelStream().forEach(this::loadModelMap);
+//    }
+//
+//    private void loadModelMap(Map.Entry<Integer, Map<String, Object>> mentry) {
+//        long id = mentry.getKey();
+//        var to = loadModelObject(mentry.getValue(), id);
+//        cache.put(new ModelCacheKey(KnowledgeObject.rid2Id(id)), to);
+//    }
+//
+//    private ModelCacheObject loadModelObject(Map<String, Object> map, long id) {
+//        var co = new ModelCacheObject();
+//        co.model = loadModel(map, id, "model");
+//        return null;
+//    }
+//
+//    private Spatial loadModel(Map<String, Object> map, long id, String name) {
+//        var texname = (String) map.get(name);
+//        Spatial model = null;
+//        log.trace("Loading {} model {}:={}", name, id, texname);
+//        try {
+//            model = am.loadModel(name);
+//        } catch (AssetNotFoundException e) {
+//            model = unknownModel;
+//            log.error("Error loading model", e);
+//        }
+//        return model;
+//    }
+
+    @Override
+    protected BehaviorBuilder<Message> getInitialBehavior() {
+        return super.getInitialBehavior()//
+                .onMessage(LoadTexturesMessage.class, this::onLoadTextures)//
+                .onMessage(LoadModelsMessage.class, this::onLoadModels)//
+                .onMessage(GetTextureMessage.class, this::onGetTexture)//
+        ;
     }
 
 }

@@ -19,15 +19,15 @@ package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import java.util.function.Consumer;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureObject;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 
 import akka.actor.typed.ActorRef;
 import lombok.ToString;
 
 /**
- * Message to retrieve a {@link TextureObject} with a {@link AssetKey} from
+ * Message to retrieve a {@link TextureCacheObject} with a {@link AssetCacheKey} from
  * the cache.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
@@ -36,7 +36,7 @@ import lombok.ToString;
 public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends AssetsMessage<T> {
 
     /**
-     * Response message that the {@link TextureObject} with the {@link AssetKey}
+     * Response message that the {@link TextureCacheObject} with the {@link AssetCacheKey}
      * was retrieved.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
@@ -44,17 +44,17 @@ public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends Asset
     @ToString
     public static class GetTextureSuccessMessage<T extends AssetsMessage<?>> extends AssetsResponseMessage<T> {
 
-        public final TextureObject to;
+        public final TextureCacheObject to;
 
-        public GetTextureSuccessMessage(GetTextureMessage<?> om, TextureObject to) {
+        public GetTextureSuccessMessage(GetTextureMessage<?> om, TextureCacheObject to) {
             super(om);
             this.to = to;
         }
     }
 
     /**
-     * Response message that there was an error retrieving a {@link TextureObject}
-     * with the {@link AssetKey}.
+     * Response message that there was an error retrieving a {@link TextureCacheObject}
+     * with the {@link AssetCacheKey}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
@@ -72,15 +72,15 @@ public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends Asset
     private final static Consumer<GameObject> EMPTY_CONSUMER = go -> {
     };
 
-    public final AssetKey<?> key;
+    public final AssetCacheKey<?> key;
 
     public final Consumer<GameObject> consumer;
 
-    public GetTextureMessage(ActorRef<T> replyTo, AssetKey<?> key) {
+    public GetTextureMessage(ActorRef<T> replyTo, AssetCacheKey<?> key) {
         this(replyTo, key, EMPTY_CONSUMER);
     }
 
-    public GetTextureMessage(ActorRef<T> replyTo, AssetKey<?> key, Consumer<GameObject> consumer) {
+    public GetTextureMessage(ActorRef<T> replyTo, AssetCacheKey<?> key, Consumer<GameObject> consumer) {
         super(replyTo);
         this.key = key;
         this.consumer = consumer;

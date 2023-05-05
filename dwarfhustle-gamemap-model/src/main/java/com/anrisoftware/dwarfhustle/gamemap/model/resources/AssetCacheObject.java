@@ -15,17 +15,43 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
+package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * Retrieves game assets.
+ * Game asset cached object.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface GameAssets {
+@NoArgsConstructor
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
+public class AssetCacheObject extends GameObject {
 
-    public AssetCacheObject get(AssetCacheKey<?> key);
+    private static final long serialVersionUID = 1L;
+
+    public static final String OBJECT_TYPE = AssetCacheObject.class.getSimpleName();
+
+    public AssetCacheObject(byte[] idbuf) {
+        super(idbuf);
+    }
+
+    public AssetCacheObject(long id) {
+        super(id);
+    }
+
+    @Override
+    public String getObjectType() {
+        return AssetCacheObject.OBJECT_TYPE;
+    }
+
 }

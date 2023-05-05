@@ -23,8 +23,8 @@ import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetObject;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheRetrieveMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheRetrieveMessage.CacheRetrieveResponseMessage;
@@ -62,8 +62,8 @@ public class GameAssetsProvider implements Provider<GameAssets> {
         return new GameAssets() {
 
             @Override
-            public AssetObject get(AssetKey<?> key) {
-                return (AssetObject) ret.cache.get(key);
+            public AssetCacheObject get(AssetCacheKey<?> key) {
+                return (AssetCacheObject) ret.cache.get(key);
             }
         };
     }
