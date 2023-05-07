@@ -25,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
+import javax.inject.Inject;
+
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.apache.commons.jcs3.access.exception.CacheException;
@@ -115,6 +117,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
         return initCache;
     }
 
+    @Inject
     private AssetsLoadMaterialTextures loadMaterialTextures;
 
     private Map<Integer, Map<String, Object>> modelsMap;

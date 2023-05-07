@@ -17,7 +17,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.AssetNotFoundException;
-import com.jme3.asset.plugins.ZipLocator;
 import com.jme3.math.ColorRGBA;
 import com.jme3.texture.Texture;
 
@@ -45,7 +44,6 @@ public class AssetsLoadMaterialTextures {
 
     @SneakyThrows
     public void loadMaterialTextures(CacheAccess<Object, GameObject> cache) {
-        am.registerLocator("../dwarfhustle-assetpack.zip", ZipLocator.class);
         var engine = new GroovyScriptEngine(
                 new URL[] { AssetsLoadMaterialTextures.class.getResource("/TexturesMaterials.groovy") });
         var binding = new Binding();
