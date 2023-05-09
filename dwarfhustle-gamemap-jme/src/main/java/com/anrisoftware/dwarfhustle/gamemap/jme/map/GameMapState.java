@@ -86,12 +86,12 @@ public class GameMapState extends BaseAppState {
 
     @Override
     protected void onEnable() {
-        engine.addSystem(mapRenderSystem);
+        // engine.addSystem(mapRenderSystem);
     }
 
     @Override
     protected void onDisable() {
-        engine.removeSystem(mapRenderSystem);
+        // engine.removeSystem(mapRenderSystem);
     }
 
     public void createMapBlockBox(GameMap gm, MapBlock mb) {

@@ -292,7 +292,9 @@ public class CameraPanningState extends BaseAppState implements ActionListener, 
     }
 
     private void updateScreenCoordinatesMap() {
-        model.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
+        if (model != null) {
+            model.getScreenCoordinatesMap(camera, mapTopRight, mapBottomLeft);
+        }
     }
 
     private void boundMove(float dx, float dy, float dz) {

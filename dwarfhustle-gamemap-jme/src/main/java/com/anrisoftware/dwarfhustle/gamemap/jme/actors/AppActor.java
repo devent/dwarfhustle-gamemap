@@ -503,18 +503,17 @@ public class AppActor {
      */
     private Behavior<Message> onLoadKnowledge(LoadKnowledgeMessage m) {
         log.debug("onLoadKnowledge {}", m);
-        actor.tell(createKgMessage(Sedimentary.class, Sedimentary.TYPE));
-        actor.tell(createKgMessage(IgneousIntrusive.class, IgneousIntrusive.TYPE));
-        actor.tell(createKgMessage(IgneousExtrusive.class, IgneousExtrusive.TYPE));
-        actor.tell(createKgMessage(Metamorphic.class, Metamorphic.TYPE));
-        actor.tell(createKgMessage(SpecialStoneLayer.class, SpecialStoneLayer.TYPE));
-        actor.tell(createKgMessage(Soil.class, Soil.TYPE));
-        actor.tell(createKgMessage(Gas.class, Gas.TYPE));
+        actor.tell(cKgM(Sedimentary.class, Sedimentary.TYPE));
+        actor.tell(cKgM(IgneousIntrusive.class, IgneousIntrusive.TYPE));
+        actor.tell(cKgM(IgneousExtrusive.class, IgneousExtrusive.TYPE));
+        actor.tell(cKgM(Metamorphic.class, Metamorphic.TYPE));
+        actor.tell(cKgM(SpecialStoneLayer.class, SpecialStoneLayer.TYPE));
+        actor.tell(cKgM(Soil.class, Soil.TYPE));
+        actor.tell(cKgM(Gas.class, Gas.TYPE));
         return Behaviors.same();
     }
 
-    private KnowledgeGetMessage<KnowledgeResponseMessage> createKgMessage(Class<? extends GameObject> typeClass,
-            String type) {
+    private KnowledgeGetMessage<KnowledgeResponseMessage> cKgM(Class<? extends GameObject> typeClass, String type) {
         return new KnowledgeGetMessage<>(knowledgeResponseAdapter, typeClass, type);
     }
 
