@@ -30,8 +30,8 @@ import org.testfx.framework.junit5.ApplicationTest;
 import org.testfx.robot.Motion;
 import org.testfx.util.WaitForAsyncUtils;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -88,9 +88,9 @@ public class TestFXJUnitAppRunner extends ApplicationTest {
     @Test
     public void testBlueHasOnlyOneEntry() {
         interact(() -> {
-            var mt = new MapTile(1);
+            var mt = new MapBlock(1);
             // mt.setMaterial("Soil");
-            mt.setPos(new GameMapPos(1, 5, 5, 5));
+            mt.setPos(new GameBlockPos(1, 5, 5, 5));
             var p = new Person(1);
             p.setFirstName("Gorbir");
             p.setLastName("Shatterfeet");

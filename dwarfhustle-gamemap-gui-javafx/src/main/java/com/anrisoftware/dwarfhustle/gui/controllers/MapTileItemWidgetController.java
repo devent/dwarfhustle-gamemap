@@ -20,7 +20,7 @@ package com.anrisoftware.dwarfhustle.gui.controllers;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 
 import javafx.fxml.FXML;
@@ -49,7 +49,7 @@ public class MapTileItemWidgetController {
     private GameSettingsProvider gs;
 
     public void setup(MapTileItem item) {
-        if (item.item instanceof MapTile mt) {
+        if (item.item instanceof MapBlock mt) {
             objectInfoTitle.setText("Tile");
             objectInfoBox.getChildren().clear();
             objectInfoBox.getChildren().add(new Label("\u2022" + mt.getMaterial()));

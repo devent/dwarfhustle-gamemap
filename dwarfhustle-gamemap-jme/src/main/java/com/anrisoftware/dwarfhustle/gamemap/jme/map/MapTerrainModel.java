@@ -28,10 +28,10 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.Materi
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
@@ -40,7 +40,7 @@ import com.jme3.util.TempVars;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Provides the properties from the {@link MapTile} data to the
+ * Provides the properties from the {@link MapBlock} data to the
  * {@link MapTerrainTile} view.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
@@ -79,12 +79,12 @@ public class MapTerrainModel {
 
     private int currentZ = -1;
 
-    private MapBlock mb;
+    private MapChunk mb;
 
     /**
      * Caches map tiles by level := y := x
      */
-    private MutableList<MutableList<MutableList<MapTile>>> tiles;
+    private MutableList<MutableList<MutableList<MapBlock>>> tiles;
 
     @Inject
     private GameObjects gameObjects;
@@ -122,7 +122,7 @@ public class MapTerrainModel {
         return tileMouseLevel == level && tileMouseY == y && tileMouseX == x;
     }
 
-    public void setTerrain(MapTerrain terrain, MapBlock mb) {
+    public void setTerrain(MapTerrain terrain, MapChunk mb) {
         this.terrain = terrain;
         this.mb = mb;
         this.rootWorldBound = terrain.getWorldBound();
@@ -223,7 +223,7 @@ public class MapTerrainModel {
         tile.setPropertiesBits(bits);
     }
 
-    private void loadMapTiles(MapBlock mb) {
+    private void loadMapTiles(MapChunk mb) {
         terrain.getLevels().forEach(this::loadMapTilesLevel);
     }
 
@@ -236,12 +236,12 @@ public class MapTerrainModel {
     }
 
     private void loadMapTilesY(MapTerrainTile tile) {
-        var pos = new GameMapPos(mb.getPos().getMapid(), tile.x, tile.y, currentZ + tile.level);
+        var pos = new GameBlockPos(mb.getPos().getMapid(), tile.x, tile.y, currentZ + tile.level);
         tiles.get(tile.level).get(tile.y).set(tile.x, mb.findMapTile(pos, this::retrieveMapBlock));
     }
 
-    private MapBlock retrieveMapBlock(long id) {
-        return (MapBlock) gameObjects.get(id);
+    private MapChunk retrieveMapBlock(long id) {
+        return (MapChunk) gameObjects.get(id);
     }
 
 }

@@ -36,7 +36,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
@@ -247,7 +247,7 @@ public class GameMapActor {
 
     /**
      * Reacts to the {@link MapBlockLoadedMessage} message. Sends a
-     * {@link AddMapBlockSceneMessage} message to add the {@link MapBlock} to the
+     * {@link AddMapBlockSceneMessage} message to add the {@link MapChunk} to the
      * scene.
      */
     private Behavior<Message> onMapBlockLoaded(MapBlockLoadedMessage m) {
@@ -295,7 +295,7 @@ public class GameMapActor {
     private Behavior<Message> onAddMapBlockScene(AddMapBlockSceneMessage m) {
         // log.debug("onAddMapBlockScene {}", m);
         m.mb.getBlocks().forEachKey(pos -> {
-            actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapBlock.class, MapBlock.OBJECT_TYPE, pos));
+            actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapChunk.class, MapChunk.OBJECT_TYPE, pos));
         });
         return Behaviors.same();
     }
@@ -345,7 +345,7 @@ public class GameMapActor {
     private Behavior<Message> onWrappedCacheResponse(WrappedCacheResponse m) {
         // log.debug("onWrappedCacheResponse {}", m);
         if (m.response instanceof CacheGetSuccessMessage<?> rm) {
-            if (rm.go instanceof MapBlock mb) {
+            if (rm.go instanceof MapChunk mb) {
                 context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), mb));
             }
         } else if (m.response instanceof CacheErrorMessage<?> rm) {

@@ -40,8 +40,8 @@ import com.anrisoftware.dwarfhustle.gui.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
@@ -124,8 +124,8 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
         // log.debug("onMapTileUnderCursor {}", m);
-        var mt = new MapTile(1);
-        mt.setPos(new GameMapPos(1, 5, 5, 5));
+        var mt = new MapBlock(1);
+        mt.setPos(new GameBlockPos(1, 5, 5, 5));
         var p = new Person(1);
         p.setFirstName("Gorbir");
         p.setLastName("Shatterfeet");

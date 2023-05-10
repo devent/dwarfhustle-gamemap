@@ -24,15 +24,15 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrain.MapTerrainFactory
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainModel.MapTerrainModelFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapTile;
 import com.badlogic.ashley.core.Engine;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.scene.Node;
 
 /**
- * Constructs the game map from {@link MapBlock} and {@link MapTile}.
+ * Constructs the game map from {@link MapChunk} and {@link MapBlock}.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -94,7 +94,7 @@ public class GameMapState extends BaseAppState {
         // engine.removeSystem(mapRenderSystem);
     }
 
-    public void createMapBlockBox(GameMap gm, MapBlock mb) {
+    public void createMapBlockBox(GameMap gm, MapChunk mb) {
     }
 
 }

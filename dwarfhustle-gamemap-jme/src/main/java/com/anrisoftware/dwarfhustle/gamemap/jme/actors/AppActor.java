@@ -55,10 +55,10 @@ import com.anrisoftware.dwarfhustle.model.api.materials.Metamorphic;
 import com.anrisoftware.dwarfhustle.model.api.materials.Sedimentary;
 import com.anrisoftware.dwarfhustle.model.api.materials.Soil;
 import com.anrisoftware.dwarfhustle.model.api.materials.SpecialStoneLayer;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameChunkPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
@@ -364,7 +364,7 @@ public class AppActor {
 
     private int currentMapBlocksCount;
 
-    private MapBlock currentMapRootBlock;
+    private MapChunk currentMapRootBlock;
 
     @SuppressWarnings("rawtypes")
     private ActorRef<AssetsResponseMessage> assetsResponseAdapter;
@@ -463,7 +463,7 @@ public class AppActor {
      * Starts the loading of the map blocks by first retrieving the root map block
      * from the database. On success the method
      * {@link #onWrappedObjectsResponse(WrappedObjectsResponse)} with the message
-     * {@link LoadObjectSuccessMessage} with a {@link MapBlock} object should be
+     * {@link LoadObjectSuccessMessage} with a {@link MapChunk} object should be
      * called.
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
@@ -473,14 +473,14 @@ public class AppActor {
     }
 
     private void loadRootMapBlock(SetGameMapMessage m) {
-        actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, db -> {
+        actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, MapChunk.OBJECT_TYPE, db -> {
             var w = m.gm.getWidth();
             var h = m.gm.getHeight();
             var d = m.gm.getDepth();
-            var p = new GameBlockPos(m.gm.getMapid(), 0, 0, 0, w, h, d);
+            var p = new GameChunkPos(m.gm.getMapid(), 0, 0, 0, w, h, d);
             var query = "SELECT * from ? where objecttype = ? and mapid = ? and sx = ? and sy = ? and sz = ? and ex = ? and ey = ? and ez = ? limit 1";
-            return db.query(query, MapBlock.OBJECT_TYPE, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(),
-                    p.getZ(), p.getEndPos().getX(), p.getEndPos().getY(), p.getEndPos().getZ());
+            return db.query(query, MapChunk.OBJECT_TYPE, MapChunk.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(),
+                    p.getZ(), p.getEp().getX(), p.getEp().getY(), p.getEp().getZ());
         }));
     }
 
@@ -559,7 +559,7 @@ public class AppActor {
      * <dt>{@link GameMap}</dt>
      * <dd>Caches the game map. Sends the {@link SetGameMapMessage} message. Sends
      * the {@link LoadMapTilesMessage}.</dd>
-     * <dt>{@link MapBlock}</dt>
+     * <dt>{@link MapChunk}</dt>
      * <dd>Caches the map block. Retrieves all child map blocks from the root map
      * block.</dd>
      * </dl>
@@ -585,7 +585,7 @@ public class AppActor {
                 ogs.get().currentMap.set(gm);
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
                 actor.tell(new SetGameMapMessage(gm));
-            } else if (rm.go instanceof MapBlock mb) {
+            } else if (rm.go instanceof MapChunk mb) {
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
                 if (mb.isRoot()) {
                     currentMapRootBlock = mb;
@@ -600,9 +600,9 @@ public class AppActor {
         return Behaviors.same();
     }
 
-    private void retrieveChildMapBlocks(GameBlockPos p) {
-        actor.tell(new LoadObjectsMessage<>(objectsResponseAdapter, MapBlock.OBJECT_TYPE, go -> {
-            var mb = (MapBlock) go;
+    private void retrieveChildMapBlocks(GameChunkPos p) {
+        actor.tell(new LoadObjectsMessage<>(objectsResponseAdapter, MapChunk.OBJECT_TYPE, go -> {
+            var mb = (MapChunk) go;
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
             currentMapBlocksLoaded++;
             if (currentMapBlocksLoaded == currentMapBlocksCount) {
@@ -631,10 +631,10 @@ public class AppActor {
         });
     }
 
-    private OResultSet createQuery(GameBlockPos p, ODatabaseDocument db) {
+    private OResultSet createQuery(GameChunkPos p, ODatabaseDocument db) {
         var query = "SELECT * from ? where mapid = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ?";
-        return db.query(query, MapBlock.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(), p.getZ(), p.getEndPos().getX(),
-                p.getEndPos().getY(), p.getEndPos().getZ());
+        return db.query(query, MapChunk.OBJECT_TYPE, p.getMapid(), p.getX(), p.getY(), p.getZ(), p.getEp().getX(),
+                p.getEp().getY(), p.getEp().getZ());
     }
 
     /**
