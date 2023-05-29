@@ -30,7 +30,7 @@
     </parent>
 
     <artifactId>dwarfhustle-gamemap</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Dwarf Hustle Game Map</name>
     <description>Game map.</description>
@@ -41,6 +41,7 @@
         <license.custom.license.template>src/main/resources/AGPL-3.txt</license.custom.license.template>
         <globalpom.custom.year>2023</globalpom.custom.year>
         <!-- Versions -->
+        <dwarfhustle.custom.model.version>0.0.2-SNAPSHOT</dwarfhustle.custom.model.version>
     </properties>
 
     <licenses>
@@ -65,7 +66,14 @@
         </developer>
     </developers>
 
-    <modules></modules>
+    <modules>
+        <module>dwarfhustle-gamemap-assets</module>
+        <module>dwarfhustle-gamemap-console</module>
+        <module>dwarfhustle-gamemap-console-antlr</module>
+        <module>dwarfhustle-gamemap-gui-javafx</module>
+        <module>dwarfhustle-gamemap-jme</module>
+        <module>dwarfhustle-gamemap-model</module>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -79,27 +87,27 @@
             <dependency>
                 <groupId>com.anrisoftware.dwarfhustle</groupId>
                 <artifactId>dwarfhustle-model-actor</artifactId>
-                <version>0.0.1</version>
+                <version>${dwarfhustle.custom.model.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.anrisoftware.dwarfhustle</groupId>
                 <artifactId>dwarfhustle-model-api</artifactId>
-                <version>0.0.1</version>
+                <version>${dwarfhustle.custom.model.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.anrisoftware.dwarfhustle</groupId>
                 <artifactId>dwarfhustle-model-db</artifactId>
-                <version>0.0.1</version>
+                <version>${dwarfhustle.custom.model.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.anrisoftware.dwarfhustle</groupId>
                 <artifactId>dwarfhustle-model-generate-map</artifactId>
-                <version>0.0.1</version>
+                <version>${dwarfhustle.custom.model.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.anrisoftware.dwarfhustle</groupId>
                 <artifactId>dwarfhustle-model-knowledge</artifactId>
-                <version>0.0.1</version>
+                <version>${dwarfhustle.custom.model.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

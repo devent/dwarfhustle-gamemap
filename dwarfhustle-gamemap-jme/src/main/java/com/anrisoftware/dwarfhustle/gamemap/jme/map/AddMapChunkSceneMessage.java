@@ -31,7 +31,7 @@ import lombok.ToString;
  */
 @ToString
 @RequiredArgsConstructor
-public class AddMapBlockSceneMessage extends Message {
+public class AddMapChunkSceneMessage extends Message {
 
     public final GameMap gm;
 

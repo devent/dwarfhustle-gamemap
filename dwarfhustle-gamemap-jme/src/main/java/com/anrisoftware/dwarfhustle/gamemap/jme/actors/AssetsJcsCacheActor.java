@@ -45,6 +45,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
@@ -85,12 +86,13 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     public interface AssetsJcsCacheActorFactory extends AbstractJcsCacheActorFactory {
 
         @Override
-        AssetsJcsCacheActor create(ActorContext<Message> context, StashBuffer<Message> stash, Class<?> keyType);
+        AssetsJcsCacheActor create(ActorContext<Message> context, StashBuffer<Message> stash, ObjectsGetter og,
+                Class<?> keyType);
     }
 
     public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
-            CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
-        return AbstractJcsCacheActor.create(injector, actorFactory, AssetCacheKey.class, initCacheAsync);
+            ObjectsGetter og, CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
+        return AbstractJcsCacheActor.create(injector, actorFactory, og, AssetCacheKey.class, initCacheAsync);
     }
 
     /**
@@ -99,11 +101,11 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
      * @param injector the {@link Injector} injector.
      * @param timeout  the {@link Duration} timeout.
      */
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, ObjectsGetter og) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         var actorFactory = injector.getInstance(AssetsJcsCacheActorFactory.class);
         var initCache = createInitCacheAsync();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, actorFactory, initCache));
+        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, actorFactory, og, initCache));
     }
 
     public static CompletableFuture<CacheAccess<Object, GameObject>> createInitCacheAsync() {
@@ -153,12 +155,13 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
         // nop
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     @SneakyThrows
-    protected GameObject getValueFromDb(Class<? extends GameObject> typeClass, String type, Object key) {
+    protected <T extends GameObject> T getValueFromDb(Class<T> typeClass, String type, Object key) {
         if (key instanceof MaterialCacheKey tk) {
             var to = loadMaterialTextures.loadTextureObject(tk.key);
-            return to;
+            return (T) to;
         }
         throw new IllegalArgumentException();
     }
@@ -212,7 +215,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     private Behavior<Message> onLoadModels(@SuppressWarnings("rawtypes") LoadModelsMessage m) {
         log.debug("onLoadModels {}", m);
         try {
-            //loadModels();
+            // loadModels();
             m.replyTo.tell(new LoadModelsSuccessMessage<>(m));
         } catch (Throwable e) {
             log.error("onLoadModels", e);

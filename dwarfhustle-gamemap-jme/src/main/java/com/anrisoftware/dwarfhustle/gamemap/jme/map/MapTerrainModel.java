@@ -237,7 +237,7 @@ public class MapTerrainModel {
 
     private void loadMapTilesY(MapTerrainTile tile) {
         var pos = new GameBlockPos(mb.getPos().getMapid(), tile.x, tile.y, currentZ + tile.level);
-        tiles.get(tile.level).get(tile.y).set(tile.x, mb.findMapTile(pos, this::retrieveMapBlock));
+        tiles.get(tile.level).get(tile.y).set(tile.x, mb.findMapBlock(pos, this::retrieveMapBlock));
     }
 
     private MapChunk retrieveMapBlock(long id) {

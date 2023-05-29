@@ -20,12 +20,11 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorModule;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GamemapModelModule;
-import com.anrisoftware.dwarfhustle.model.actor.ModelActorsModule;
-import com.anrisoftware.dwarfhustle.model.api.objects.ApiModule;
-import com.anrisoftware.dwarfhustle.model.db.cache.JcsCacheModule;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbModule;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbModule;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerloomModule;
+import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
+import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbcacheModule;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbOrientdbModule;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
 import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
@@ -44,18 +43,17 @@ public class AppModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		install(new ModelActorsModule());
+		install(new DwarfhustleModelActorsModule());
 		install(new GamemapConsoleActorModule());
 		install(new GamemapConsoleAntlrModule());
 		bind(Engine.class).asEagerSingleton();
 		install(new GamemapModelModule());
 		// Model Modules
-		install(new ModelActorsModule());
-		install(new ObjectsDbModule());
-		install(new PowerloomModule());
-		install(new OrientDbModule());
-		install(new ApiModule());
-		install(new JcsCacheModule());
+		install(new DwarfhustleModelActorsModule());
+		install(new DwarfhustlePowerloomModule());
+		install(new DwarfhustleModelDbOrientdbModule());
+		install(new DwarfhustleModelApiObjectsModule());
+		install(new DwarfhustleModelDbcacheModule());
 		// Resources
 		install(new ImagesResourcesModule());
 		install(new ResourcesImagesCachedMapModule());

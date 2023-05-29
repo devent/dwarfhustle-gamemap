@@ -247,7 +247,7 @@ public class GameMapActor {
 
     /**
      * Reacts to the {@link MapBlockLoadedMessage} message. Sends a
-     * {@link AddMapBlockSceneMessage} message to add the {@link MapChunk} to the
+     * {@link AddMapChunkSceneMessage} message to add the {@link MapChunk} to the
      * scene.
      */
     private Behavior<Message> onMapBlockLoaded(MapBlockLoadedMessage m) {
@@ -259,7 +259,7 @@ public class GameMapActor {
     }
 
     private void addMapBlockScene(MapBlockLoadedMessage m) {
-        context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), m.mb));
+        context.getSelf().tell(new AddMapChunkSceneMessage(gs.get().currentMap.get(), m.mb));
         app.enqueue(() -> {
             is.gameMapState.createMapBlockBox(gs.get().currentMap.get(), m.mb);
             is.cameraPanningState.setTerrainModel(is.gameMapState.getModel());
@@ -288,11 +288,11 @@ public class GameMapActor {
     }
 
     /**
-     * Reacts to the {@link AddMapBlockSceneMessage} message. Creates the
+     * Reacts to the {@link AddMapChunkSceneMessage} message. Creates the
      * {@link MapBlockComponent} for the render to construct map blocks and map
      * tiles of the game map.
      */
-    private Behavior<Message> onAddMapBlockScene(AddMapBlockSceneMessage m) {
+    private Behavior<Message> onAddMapBlockScene(AddMapChunkSceneMessage m) {
         // log.debug("onAddMapBlockScene {}", m);
         m.mb.getBlocks().forEachKey(pos -> {
             actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapChunk.class, MapChunk.OBJECT_TYPE, pos));
@@ -346,7 +346,7 @@ public class GameMapActor {
         // log.debug("onWrappedCacheResponse {}", m);
         if (m.response instanceof CacheGetSuccessMessage<?> rm) {
             if (rm.go instanceof MapChunk mb) {
-                context.getSelf().tell(new AddMapBlockSceneMessage(gs.get().currentMap.get(), mb));
+                context.getSelf().tell(new AddMapChunkSceneMessage(gs.get().currentMap.get(), mb));
             }
         } else if (m.response instanceof CacheErrorMessage<?> rm) {
             log.error("Cache error {}", m);
@@ -379,7 +379,7 @@ public class GameMapActor {
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(MapBlockLoadedMessage.class, this::onMapBlockLoaded)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
-                .onMessage(AddMapBlockSceneMessage.class, this::onAddMapBlockScene)//
+                .onMessage(AddMapChunkSceneMessage.class, this::onAddMapBlockScene)//
                 .onMessage(SetCameraPositionMessage.class, this::onSetCameraPosition)//
                 .onMessage(MapCursorSetMessage.class, this::onMapCursorSet)//
                 .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//

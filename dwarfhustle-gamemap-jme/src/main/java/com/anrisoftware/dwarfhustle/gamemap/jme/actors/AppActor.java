@@ -68,19 +68,14 @@ import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbEmbeddedMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbRemoteMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbResponseMessage.DbErrorMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbMessage.DbErrorMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbMessage.DbResponseMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage.LoadObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectsMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerMessage.StartEmbeddedServerSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectErrorMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectMessage.LoadObjectSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectsMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.LoadObjectsMessage.LoadObjectsErrorMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsDbActor;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.ObjectsResponseMessage;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeBaseActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeResponseMessage;
@@ -142,12 +137,6 @@ public class AppActor {
     @ToString
     private static class WrappedDbResponse extends Message {
         private final DbResponseMessage<?> response;
-    }
-
-    @RequiredArgsConstructor
-    @ToString
-    private static class WrappedObjectsResponse extends Message {
-        private final ObjectsResponseMessage<?> response;
     }
 
     @RequiredArgsConstructor
@@ -217,7 +206,9 @@ public class AppActor {
     }
 
     private static void createObjectsCache(Injector injector) {
-        var task = StoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        var actor = injector.getInstance(ActorSystemProvider.class);
+        var task = StoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30),
+                actor.getObjectsGetter(OrientDbActor.ID));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
@@ -246,19 +237,6 @@ public class AppActor {
                 actor.tell(new AppErrorMessage(ex));
             } else {
                 log.debug("OrientDbActor created");
-                createObjects(injector, ret, command);
-            }
-        });
-    }
-
-    private static void createObjects(Injector injector, ActorRef<Message> db, AppCommand command) {
-        var actor = injector.getInstance(ActorSystemProvider.class);
-        ObjectsDbActor.create(injector, ofSeconds(1), db).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("ObjectsDbActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("ObjectsDbActor created");
                 if (command.isSkipLoad()) {
                     log.warn("Skip load is set, not loading world.");
                     return;
@@ -283,28 +261,15 @@ public class AppActor {
 
     private static void createKnowledgeCache(Injector injector, ActorRef<Message> powerLoom) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        KnowledgeJcsCacheActor.create(injector, ofSeconds(10)).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("KnowledgeJcsCacheActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("KnowledgeJcsCacheActor created");
-                createKnowledge(injector, powerLoom, ret);
-            }
-        });
-    }
-
-    private static void createKnowledge(Injector injector, ActorRef<Message> powerLoom, ActorRef<Message> cache) {
-        var actor = injector.getInstance(ActorSystemProvider.class);
-        KnowledgeBaseActor.create(injector, ofSeconds(10), powerLoom, cache).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("KnowledgeBaseActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("KnowledgeBaseActor created");
-                actor.tell(new LoadKnowledgeMessage());
-            }
-        });
+        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsGetter(PowerLoomKnowledgeActor.ID))
+                .whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("KnowledgeJcsCacheActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("KnowledgeJcsCacheActor created");
+                    }
+                });
     }
 
     private static void createConsole(Injector injector) {
@@ -347,9 +312,6 @@ public class AppActor {
     private ActorRef<DbResponseMessage> dbResponseAdapter;
 
     @SuppressWarnings("rawtypes")
-    private ActorRef<ObjectsResponseMessage> objectsResponseAdapter;
-
-    @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
     private ActorRef<KnowledgeResponseMessage> knowledgeResponseAdapter;
@@ -381,7 +343,6 @@ public class AppActor {
     public Behavior<Message> start(Injector injector) {
         this.injector = injector;
         this.dbResponseAdapter = context.messageAdapter(DbResponseMessage.class, WrappedDbResponse::new);
-        this.objectsResponseAdapter = context.messageAdapter(ObjectsResponseMessage.class, WrappedObjectsResponse::new);
         this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         this.knowledgeResponseAdapter = context.messageAdapter(KnowledgeResponseMessage.class,
                 WrappedKnowledgeResponse::new);
@@ -440,8 +401,9 @@ public class AppActor {
      */
     private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
         log.debug("onSetWorldMap {}", m);
+        actor.tell(new CachePutMessage<>(cacheResponseAdapter, m.wm.getId(), m.wm));
         ogs.get().currentWorld.set(m.wm);
-        actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, GameMap.OBJECT_TYPE, db -> {
+        actor.tell(new LoadObjectMessage<>(dbResponseAdapter, GameMap.OBJECT_TYPE, db -> {
             var query = "SELECT * from ? where objecttype = ? and mapid = ?";
             return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.getCurrentMapid());
         }));
@@ -468,12 +430,13 @@ public class AppActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
+        actor.tell(new CachePutMessage<>(cacheResponseAdapter, m.gm.getId(), m.gm));
         loadRootMapBlock(m);
         return Behaviors.same();
     }
 
     private void loadRootMapBlock(SetGameMapMessage m) {
-        actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, MapChunk.OBJECT_TYPE, db -> {
+        actor.tell(new LoadObjectMessage<>(dbResponseAdapter, MapChunk.OBJECT_TYPE, db -> {
             var w = m.gm.getWidth();
             var h = m.gm.getHeight();
             var d = m.gm.getDepth();
@@ -518,32 +481,6 @@ public class AppActor {
     }
 
     /**
-     * <ul>
-     * <li>
-     * </ul>
-     */
-    private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
-        log.debug("onWrappedDbResponse {}", m);
-        var response = m.response;
-        if (response instanceof DbErrorMessage<?> rm) {
-            log.error("Db error", rm);
-            actor.tell(new AppErrorMessage(rm.error));
-            return Behaviors.stopped();
-        } else if (response instanceof StartEmbeddedServerSuccessMessage) {
-            log.debug("Started embedded server");
-            var rm = (StartEmbeddedServerSuccessMessage<?>) response;
-            actor.tell(new ConnectDbEmbeddedMessage<>(dbResponseAdapter, rm.server, "test", "root", "admin"));
-        } else if (response instanceof ConnectDbSuccessMessage) {
-            log.debug("Connected to server");
-            actor.tell(new LoadObjectMessage<>(objectsResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
-                var query = "SELECT * from ? limit 1";
-                return db.query(query, WorldMap.OBJECT_TYPE);
-            }));
-        }
-        return Behaviors.same();
-    }
-
-    /**
      * Reacts to the {@link WrappedObjectsResponse} message from the objects actor.
      * <dl>
      * <dt>{@link LoadObjectErrorMessage}</dt>
@@ -564,26 +501,30 @@ public class AppActor {
      * block.</dd>
      * </dl>
      */
-    private Behavior<Message> onWrappedObjectsResponse(WrappedObjectsResponse m) {
-        log.debug("onWrappedObjectsResponse {}", m);
+    private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
+        log.debug("onWrappedDbResponse {}", m);
         var response = m.response;
-        if (response instanceof LoadObjectErrorMessage<?> rm) {
-            log.error("Load object error", rm.error);
+        if (response instanceof DbErrorMessage<?> rm) {
+            log.error("Db error", rm);
             actor.tell(new AppErrorMessage(rm.error));
             return Behaviors.stopped();
-        } else if (response instanceof LoadObjectsErrorMessage<?> rm) {
-            log.error("Load objects error", rm.error);
-            actor.tell(new AppErrorMessage(rm.error));
-            return Behaviors.stopped();
+        } else if (response instanceof StartEmbeddedServerSuccessMessage) {
+            log.debug("Started embedded server");
+            var rm = (StartEmbeddedServerSuccessMessage<?>) response;
+            actor.tell(new ConnectDbEmbeddedMessage<>(dbResponseAdapter, rm.server, "test", "root", "admin"));
+        } else if (response instanceof ConnectDbSuccessMessage) {
+            log.debug("Connected to server");
+            actor.tell(new LoadObjectMessage<>(dbResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
+                var query = "SELECT * from ? limit 1";
+                return db.query(query, WorldMap.OBJECT_TYPE);
+            }));
         } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
             if (rm.go instanceof WorldMap wm) {
                 ogs.get().currentWorld.set(wm);
-                actor.tell(new CachePutMessage<>(cacheResponseAdapter, wm.getId(), wm));
                 actor.tell(new SetWorldMapMessage(wm));
             } else if (rm.go instanceof GameMap gm) {
                 gm.setWorld(ogs.get().currentWorld.get());
                 ogs.get().currentMap.set(gm);
-                actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
                 actor.tell(new SetGameMapMessage(gm));
             } else if (rm.go instanceof MapChunk mb) {
                 actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
@@ -601,7 +542,7 @@ public class AppActor {
     }
 
     private void retrieveChildMapBlocks(GameChunkPos p) {
-        actor.tell(new LoadObjectsMessage<>(objectsResponseAdapter, MapChunk.OBJECT_TYPE, go -> {
+        actor.tell(new LoadObjectsMessage<>(dbResponseAdapter, MapChunk.OBJECT_TYPE, go -> {
             var mb = (MapChunk) go;
             actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
             currentMapBlocksLoaded++;
@@ -710,7 +651,6 @@ public class AppActor {
      * <li>{@link SetTimeWorldMessage}
      * <li>{@link LoadKnowledgeMessage}
      * <li>{@link WrappedDbResponse}
-     * <li>{@link WrappedObjectsResponse}
      * <li>{@link WrappedCacheResponse}
      * <li>{@link WrappedAssetsResponse}
      * </ul>
@@ -725,7 +665,6 @@ public class AppActor {
                 .onMessage(SetTimeWorldMessage.class, this::onSetTimeWorld)//
                 .onMessage(LoadKnowledgeMessage.class, this::onLoadKnowledge)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
-                .onMessage(WrappedObjectsResponse.class, this::onWrappedObjectsResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(WrappedKnowledgeResponse.class, this::onWrappedKnowledgeResponse)//
                 .onMessage(WrappedAssetsResponse.class, this::onWrappedAssetsResponse)//

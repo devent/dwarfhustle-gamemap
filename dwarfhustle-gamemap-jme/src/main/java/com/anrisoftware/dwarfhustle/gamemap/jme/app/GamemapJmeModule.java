@@ -19,15 +19,11 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import javax.inject.Named;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GameAssets;
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GameAssetsProvider;
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GameObjectsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.DwarfhustleGamemapJmeMapModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
 import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObjects;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.jme3.app.Application;
@@ -56,8 +52,6 @@ public class GamemapJmeModule extends AbstractModule {
         install(new GamemapActorsModule());
         install(new DwarfhustleGamemapJmeMapModule());
         install(new DwarfhustleGamemapJmeLightsModule());
-        bind(GameObjects.class).toProvider(GameObjectsProvider.class);
-        bind(GameAssets.class).toProvider(GameAssetsProvider.class);
     }
 
     @Provides

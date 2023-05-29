@@ -32,7 +32,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.objects.CreateSchemasMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.CreateSchemasMessage;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 

@@ -15,17 +15,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
+package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheObject;
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor.TerrainActorFactory;
+import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
- * Retrieves game assets.
+ *
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface GameAssets {
+public class DwarfhustleGamemapJmeTerrainModule extends AbstractModule {
 
-    public AssetCacheObject get(AssetCacheKey<?> key);
+	@Override
+	protected void configure() {
+        install(new FactoryModuleBuilder().implement(TerrainActor.class, TerrainActor.class)
+                .build(TerrainActorFactory.class));
+	}
 }
