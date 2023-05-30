@@ -10,8 +10,12 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.map.primitive.LongObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
+import org.eclipse.collections.api.multimap.Multimap;
+import org.eclipse.collections.api.multimap.MutableMultimap;
+import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -232,19 +236,22 @@ public class TerrainActor {
      */
     private Behavior<Message> onUpdateModel(UpdateModelMessage m) {
         log.debug("onUpdateModel {}", m);
-        var chunks = Lists.mutable.empty();
         actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid(),
-                o -> collectChunks(m, chunks, o)));
+                o -> updateModel(m, o)));
         return Behaviors.same();
     }
 
-    private void collectChunks(UpdateModelMessage m, MutableList<Object> chunks, GameObject o) {
-        var root = (MapChunk) o;
+    private void updateModel(UpdateModelMessage m, GameObject o) {
+        var chunks = collectChunks(m, (MapChunk) o);
+    }
+
+    private LongObjectMap<Multimap<Long, Object>> collectChunks(UpdateModelMessage m, MapChunk root) {
+        MutableLongObjectMap<Multimap<Long, Object>> chunksBlocks = LongObjectMaps.mutable.empty();
         int x = 0;
         int y = 0;
         int z = m.gm.getCursorZ();
         var firstchunk = root.findMapChunk(x, y, z, id -> og.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
-        chunks.add(firstchunk);
+        putChunkSortBlocks(chunksBlocks, firstchunk);
         long chunkid;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -257,13 +264,22 @@ public class TerrainActor {
                 }
                 firstchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
                 nextchunk = firstchunk;
-                chunks.add(firstchunk);
+                putChunkSortBlocks(chunksBlocks, nextchunk);
             } else {
                 nextchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
-                chunks.add(nextchunk);
+                putChunkSortBlocks(chunksBlocks, nextchunk);
             }
         }
         log.trace("collectChunks {}", m);
+        return chunksBlocks;
+    }
+
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, Object>> chunksBlocks, MapChunk chunk) {
+        MutableMultimap<Long, Object> blocks = Multimaps.mutable.list.empty();
+        for (var pair : chunk.getBlocks().keyValuesView()) {
+            blocks.put(pair.getTwo().getMaterial(), pair.getTwo());
+        }
+        chunksBlocks.put(chunk.getId(), blocks);
     }
 
     /**
