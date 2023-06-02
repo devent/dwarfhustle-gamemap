@@ -56,13 +56,13 @@ public class AssetsLoadMaterialTextures {
         var tex = loadTexture(data.image);
         for (var v : data.frames.entrySet()) {
             texturesMapFramesDataMap.put(v.getKey(), v.getValue());
-            var to = loadTextureObject(v.getValue());
+            var to = loadTextureData(v.getValue());
             to.tex = tex;
             cache.put(new MaterialCacheKey(KnowledgeObject.rid2Id(v.getKey())), to);
         }
     }
 
-    private TextureCacheObject loadTextureObject(TexturesMapFramesData data) {
+    private TextureCacheObject loadTextureData(TexturesMapFramesData data) {
         var to = new TextureCacheObject();
         to.specular = new ColorRGBA(data.specular[0], data.specular[1], data.specular[2], data.specular[3]);
         to.baseColor = new ColorRGBA(data.color[0], data.color[1], data.color[2], data.color[3]);
@@ -90,7 +90,7 @@ public class AssetsLoadMaterialTextures {
 
     public TextureCacheObject loadTextureObject(long key) {
         var d = texturesMapFramesDataMap.get(key);
-        var to = loadTextureObject(d);
+        var to = loadTextureData(d);
         to.tex = loadTexture(d.image);
         return to;
     }

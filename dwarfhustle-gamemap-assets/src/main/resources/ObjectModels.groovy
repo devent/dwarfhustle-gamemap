@@ -1,3 +1,5 @@
+import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMap
+
 /*
  * Dwarf Hustle Game Map - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
@@ -16,16 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 rid = [:]
-// TileType
-rid["tile-tile"] = 816
-rid["tile-mined"] = 815
-rid["tile-ramp"] = 814
-rid["tile-floor"] = 813
+// ObjectType
+rid["tile-block"] = 809
 
-models = [:]
-models[rid["tile-tile"]] = [baseColorMap: "Textures/Tiles/Sedimentary/siltstone-1.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
-models[rid["tile-mined"]] = [baseColorMap: "Textures/Tiles/Sedimentary/shale-1-1024.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
-models[rid["tile-ramp"]] = [baseColorMap: "Textures/Tiles/Sedimentary/sandstone-01.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
-models[rid["tile-floor"]] = [baseColorMap: "Textures/Tiles/Sedimentary/rock_salt-1-1024.png", "glossiness": 0f, "metallic": 0f, "roughness": 1f]
+m = new ModelMap()
 
-models
+m[rid["tile-block"]] = [model: "Models/tile-cube/tile-cube.j3o"]
+
+m

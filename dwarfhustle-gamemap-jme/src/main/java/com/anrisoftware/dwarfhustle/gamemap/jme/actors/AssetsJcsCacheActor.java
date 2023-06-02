@@ -20,7 +20,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
@@ -41,6 +40,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.L
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.MaterialCacheKey;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.ModelCacheKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -51,7 +51,6 @@ import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage;
 import com.google.inject.Injector;
-import com.jme3.scene.Spatial;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -91,7 +90,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
-            ObjectsGetter og, CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
+            CompletionStage<ObjectsGetter> og, CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
         return AbstractJcsCacheActor.create(injector, actorFactory, og, AssetCacheKey.class, initCacheAsync);
     }
 
@@ -101,7 +100,8 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
      * @param injector the {@link Injector} injector.
      * @param timeout  the {@link Duration} timeout.
      */
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, ObjectsGetter og) {
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
+            CompletionStage<ObjectsGetter> og) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         var actorFactory = injector.getInstance(AssetsJcsCacheActorFactory.class);
         var initCache = createInitCacheAsync();
@@ -122,9 +122,8 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     @Inject
     private AssetsLoadMaterialTextures loadMaterialTextures;
 
-    private Map<Integer, Map<String, Object>> modelsMap;
-
-    private Spatial unknownModel;
+    @Inject
+    private AssetsLoadObjectModels loadObjectModels;
 
     @Override
     protected Behavior<Message> initialStage(InitialStateMessage m) {
@@ -141,6 +140,9 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     protected void retrieveValueFromDb(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
         if (m.key instanceof MaterialCacheKey tkey) {
             var to = loadMaterialTextures.loadTextureObject(tkey.getKey());
+            consumer.accept(to);
+        } else if (m.key instanceof ModelCacheKey tkey) {
+            var to = loadObjectModels.loadModelObject(tkey.getKey());
             consumer.accept(to);
         }
     }
@@ -159,8 +161,11 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     @Override
     @SneakyThrows
     protected <T extends GameObject> T getValueFromDb(Class<T> typeClass, String type, Object key) {
-        if (key instanceof MaterialCacheKey tk) {
-            var to = loadMaterialTextures.loadTextureObject(tk.key);
+        if (key instanceof MaterialCacheKey k) {
+            var to = loadMaterialTextures.loadTextureObject(k.key);
+            return (T) to;
+        } else if (key instanceof ModelCacheKey k) {
+            var to = loadMaterialTextures.loadTextureObject(k.key);
             return (T) to;
         }
         throw new IllegalArgumentException();
@@ -215,7 +220,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     private Behavior<Message> onLoadModels(@SuppressWarnings("rawtypes") LoadModelsMessage m) {
         log.debug("onLoadModels {}", m);
         try {
-            // loadModels();
+            loadObjectModels.loadObjectModels(cache);
             m.replyTo.tell(new LoadModelsSuccessMessage<>(m));
         } catch (Throwable e) {
             log.error("onLoadModels", e);
@@ -223,41 +228,6 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
         }
         return Behaviors.same();
     }
-
-//    @SuppressWarnings("unchecked")
-//    @SneakyThrows
-//    private void loadModels() {
-//        var engine = new GroovyScriptEngine(new URL[] { MapTerrainModel.class.getResource("/ModelsMap.groovy") });
-//        var binding = new Binding();
-//        this.modelsMap = (Map<Integer, Map<String, Object>>) engine.run("ModelsMap.groovy", binding);
-//        unknownModel = am.loadModel("Models/Tiles/Unknown/unknown-02.png");
-//        modelsMap.entrySet().parallelStream().forEach(this::loadModelMap);
-//    }
-//
-//    private void loadModelMap(Map.Entry<Integer, Map<String, Object>> mentry) {
-//        long id = mentry.getKey();
-//        var to = loadModelObject(mentry.getValue(), id);
-//        cache.put(new ModelCacheKey(KnowledgeObject.rid2Id(id)), to);
-//    }
-//
-//    private ModelCacheObject loadModelObject(Map<String, Object> map, long id) {
-//        var co = new ModelCacheObject();
-//        co.model = loadModel(map, id, "model");
-//        return null;
-//    }
-//
-//    private Spatial loadModel(Map<String, Object> map, long id, String name) {
-//        var texname = (String) map.get(name);
-//        Spatial model = null;
-//        log.trace("Loading {} model {}:={}", name, id, texname);
-//        try {
-//            model = am.loadModel(name);
-//        } catch (AssetNotFoundException e) {
-//            model = unknownModel;
-//            log.error("Error loading model", e);
-//        }
-//        return model;
-//    }
 
     @Override
     protected BehaviorBuilder<Message> getInitialBehavior() {
