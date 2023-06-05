@@ -100,11 +100,18 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
      * @param injector the {@link Injector} injector.
      * @param timeout  the {@link Duration} timeout.
      */
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> og) {
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         var actorFactory = injector.getInstance(AssetsJcsCacheActorFactory.class);
         var initCache = createInitCacheAsync();
+        CompletionStage<ObjectsGetter> og = CompletableFuture.supplyAsync(() -> new ObjectsGetter() {
+
+            @Override
+            public <T extends GameObject> T get(Class<T> typeClass, String type, Object key)
+                    throws ObjectsGetterException {
+                throw new UnsupportedOperationException();
+            }
+        });
         return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, actorFactory, og, initCache));
     }
 
@@ -165,7 +172,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
             var to = loadMaterialTextures.loadTextureObject(k.key);
             return (T) to;
         } else if (key instanceof ModelCacheKey k) {
-            var to = loadMaterialTextures.loadTextureObject(k.key);
+            var to = loadObjectModels.loadModelObject(k.key);
             return (T) to;
         }
         throw new IllegalArgumentException();

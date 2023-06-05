@@ -27,7 +27,7 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class GamemapActorsModule extends AbstractModule {
+public class DwarfhustleGamemapActorsModule extends AbstractModule {
 
 	@Override
 	protected void configure() {

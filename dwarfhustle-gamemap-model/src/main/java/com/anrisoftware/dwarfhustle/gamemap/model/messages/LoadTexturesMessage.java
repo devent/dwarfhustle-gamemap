@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
+import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+
 import akka.actor.typed.ActorRef;
 import lombok.ToString;
 
@@ -26,7 +28,7 @@ import lombok.ToString;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString(callSuper = true)
-public class LoadTexturesMessage<T extends AssetsResponseMessage<?>> extends AssetsMessage<T> {
+public class LoadTexturesMessage<T extends Message> extends AssetsMessage<T> {
 
     /**
      * Response message that textures are loaded.
@@ -34,7 +36,7 @@ public class LoadTexturesMessage<T extends AssetsResponseMessage<?>> extends Ass
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     @ToString
-    public static class LoadTexturesSuccessMessage<T extends AssetsMessage<?>> extends AssetsResponseMessage<T> {
+    public static class LoadTexturesSuccessMessage<T extends Message> extends AssetsResponseMessage<T> {
 
         public LoadTexturesSuccessMessage(LoadTexturesMessage<?> om) {
             super(om);
@@ -47,7 +49,7 @@ public class LoadTexturesMessage<T extends AssetsResponseMessage<?>> extends Ass
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     @ToString
-    public static class LoadTexturesErrorMessage<T extends AssetsMessage<?>> extends AssetsResponseMessage<T> {
+    public static class LoadTexturesErrorMessage<T extends Message> extends AssetsResponseMessage<T> {
 
         public final Throwable e;
 

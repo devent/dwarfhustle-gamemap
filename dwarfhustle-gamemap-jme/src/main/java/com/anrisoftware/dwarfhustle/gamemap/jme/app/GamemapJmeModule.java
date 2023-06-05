@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import javax.inject.Named;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.GamemapActorsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.DwarfhustleGamemapJmeMapModule;
 import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
@@ -49,7 +49,7 @@ public class GamemapJmeModule extends AbstractModule {
     protected void configure() {
         install(new GamemapGuiActorsModule());
         install(new GamemapGuiControllersModule());
-        install(new GamemapActorsModule());
+        install(new DwarfhustleGamemapActorsModule());
         install(new DwarfhustleGamemapJmeMapModule());
         install(new DwarfhustleGamemapJmeLightsModule());
     }

@@ -22,6 +22,8 @@ import static java.time.Duration.ofSeconds;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.inject.Inject;
@@ -36,9 +38,14 @@ import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectLongMaps;
 import org.lable.oss.uniqueid.IDGenerator;
 
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AssetsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.DebugCoordinateAxesState;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.MockStoredObjectsJcsCacheActor.MockStoredObjectsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
@@ -73,10 +80,12 @@ import com.jme3.app.LostFocusBehavior;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.StatsAppState;
 import com.jme3.app.state.ConstantVerifierState;
+import com.jme3.asset.AssetManager;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
 
 import akka.actor.typed.ActorRef;
+import akka.actor.typed.javadsl.AskPattern;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -114,6 +123,12 @@ public class TerrainTest extends SimpleApplication {
 
     private LongObjectMap<GameObject> backendIdsObjects;
 
+    private boolean texturesLoaded = false;
+
+    private boolean modelsLoaded = false;
+
+    private Consumer<Float> simpleUpdateCall;
+
     public TerrainTest() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState());
     }
@@ -139,6 +154,7 @@ public class TerrainTest extends SimpleApplication {
                 install(new DwarfhustlePowerloomModule());
                 install(new DwarfhustleModelDbStoragesSchemasModule());
                 install(new DwarfhustleModelDbcacheModule());
+                install(new DwarfhustleGamemapActorsModule());
                 install(new FactoryModuleBuilder()
                         .implement(MockStoredObjectsJcsCacheActor.class, MockStoredObjectsJcsCacheActor.class)
                         .build(MockStoredObjectsJcsCacheActorFactory.class));
@@ -154,13 +170,32 @@ public class TerrainTest extends SimpleApplication {
             public Node getRootNode() {
                 return TerrainTest.this.getRootNode();
             }
+
+            @Provides
+            public AssetManager getAssetManger() {
+                return TerrainTest.this.assetManager;
+            }
+
         });
         createMockTerrain();
         setupApp();
+        start();
+    }
+
+    @Override
+    public void simpleInitApp() {
+        log.debug("simpleInitApp");
+        this.simpleUpdateCall = tpl -> {
+            if (texturesLoaded && modelsLoaded) {
+                actor.tell(new SetGameMapMessage(gm));
+                simpleUpdateCall = (tpl1) -> {
+                };
+            }
+        };
+        createAssets();
         createTerrain();
         createPowerLoom();
         createObjectsCache();
-        start();
     }
 
     @SneakyThrows
@@ -216,7 +251,6 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createPowerLoom() {
-        var actor = injector.getInstance(ActorSystemProvider.class);
         PowerLoomKnowledgeActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("PowerLoomKnowledgeActor.create", ex);
@@ -229,7 +263,6 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createKnowledgeCache(ActorRef<Message> powerLoom) {
-        var actor = injector.getInstance(ActorSystemProvider.class);
         KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsGetter(PowerLoomKnowledgeActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
@@ -242,7 +275,6 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createObjectsCache() {
-        var actor = injector.getInstance(ActorSystemProvider.class);
         var task = MockStoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30),
                 CompletableFuture.supplyAsync(() -> og));
         task.whenComplete((ret, ex) -> {
@@ -251,7 +283,47 @@ public class TerrainTest extends SimpleApplication {
             } else {
                 log.debug("ObjectsJcsCacheActor created");
                 cacheAllObjects();
-                actor.tell(new SetGameMapMessage(gm));
+            }
+        });
+    }
+
+    private void createAssets() {
+        var task = AssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("AssetsJcsCacheActor.create", ex);
+            } else {
+                log.debug("AssetsJcsCacheActor created");
+                loadTextures();
+                loadModels();
+            }
+        });
+    }
+
+    private void loadTextures() {
+        CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadTexturesMessage::new,
+                Duration.ofSeconds(30), actor.getScheduler());
+        result.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("LoadTexturesMessage", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("LoadTexturesMessage {}", ret);
+                texturesLoaded = true;
+            }
+        });
+    }
+
+    private void loadModels() {
+        CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadModelsMessage::new,
+                Duration.ofSeconds(30), actor.getScheduler());
+        result.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("LoadModelsMessage", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("LoadModelsMessage {}", ret);
+                modelsLoaded = true;
             }
         });
     }
@@ -374,10 +446,6 @@ public class TerrainTest extends SimpleApplication {
     }
 
     @Override
-    public void simpleInitApp() {
-    }
-
-    @Override
     public void stop(boolean waitFor) {
         actor.get().tell(new ShutdownMessage());
         super.stop(waitFor);
@@ -385,6 +453,7 @@ public class TerrainTest extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
+        simpleUpdateCall.accept(tpf);
         engine.update(tpf);
     }
 }

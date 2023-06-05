@@ -30,7 +30,7 @@ import lombok.ToString;
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class AssetsMessage<T extends AssetsResponseMessage<?>> extends Message {
+public class AssetsMessage<T extends Message> extends Message {
 
     /**
      * Reply to {@link ActorRef}.

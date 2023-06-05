@@ -29,7 +29,7 @@ import lombok.ToString;
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class AssetsResponseMessage<T extends AssetsMessage<?>> extends Message {
+public class AssetsResponseMessage<T extends Message> extends Message {
 
     public final AssetsMessage<?> om;
 }
