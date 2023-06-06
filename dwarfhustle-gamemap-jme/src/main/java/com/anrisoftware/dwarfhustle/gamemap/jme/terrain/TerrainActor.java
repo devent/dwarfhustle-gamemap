@@ -227,7 +227,7 @@ public class TerrainActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
-        timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(1000));
+        timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(3000));
         return Behaviors.same();
     }
 
@@ -243,6 +243,7 @@ public class TerrainActor {
 
     private void updateModel(UpdateModelMessage m, GameObject o) {
         var chunks = collectChunks(m, (MapChunk) o);
+        log.info("chunks {}", chunks);
     }
 
     private LongObjectMap<Multimap<Long, Object>> collectChunks(UpdateModelMessage m, MapChunk root) {
@@ -277,9 +278,27 @@ public class TerrainActor {
     private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, Object>> chunksBlocks, MapChunk chunk) {
         MutableMultimap<Long, Object> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
-            blocks.put(pair.getTwo().getMaterial(), pair.getTwo());
+            if (isBlockVisible(pair.getTwo())) {
+                blocks.put(pair.getTwo().getMaterial(), pair.getTwo());
+            }
         }
         chunksBlocks.put(chunk.getId(), blocks);
+    }
+
+    private boolean isBlockVisible(MapBlock mb) {
+        if (mb.isMined()) {
+            return false;
+        }
+        if (mb.isSolid()) {
+            long nt;
+            if ((nt = mb.getNeighborTop()) != 0) {
+                var bt = og.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
+                if (bt.isSolid()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**

@@ -188,7 +188,7 @@ public class TerrainTest extends SimpleApplication {
         this.simpleUpdateCall = tpl -> {
             if (texturesLoaded && modelsLoaded) {
                 actor.tell(new SetGameMapMessage(gm));
-                simpleUpdateCall = (tpl1) -> {
+                simpleUpdateCall = tpl1 -> {
                 };
             }
         };
@@ -369,9 +369,46 @@ public class TerrainTest extends SimpleApplication {
                     if ((w = mcRoot.findChild(wx, y, z, wx + xs, y + ys, z + zs, r)) != 0) {
                         chunk.setNeighborWest(w);
                     }
+                    if (chunk.getBlocks().notEmpty()) {
+                        chunk.getBlocks().forEachValue(mb -> setupBlockNeighbors(chunk, mb));
+                    }
+                    putObjectToBackend(chunk);
                 }
             }
         }
+    }
+
+    private void setupBlockNeighbors(MapChunk chunk, MapBlock mb) {
+        var pos = mb.getPos();
+        var t = pos.addZ(-1);
+        var tb = chunk.getBlock(t);
+        if (tb.isPresent()) {
+            mb.setNeighborTop(tb.get().getId());
+        } else {
+            long chunkid;
+            if ((chunkid = chunk.getNeighborTop()) != 0) {
+                var c = (MapChunk) backendIdsObjects.get(chunkid);
+                tb = c.getBlock(t);
+                if (tb.isPresent()) {
+                    mb.setNeighborTop(tb.get().getId());
+                }
+            }
+        }
+        var b = pos.addZ(1);
+        var bb = chunk.getBlock(b);
+        if (bb.isPresent()) {
+            mb.setNeighborTop(bb.get().getId());
+        } else {
+            long chunkid;
+            if ((chunkid = chunk.getNeighborBottom()) != 0) {
+                var c = (MapChunk) backendIdsObjects.get(chunkid);
+                bb = c.getBlock(b);
+                if (bb.isPresent()) {
+                    mb.setNeighborTop(bb.get().getId());
+                }
+            }
+        }
+        putObjectToBackend(mb);
     }
 
     private void createMap(long[] terrain, MapChunk rootc, int sx, int sy, int sz, int ex, int ey, int ez) {
@@ -426,6 +463,7 @@ public class TerrainTest extends SimpleApplication {
     private void putObjectToBackend(GameObject go) {
         var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
         backend.put(go.getId(), go);
+        System.out.printf("putObjectToBackend %d := %s\n", go.getId(), go); // TODO
     }
 
     private void cacheAllObjects() {

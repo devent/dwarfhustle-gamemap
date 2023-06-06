@@ -23,7 +23,6 @@ import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbMessage.DbResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.SaveObjectMessage;
 import com.google.inject.Injector;
 
@@ -135,15 +134,13 @@ public class MockStoredObjectsJcsCacheActor extends AbstractJcsCacheActor {
     @Override
     protected void retrieveValueFromDb(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
         if (m.key instanceof Long id && StoredObject.class.isAssignableFrom(m.typeClass)) {
-            retrieveGameObject(m.type, id, consumer);
+            retrieveGameObject(m.typeClass, m.type, id, consumer);
         }
     }
 
-    private void retrieveGameObject(String type, long id, Consumer<GameObject> consumer) {
-        actor.tell(new LoadObjectMessage<>(dbResponseAdapter, type, consumer, db -> {
-            var query = "SELECT * from ? where objecttype = ? and objectid = ? limit 1";
-            return db.query(query, type, type, id);
-        }));
+    private void retrieveGameObject(Class<? extends GameObject> typeClass, String type, long id,
+            Consumer<GameObject> consumer) {
+        consumer.accept(og.get(typeClass, type, id));
     }
 
     @Override
