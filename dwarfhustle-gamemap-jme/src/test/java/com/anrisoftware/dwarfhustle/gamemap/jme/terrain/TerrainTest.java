@@ -129,6 +129,8 @@ public class TerrainTest extends SimpleApplication {
 
     private Consumer<Float> simpleUpdateCall;
 
+    private long[] terrain;
+
     public TerrainTest() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState());
     }
@@ -198,9 +200,15 @@ public class TerrainTest extends SimpleApplication {
         createObjectsCache();
     }
 
-    @SneakyThrows
     private void createMockTerrain() {
-        var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
+        createGameMap();
+        createMap(mcRoot, 0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth());
+        createNeighbors((MapChunk) backendIdsObjects.get(gm.getRootid()));
+        putObjectToBackend(gm);
+    }
+
+    @SneakyThrows
+    private void createGameMap() {
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
         gm.setChunkSize(2);
@@ -210,21 +218,19 @@ public class TerrainTest extends SimpleApplication {
         gm.setRootid(mcRoot.getId());
         int ground_depth = Math.round(gm.getDepth() * 0.5f);
         int magma_depth = Math.round(gm.getDepth() * 0.9f);
-        var terrain = new long[gm.getDepth()];
+        this.terrain = new long[gm.getDepth()];
         for (int z = 0; z < ground_depth; z++) {
-            terrain[z] = KnowledgeObject.rid2Id(891);
+            terrain[z] = KnowledgeObject.rid2Id(898); // oxygen
         }
-        terrain[ground_depth] = KnowledgeObject.rid2Id(881);
-        terrain[ground_depth + 1] = KnowledgeObject.rid2Id(881);
-        for (int z = ground_depth + 2; z < magma_depth; z++) {
-            terrain[z] = KnowledgeObject.rid2Id(818);
+        terrain[ground_depth] = KnowledgeObject.rid2Id(890); // topsoil
+        terrain[ground_depth + 1] = KnowledgeObject.rid2Id(888); // topsoil
+        for (int z = ground_depth + 2; z < magma_depth; z++) { // rock
+            terrain[z] = KnowledgeObject.rid2Id(825);
         }
-        for (int z = magma_depth; z < gm.getDepth(); z++) {
-            terrain[z] = KnowledgeObject.rid2Id(808);
+        for (int z = magma_depth; z < gm.getDepth(); z++) { // magma
+            terrain[z] = KnowledgeObject.rid2Id(815);
         }
-        createMap(terrain, mcRoot, 0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth());
-        createNeighbors((MapChunk) backend.get(gm.getRootid()));
-        putObjectToBackend(gm);
+        gm.setCursorZ(ground_depth);
     }
 
     private void setupApp() {
@@ -397,21 +403,21 @@ public class TerrainTest extends SimpleApplication {
         var b = pos.addZ(1);
         var bb = chunk.getBlock(b);
         if (bb.isPresent()) {
-            mb.setNeighborTop(bb.get().getId());
+            mb.setNeighborBottom(bb.get().getId());
         } else {
             long chunkid;
             if ((chunkid = chunk.getNeighborBottom()) != 0) {
                 var c = (MapChunk) backendIdsObjects.get(chunkid);
                 bb = c.getBlock(b);
                 if (bb.isPresent()) {
-                    mb.setNeighborTop(bb.get().getId());
+                    mb.setNeighborBottom(bb.get().getId());
                 }
             }
         }
         putObjectToBackend(mb);
     }
 
-    private void createMap(long[] terrain, MapChunk rootc, int sx, int sy, int sz, int ex, int ey, int ez) {
+    private void createMap(MapChunk rootc, int sx, int sy, int sz, int ex, int ey, int ez) {
         rootc.setPos(new GameChunkPos(gm.getMapid(), sx, sy, sz, ex, ey, ez));
         if (rootc.getPos().ep.x == gm.getWidth() && rootc.getPos().ep.y == gm.getHeight()
                 && rootc.getPos().ep.z == gm.getDepth()) {
@@ -445,7 +451,7 @@ public class TerrainTest extends SimpleApplication {
                         var mb = new MapBlock(ids.generate());
                         mb.setPos(new GameBlockPos(mapid, xx, yy, zz));
                         mb.setMaterial(terrain[zz]);
-                        if (mb.getMaterial() == KnowledgeObject.rid2Id(891)) {
+                        if (mb.getMaterialRid() == 898) {
                             mb.setMined(true);
                         }
                         blocks.put(mb.getPos(), mb);
@@ -454,7 +460,7 @@ public class TerrainTest extends SimpleApplication {
             }
             chunk.setBlocks(blocks);
         } else {
-            createMap(terrain, chunk, x, y, z, ex, ey, ez);
+            createMap(chunk, x, y, z, ex, ey, ez);
         }
         putObjectToBackend(chunk);
         chunks.put(chunk.getPos(), chunk.getId());
@@ -463,7 +469,6 @@ public class TerrainTest extends SimpleApplication {
     private void putObjectToBackend(GameObject go) {
         var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
         backend.put(go.getId(), go);
-        System.out.printf("putObjectToBackend %d := %s\n", go.getId(), go); // TODO
     }
 
     private void cacheAllObjects() {
