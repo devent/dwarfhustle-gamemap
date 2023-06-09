@@ -11,7 +11,6 @@ import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMap;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMapData;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMapFramesData;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.MaterialCacheKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
@@ -58,7 +57,7 @@ public class AssetsLoadMaterialTextures {
             texturesMapFramesDataMap.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
-            cache.put(new MaterialCacheKey(KnowledgeObject.rid2Id(v.getKey())), to);
+            cache.put(KnowledgeObject.rid2Id(v.getKey()), to);
         }
     }
 

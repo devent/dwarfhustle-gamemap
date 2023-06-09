@@ -10,15 +10,17 @@ import java.util.concurrent.CompletionStage;
 
 import javax.inject.Inject;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.map.primitive.LongObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
@@ -27,11 +29,9 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
-import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -98,13 +98,15 @@ public class TerrainActor {
      */
     public interface TerrainActorFactory {
         TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
-                ObjectsGetter og);
+                @Assisted("objects") ObjectsGetter objects, @Assisted("materials") ObjectsGetter materials,
+                @Assisted("models") ObjectsGetter models);
     }
 
     /**
      * Creates the {@link TerrainActor}.
      */
-    public static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og) {
+    public static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> objects,
+            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
@@ -113,8 +115,11 @@ public class TerrainActor {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return injector.getInstance(TerrainActorFactory.class)
-                    .create(context, stash, timer, og.toCompletableFuture().get(15, SECONDS)).start(injector);
+            var o = objects.toCompletableFuture().get(15, SECONDS);
+            var ma = materials.toCompletableFuture().get(15, SECONDS);
+            var mo = models.toCompletableFuture().get(15, SECONDS);
+            return injector.getInstance(TerrainActorFactory.class).create(context, stash, timer, o, ma, mo)
+                    .start(injector);
         })));
     }
 
@@ -122,9 +127,10 @@ public class TerrainActor {
      * Creates the {@link TerrainActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> og) {
+            CompletionStage<ObjectsGetter> objects, CompletionStage<ObjectsGetter> materials,
+            CompletionStage<ObjectsGetter> models) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, og));
+        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, objects, materials, models));
     }
 
     private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
@@ -160,20 +166,16 @@ public class TerrainActor {
     private TimerScheduler<Message> timer;
 
     @Inject
-    private ActorSystemProvider actor;
+    @Assisted("objects")
+    private ObjectsGetter objectsg;
 
     @Inject
-    private Engine engine;
+    @Assisted("materials")
+    private ObjectsGetter materialsg;
 
     @Inject
-    private Application app;
-
-    @Inject
-    private GameSettingsProvider gs;
-
-    @Inject
-    @Assisted
-    private ObjectsGetter og;
+    @Assisted("models")
+    private ObjectsGetter modelsg;
 
     private InitialStateMessage is;
 
@@ -236,22 +238,35 @@ public class TerrainActor {
      */
     private Behavior<Message> onUpdateModel(UpdateModelMessage m) {
         log.debug("onUpdateModel {}", m);
-        actor.tell(new CacheGetMessage<>(cacheResponseAdapter, MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid(),
-                o -> updateModel(m, o)));
+        var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
+        updateModel(m, root);
         return Behaviors.same();
     }
 
     private void updateModel(UpdateModelMessage m, GameObject o) {
-        var chunks = collectChunks(m, (MapChunk) o);
-        log.info("chunks {}", chunks);
+        MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
+        collectChunks(chunksBlocks, m.gm, (MapChunk) o);
+        combineModels(chunksBlocks);
+        // log.info("chunks {}", chunks);
     }
 
-    private LongObjectMap<Multimap<Long, Object>> collectChunks(UpdateModelMessage m, MapChunk root) {
-        MutableLongObjectMap<Multimap<Long, Object>> chunksBlocks = LongObjectMaps.mutable.empty();
+    private void combineModels(LongObjectMap<Multimap<Long, MapBlock>> chunksBlocks) {
+        for (Multimap<Long, MapBlock> chunks : chunksBlocks) {
+            for (Pair<Long, RichIterable<MapBlock>> blocks : chunks.keyMultiValuePairsView()) {
+                for (MapBlock mb : blocks.getTwo()) {
+                    var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
+                }
+
+            }
+
+        }
+    }
+
+    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root) {
         int x = 0;
         int y = 0;
-        int z = m.gm.getCursorZ();
-        var firstchunk = root.findMapChunk(x, y, z, id -> og.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
+        int z = gm.getCursorZ();
+        var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
         putChunkSortBlocks(chunksBlocks, firstchunk);
         long chunkid;
         var nextchunk = firstchunk;
@@ -263,23 +278,23 @@ public class TerrainActor {
                 if (nsid == 0) {
                     break;
                 }
-                firstchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
+                firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
                 nextchunk = firstchunk;
                 putChunkSortBlocks(chunksBlocks, nextchunk);
             } else {
-                nextchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
+                nextchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
                 putChunkSortBlocks(chunksBlocks, nextchunk);
             }
         }
-        log.trace("collectChunks {}", m);
-        return chunksBlocks;
+        log.trace("collectChunks {}", chunksBlocks.size());
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, Object>> chunksBlocks, MapChunk chunk) {
-        MutableMultimap<Long, Object> blocks = Multimaps.mutable.list.empty();
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk chunk) {
+        MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
-            if (isBlockVisible(pair.getTwo())) {
-                blocks.put(pair.getTwo().getMaterial(), pair.getTwo());
+            var mb = pair.getTwo();
+            if (isBlockVisible(mb)) {
+                blocks.put(mb.getMaterial(), mb);
             }
         }
         chunksBlocks.put(chunk.getId(), blocks);
@@ -292,7 +307,7 @@ public class TerrainActor {
         if (mb.isSolid()) {
             long nt;
             if ((nt = mb.getNeighborTop()) != 0) {
-                var bt = og.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
+                var bt = objectsg.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
                 if (bt.isSolid()) {
                     return false;
                 }

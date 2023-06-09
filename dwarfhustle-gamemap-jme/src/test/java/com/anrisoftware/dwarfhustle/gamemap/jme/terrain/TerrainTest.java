@@ -23,6 +23,7 @@ import static java.time.Duration.ofSeconds;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -38,8 +39,9 @@ import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectLongMaps;
 import org.lable.oss.uniqueid.IDGenerator;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AssetsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.MaterialAssetsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.actors.ModelsAssetsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.DebugCoordinateAxesState;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.MockStoredObjectsJcsCacheActor.MockStoredObjectsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
@@ -57,13 +59,13 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameChunkPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbcacheModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
@@ -143,10 +145,7 @@ public class TerrainTest extends SimpleApplication {
             @Override
             public <T extends GameObject> T get(Class<T> typeClass, String type, Object key)
                     throws ObjectsGetterException {
-                if (key.getClass().isAssignableFrom(Long.class)) {
-                    return (T) backendIdsObjects.get((long) key);
-                }
-                throw new UnsupportedOperationException();
+                return (T) backendIdsObjects.get((long) key);
             }
         };
         this.injector = parent.createChildInjector(new AbstractModule() {
@@ -178,6 +177,11 @@ public class TerrainTest extends SimpleApplication {
                 return TerrainTest.this.assetManager;
             }
 
+            @Provides
+            public LongObjectMap<GameObject> getBackendIdsObjects() {
+                return backendIdsObjects;
+            }
+
         });
         createMockTerrain();
         setupApp();
@@ -194,7 +198,8 @@ public class TerrainTest extends SimpleApplication {
                 };
             }
         };
-        createAssets();
+        createMaterialAssets();
+        createModelsAssets();
         createTerrain();
         createPowerLoom();
         createObjectsCache();
@@ -220,15 +225,15 @@ public class TerrainTest extends SimpleApplication {
         int magma_depth = Math.round(gm.getDepth() * 0.9f);
         this.terrain = new long[gm.getDepth()];
         for (int z = 0; z < ground_depth; z++) {
-            terrain[z] = KnowledgeObject.rid2Id(898); // oxygen
+            terrain[z] = 898; // oxygen
         }
-        terrain[ground_depth] = KnowledgeObject.rid2Id(890); // topsoil
-        terrain[ground_depth + 1] = KnowledgeObject.rid2Id(888); // topsoil
+        terrain[ground_depth] = 890; // topsoil
+        terrain[ground_depth + 1] = 888; // topsoil
         for (int z = ground_depth + 2; z < magma_depth; z++) { // rock
-            terrain[z] = KnowledgeObject.rid2Id(825);
+            terrain[z] = 825;
         }
         for (int z = magma_depth; z < gm.getDepth(); z++) { // magma
-            terrain[z] = KnowledgeObject.rid2Id(815);
+            terrain[z] = 815;
         }
         gm.setCursorZ(ground_depth);
     }
@@ -246,30 +251,33 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createTerrain() {
-        TerrainActor.create(injector, ofSeconds(1), CompletableFuture.supplyAsync(() -> og)).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("TerrainActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("TerrainActor created");
-            }
-        });
+        TerrainActor.create(injector, ofSeconds(1), CompletableFuture.supplyAsync(() -> og),
+                actor.getObjectsAsync(MaterialAssetsJcsCacheActor.ID),
+                actor.getObjectsAsync(ModelsAssetsJcsCacheActor.ID)).whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("TerrainActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("TerrainActor created");
+                    }
+                });
     }
 
     private void createPowerLoom() {
-        PowerLoomKnowledgeActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("PowerLoomKnowledgeActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("PowerLoomKnowledgeActor created");
-                createKnowledgeCache(ret);
-            }
-        });
+        PowerLoomKnowledgeActor.create(injector, ofSeconds(1), actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
+                .whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("PowerLoomKnowledgeActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("PowerLoomKnowledgeActor created");
+                        createKnowledgeCache(ret);
+                    }
+                });
     }
 
     private void createKnowledgeCache(ActorRef<Message> powerLoom) {
-        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsGetter(PowerLoomKnowledgeActor.ID))
+        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsAsync(PowerLoomKnowledgeActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("KnowledgeJcsCacheActor.create", ex);
@@ -293,14 +301,25 @@ public class TerrainTest extends SimpleApplication {
         });
     }
 
-    private void createAssets() {
-        var task = AssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+    private void createMaterialAssets() {
+        var task = MaterialAssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
-                log.error("AssetsJcsCacheActor.create", ex);
+                log.error("MaterialAssetsJcsCacheActor.create", ex);
             } else {
-                log.debug("AssetsJcsCacheActor created");
+                log.debug("MaterialAssetsJcsCacheActor created");
                 loadTextures();
+            }
+        });
+    }
+
+    private void createModelsAssets() {
+        var task = ModelsAssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ModelsAssetsJcsCacheActor.create", ex);
+            } else {
+                log.debug("ModelsAssetsJcsCacheActor created");
                 loadModels();
             }
         });
@@ -450,7 +469,8 @@ public class TerrainTest extends SimpleApplication {
                     for (int zz = z; zz < z + csize; zz++) {
                         var mb = new MapBlock(ids.generate());
                         mb.setPos(new GameBlockPos(mapid, xx, yy, zz));
-                        mb.setMaterial(terrain[zz]);
+                        mb.setMaterialRid(terrain[zz]);
+                        mb.setObjectRid(809);
                         if (mb.getMaterialRid() == 898) {
                             mb.setMined(true);
                         }
@@ -471,9 +491,11 @@ public class TerrainTest extends SimpleApplication {
         backend.put(go.getId(), go);
     }
 
+    @SneakyThrows
     private void cacheAllObjects() {
-        askCachePuts(actor.getActorSystem(), Long.class, GameObject::getId, backendIdsObjects.values(), ofSeconds(1))
-                .whenComplete((reply, failure) -> {
+        var cache = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, TimeUnit.SECONDS);
+        askCachePuts(cache, Long.class, GameObject::getId, backendIdsObjects.values(), ofSeconds(1),
+                actor.getScheduler()).whenComplete((reply, failure) -> {
                     if (failure != null) {
                         log.error("Cache failure", failure);
                     } else {

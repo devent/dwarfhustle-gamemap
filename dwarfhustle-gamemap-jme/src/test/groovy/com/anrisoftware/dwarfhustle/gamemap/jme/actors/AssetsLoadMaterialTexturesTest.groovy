@@ -29,17 +29,17 @@ class AssetsLoadMaterialTexturesTest {
         assert m.data["Clay"] instanceof TexturesMapData
         assert m.Clay.image =~ /.*png/
         assert m.Clay.frames.size() == 5
-        assert m.Clay.frames[868l] instanceof TexturesMapFramesData
-        assert m.Clay.frames[868l].image =~ /.*png/
-        assert m.Clay.frames[868l].x == 0
-        assert m.Clay.frames[868l].y == 256
-        assert m.Clay.frames[868l].w == ww
-        assert m.Clay.frames[868l].h == hh
+        assert m.Clay.frames[875l] instanceof TexturesMapFramesData
+        assert m.Clay.frames[875l].image =~ /.*png/
+        assert m.Clay.frames[875l].x == 0
+        assert m.Clay.frames[875l].y == 256
+        assert m.Clay.frames[875l].w == ww
+        assert m.Clay.frames[875l].h == hh
         assert m.Gas.image =~ /.*png/
-        assert m.Gas.frames[891l].transparent
+        assert m.Gas.frames[897l].transparent
         assert m.Sand.image =~ /.*png/
-        assert m.Sand.frames[874l].x == 128
-        assert m.Sand.frames[874l].y == 0
+        assert m.Sand.frames[881l].x == 128
+        assert m.Sand.frames[881l].y == 0
     }
 
     @Test

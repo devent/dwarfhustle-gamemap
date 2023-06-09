@@ -19,7 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import java.util.function.Consumer;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 
@@ -27,8 +26,8 @@ import akka.actor.typed.ActorRef;
 import lombok.ToString;
 
 /**
- * Message to retrieve a {@link TextureCacheObject} with a {@link AssetCacheKey} from
- * the cache.
+ * Message to retrieve a {@link TextureCacheObject} with a {@link AssetCacheKey}
+ * from the cache.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -36,8 +35,7 @@ import lombok.ToString;
 public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends AssetsMessage<T> {
 
     /**
-     * Response message that the {@link TextureCacheObject} with the {@link AssetCacheKey}
-     * was retrieved.
+     * Response message that the {@link TextureCacheObject} was retrieved.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
@@ -53,8 +51,8 @@ public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends Asset
     }
 
     /**
-     * Response message that there was an error retrieving a {@link TextureCacheObject}
-     * with the {@link AssetCacheKey}.
+     * Response message that there was an error retrieving a
+     * {@link TextureCacheObject}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
@@ -72,15 +70,15 @@ public class GetTextureMessage<T extends AssetsResponseMessage<?>> extends Asset
     private final static Consumer<GameObject> EMPTY_CONSUMER = go -> {
     };
 
-    public final AssetCacheKey<?> key;
+    public final long key;
 
     public final Consumer<GameObject> consumer;
 
-    public GetTextureMessage(ActorRef<T> replyTo, AssetCacheKey<?> key) {
+    public GetTextureMessage(ActorRef<T> replyTo, long key) {
         this(replyTo, key, EMPTY_CONSUMER);
     }
 
-    public GetTextureMessage(ActorRef<T> replyTo, AssetCacheKey<?> key, Consumer<GameObject> consumer) {
+    public GetTextureMessage(ActorRef<T> replyTo, long key, Consumer<GameObject> consumer) {
         super(replyTo);
         this.key = key;
         this.consumer = consumer;

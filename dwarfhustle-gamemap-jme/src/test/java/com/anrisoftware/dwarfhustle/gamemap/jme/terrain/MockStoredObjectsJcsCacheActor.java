@@ -12,18 +12,18 @@ import javax.inject.Inject;
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.apache.commons.jcs3.access.exception.CacheException;
+import org.eclipse.collections.api.map.primitive.LongObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.StoredObject;
 import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbMessage.DbResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.SaveObjectMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.google.inject.Injector;
 
 import akka.actor.typed.ActorRef;
@@ -43,9 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 public class MockStoredObjectsJcsCacheActor extends AbstractJcsCacheActor {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-            MockStoredObjectsJcsCacheActor.class.getSimpleName());
+            StoredObjectsJcsCacheActor.class.getSimpleName());
 
-    public static final String NAME = MockStoredObjectsJcsCacheActor.class.getSimpleName();
+    public static final String NAME = StoredObjectsJcsCacheActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
 
@@ -58,12 +58,12 @@ public class MockStoredObjectsJcsCacheActor extends AbstractJcsCacheActor {
 
         @Override
         MockStoredObjectsJcsCacheActor create(ActorContext<Message> context, StashBuffer<Message> stash,
-                ObjectsGetter og, Class<?> keyType);
+                ObjectsGetter og);
     }
 
     public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
             CompletionStage<ObjectsGetter> og, CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
-        return AbstractJcsCacheActor.create(injector, actorFactory, og, Long.class, initCacheAsync);
+        return AbstractJcsCacheActor.create(injector, actorFactory, og, initCacheAsync);
     }
 
     /**
@@ -92,10 +92,7 @@ public class MockStoredObjectsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Inject
-    private ActorSystemProvider actor;
-
-    @SuppressWarnings("rawtypes")
-    private ActorRef<DbResponseMessage> dbResponseAdapter;
+    private LongObjectMap<GameObject> backend;
 
     @Override
     protected Behavior<Message> initialStage(InitialStateMessage m) {
@@ -109,33 +106,22 @@ public class MockStoredObjectsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Override
-    protected void handleCacheMiss(@SuppressWarnings("rawtypes") CacheGetMessage m) {
-        if (m.key instanceof Long id && StoredObject.class.isAssignableFrom(m.typeClass)) {
-            super.handleCacheMiss(m);
-        }
-    }
-
-    @Override
     protected void storeValueDb(CachePutMessage<?> m) {
-        if (m.value instanceof StoredObject) {
-            actor.tell(new SaveObjectMessage<>(dbResponseAdapter, m.value));
-        }
+        var b = (MutableLongObjectMap<GameObject>) this.backend;
+        b.put((long) m.key, m.value);
     }
 
     @Override
     protected void storeValueDb(CachePutsMessage<?> m) {
+        var b = (MutableLongObjectMap<GameObject>) this.backend;
         for (var go : m.value) {
-            if (m.value instanceof StoredObject) {
-                actor.tell(new SaveObjectMessage<>(dbResponseAdapter, go));
-            }
+            b.put(go.getId(), go);
         }
     }
 
     @Override
     protected void retrieveValueFromDb(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
-        if (m.key instanceof Long id && StoredObject.class.isAssignableFrom(m.typeClass)) {
-            retrieveGameObject(m.typeClass, m.type, id, consumer);
-        }
+        retrieveGameObject(m.typeClass, m.type, (long) m.key, consumer);
     }
 
     private void retrieveGameObject(Class<? extends GameObject> typeClass, String type, long id,
@@ -146,15 +132,6 @@ public class MockStoredObjectsJcsCacheActor extends AbstractJcsCacheActor {
     @Override
     protected <T extends GameObject> T getValueFromDb(Class<T> typeClass, String type, Object key) {
         return og.get(typeClass, type, key);
-    }
-
-    @Override
-    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) throws ObjectsGetterException {
-        if (key instanceof Long id && StoredObject.class.isAssignableFrom(typeClass)) {
-            return super.get(typeClass, type, key);
-        } else {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @Override

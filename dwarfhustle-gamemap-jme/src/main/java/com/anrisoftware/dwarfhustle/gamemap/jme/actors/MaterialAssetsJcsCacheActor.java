@@ -32,15 +32,9 @@ import org.apache.commons.jcs3.access.exception.CacheException;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage.GetTextureSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.MaterialCacheKey;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheKey.ModelCacheKey;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -63,46 +57,45 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Cache for game assets.
+ * Cache for material textures.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
-public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
+public class MaterialAssetsJcsCacheActor extends AbstractJcsCacheActor {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-            AssetsJcsCacheActor.class.getSimpleName());
+            MaterialAssetsJcsCacheActor.class.getSimpleName());
 
-    public static final String NAME = AssetsJcsCacheActor.class.getSimpleName();
+    public static final String NAME = MaterialAssetsJcsCacheActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
 
     /**
-     * Factory to create {@link AssetsJcsCacheActor}.
+     * Factory to create {@link MaterialAssetsJcsCacheActor}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
-    public interface AssetsJcsCacheActorFactory extends AbstractJcsCacheActorFactory {
+    public interface MaterialAssetsJcsCacheActorFactory extends AbstractJcsCacheActorFactory {
 
         @Override
-        AssetsJcsCacheActor create(ActorContext<Message> context, StashBuffer<Message> stash, ObjectsGetter og,
-                Class<?> keyType);
+        MaterialAssetsJcsCacheActor create(ActorContext<Message> context, StashBuffer<Message> stash, ObjectsGetter og);
     }
 
     public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
             CompletionStage<ObjectsGetter> og, CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
-        return AbstractJcsCacheActor.create(injector, actorFactory, og, AssetCacheKey.class, initCacheAsync);
+        return AbstractJcsCacheActor.create(injector, actorFactory, og, initCacheAsync);
     }
 
     /**
-     * Creates the {@link AssetsJcsCacheActor}.
+     * Creates the {@link MaterialAssetsJcsCacheActor}.
      *
      * @param injector the {@link Injector} injector.
      * @param timeout  the {@link Duration} timeout.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        var actorFactory = injector.getInstance(AssetsJcsCacheActorFactory.class);
+        var actorFactory = injector.getInstance(MaterialAssetsJcsCacheActorFactory.class);
         var initCache = createInitCacheAsync();
         CompletionStage<ObjectsGetter> og = CompletableFuture.supplyAsync(() -> new ObjectsGetter() {
 
@@ -118,7 +111,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     public static CompletableFuture<CacheAccess<Object, GameObject>> createInitCacheAsync() {
         CompletableFuture<CacheAccess<Object, GameObject>> initCache = CompletableFuture.supplyAsync(() -> {
             try {
-                return JCS.getInstance("assets");
+                return JCS.getInstance("assets-material");
             } catch (CacheException e) {
                 throw new RuntimeException(e);
             }
@@ -127,10 +120,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Inject
-    private AssetsLoadMaterialTextures loadMaterialTextures;
-
-    @Inject
-    private AssetsLoadObjectModels loadObjectModels;
+    private AssetsLoadMaterialTextures textures;
 
     @Override
     protected Behavior<Message> initialStage(InitialStateMessage m) {
@@ -145,13 +135,8 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
 
     @Override
     protected void retrieveValueFromDb(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
-        if (m.key instanceof MaterialCacheKey tkey) {
-            var to = loadMaterialTextures.loadTextureObject(tkey.getKey());
-            consumer.accept(to);
-        } else if (m.key instanceof ModelCacheKey tkey) {
-            var to = loadObjectModels.loadModelObject(tkey.getKey());
-            consumer.accept(to);
-        }
+        var to = textures.loadTextureObject((long) m.key);
+        consumer.accept(to);
     }
 
     @Override
@@ -168,14 +153,8 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     @Override
     @SneakyThrows
     protected <T extends GameObject> T getValueFromDb(Class<T> typeClass, String type, Object key) {
-        if (key instanceof MaterialCacheKey k) {
-            var to = loadMaterialTextures.loadTextureObject(k.key);
-            return (T) to;
-        } else if (key instanceof ModelCacheKey k) {
-            var to = loadObjectModels.loadModelObject(k.key);
-            return (T) to;
-        }
-        throw new IllegalArgumentException();
+        var to = textures.loadTextureObject((long) key);
+        return (T) to;
     }
 
     /**
@@ -187,7 +166,7 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     private Behavior<Message> onLoadTextures(@SuppressWarnings("rawtypes") LoadTexturesMessage m) {
         log.debug("onLoadTextures {}", m);
         try {
-            loadMaterialTextures.loadMaterialTextures(cache);
+            textures.loadMaterialTextures(cache);
             m.replyTo.tell(new LoadTexturesSuccessMessage<>(m));
         } catch (Throwable e) {
             log.error("onLoadTextures", e);
@@ -211,36 +190,14 @@ public class AssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     private TextureCacheObject retrieveTexture(GetTextureMessage<?> m) {
-        if (m.key instanceof MaterialCacheKey tk) {
-            var to = loadMaterialTextures.loadTextureObject(tk.key);
-            return to;
-        }
-        throw new IllegalArgumentException();
-    }
-
-    /**
-     * <ul>
-     * <li>
-     * </ul>
-     */
-    @SuppressWarnings("unchecked")
-    private Behavior<Message> onLoadModels(@SuppressWarnings("rawtypes") LoadModelsMessage m) {
-        log.debug("onLoadModels {}", m);
-        try {
-            loadObjectModels.loadObjectModels(cache);
-            m.replyTo.tell(new LoadModelsSuccessMessage<>(m));
-        } catch (Throwable e) {
-            log.error("onLoadModels", e);
-            m.replyTo.tell(new LoadModelsErrorMessage<>(m, e));
-        }
-        return Behaviors.same();
+        var to = textures.loadTextureObject(m.key);
+        return to;
     }
 
     @Override
     protected BehaviorBuilder<Message> getInitialBehavior() {
         return super.getInitialBehavior()//
                 .onMessage(LoadTexturesMessage.class, this::onLoadTextures)//
-                .onMessage(LoadModelsMessage.class, this::onLoadModels)//
                 .onMessage(GetTextureMessage.class, this::onGetTexture)//
         ;
     }

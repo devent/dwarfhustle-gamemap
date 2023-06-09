@@ -208,7 +208,7 @@ public class AppActor {
     private static void createObjectsCache(Injector injector) {
         var actor = injector.getInstance(ActorSystemProvider.class);
         var task = StoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30),
-                actor.getObjectsGetter(OrientDbActor.ID));
+                actor.getObjectsAsync(OrientDbActor.ID));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
@@ -219,7 +219,7 @@ public class AppActor {
     }
 
     private static void createAssetsActor(Injector injector) {
-        var task = AssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        var task = MaterialAssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("AssetsActor.create", ex);
@@ -261,7 +261,7 @@ public class AppActor {
 
     private static void createKnowledgeCache(Injector injector, ActorRef<Message> powerLoom) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsGetter(PowerLoomKnowledgeActor.ID))
+        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsAsync(PowerLoomKnowledgeActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("KnowledgeJcsCacheActor.create", ex);
