@@ -49,7 +49,10 @@ public class AssetsLoadObjectModels {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
         mo.model = model;
-        cache.put(KnowledgeObject.rid2Id(data.rid), mo);
+        long id = KnowledgeObject.rid2Id(data.rid);
+        mo.setId(id);
+        mo.setRid(data.rid);
+        cache.put(id, mo);
     }
 
     private ModelCacheObject loadModelData(ModelMapData data) {
