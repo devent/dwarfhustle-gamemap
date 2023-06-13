@@ -357,8 +357,7 @@ public class TerrainActor {
             var pos = (FloatBuffer) mesh.getBuffer(Type.Position).clone().getData();
             transformPosCopy(mb, pos, (FloatBuffer) vpos.getData(), transform);
             var index = mesh.getShortBuffer(Type.Index);
-            index.position(0);
-            ((ShortBuffer) vindex.getData()).put(index);
+            transformIndexCopy(mb, index, (ShortBuffer) vindex.getData(), transform);
             var normal = mesh.getFloatBuffer(Type.Normal);
             normal.position(0);
             ((FloatBuffer) vnormal.getData()).put(normal);
@@ -372,6 +371,25 @@ public class TerrainActor {
         vtex.getData().limit(vtex.getData().position());
     }
 
+    /**
+     * Transforms the indices based on the current position of the vertices.
+     */
+    private void transformIndexCopy(MapBlock mb, ShortBuffer index, ShortBuffer cindex, Transform transform) {
+        short pos = (short) cindex.position();
+        index.position(0);
+        for (int i = 0; i < index.limit(); i += 3) {
+            short x = (short) (index.get() + pos);
+            short y = (short) (index.get() + pos);
+            short z = (short) (index.get() + pos);
+            cindex.put(x);
+            cindex.put(y);
+            cindex.put(z);
+        }
+    }
+
+    /**
+     * Transforms the position values based on the block position.
+     */
     private void transformPosCopy(MapBlock mb, FloatBuffer pos, FloatBuffer cpos, Transform t) {
         pos.position(0);
         var temp = TempVars.get();
