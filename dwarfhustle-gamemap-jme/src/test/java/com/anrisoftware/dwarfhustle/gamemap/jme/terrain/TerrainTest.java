@@ -210,13 +210,16 @@ public class TerrainTest extends SimpleApplication {
         createMap(mcRoot, 0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth());
         createNeighbors((MapChunk) backendIdsObjects.get(gm.getRootid()));
         putObjectToBackend(gm);
+        var block = mcRoot.findMapBlock(5, 4, 4, id -> (MapChunk) backendIdsObjects.get(id));
+        block.setMined(true);
+        block.setMaterialRid(898);
     }
 
     @SneakyThrows
     private void createGameMap() {
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-        gm.setChunkSize(2);
+        gm.setChunkSize(4);
         gm.setWidth(8);
         gm.setHeight(8);
         gm.setDepth(8);
@@ -235,7 +238,7 @@ public class TerrainTest extends SimpleApplication {
         for (int z = magma_depth; z < gm.getDepth(); z++) { // magma
             terrain[z] = 815;
         }
-        gm.setCursorZ(ground_depth);
+        gm.setCursorZ(ground_depth + 1);
     }
 
     private void setupApp() {
@@ -482,8 +485,8 @@ public class TerrainTest extends SimpleApplication {
         } else {
             createMap(chunk, x, y, z, ex, ey, ez);
         }
-        putObjectToBackend(chunk);
         chunks.put(chunk.getPos(), chunk.getId());
+        putObjectToBackend(chunk);
     }
 
     private void putObjectToBackend(GameObject go) {

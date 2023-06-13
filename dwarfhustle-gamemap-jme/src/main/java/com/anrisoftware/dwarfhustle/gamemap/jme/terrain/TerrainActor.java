@@ -294,7 +294,7 @@ public class TerrainActor {
                 long material = blocks.getOne();
                 createLazy(combinedPos, material, Type.Position, 3, Format.Float,
                         () -> BufferUtils.createFloatBuffer(3 * 10000));
-                createLazy(combinedIndex, material, Type.Index, 3, Format.Short,
+                createLazy(combinedIndex, material, Type.Index, 3, Format.UnsignedShort,
                         () -> BufferUtils.createShortBuffer(3 * 10000));
                 createLazy(combinedNormal, material, Type.Normal, 3, Format.Float,
                         () -> BufferUtils.createFloatBuffer(3 * 10000));
@@ -398,7 +398,7 @@ public class TerrainActor {
         int y = 0;
         int z = gm.getCursorZ();
         var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
-        putChunkSortBlocks(chunksBlocks, firstchunk);
+        putChunkSortBlocks(chunksBlocks, firstchunk, z);
         long chunkid;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -411,36 +411,42 @@ public class TerrainActor {
                 }
                 firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk);
+                putChunkSortBlocks(chunksBlocks, nextchunk, z);
             } else {
                 nextchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk);
+                putChunkSortBlocks(chunksBlocks, nextchunk, z);
             }
         }
         log.trace("collectChunks {}", chunksBlocks.size());
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk chunk) {
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk chunk,
+            int z) {
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
             var mb = pair.getTwo();
-            if (isBlockVisible(mb)) {
+            if (isBlockVisible(mb, z)) {
                 blocks.put(mb.getMaterial(), mb);
             }
         }
         chunksBlocks.put(chunk.getId(), blocks);
     }
 
-    private boolean isBlockVisible(MapBlock mb) {
+    private boolean isBlockVisible(MapBlock mb, int z) {
+        if (mb.getPos().z < z) {
+            return false;
+        }
         if (mb.isMined()) {
             return false;
         }
-        if (mb.isSolid()) {
-            long nt;
-            if ((nt = mb.getNeighborTop()) != 0) {
-                var bt = objectsg.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
-                if (bt.isSolid()) {
-                    return false;
+        if (mb.getPos().z > z) {
+            if (mb.isSolid()) {
+                long nt;
+                if ((nt = mb.getNeighborTop()) != 0) {
+                    var bt = objectsg.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
+                    if (bt.isSolid()) {
+                        return false;
+                    }
                 }
             }
         }
