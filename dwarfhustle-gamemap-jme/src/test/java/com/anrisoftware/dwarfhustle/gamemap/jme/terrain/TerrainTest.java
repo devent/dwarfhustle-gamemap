@@ -134,7 +134,9 @@ public class TerrainTest extends SimpleApplication {
     private long[] terrain;
 
     public TerrainTest() {
-        super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState());
+        super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
+        // , new FlyCamAppState()
+        );
     }
 
     private void start(Injector parent) {

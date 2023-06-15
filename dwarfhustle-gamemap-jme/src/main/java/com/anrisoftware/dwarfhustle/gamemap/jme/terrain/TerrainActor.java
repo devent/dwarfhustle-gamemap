@@ -288,7 +288,9 @@ public class TerrainActor {
     private void updateModel(UpdateModelMessage m, GameObject o) {
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
         collectChunks(chunksBlocks, m.gm, (MapChunk) o);
+        int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
         var transform = new Transform();
+        blockNodes.clear();
         for (var chunks : chunksBlocks.keyValuesView()) {
             for (var blocks : chunks.getTwo().keyMultiValuePairsView()) {
                 long material = blocks.getOne();
@@ -300,7 +302,7 @@ public class TerrainActor {
                         () -> BufferUtils.createFloatBuffer(3 * 10000));
                 createLazy(combinedTex, material, Type.TexCoord, 3, Format.Float,
                         () -> BufferUtils.createFloatBuffer(2 * 10000));
-                fillBuffers(transform, blocks);
+                fillBuffers(transform, blocks, w, h, d);
                 var mesh = new Mesh();
                 mesh.setBuffer(combinedPos.get(material));
                 mesh.setBuffer(combinedIndex.get(material));
@@ -346,7 +348,7 @@ public class TerrainActor {
         }
     }
 
-    private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks) {
+    private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d) {
         var vpos = combinedPos.get(blocks.getOne());
         var vindex = combinedIndex.get(blocks.getOne());
         var vnormal = combinedNormal.get(blocks.getOne());
@@ -354,10 +356,10 @@ public class TerrainActor {
         for (MapBlock mb : blocks.getTwo()) {
             var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
             var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
-            var pos = (FloatBuffer) mesh.getBuffer(Type.Position).clone().getData();
-            transformPosCopy(mb, pos, (FloatBuffer) vpos.getData(), transform);
             var index = mesh.getShortBuffer(Type.Index);
-            transformIndexCopy(mb, index, (ShortBuffer) vindex.getData(), transform);
+            transformIndexCopy(mb, index, (ShortBuffer) vindex.getData(), vpos.getData().position());
+            var pos = (FloatBuffer) mesh.getBuffer(Type.Position).clone().getData();
+            transformPosCopy(mb, pos, (FloatBuffer) vpos.getData(), transform, w, h, d);
             var normal = mesh.getFloatBuffer(Type.Normal);
             normal.position(0);
             ((FloatBuffer) vnormal.getData()).put(normal);
@@ -374,13 +376,12 @@ public class TerrainActor {
     /**
      * Transforms the indices based on the current position of the vertices.
      */
-    private void transformIndexCopy(MapBlock mb, ShortBuffer index, ShortBuffer cindex, Transform transform) {
-        short pos = (short) cindex.position();
+    private void transformIndexCopy(MapBlock mb, ShortBuffer index, ShortBuffer cindex, int d) {
         index.position(0);
         for (int i = 0; i < index.limit(); i += 3) {
-            short x = (short) (index.get() + pos);
-            short y = (short) (index.get() + pos);
-            short z = (short) (index.get() + pos);
+            short x = (short) (index.get() + d);
+            short y = (short) (index.get() + d);
+            short z = (short) (index.get() + d);
             cindex.put(x);
             cindex.put(y);
             cindex.put(z);
@@ -390,10 +391,10 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void transformPosCopy(MapBlock mb, FloatBuffer pos, FloatBuffer cpos, Transform t) {
+    private void transformPosCopy(MapBlock mb, FloatBuffer pos, FloatBuffer cpos, Transform t, int w, int h, int d) {
         pos.position(0);
         var temp = TempVars.get();
-        t.setTranslation(mb.getPos().x, mb.getPos().y, mb.getPos().z);
+        t.setTranslation(-w + 1f + 2f * mb.getPos().x, d - 1f - 2f * mb.getPos().y, 0);
         try {
             var inv = temp.vect1;
             var outv = temp.vect2;
@@ -438,8 +439,7 @@ public class TerrainActor {
         log.trace("collectChunks {}", chunksBlocks.size());
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk chunk,
-            int z) {
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z) {
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
             var mb = pair.getTwo();
@@ -447,7 +447,7 @@ public class TerrainActor {
                 blocks.put(mb.getMaterial(), mb);
             }
         }
-        chunksBlocks.put(chunk.getId(), blocks);
+        chunks.put(chunk.getId(), blocks);
     }
 
     private boolean isBlockVisible(MapBlock mb, int z) {
