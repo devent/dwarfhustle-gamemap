@@ -83,6 +83,8 @@ import com.jme3.app.SimpleApplication;
 import com.jme3.app.StatsAppState;
 import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.asset.AssetManager;
+import com.jme3.input.InputManager;
+import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
 
@@ -169,6 +171,16 @@ public class TerrainTest extends SimpleApplication {
             }
 
             @Provides
+            public Camera getCamera() {
+                return TerrainTest.this.getCamera();
+            }
+
+            @Provides
+            public InputManager getInputManager() {
+                return TerrainTest.this.getInputManager();
+            }
+
+            @Provides
             @Named("rootNode")
             public Node getRootNode() {
                 return TerrainTest.this.getRootNode();
@@ -226,6 +238,8 @@ public class TerrainTest extends SimpleApplication {
         gm.setHeight(8);
         gm.setDepth(8);
         gm.setRootid(mcRoot.getId());
+        gm.setCameraPos(0.0f, 0.0f, 10.0f);
+        gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
         int ground_depth = Math.round(gm.getDepth() * 0.5f);
         int magma_depth = Math.round(gm.getDepth() * 0.9f);
         this.terrain = new long[gm.getDepth()];

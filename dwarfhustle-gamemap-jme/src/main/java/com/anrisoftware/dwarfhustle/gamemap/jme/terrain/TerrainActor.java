@@ -42,6 +42,7 @@ import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
 import com.jme3.asset.AssetManager;
+import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
 import com.jme3.math.Transform;
 import com.jme3.scene.Geometry;
@@ -221,6 +222,8 @@ public class TerrainActor {
 
     private MutableLongObjectMap<Geometry> blockNodes;
 
+    private BoundingBox terrainBounds;
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -271,6 +274,8 @@ public class TerrainActor {
         combinedNormal = LongObjectMaps.mutable.empty();
         combinedTex = LongObjectMaps.mutable.empty();
         blockNodes = LongObjectMaps.mutable.empty();
+        terrainBounds = new BoundingBox();
+        app.enqueue(() -> is.cameraState.updateCamera(m.gm));
         timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(3000));
         return Behaviors.same();
     }
@@ -282,6 +287,7 @@ public class TerrainActor {
         log.debug("onUpdateModel {}", m);
         var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
         updateModel(m, root);
+        is.cameraState.setTerrainModel(terrainBounds);
         return Behaviors.same();
     }
 
@@ -318,6 +324,7 @@ public class TerrainActor {
                 geo.getMaterial().setColor("Color", tex.baseColor);
                 geo.getMaterial().getAdditionalRenderState().setWireframe(true);
                 blockNodes.put(material, geo);
+                terrainBounds.mergeLocal(mesh.getBound());
             }
         }
         renderMeshs();

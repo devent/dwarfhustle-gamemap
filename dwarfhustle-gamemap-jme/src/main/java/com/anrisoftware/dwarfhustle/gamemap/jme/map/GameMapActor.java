@@ -27,6 +27,7 @@ import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainCameraState;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorSetMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
@@ -81,7 +82,7 @@ public class GameMapActor {
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
         public final GameMapState gameMapState;
-        public final CameraPanningState cameraPanningState;
+        public final TerrainCameraState cameraPanningState;
         public final MapCursorState mapCursorState;
     }
 
@@ -142,7 +143,7 @@ public class GameMapActor {
     private static Message attachState(Injector injector) {
         var app = injector.getInstance(Application.class);
         var gameMapState = injector.getInstance(GameMapState.class);
-        var cameraState = injector.getInstance(CameraPanningState.class);
+        var cameraState = injector.getInstance(TerrainCameraState.class);
         var mapCursorState = injector.getInstance(MapCursorState.class);
         try {
             var f = app.enqueue(() -> {
