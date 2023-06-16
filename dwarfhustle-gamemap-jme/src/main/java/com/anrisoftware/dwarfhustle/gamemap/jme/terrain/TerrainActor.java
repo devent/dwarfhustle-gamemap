@@ -3,18 +3,18 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
@@ -44,15 +44,13 @@ import com.jme3.app.Application;
 import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.math.Transform;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.Mesh.Mode;
 import com.jme3.scene.Node;
-import com.jme3.scene.VertexBuffer;
-import com.jme3.scene.VertexBuffer.Format;
 import com.jme3.scene.VertexBuffer.Type;
-import com.jme3.scene.VertexBuffer.Usage;
 import com.jme3.util.BufferUtils;
 import com.jme3.util.TempVars;
 
@@ -212,15 +210,7 @@ public class TerrainActor {
 
     private Optional<Entity> cursorEntity = Optional.empty();
 
-    private MutableLongObjectMap<VertexBuffer> combinedPos;
-
-    private MutableLongObjectMap<VertexBuffer> combinedIndex;
-
-    private MutableLongObjectMap<VertexBuffer> combinedNormal;
-
-    private MutableLongObjectMap<VertexBuffer> combinedTex;
-
-    private MutableLongObjectMap<Geometry> blockNodes;
+    private MutableList<Geometry> blockNodes;
 
     private BoundingBox terrainBounds;
 
@@ -269,11 +259,7 @@ public class TerrainActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
-        combinedPos = LongObjectMaps.mutable.empty();
-        combinedIndex = LongObjectMaps.mutable.empty();
-        combinedNormal = LongObjectMaps.mutable.empty();
-        combinedTex = LongObjectMaps.mutable.empty();
-        blockNodes = LongObjectMaps.mutable.empty();
+        blockNodes = Lists.mutable.empty();
         terrainBounds = new BoundingBox();
         app.enqueue(() -> is.cameraState.updateCamera(m.gm));
         timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(3000));
@@ -299,31 +285,35 @@ public class TerrainActor {
         blockNodes.clear();
         for (var chunks : chunksBlocks.keyValuesView()) {
             for (var blocks : chunks.getTwo().keyMultiValuePairsView()) {
-                long material = blocks.getOne();
-                createLazy(combinedPos, material, Type.Position, 3, Format.Float,
-                        () -> BufferUtils.createFloatBuffer(3 * 10000));
-                createLazy(combinedIndex, material, Type.Index, 3, Format.UnsignedShort,
-                        () -> BufferUtils.createShortBuffer(3 * 10000));
-                createLazy(combinedNormal, material, Type.Normal, 3, Format.Float,
-                        () -> BufferUtils.createFloatBuffer(3 * 10000));
-                createLazy(combinedTex, material, Type.TexCoord, 3, Format.Float,
-                        () -> BufferUtils.createFloatBuffer(2 * 10000));
-                fillBuffers(transform, blocks, w, h, d);
+                int spos = 0;
+                int sindex = 0;
+                for (MapBlock mb : blocks.getTwo()) {
+                    var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
+                    var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
+                    spos += mesh.getBuffer(Type.Position).getNumElements();
+                    sindex += mesh.getBuffer(Type.Index).getNumElements();
+                }
+                final long material = blocks.getOne();
+                final var cpos = BufferUtils.createFloatBuffer(3 * spos);
+                final var cindex = BufferUtils.createShortBuffer(3 * sindex);
+                final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
+                final var ctex = BufferUtils.createFloatBuffer(2 * spos);
+                fillBuffers(transform, blocks, w, h, d, cpos, cindex, cnormal, ctex);
                 var mesh = new Mesh();
-                mesh.setBuffer(combinedPos.get(material));
-                mesh.setBuffer(combinedIndex.get(material));
-                mesh.setBuffer(combinedNormal.get(material));
-                mesh.setBuffer(combinedTex.get(material));
+                mesh.setBuffer(Type.Position, 3, cpos);
+                mesh.setBuffer(Type.Index, 1, cindex);
+                mesh.setBuffer(Type.Normal, 3, cnormal);
+                mesh.setBuffer(Type.TexCoord, 2, ctex);
                 mesh.setMode(Mode.Triangles);
                 mesh.updateBound();
-                mesh.updateCounts();
                 var geo = new Geometry("block-mesh", mesh);
                 geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
                 var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
                 geo.getMaterial().setTexture("ColorMap", tex.tex);
                 geo.getMaterial().setColor("Color", tex.baseColor);
-                geo.getMaterial().getAdditionalRenderState().setWireframe(true);
-                blockNodes.put(material, geo);
+                geo.getMaterial().getAdditionalRenderState().setWireframe(false);
+                geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
+                blockNodes.add(geo);
                 terrainBounds.mergeLocal(mesh.getBound());
             }
         }
@@ -337,47 +327,31 @@ public class TerrainActor {
 
     private void renderMeshs1() {
         is.terrainState.clearBlockNodes();
-        for (var geo : blockNodes.values()) {
+        for (var geo : blockNodes) {
             is.terrainState.addBlockMesh(geo);
         }
     }
 
-    private void createLazy(MutableLongObjectMap<VertexBuffer> map, long material, Type type, int components,
-            Format format, Supplier<Buffer> buffer) {
-        if (map.containsKey(material)) {
-            var v = map.get(material);
-            v.getData().clear();
-        } else {
-            var v = new VertexBuffer(type);
-            var b = buffer.get();
-            v.setupData(Usage.Static, components, format, b);
-            map.put(material, v);
-        }
-    }
-
-    private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d) {
-        var vpos = combinedPos.get(blocks.getOne());
-        var vindex = combinedIndex.get(blocks.getOne());
-        var vnormal = combinedNormal.get(blocks.getOne());
-        var vtex = combinedTex.get(blocks.getOne());
+    private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
         for (MapBlock mb : blocks.getTwo()) {
             var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
             var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
             var index = mesh.getShortBuffer(Type.Index);
-            transformIndexCopy(mb, index, (ShortBuffer) vindex.getData(), vpos.getData().position());
+            transformIndexCopy(mb, index, cindex, cpos.position() / 3);
             var pos = (FloatBuffer) mesh.getBuffer(Type.Position).clone().getData();
-            transformPosCopy(mb, pos, (FloatBuffer) vpos.getData(), transform, w, h, d);
+            transformPosCopy(mb, pos, cpos, transform, w, h, d);
             var normal = mesh.getFloatBuffer(Type.Normal);
             normal.position(0);
-            ((FloatBuffer) vnormal.getData()).put(normal);
+            cnormal.put(normal);
             var tex = mesh.getFloatBuffer(Type.TexCoord);
             tex.position(0);
-            ((FloatBuffer) vtex.getData()).put(tex);
+            ctex.put(tex);
         }
-        vpos.getData().limit(vpos.getData().position());
-        vindex.getData().limit(vindex.getData().position());
-        vnormal.getData().limit(vnormal.getData().position());
-        vtex.getData().limit(vtex.getData().position());
+        cpos.flip();
+        cindex.flip();
+        cnormal.flip();
+        ctex.flip();
     }
 
     /**
@@ -401,7 +375,7 @@ public class TerrainActor {
     private void transformPosCopy(MapBlock mb, FloatBuffer pos, FloatBuffer cpos, Transform t, int w, int h, int d) {
         pos.position(0);
         var temp = TempVars.get();
-        t.setTranslation(-w + 1f + 2f * mb.getPos().x, d - 1f - 2f * mb.getPos().y, 0);
+        t.setTranslation(-w + 1f + 2f * mb.getPos().x, h - 1f - 2f * mb.getPos().y, 0);
         try {
             var inv = temp.vect1;
             var outv = temp.vect2;

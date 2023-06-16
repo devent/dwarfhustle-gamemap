@@ -224,37 +224,41 @@ public class TerrainTest extends SimpleApplication {
         createMap(mcRoot, 0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth());
         createNeighbors((MapChunk) backendIdsObjects.get(gm.getRootid()));
         putObjectToBackend(gm);
-        var block = mcRoot.findMapBlock(5, 4, 4, id -> (MapChunk) backendIdsObjects.get(id));
-        block.setMined(true);
-        block.setMaterialRid(898);
+//        var block = mcRoot.findMapBlock(5, 4, 4, id -> (MapChunk) backendIdsObjects.get(id));
+//        block.setMined(true);
+//        block.setMaterialRid(898);
     }
 
     @SneakyThrows
     private void createGameMap() {
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-        gm.setChunkSize(4);
-        gm.setWidth(8);
-        gm.setHeight(8);
-        gm.setDepth(8);
+        gm.setChunkSize(16);
+        gm.setWidth(64);
+        gm.setHeight(64);
+        gm.setDepth(64);
         gm.setRootid(mcRoot.getId());
         gm.setCameraPos(0.0f, 0.0f, 10.0f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
         int ground_depth = Math.round(gm.getDepth() * 0.5f);
         int magma_depth = Math.round(gm.getDepth() * 0.9f);
         this.terrain = new long[gm.getDepth()];
-        for (int z = 0; z < ground_depth; z++) {
-            terrain[z] = 898; // oxygen
+        for (int z = 0; z < gm.getDepth(); z++) {
+            terrain[z] = 890; // topsoil
         }
-        terrain[ground_depth] = 890; // topsoil
-        terrain[ground_depth + 1] = 888; // topsoil
-        for (int z = ground_depth + 2; z < magma_depth; z++) { // rock
-            terrain[z] = 825;
-        }
-        for (int z = magma_depth; z < gm.getDepth(); z++) { // magma
-            terrain[z] = 815;
-        }
-        gm.setCursorZ(ground_depth + 1);
+//        for (int z = 0; z < ground_depth; z++) {
+//            terrain[z] = 898; // oxygen
+//        }
+//        terrain[ground_depth] = 890; // topsoil
+//        terrain[ground_depth + 1] = 888; // topsoil
+//        for (int z = ground_depth + 2; z < magma_depth; z++) { // rock
+//            terrain[z] = 825;
+//        }
+//        for (int z = magma_depth; z < gm.getDepth(); z++) { // magma
+//            terrain[z] = 815;
+//        }
+        // gm.setCursorZ(ground_depth + 1);
+        gm.setCursorZ(0);
     }
 
     private void setupApp() {
