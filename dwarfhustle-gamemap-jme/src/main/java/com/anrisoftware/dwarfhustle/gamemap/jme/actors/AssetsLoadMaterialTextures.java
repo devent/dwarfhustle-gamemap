@@ -18,6 +18,8 @@ import com.jme3.asset.AssetManager;
 import com.jme3.asset.AssetNotFoundException;
 import com.jme3.math.ColorRGBA;
 import com.jme3.texture.Texture;
+import com.jme3.texture.Texture.MagFilter;
+import com.jme3.texture.Texture.MinFilter;
 
 import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
@@ -71,10 +73,10 @@ public class AssetsLoadMaterialTextures {
         to.metallic = data.metallic;
         to.glossiness = data.glossiness;
         to.roughness = data.roughness;
-        to.x = data.x;
-        to.y = data.y;
-        to.w = data.w;
-        to.h = data.h;
+        to.x = data.x / (float) data.ww;
+        to.y = data.y / (float) data.hh;
+        to.w = data.w / (float) data.ww;
+        to.h = data.h / (float) data.hh;
         return to;
     }
 
@@ -83,6 +85,8 @@ public class AssetsLoadMaterialTextures {
         log.trace("Loading texture {}", image);
         try {
             tex = am.loadTexture(image);
+            tex.setMagFilter(MagFilter.Bilinear);
+            tex.setMinFilter(MinFilter.Trilinear);
         } catch (AssetNotFoundException e) {
             tex = unknownTextures;
             log.error("Error loading texture", e);

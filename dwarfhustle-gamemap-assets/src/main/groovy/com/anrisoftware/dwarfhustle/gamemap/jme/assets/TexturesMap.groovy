@@ -54,6 +54,8 @@ class TexturesMapFramesData {
 
     public int x, y, w, h
 
+    public int ww, hh
+
     public float[] color = [1f, 1f, 1f, 1f]
 
     public float[] specular = [1f, 1f, 1f, 1f]
@@ -71,6 +73,8 @@ class TexturesMapFramesData {
         y = args.getOrDefault("y", 0)
         w = args.getOrDefault("w", 0)
         h = args.getOrDefault("h", 0)
+        ww = args.getOrDefault("ww", 0)
+        hh = args.getOrDefault("hh", 0)
         color = args.getOrDefault("color", color)
         specular = args.getOrDefault("specular", specular)
         transparent = args.getOrDefault("transparent", transparent)

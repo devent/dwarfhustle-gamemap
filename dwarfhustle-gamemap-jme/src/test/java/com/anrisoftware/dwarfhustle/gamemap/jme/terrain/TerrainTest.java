@@ -233,10 +233,14 @@ public class TerrainTest extends SimpleApplication {
     private void createGameMap() {
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-        gm.setChunkSize(16);
-        gm.setWidth(64);
-        gm.setHeight(64);
-        gm.setDepth(64);
+//        gm.setChunkSize(16);
+//        gm.setWidth(64);
+//        gm.setHeight(64);
+//        gm.setDepth(64);
+        gm.setChunkSize(1);
+        gm.setWidth(2);
+        gm.setHeight(2);
+        gm.setDepth(2);
         gm.setRootid(mcRoot.getId());
         gm.setCameraPos(0.0f, 0.0f, 10.0f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
@@ -244,7 +248,7 @@ public class TerrainTest extends SimpleApplication {
         int magma_depth = Math.round(gm.getDepth() * 0.9f);
         this.terrain = new long[gm.getDepth()];
         for (int z = 0; z < gm.getDepth(); z++) {
-            terrain[z] = 890; // topsoil
+            terrain[z] = 889; // LOAMY-SAND
         }
 //        for (int z = 0; z < ground_depth; z++) {
 //            terrain[z] = 898; // oxygen
@@ -350,7 +354,7 @@ public class TerrainTest extends SimpleApplication {
 
     private void loadTextures() {
         CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadTexturesMessage::new,
-                Duration.ofSeconds(30), actor.getScheduler());
+                Duration.ofSeconds(60), actor.getScheduler());
         result.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("LoadTexturesMessage", ex);
@@ -517,7 +521,7 @@ public class TerrainTest extends SimpleApplication {
     @SneakyThrows
     private void cacheAllObjects() {
         var cache = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, TimeUnit.SECONDS);
-        askCachePuts(cache, Long.class, GameObject::getId, backendIdsObjects.values(), ofSeconds(1),
+        askCachePuts(cache, Long.class, GameObject::getId, backendIdsObjects.values(), ofSeconds(10),
                 actor.getScheduler()).whenComplete((reply, failure) -> {
                     if (failure != null) {
                         log.error("Cache failure", failure);

@@ -44,13 +44,13 @@ public class TextureCacheObject extends AssetCacheObject {
 
     public Texture tex;
 
-    public int x;
+    public float x;
 
-    public int y;
+    public float y;
 
-    public int w;
+    public float w;
 
-    public int h;
+    public float h;
 
     public ColorRGBA specular;
 

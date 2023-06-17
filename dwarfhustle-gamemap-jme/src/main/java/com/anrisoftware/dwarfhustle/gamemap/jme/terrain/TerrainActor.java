@@ -337,16 +337,10 @@ public class TerrainActor {
         for (MapBlock mb : blocks.getTwo()) {
             var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
             var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
-            var index = mesh.getShortBuffer(Type.Index);
-            transformIndexCopy(mb, index, cindex, cpos.position() / 3);
-            var pos = (FloatBuffer) mesh.getBuffer(Type.Position).clone().getData();
-            transformPosCopy(mb, pos, cpos, transform, w, h, d);
-            var normal = mesh.getFloatBuffer(Type.Normal);
-            normal.position(0);
-            cnormal.put(normal);
-            var tex = mesh.getFloatBuffer(Type.TexCoord);
-            tex.position(0);
-            ctex.put(tex);
+            copyIndex(mb, mesh, cindex, cpos.position() / 3);
+            copyPos(mb, mesh, cpos, transform, w, h, d);
+            copyNormal(mb, mesh, cnormal);
+            copyTex(mb, mesh, ctex);
         }
         cpos.flip();
         cindex.flip();
@@ -354,11 +348,29 @@ public class TerrainActor {
         ctex.flip();
     }
 
+    private void copyNormal(MapBlock mb, Mesh mesh, FloatBuffer cnormal) {
+        var normal = mesh.getFloatBuffer(Type.Normal).rewind();
+        cnormal.put(normal);
+    }
+
+    private void copyTex(MapBlock mb, Mesh mesh, FloatBuffer ctex) {
+        var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
+        var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, mb.getMaterial());
+        for (int i = 0; i < btex.limit(); i += 2) {
+            float tx = btex.get();
+            float ty = btex.get();
+            float x = tex.x + tx * tex.w;
+            float y = tex.y + ty * tex.h;
+            ctex.put(x);
+            ctex.put(y);
+        }
+    }
+
     /**
      * Transforms the indices based on the current position of the vertices.
      */
-    private void transformIndexCopy(MapBlock mb, ShortBuffer index, ShortBuffer cindex, int d) {
-        index.position(0);
+    private void copyIndex(MapBlock mb, Mesh mesh, ShortBuffer cindex, int d) {
+        var index = mesh.getShortBuffer(Type.Index).rewind();
         for (int i = 0; i < index.limit(); i += 3) {
             short x = (short) (index.get() + d);
             short y = (short) (index.get() + d);
@@ -372,10 +384,10 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void transformPosCopy(MapBlock mb, FloatBuffer pos, FloatBuffer cpos, Transform t, int w, int h, int d) {
-        pos.position(0);
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, Transform t, int w, int h, int d) {
+        var pos = mesh.getFloatBuffer(Type.Position).rewind();
         var temp = TempVars.get();
-        t.setTranslation(-w + 1f + 2f * mb.getPos().x, h - 1f - 2f * mb.getPos().y, 0);
+        t.setTranslation(-w + 1f + 2.0f * mb.getPos().x, h - 1f - 2.0f * mb.getPos().y, 0);
         try {
             var inv = temp.vect1;
             var outv = temp.vect2;
