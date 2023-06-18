@@ -311,7 +311,7 @@ public class TerrainActor {
                 var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
                 geo.getMaterial().setTexture("ColorMap", tex.tex);
                 geo.getMaterial().setColor("Color", tex.baseColor);
-                geo.getMaterial().getAdditionalRenderState().setWireframe(true);
+                geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 blockNodes.add(geo);
                 terrainBounds.mergeLocal(mesh.getBound());
@@ -335,38 +335,12 @@ public class TerrainActor {
     private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d,
             FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
         for (MapBlock mb : blocks.getTwo()) {
-            System.out.println(mb.getMaterial()); // TODO
-            var temp = TempVars.get();
-            try {
-                var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
-                var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
-                var bindex = mesh.getShortBuffer(Type.Index).rewind();
-                var bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
-                var bpos = mesh.getFloatBuffer(Type.Position).rewind();
-                var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
-                int delta = cindex.position();
-                for (int i = 0; i < bindex.limit() / 3; i++) {
-                    short i0 = (short) (bindex.get() * 3);
-                    short i1 = (short) (bindex.get() * 3);
-                    short i2 = (short) (bindex.get() * 3);
-                    var n0 = temp.vect1.set(bnormal.get(i0), bnormal.get(i0 + 1), bnormal.get(i0 + 2));
-                    var n1 = temp.vect2.set(bnormal.get(i1), bnormal.get(i1 + 1), bnormal.get(i1 + 2));
-                    var n2 = temp.vect3.set(bnormal.get(i2), bnormal.get(i2 + 1), bnormal.get(i2 + 2));
-                    n0.addLocal(n1.addLocal(n2)).divideLocal(3f);
-                    if (n0.z < 0.0f) {
-                        continue;
-                    }
-                    cindex.put((short) (i0 + delta));
-                    cindex.put((short) (i1 + delta));
-                    cindex.put((short) (i2 + delta));
-                    System.out.printf("%d normal: %s %s %s\n", i, n0, n1, n2); // TODO
-                }
-                copyNormal(mb, mesh, cnormal);
-                copyTex(mb, mesh, ctex);
-                copyPos(mb, mesh, cpos, transform, w, h, d);
-            } finally {
-                temp.release();
-            }
+            var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
+            var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
+            copyIndex(mb, mesh, cindex, cpos.position() / 3);
+            copyPos(mb, mesh, cpos, transform, w, h, d);
+            copyNormal(mb, mesh, cnormal);
+            copyTex(mb, mesh, ctex);
         }
         cpos.flip();
         cindex.flip();
