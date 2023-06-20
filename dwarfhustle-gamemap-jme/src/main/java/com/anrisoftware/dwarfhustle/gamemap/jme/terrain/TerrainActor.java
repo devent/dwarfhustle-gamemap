@@ -278,6 +278,7 @@ public class TerrainActor {
     }
 
     private void updateModel(UpdateModelMessage m, GameObject o) {
+        long oldtime = System.currentTimeMillis();
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
         collectChunks(chunksBlocks, m.gm, (MapChunk) o);
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
@@ -311,14 +312,15 @@ public class TerrainActor {
                 var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
                 geo.getMaterial().setTexture("ColorMap", tex.tex);
                 geo.getMaterial().setColor("Color", tex.baseColor);
-                geo.getMaterial().getAdditionalRenderState().setWireframe(true);
+                geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 blockNodes.add(geo);
                 terrainBounds.mergeLocal(mesh.getBound());
             }
         }
         renderMeshs();
-        log.info("updateModel done");
+        long finishtime = System.currentTimeMillis();
+        log.trace("updateModel done in {}", finishtime - oldtime);
     }
 
     private void renderMeshs() {
@@ -335,16 +337,13 @@ public class TerrainActor {
     private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d,
             FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
         for (MapBlock mb : blocks.getTwo()) {
-            System.out.println(mb.getMaterial()); // TODO
             var temp = TempVars.get();
             try {
                 var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
                 var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
                 var bindex = mesh.getShortBuffer(Type.Index).rewind();
                 var bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
-                var bpos = mesh.getFloatBuffer(Type.Position).rewind();
-                var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
-                int delta = cindex.position();
+                int delta = cpos.position() / 3;
                 for (int i = 0; i < bindex.limit() / 3; i++) {
                     short in0 = bindex.get();
                     short in1 = bindex.get();
@@ -359,10 +358,21 @@ public class TerrainActor {
                     if (n0.z < 0.0f) {
                         continue;
                     }
+                    if (n0.x < 0.0f && checkNeighborWest(mb)) {
+                        continue;
+                    }
+                    if (n0.x > 0.0f && checkNeighborEast(mb)) {
+                        continue;
+                    }
+                    if (n0.y < 0.0f && checkNeighborSouth(mb)) {
+                        continue;
+                    }
+                    if (n0.y > 0.0f && checkNeighborNorth(mb)) {
+                        continue;
+                    }
                     cindex.put((short) (in0 + delta));
                     cindex.put((short) (in1 + delta));
                     cindex.put((short) (in2 + delta));
-                    System.out.printf("%d normal: %s %s %s\n", i, n0, n1, n2); // TODO
                 }
                 copyNormal(mb, mesh, cnormal);
                 copyTex(mb, mesh, ctex);
@@ -375,6 +385,38 @@ public class TerrainActor {
         cindex.flip();
         cnormal.flip();
         ctex.flip();
+    }
+
+    private boolean checkNeighborNorth(MapBlock mb) {
+        var n = mb.getNeighborNorth();
+        if (n == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkNeighborSouth(MapBlock mb) {
+        var n = mb.getNeighborSouth();
+        if (n == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkNeighborEast(MapBlock mb) {
+        var n = mb.getNeighborEast();
+        if (n == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkNeighborWest(MapBlock mb) {
+        var n = mb.getNeighborWest();
+        if (n == 0) {
+            return false;
+        }
+        return true;
     }
 
     private void copyNormal(MapBlock mb, Mesh mesh, FloatBuffer cnormal) {
@@ -392,21 +434,6 @@ public class TerrainActor {
             float y = tex.y + ty * tex.h;
             ctex.put(x);
             ctex.put(y);
-        }
-    }
-
-    /**
-     * Transforms the indices based on the current position of the vertices.
-     */
-    private void copyIndex(MapBlock mb, Mesh mesh, ShortBuffer cindex, int d) {
-        var index = mesh.getShortBuffer(Type.Index).rewind();
-        for (int i = 0; i < index.limit(); i += 3) {
-            short x = (short) (index.get() + d);
-            short y = (short) (index.get() + d);
-            short z = (short) (index.get() + d);
-            cindex.put(x);
-            cindex.put(y);
-            cindex.put(z);
         }
     }
 

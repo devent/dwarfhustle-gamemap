@@ -330,7 +330,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
             tmpc.getScreenCoordinates(bottomleft, tmpBottomLeft);
             if (dy > 0) {
                 // zoom out
-                if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 50) {
+                if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 10) {
                     boundMove(0f, 0f, dy * s);
                 }
             } else {
@@ -357,20 +357,20 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private boolean canMoveX(float dx, float s) {
         if (dx > 0) {
             // right
-            return mapBottomLeft.x + dx * s < camera.getWidth() / 2f;
+            return mapBottomLeft.x + dx * s < camera.getWidth() - 50f;
         } else {
             // left
-            return mapTopRight.x - dx * s > camera.getWidth() / 2f;
+            return mapTopRight.x - dx * s > 50f;
         }
     }
 
     private boolean canMoveY(float dy, float s) {
         if (dy > 0) {
             // down
-            return mapTopRight.y + dy * s > camera.getHeight() / 2f;
+            return mapTopRight.y + dy * s > 50f;
         } else {
             // up
-            return mapBottomLeft.y - dy * s < camera.getHeight() / 2f;
+            return mapBottomLeft.y - dy * s < camera.getHeight() - 50f;
         }
     }
 

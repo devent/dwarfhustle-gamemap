@@ -61,6 +61,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
+import com.anrisoftware.dwarfhustle.model.api.objects.NeighboringDir;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheSuccessMessage;
@@ -233,14 +234,18 @@ public class TerrainTest extends SimpleApplication {
     private void createGameMap() {
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-//        gm.setChunkSize(16);
-//        gm.setWidth(64);
-//        gm.setHeight(64);
-//        gm.setDepth(64);
-        gm.setChunkSize(1);
-        gm.setWidth(2);
-        gm.setHeight(2);
-        gm.setDepth(2);
+        gm.setChunkSize(16);
+        gm.setWidth(64);
+        gm.setHeight(64);
+        gm.setDepth(64);
+//        gm.setChunkSize(1);
+//        gm.setWidth(2);
+//        gm.setHeight(2);
+//        gm.setDepth(2);
+//        gm.setChunkSize(2);
+//        gm.setWidth(4);
+//        gm.setHeight(4);
+//        gm.setDepth(4);
         gm.setRootid(mcRoot.getId());
         gm.setCameraPos(0.0f, 0.0f, 10.0f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
@@ -446,17 +451,19 @@ public class TerrainTest extends SimpleApplication {
                 }
             }
         }
-        var b = pos.addZ(1);
-        var bb = chunk.getBlock(b);
-        if (bb.isPresent()) {
-            mb.setNeighborBottom(bb.get().getId());
-        } else {
-            long chunkid;
-            if ((chunkid = chunk.getNeighborBottom()) != 0) {
-                var c = (MapChunk) backendIdsObjects.get(chunkid);
-                bb = c.getBlock(b);
-                if (bb.isPresent()) {
-                    mb.setNeighborBottom(bb.get().getId());
+        for (var d : NeighboringDir.values()) {
+            var b = pos.add(d.pos);
+            var bb = chunk.getBlock(b);
+            if (bb.isPresent()) {
+                mb.setNeighbor(d, bb.get().getId());
+            } else {
+                long chunkid;
+                if ((chunkid = chunk.getNeighbor(d)) != 0) {
+                    var c = (MapChunk) backendIdsObjects.get(chunkid);
+                    bb = c.getBlock(b);
+                    if (bb.isPresent()) {
+                        mb.setNeighbor(d, bb.get().getId());
+                    }
                 }
             }
         }
@@ -520,7 +527,8 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void cacheAllObjects() {
-        var cache = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, TimeUnit.SECONDS);
+        log.debug("cacheAllObjects");
+        var cache = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(30, TimeUnit.SECONDS);
         askCachePuts(cache, Long.class, GameObject::getId, backendIdsObjects.values(), ofSeconds(10),
                 actor.getScheduler()).whenComplete((reply, failure) -> {
                     if (failure != null) {
