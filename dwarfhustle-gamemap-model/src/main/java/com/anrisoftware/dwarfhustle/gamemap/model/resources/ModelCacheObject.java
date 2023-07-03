@@ -19,10 +19,9 @@ package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
 import com.jme3.scene.Spatial;
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -33,15 +32,22 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@Getter
-@Setter
+@Data
 public class ModelCacheObject extends AssetCacheObject {
 
     private static final long serialVersionUID = 1L;
 
     public static final String OBJECT_TYPE = ModelCacheObject.class.getSimpleName();
 
+    /**
+     * {@link Spatial} model.
+     */
     public Spatial model;
+
+    /**
+     * Resource ID.
+     */
+    public long rid;
 
     public ModelCacheObject(byte[] idbuf) {
         super(idbuf);

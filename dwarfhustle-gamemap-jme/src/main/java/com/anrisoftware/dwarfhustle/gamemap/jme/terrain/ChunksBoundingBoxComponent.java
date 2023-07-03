@@ -15,41 +15,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model.resources;
+package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.ComponentMapper;
+import com.jme3.bounding.BoundingBox;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Game asset cached object.
+ *
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@NoArgsConstructor
-@ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
-@Data
-public class AssetCacheObject extends GameObject {
+@ToString
+@RequiredArgsConstructor
+public class ChunksBoundingBoxComponent implements Component {
 
-    private static final long serialVersionUID = 1L;
+	public static final ComponentMapper<ChunksBoundingBoxComponent> m = ComponentMapper.getFor(ChunksBoundingBoxComponent.class);
 
-    public static final String OBJECT_TYPE = AssetCacheObject.class.getSimpleName();
+    public final int level;
 
-    public AssetCacheObject(byte[] idbuf) {
-        super(idbuf);
-    }
-
-    public AssetCacheObject(long id) {
-        super(id);
-    }
-
-    @Override
-    public String getObjectType() {
-        return AssetCacheObject.OBJECT_TYPE;
-    }
-
+    public final BoundingBox bb;
 }

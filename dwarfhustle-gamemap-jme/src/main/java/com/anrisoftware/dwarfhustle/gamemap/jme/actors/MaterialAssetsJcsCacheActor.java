@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
@@ -42,8 +43,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage;
 import com.google.inject.Injector;
 
 import akka.actor.typed.ActorRef;
@@ -140,12 +139,12 @@ public class MaterialAssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Override
-    protected void storeValueDb(CachePutMessage<?> m) {
+    protected void storeValueDb(Object key, GameObject go) {
         // nop
     }
 
     @Override
-    protected void storeValueDb(CachePutsMessage<?> m) {
+    protected void storeValueDb(Class<?> keyType, Function<GameObject, Object> key, GameObject go) {
         // nop
     }
 

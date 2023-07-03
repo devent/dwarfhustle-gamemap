@@ -46,6 +46,8 @@ import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.math.Transform;
+import com.jme3.renderer.Camera;
+import com.jme3.renderer.Camera.FrustumIntersect;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.Mesh.Mode;
@@ -88,6 +90,7 @@ public class TerrainActor {
     private static class InitialStateMessage extends Message {
         public final TerrainState terrainState;
         public final TerrainCameraState cameraState;
+        public final ChunksBoundingBoxState chunksBoundingBoxState;
     }
 
     @RequiredArgsConstructor
@@ -158,11 +161,13 @@ public class TerrainActor {
         var app = injector.getInstance(Application.class);
         var terrainState = injector.getInstance(TerrainState.class);
         var cameraState = injector.getInstance(TerrainCameraState.class);
+        var chunksBoundingBoxState = injector.getInstance(ChunksBoundingBoxState.class);
         try {
             var f = app.enqueue(() -> {
                 app.getStateManager().attach(terrainState);
                 app.getStateManager().attach(cameraState);
-                return new InitialStateMessage(terrainState, cameraState);
+                app.getStateManager().attach(chunksBoundingBoxState);
+                return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState);
             });
             return f.get();
         } catch (Exception ex) {
@@ -202,6 +207,9 @@ public class TerrainActor {
 
     @Inject
     private AssetManager assets;
+
+    @Inject
+    private Camera camera;
 
     private InitialStateMessage is;
 
@@ -280,10 +288,11 @@ public class TerrainActor {
     private void updateModel(UpdateModelMessage m, GameObject o) {
         long oldtime = System.currentTimeMillis();
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
-        collectChunks(chunksBlocks, m.gm, (MapChunk) o);
+        collectChunks(chunksBlocks, m.gm, (MapChunk) o, new BoundingBox());
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
         var transform = new Transform();
         blockNodes.clear();
+        int b = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
             for (var blocks : chunks.getTwo().keyMultiValuePairsView()) {
                 int spos = 0;
@@ -293,6 +302,7 @@ public class TerrainActor {
                     var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
+                    b++;
                 }
                 final long material = blocks.getOne();
                 final var cpos = BufferUtils.createFloatBuffer(3 * spos);
@@ -318,6 +328,7 @@ public class TerrainActor {
                 terrainBounds.mergeLocal(mesh.getBound());
             }
         }
+        System.out.println(b); // TODO
         renderMeshs();
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {}", finishtime - oldtime);
@@ -443,7 +454,7 @@ public class TerrainActor {
     private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, Transform t, int w, int h, int d) {
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         var temp = TempVars.get();
-        t.setTranslation(-w + 1f + 2.0f * mb.getPos().x, h - 1f - 2.0f * mb.getPos().y, 0);
+        t.setTranslation(-w + 2.0f * mb.pos.x + 1f, -h + 2.0f * mb.pos.y + 1f, 0);
         try {
             var inv = temp.vect1;
             var outv = temp.vect2;
@@ -461,12 +472,13 @@ public class TerrainActor {
         }
     }
 
-    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root) {
+    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root,
+            BoundingBox bb) {
         int x = 0;
         int y = 0;
         int z = gm.getCursorZ();
         var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
-        putChunkSortBlocks(chunksBlocks, firstchunk, z);
+        putChunkSortBlocks(chunksBlocks, firstchunk, z, gm);
         long chunkid;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -479,16 +491,34 @@ public class TerrainActor {
                 }
                 firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk, z);
+                putChunkSortBlocks(chunksBlocks, nextchunk, z, gm);
             } else {
                 nextchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk, z);
+                putChunkSortBlocks(chunksBlocks, nextchunk, z, gm);
             }
         }
         log.trace("collectChunks {}", chunksBlocks.size());
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z) {
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z,
+            GameMap gm) {
+        int planeState = camera.getPlaneState();
+        camera.setPlaneState(0);
+        var bb = new BoundingBox();
+        bb.setXExtent(chunk.pos.extentx * gm.blockSizeX);
+        bb.setYExtent(chunk.pos.extenty * gm.blockSizeY);
+        bb.setZExtent(chunk.pos.extentz * gm.blockSizeZ);
+        bb.setCenter((chunk.pos.centerx - gm.centerOffsetX) * gm.blockSizeX,
+                (chunk.pos.centery - gm.centerOffsetY) * gm.blockSizeY,
+                (chunk.pos.centerz - gm.centerOffsetZ));
+        app.enqueue(() -> {
+            is.chunksBoundingBoxState.setChunk(chunk, bb);
+        });
+        var contains = camera.contains(bb);
+        camera.setPlaneState(planeState);
+        if (contains == FrustumIntersect.Outside) {
+            return;
+        }
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
             var mb = pair.getTwo();
@@ -500,13 +530,13 @@ public class TerrainActor {
     }
 
     private boolean isBlockVisible(MapBlock mb, int z) {
-        if (mb.getPos().z < z) {
+        if (mb.pos.z < z) {
             return false;
         }
         if (mb.isMined()) {
             return false;
         }
-        if (mb.getPos().z > z) {
+        if (mb.pos.z > z) {
             if (mb.isSolid()) {
                 long nt;
                 if ((nt = mb.getNeighborTop()) != 0) {

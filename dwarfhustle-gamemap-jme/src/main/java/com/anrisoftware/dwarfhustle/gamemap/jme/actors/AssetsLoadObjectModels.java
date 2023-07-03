@@ -49,7 +49,7 @@ public class AssetsLoadObjectModels {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
         mo.model = model;
-        long id = KnowledgeObject.rid2Id(data.rid);
+        long id = KnowledgeObject.kid2Id(data.rid);
         mo.setId(id);
         mo.setRid(data.rid);
         cache.put(id, mo);

@@ -59,7 +59,7 @@ public class AssetsLoadMaterialTextures {
             texturesMapFramesDataMap.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
-            long id = KnowledgeObject.rid2Id(v.getKey());
+            long id = KnowledgeObject.kid2Id(v.getKey());
             to.setId(id);
             to.setRid(v.getKey());
             cache.put(id, to);

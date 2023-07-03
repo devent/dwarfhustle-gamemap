@@ -20,10 +20,9 @@ package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 import com.jme3.math.ColorRGBA;
 import com.jme3.texture.Texture;
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -34,8 +33,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@Getter
-@Setter
+@Data
 public class TextureCacheObject extends AssetCacheObject {
 
     private static final long serialVersionUID = 1L;
@@ -43,6 +41,11 @@ public class TextureCacheObject extends AssetCacheObject {
     public static final String OBJECT_TYPE = TextureCacheObject.class.getSimpleName();
 
     public Texture tex;
+
+    /**
+     * Resource ID.
+     */
+    public long rid;
 
     public float x;
 
