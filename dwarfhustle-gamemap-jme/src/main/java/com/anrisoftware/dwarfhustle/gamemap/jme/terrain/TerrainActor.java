@@ -56,7 +56,6 @@ import com.jme3.scene.Mesh.Mode;
 import com.jme3.scene.Node;
 import com.jme3.scene.VertexBuffer.Type;
 import com.jme3.util.BufferUtils;
-import com.jme3.util.TempVars;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -168,6 +167,7 @@ public class TerrainActor {
             var f = app.enqueue(() -> {
                 app.getStateManager().attach(terrainState);
                 app.getStateManager().attach(cameraState);
+                // app.getStateManager().attach(chunksBoundingBoxState);
                 return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState);
             });
             return f.get();
@@ -286,9 +286,10 @@ public class TerrainActor {
         collectChunks(chunksBlocks, m.gm, root, new BoundingBox());
         var bnum = updateModel(m, root, chunksBlocks);
         renderMeshs();
-        is.cameraState.setTerrainModel(terrainBounds);
+        is.cameraState.setTerrainBounds(terrainBounds);
         long finishtime = System.currentTimeMillis();
-        log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
+        // log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime,
+        // bnum);
         return Behaviors.same();
     }
 
@@ -313,7 +314,7 @@ public class TerrainActor {
                 final var cindex = BufferUtils.createShortBuffer(3 * sindex);
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-                fillBuffers(blocks, w, h, d, cpos, cindex, cnormal, ctex);
+                fillBuffers(blocks, m.gm.blockSizeZ, w, h, d, cpos, cindex, cnormal, ctex);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -326,7 +327,7 @@ public class TerrainActor {
                 var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
                 geo.getMaterial().setTexture("ColorMap", tex.tex);
                 geo.getMaterial().setColor("Color", tex.baseColor);
-                geo.getMaterial().getAdditionalRenderState().setWireframe(false);
+                geo.getMaterial().getAdditionalRenderState().setWireframe(true);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 blockNodes.add(geo);
                 terrainBounds.mergeLocal(mesh.getBound());
@@ -358,8 +359,8 @@ public class TerrainActor {
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, FloatBuffer cpos,
-            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, float blockSizeZ, int w, int h, int d,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -395,16 +396,16 @@ public class TerrainActor {
                 if (n0z < 0.0f) {
                     continue;
                 }
-                if (n0x < 0.0f && checkNeighborWest(mb)) {
+                if (n0x < 0.0f && isSkipCheckNeighborWest(mb)) {
                     continue;
                 }
-                if (n0x > 0.0f && checkNeighborEast(mb)) {
+                if (n0x > 0.0f && isSkipCheckNeighborEast(mb)) {
                     continue;
                 }
-                if (n0y < 0.0f && checkNeighborSouth(mb)) {
+                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb)) {
                     continue;
                 }
-                if (n0y > 0.0f && checkNeighborNorth(mb)) {
+                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb)) {
                     continue;
                 }
                 cindex.put((short) (in0 + delta));
@@ -413,7 +414,7 @@ public class TerrainActor {
             }
             copyNormal(mb, mesh, cnormal);
             copyTex(mb, mesh, ctex);
-            copyPos(mb, mesh, cpos, w, h, d);
+            copyPos(mb, mesh, cpos, blockSizeZ, w, h, d);
         }
         cpos.flip();
         cindex.flip();
@@ -421,7 +422,7 @@ public class TerrainActor {
         ctex.flip();
     }
 
-    private boolean checkNeighborNorth(MapBlock mb) {
+    private boolean isSkipCheckNeighborNorth(MapBlock mb) {
         var n = mb.getNeighborNorth();
         if (n == 0) {
             return false;
@@ -429,7 +430,7 @@ public class TerrainActor {
         return true;
     }
 
-    private boolean checkNeighborSouth(MapBlock mb) {
+    private boolean isSkipCheckNeighborSouth(MapBlock mb) {
         var n = mb.getNeighborSouth();
         if (n == 0) {
             return false;
@@ -437,7 +438,7 @@ public class TerrainActor {
         return true;
     }
 
-    private boolean checkNeighborEast(MapBlock mb) {
+    private boolean isSkipCheckNeighborEast(MapBlock mb) {
         var n = mb.getNeighborEast();
         if (n == 0) {
             return false;
@@ -445,7 +446,7 @@ public class TerrainActor {
         return true;
     }
 
-    private boolean checkNeighborWest(MapBlock mb) {
+    private boolean isSkipCheckNeighborWest(MapBlock mb) {
         var n = mb.getNeighborWest();
         if (n == 0) {
             return false;
@@ -474,25 +475,23 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, int w, int h, int d) {
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float blockSizeZ, int w, int h, int d) {
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
-        var temp = TempVars.get();
         float tx = -w + 2.0f * mb.pos.x + 1f;
         float ty = -h + 2.0f * mb.pos.y + 1f;
-        float tz = 0;
-        var v = temp.vect1;
+        float tz = -mb.pos.z * blockSizeZ;
+        float vx, vy, vz;
         for (int i = 0; i < pos.limit(); i += 3) {
-            v.x = pos.get();
-            v.y = pos.get();
-            v.z = pos.get();
-            v.x += tx;
-            v.y += ty;
-            v.z += tz;
-            cpos.put(v.x);
-            cpos.put(v.y);
-            cpos.put(v.z);
+            vx = pos.get();
+            vy = pos.get();
+            vz = pos.get();
+            vx += tx;
+            vy += ty;
+            vz += tz;
+            cpos.put(vx);
+            cpos.put(vy);
+            cpos.put(vz);
         }
-        temp.release();
     }
 
     private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root,
@@ -501,7 +500,7 @@ public class TerrainActor {
         int y = 0;
         int z = gm.getCursorZ();
         var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
-        putChunkSortBlocks(chunksBlocks, firstchunk, z, gm);
+        putChunkSortBlocks(chunksBlocks, firstchunk, z);
         long chunkid;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -514,18 +513,17 @@ public class TerrainActor {
                 }
                 firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk, z, gm);
+                putChunkSortBlocks(chunksBlocks, nextchunk, z);
             } else {
                 nextchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk, z, gm);
+                putChunkSortBlocks(chunksBlocks, nextchunk, z);
             }
         }
         // log.trace("collectChunks {}", chunksBlocks.size());
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z,
-            GameMap gm) {
-        var contains = getIntersectBb(chunk, gm);
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z) {
+        var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
@@ -539,8 +537,11 @@ public class TerrainActor {
         chunks.put(chunk.getId(), blocks);
     }
 
-    private FrustumIntersect getIntersectBb(MapChunk chunk, GameMap gm) {
-        var bb = createBb(chunk, gm);
+    private FrustumIntersect getIntersectBb(MapChunk chunk) {
+        var bb = createBb(chunk);
+//        app.enqueue(() -> {
+//            is.chunksBoundingBoxState.setChunk(chunk, bb);
+//        });
         return getIntersect(bb);
     }
 
@@ -552,13 +553,12 @@ public class TerrainActor {
         return contains;
     }
 
-    private BoundingBox createBb(MapChunk chunk, GameMap gm) {
+    private BoundingBox createBb(MapChunk chunk) {
         var bb = new BoundingBox();
-        bb.setXExtent(chunk.pos.extentx * gm.blockSizeX);
-        bb.setYExtent(chunk.pos.extenty * gm.blockSizeY);
-        bb.setZExtent(chunk.pos.extentz * gm.blockSizeZ);
-        bb.setCenter((chunk.pos.centerx - gm.centerOffsetX) * gm.blockSizeX,
-                (chunk.pos.centery - gm.centerOffsetY) * gm.blockSizeY, (chunk.pos.centerz - gm.centerOffsetZ));
+        bb.setXExtent(chunk.extentx);
+        bb.setYExtent(chunk.extenty);
+        bb.setZExtent(chunk.extentz);
+        bb.setCenter(chunk.centerx, chunk.centery, chunk.centerz);
         return bb;
     }
 
