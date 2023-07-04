@@ -9,6 +9,9 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.inject.Inject;
 
@@ -45,7 +48,6 @@ import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState.FaceCullMode;
-import com.jme3.math.Transform;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.Camera.FrustumIntersect;
 import com.jme3.scene.Geometry;
@@ -166,7 +168,6 @@ public class TerrainActor {
             var f = app.enqueue(() -> {
                 app.getStateManager().attach(terrainState);
                 app.getStateManager().attach(cameraState);
-                app.getStateManager().attach(chunksBoundingBoxState);
                 return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState);
             });
             return f.get();
@@ -270,7 +271,7 @@ public class TerrainActor {
         blockNodes = Lists.mutable.empty();
         terrainBounds = new BoundingBox();
         app.enqueue(() -> is.cameraState.updateCamera(m.gm));
-        timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(3000));
+        timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(50));
         return Behaviors.same();
     }
 
@@ -278,21 +279,24 @@ public class TerrainActor {
      * Reacts to the {@link UpdateModelMessage} message.
      */
     private Behavior<Message> onUpdateModel(UpdateModelMessage m) {
-        log.debug("onUpdateModel {}", m);
+        // log.debug("onUpdateModel {}", m);
+        long oldtime = System.currentTimeMillis();
         var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
-        updateModel(m, root);
+        MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
+        collectChunks(chunksBlocks, m.gm, root, new BoundingBox());
+        var bnum = updateModel(m, root, chunksBlocks);
+        renderMeshs();
         is.cameraState.setTerrainModel(terrainBounds);
+        long finishtime = System.currentTimeMillis();
+        log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
         return Behaviors.same();
     }
 
-    private void updateModel(UpdateModelMessage m, GameObject o) {
-        long oldtime = System.currentTimeMillis();
-        MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
-        collectChunks(chunksBlocks, m.gm, (MapChunk) o, new BoundingBox());
+    private int updateModel(UpdateModelMessage m, GameObject o,
+            MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks) {
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
-        var transform = new Transform();
         blockNodes.clear();
-        int b = 0;
+        int bnum = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
             for (var blocks : chunks.getTwo().keyMultiValuePairsView()) {
                 int spos = 0;
@@ -302,14 +306,14 @@ public class TerrainActor {
                     var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
-                    b++;
+                    bnum++;
                 }
                 final long material = blocks.getOne();
                 final var cpos = BufferUtils.createFloatBuffer(3 * spos);
                 final var cindex = BufferUtils.createShortBuffer(3 * sindex);
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-                fillBuffers(transform, blocks, w, h, d, cpos, cindex, cnormal, ctex);
+                fillBuffers(blocks, w, h, d, cpos, cindex, cnormal, ctex);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -328,69 +332,88 @@ public class TerrainActor {
                 terrainBounds.mergeLocal(mesh.getBound());
             }
         }
-        System.out.println(b); // TODO
-        renderMeshs();
-        long finishtime = System.currentTimeMillis();
-        log.trace("updateModel done in {}", finishtime - oldtime);
+        return bnum;
     }
 
+    @SneakyThrows
     private void renderMeshs() {
-        app.enqueue(this::renderMeshs1);
+        var task = app.enqueue(this::renderMeshs1);
+        try {
+            task.get(25, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            // continue
+            return;
+        } catch (InterruptedException e) {
+            log.warn("renderMeshs interrupted", e);
+        } catch (ExecutionException e) {
+            throw e.getCause();
+        }
     }
 
-    private void renderMeshs1() {
+    private boolean renderMeshs1() {
         is.terrainState.clearBlockNodes();
         for (var geo : blockNodes) {
             is.terrainState.addBlockMesh(geo);
         }
+        return true;
     }
 
-    private void fillBuffers(Transform transform, Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d,
-            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, FloatBuffer cpos,
+            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
+        short in0, in1, in2, i0, i1, i2;
+        float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
+        int delta;
+        ModelCacheObject model;
+        Mesh mesh;
+        ShortBuffer bindex;
+        FloatBuffer bnormal;
         for (MapBlock mb : blocks.getTwo()) {
-            var temp = TempVars.get();
-            try {
-                var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
-                var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
-                var bindex = mesh.getShortBuffer(Type.Index).rewind();
-                var bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
-                int delta = cpos.position() / 3;
-                for (int i = 0; i < bindex.limit() / 3; i++) {
-                    short in0 = bindex.get();
-                    short in1 = bindex.get();
-                    short in2 = bindex.get();
-                    short i0 = (short) (in0 * 3);
-                    short i1 = (short) (in1 * 3);
-                    short i2 = (short) (in2 * 3);
-                    var n0 = temp.vect1.set(bnormal.get(i0), bnormal.get(i0 + 1), bnormal.get(i0 + 2));
-                    var n1 = temp.vect2.set(bnormal.get(i1), bnormal.get(i1 + 1), bnormal.get(i1 + 2));
-                    var n2 = temp.vect3.set(bnormal.get(i2), bnormal.get(i2 + 1), bnormal.get(i2 + 2));
-                    n0.addLocal(n1.addLocal(n2)).divideLocal(3f);
-                    if (n0.z < 0.0f) {
-                        continue;
-                    }
-                    if (n0.x < 0.0f && checkNeighborWest(mb)) {
-                        continue;
-                    }
-                    if (n0.x > 0.0f && checkNeighborEast(mb)) {
-                        continue;
-                    }
-                    if (n0.y < 0.0f && checkNeighborSouth(mb)) {
-                        continue;
-                    }
-                    if (n0.y > 0.0f && checkNeighborNorth(mb)) {
-                        continue;
-                    }
-                    cindex.put((short) (in0 + delta));
-                    cindex.put((short) (in1 + delta));
-                    cindex.put((short) (in2 + delta));
+            model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
+            mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
+            bindex = mesh.getShortBuffer(Type.Index).rewind();
+            bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
+            delta = cpos.position() / 3;
+            for (int i = 0; i < bindex.limit() / 3; i++) {
+                in0 = bindex.get();
+                in1 = bindex.get();
+                in2 = bindex.get();
+                i0 = (short) (in0 * 3);
+                i1 = (short) (in1 * 3);
+                i2 = (short) (in2 * 3);
+                n0x = bnormal.get(i0);
+                n0y = bnormal.get(i0 + 1);
+                n0z = bnormal.get(i0 + 2);
+                n1x = bnormal.get(i1);
+                n1y = bnormal.get(i1 + 1);
+                n1z = bnormal.get(i1 + 2);
+                n2x = bnormal.get(i2);
+                n2y = bnormal.get(i2 + 1);
+                n2z = bnormal.get(i2 + 2);
+                n0x = (n0x + n1x + n2x) / 3f;
+                n0y = (n0y + n1y + n2y) / 3f;
+                n0z = (n0z + n1z + n2z) / 3f;
+                if (n0z < 0.0f) {
+                    continue;
                 }
-                copyNormal(mb, mesh, cnormal);
-                copyTex(mb, mesh, ctex);
-                copyPos(mb, mesh, cpos, transform, w, h, d);
-            } finally {
-                temp.release();
+                if (n0x < 0.0f && checkNeighborWest(mb)) {
+                    continue;
+                }
+                if (n0x > 0.0f && checkNeighborEast(mb)) {
+                    continue;
+                }
+                if (n0y < 0.0f && checkNeighborSouth(mb)) {
+                    continue;
+                }
+                if (n0y > 0.0f && checkNeighborNorth(mb)) {
+                    continue;
+                }
+                cindex.put((short) (in0 + delta));
+                cindex.put((short) (in1 + delta));
+                cindex.put((short) (in2 + delta));
             }
+            copyNormal(mb, mesh, cnormal);
+            copyTex(mb, mesh, ctex);
+            copyPos(mb, mesh, cpos, w, h, d);
         }
         cpos.flip();
         cindex.flip();
@@ -451,25 +474,25 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, Transform t, int w, int h, int d) {
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, int w, int h, int d) {
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         var temp = TempVars.get();
-        t.setTranslation(-w + 2.0f * mb.pos.x + 1f, -h + 2.0f * mb.pos.y + 1f, 0);
-        try {
-            var inv = temp.vect1;
-            var outv = temp.vect2;
-            for (int i = 0; i < pos.limit(); i += 3) {
-                inv.x = pos.get();
-                inv.y = pos.get();
-                inv.z = pos.get();
-                t.transformVector(inv, outv);
-                cpos.put(outv.x);
-                cpos.put(outv.y);
-                cpos.put(outv.z);
-            }
-        } finally {
-            temp.release();
+        float tx = -w + 2.0f * mb.pos.x + 1f;
+        float ty = -h + 2.0f * mb.pos.y + 1f;
+        float tz = 0;
+        var v = temp.vect1;
+        for (int i = 0; i < pos.limit(); i += 3) {
+            v.x = pos.get();
+            v.y = pos.get();
+            v.z = pos.get();
+            v.x += tx;
+            v.y += ty;
+            v.z += tz;
+            cpos.put(v.x);
+            cpos.put(v.y);
+            cpos.put(v.z);
         }
+        temp.release();
     }
 
     private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root,
@@ -497,25 +520,12 @@ public class TerrainActor {
                 putChunkSortBlocks(chunksBlocks, nextchunk, z, gm);
             }
         }
-        log.trace("collectChunks {}", chunksBlocks.size());
+        // log.trace("collectChunks {}", chunksBlocks.size());
     }
 
     private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z,
             GameMap gm) {
-        int planeState = camera.getPlaneState();
-        camera.setPlaneState(0);
-        var bb = new BoundingBox();
-        bb.setXExtent(chunk.pos.extentx * gm.blockSizeX);
-        bb.setYExtent(chunk.pos.extenty * gm.blockSizeY);
-        bb.setZExtent(chunk.pos.extentz * gm.blockSizeZ);
-        bb.setCenter((chunk.pos.centerx - gm.centerOffsetX) * gm.blockSizeX,
-                (chunk.pos.centery - gm.centerOffsetY) * gm.blockSizeY,
-                (chunk.pos.centerz - gm.centerOffsetZ));
-        app.enqueue(() -> {
-            is.chunksBoundingBoxState.setChunk(chunk, bb);
-        });
-        var contains = camera.contains(bb);
-        camera.setPlaneState(planeState);
+        var contains = getIntersectBb(chunk, gm);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
@@ -527,6 +537,29 @@ public class TerrainActor {
             }
         }
         chunks.put(chunk.getId(), blocks);
+    }
+
+    private FrustumIntersect getIntersectBb(MapChunk chunk, GameMap gm) {
+        var bb = createBb(chunk, gm);
+        return getIntersect(bb);
+    }
+
+    private FrustumIntersect getIntersect(BoundingBox bb) {
+        int planeState = camera.getPlaneState();
+        camera.setPlaneState(0);
+        var contains = camera.contains(bb);
+        camera.setPlaneState(planeState);
+        return contains;
+    }
+
+    private BoundingBox createBb(MapChunk chunk, GameMap gm) {
+        var bb = new BoundingBox();
+        bb.setXExtent(chunk.pos.extentx * gm.blockSizeX);
+        bb.setYExtent(chunk.pos.extenty * gm.blockSizeY);
+        bb.setZExtent(chunk.pos.extentz * gm.blockSizeZ);
+        bb.setCenter((chunk.pos.centerx - gm.centerOffsetX) * gm.blockSizeX,
+                (chunk.pos.centery - gm.centerOffsetY) * gm.blockSizeY, (chunk.pos.centerz - gm.centerOffsetZ));
+        return bb;
     }
 
     private boolean isBlockVisible(MapBlock mb, int z) {

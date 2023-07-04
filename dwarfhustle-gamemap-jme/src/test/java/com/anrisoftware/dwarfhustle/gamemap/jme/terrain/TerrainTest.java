@@ -262,7 +262,7 @@ public class TerrainTest extends SimpleApplication {
         gm.setCenterOffset(gm.width / 2f);
         gm.setBlockSize(2f);
         gm.rootid = mcRoot.getId();
-        gm.setCameraPos(0.0f, 0.0f, 105.0f);
+        gm.setCameraPos(0.0f, 0.0f, 83.0f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
         int ground_depth = Math.round(gm.depth * 0.5f);
         int magma_depth = Math.round(gm.depth * 0.9f);

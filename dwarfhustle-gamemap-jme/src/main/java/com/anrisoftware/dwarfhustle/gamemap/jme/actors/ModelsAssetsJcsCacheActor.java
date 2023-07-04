@@ -23,24 +23,27 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.apache.commons.jcs3.access.exception.CacheException;
+import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
+import org.eclipse.collections.impl.map.mutable.primitive.SynchronizedLongObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage;
 import com.google.inject.Injector;
 
 import akka.actor.typed.ActorRef;
@@ -119,9 +122,12 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
     @Inject
     private AssetsLoadObjectModels models;
 
+    private MutableLongObjectMap<ModelCacheObject> localCache;
+
     @Override
     protected Behavior<Message> initialStage(InitialStateMessage m) {
         log.debug("initialStage {}", m);
+        this.localCache = new SynchronizedLongObjectMap<>(LongObjectMaps.mutable.ofInitialCapacity(100));
         return super.initialStage(m);
     }
 
@@ -137,12 +143,12 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Override
-    protected void storeValueDb(CachePutMessage<?> m) {
+    protected void storeValueDb(Object key, GameObject go) {
         // nop
     }
 
     @Override
-    protected void storeValueDb(CachePutsMessage<?> m) {
+    protected void storeValueDb(Class<?> keyType, Function<GameObject, Object> key, GameObject go) {
         // nop
     }
 
@@ -179,4 +185,14 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
         ;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) throws ObjectsGetterException {
+        var v = localCache.get((long) key);
+        if (v == null) {
+            v = (ModelCacheObject) super.get(typeClass, type, key);
+            localCache.put(v.id, v);
+        }
+        return (T) v;
+    }
 }

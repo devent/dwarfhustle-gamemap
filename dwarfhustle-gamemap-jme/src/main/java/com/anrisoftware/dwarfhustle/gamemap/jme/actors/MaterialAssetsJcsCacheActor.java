@@ -30,6 +30,9 @@ import javax.inject.Inject;
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.apache.commons.jcs3.access.exception.CacheException;
+import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
+import org.eclipse.collections.impl.map.mutable.primitive.SynchronizedLongObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GetTextureMessage.GetTextureSuccessMessage;
@@ -121,9 +124,12 @@ public class MaterialAssetsJcsCacheActor extends AbstractJcsCacheActor {
     @Inject
     private AssetsLoadMaterialTextures textures;
 
+    private MutableLongObjectMap<TextureCacheObject> localCache;
+
     @Override
     protected Behavior<Message> initialStage(InitialStateMessage m) {
         log.debug("initialStage {}", m);
+        this.localCache = new SynchronizedLongObjectMap<>(LongObjectMaps.mutable.ofInitialCapacity(100));
         return super.initialStage(m);
     }
 
@@ -201,4 +207,14 @@ public class MaterialAssetsJcsCacheActor extends AbstractJcsCacheActor {
         ;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) throws ObjectsGetterException {
+        var v = localCache.get((long) key);
+        if (v == null) {
+            v = (TextureCacheObject) super.get(typeClass, type, key);
+            localCache.put(v.id, v);
+        }
+        return (T) v;
+    }
 }

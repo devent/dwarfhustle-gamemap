@@ -292,14 +292,11 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private void updateScreenCoordinatesMap() {
         var temp = TempVars.get();
-        try {
-            var btr = bounds.getMax(temp.vect1);
-            var bbl = bounds.getMin(temp.vect2);
-            camera.getScreenCoordinates(btr, mapTopRight);
-            camera.getScreenCoordinates(bbl, mapBottomLeft);
-        } finally {
-            temp.release();
-        }
+        var btr = bounds.getMax(temp.vect1);
+        var bbl = bounds.getMin(temp.vect2);
+        camera.getScreenCoordinates(btr, mapTopRight);
+        camera.getScreenCoordinates(bbl, mapBottomLeft);
+        temp.release();
     }
 
     private void boundMove(float dx, float dy, float dz) {
