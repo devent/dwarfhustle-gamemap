@@ -248,15 +248,16 @@ public class AppActor {
 
     private static void createPowerLoom(Injector injector) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        PowerLoomKnowledgeActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("PowerLoomKnowledgeActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("PowerLoomKnowledgeActor created");
-                createKnowledgeCache(injector, ret);
-            }
-        });
+        PowerLoomKnowledgeActor.create(injector, ofSeconds(1), actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
+                .whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("PowerLoomKnowledgeActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("PowerLoomKnowledgeActor created");
+                        createKnowledgeCache(injector, ret);
+                    }
+                });
     }
 
     private static void createKnowledgeCache(Injector injector, ActorRef<Message> powerLoom) {
@@ -523,7 +524,7 @@ public class AppActor {
                 ogs.get().currentWorld.set(wm);
                 actor.tell(new SetWorldMapMessage(wm));
             } else if (rm.go instanceof GameMap gm) {
-                gm.setWorld(ogs.get().currentWorld.get());
+                gm.setWorld(ogs.get().currentWorld.get().id);
                 ogs.get().currentMap.set(gm);
                 actor.tell(new SetGameMapMessage(gm));
             } else if (rm.go instanceof MapChunk mb) {

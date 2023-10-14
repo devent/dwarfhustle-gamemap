@@ -48,4 +48,8 @@ public class TerrainState extends BaseAppState {
         terrainNode.attachChild(geo);
     }
 
+    public Node getNode() {
+        return terrainNode;
+    }
+
 }

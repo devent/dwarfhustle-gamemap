@@ -137,25 +137,25 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Override
-    protected void retrieveValueFromDb(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
+    protected void retrieveValueFromBackend(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
         var to = models.loadModelObject((long) m.key);
         consumer.accept(to);
     }
 
     @Override
-    protected void storeValueDb(Object key, GameObject go) {
+    protected void storeValueBackend(Object key, GameObject go) {
         // nop
     }
 
     @Override
-    protected void storeValueDb(Class<?> keyType, Function<GameObject, Object> key, GameObject go) {
+    protected void storeValueBackend(Class<?> keyType, Function<GameObject, Object> key, GameObject go) {
         // nop
     }
 
     @SuppressWarnings("unchecked")
     @Override
     @SneakyThrows
-    protected <T extends GameObject> T getValueFromDb(Class<T> typeClass, String type, Object key) {
+    protected <T extends GameObject> T getValueFromBackend(Class<T> typeClass, String type, Object key) {
         var to = models.loadModelObject((long) key);
         return (T) to;
     }

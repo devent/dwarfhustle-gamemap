@@ -28,6 +28,8 @@ import java.util.function.Consumer;
 import javax.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.bounding.BoundingBox;
@@ -47,6 +49,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
+import com.jme3.scene.Node;
 import com.jme3.util.TempVars;
 
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +85,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     @Inject
     private Camera camera;
 
+    private ObjectsGetter objectsg;
+
     private boolean middleMouseDown;
 
     private final Vector3f mapBottomLeft;
@@ -98,6 +103,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private BoundingBox bounds;
 
+    private Node node;
+
     @Inject
     public TerrainCameraState() {
         super(TerrainCameraState.class.getSimpleName());
@@ -106,6 +113,10 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         this.mapBottomLeft = new Vector3f();
         this.mapTopRight = new Vector3f();
         this.bounds = new BoundingBox(new Vector3f(), 10f, 10f, 10f);
+    }
+
+    public void setObjectsg(ObjectsGetter objectsg) {
+        this.objectsg = objectsg;
     }
 
     public void setSaveCamera(Consumer<GameMap> saveCamera) {
@@ -121,7 +132,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         camera.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
     }
 
-    public void setTerrainModel(BoundingBox bounds) {
+    public void setTerrainBounds(BoundingBox bounds) {
         this.bounds = bounds;
         updateScreenCoordinatesMap();
     }
@@ -146,6 +157,10 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         camera.setLocation(new Vector3f(x, y, z));
         camera.update();
         saveCamera();
+    }
+
+    public void setNode(Node node) {
+        this.node = node;
     }
 
     @Override
@@ -255,15 +270,16 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     public void onMouseMotionEvent(MouseMotionEvent evt) {
         mouse.x = evt.getX();
         mouse.y = evt.getY();
-        if (!middleMouseDown && !rightMouseDown) {
-            return;
-        }
         var temp = TempVars.get();
         try {
             var oldpos = temp.vect1;
             var newpos = temp.vect2;
             camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
             camera.getWorldCoordinates(mouse, 0.0f, newpos);
+            updateSelectedObject();
+            if (!middleMouseDown && !rightMouseDown) {
+                return;
+            }
             updateScreenCoordinatesMap();
             float dx = evt.getDX();
             float dy = -evt.getDY();
@@ -276,6 +292,51 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         } finally {
             temp.release();
         }
+    }
+
+    private void updateSelectedObject() {
+        var temp = TempVars.get();
+        try {
+            var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.rootid);
+            var chunk = findChunkUnderCursor(mouse, rootchunk, temp);
+            System.out.println(chunk); // TODO
+        } finally {
+            temp.release();
+        }
+    }
+
+    private MapChunk findChunkUnderCursor(Vector2f mouse, MapChunk chunk, TempVars temp) {
+        if (chunk.blocks.isEmpty()) {
+            for (var kvalues : chunk.chunks.keyValuesView()) {
+                var id = kvalues.getTwo();
+                var c = findChunkUnderCursor(mouse, objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id), temp);
+                if (c == null) {
+                    continue;
+                } else {
+                    return c;
+                }
+            }
+        } else {
+            var bottomc = temp.vect1;
+            var topc = temp.vect2;
+            bottomc.x = chunk.centerx - chunk.extentx;
+            bottomc.y = chunk.centery - chunk.extenty;
+            bottomc.z = chunk.centerz - chunk.extentz;
+            camera.getScreenCoordinates(bottomc, bottomc);
+            topc.x = chunk.centerx + chunk.extentx;
+            topc.y = chunk.centery + chunk.extenty;
+            topc.z = chunk.centerz + chunk.extentz;
+            camera.getScreenCoordinates(topc, topc);
+            System.out.printf("%d# %s - %s - %s - %f/%f/%f - %f/%f/%f\n", chunk.id, bottomc, topc, mouse, chunk.centerx,
+                    chunk.centery, chunk.centerz, chunk.centerx + chunk.extentx, chunk.centery + chunk.extenty,
+                    chunk.centerz + chunk.extentz); // TODO
+            if (mouse.x >= bottomc.x && mouse.y >= bottomc.y && mouse.x <= topc.x && mouse.y <= topc.y) {
+                return chunk;
+            } else {
+                return null;
+            }
+        }
+        return null;
     }
 
     @Override

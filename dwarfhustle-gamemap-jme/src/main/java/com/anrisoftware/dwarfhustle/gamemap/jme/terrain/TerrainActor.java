@@ -167,7 +167,7 @@ public class TerrainActor {
             var f = app.enqueue(() -> {
                 app.getStateManager().attach(terrainState);
                 app.getStateManager().attach(cameraState);
-                // app.getStateManager().attach(chunksBoundingBoxState);
+                app.getStateManager().attach(chunksBoundingBoxState);
                 return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState);
             });
             return f.get();
@@ -259,6 +259,8 @@ public class TerrainActor {
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.is = m;
+        is.cameraState.setObjectsg(objectsg);
+        is.cameraState.setNode(is.terrainState.getNode());
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -476,6 +478,7 @@ public class TerrainActor {
      * Transforms the position values based on the block position.
      */
     private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float blockSizeZ, int w, int h, int d) {
+        // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float tx = -w + 2.0f * mb.pos.x + 1f;
         float ty = -h + 2.0f * mb.pos.y + 1f;
@@ -491,6 +494,7 @@ public class TerrainActor {
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
+            // System.out.printf("%f/%f/%f\n", vx, vy, vz); // TODO
         }
     }
 
@@ -498,7 +502,7 @@ public class TerrainActor {
             BoundingBox bb) {
         int x = 0;
         int y = 0;
-        int z = gm.getCursorZ();
+        int z = gm.getCursorZ() + 1;
         var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
         putChunkSortBlocks(chunksBlocks, firstchunk, z);
         long chunkid;
@@ -539,9 +543,9 @@ public class TerrainActor {
 
     private FrustumIntersect getIntersectBb(MapChunk chunk) {
         var bb = createBb(chunk);
-//        app.enqueue(() -> {
-//            is.chunksBoundingBoxState.setChunk(chunk, bb);
-//        });
+        app.enqueue(() -> {
+            is.chunksBoundingBoxState.setChunk(chunk, bb);
+        });
         return getIntersect(bb);
     }
 

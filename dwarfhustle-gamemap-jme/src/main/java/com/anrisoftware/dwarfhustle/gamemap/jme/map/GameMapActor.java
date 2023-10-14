@@ -263,7 +263,7 @@ public class GameMapActor {
         context.getSelf().tell(new AddMapChunkSceneMessage(gs.get().currentMap.get(), m.mb));
         app.enqueue(() -> {
             is.gameMapState.createMapBlockBox(gs.get().currentMap.get(), m.mb);
-            is.cameraPanningState.setTerrainModel(is.gameMapState.getModel());
+            is.cameraPanningState.setTerrainBounds(is.gameMapState.getModel());
             Entity cursor = engine.createEntity();
             this.cursorEntity = Optional.of(cursor);
             int z = gs.get().currentMap.get().getCursor().z;

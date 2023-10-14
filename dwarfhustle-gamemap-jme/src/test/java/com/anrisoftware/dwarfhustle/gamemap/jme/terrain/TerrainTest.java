@@ -255,10 +255,14 @@ public class TerrainTest extends SimpleApplication {
 //        gm.width = 8;
 //        gm.height = 8;
 //        gm.depth = 8;
-        gm.chunkSize = 2;
-        gm.width = 4;
-        gm.height = 4;
-        gm.depth = 4;
+//        gm.chunkSize = 2;
+//        gm.width = 4;
+//        gm.height = 4;
+//        gm.depth = 4;
+        gm.chunkSize = 1;
+        gm.width = 2;
+        gm.height = 2;
+        gm.depth = 2;
         gm.setCenterOffset(gm.width / 2f);
         gm.setBlockSize(2f);
         gm.rootid = mcRoot.getId();
