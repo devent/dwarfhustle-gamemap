@@ -329,7 +329,7 @@ public class TerrainActor {
                 var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
                 geo.getMaterial().setTexture("ColorMap", tex.tex);
                 geo.getMaterial().setColor("Color", tex.baseColor);
-                geo.getMaterial().getAdditionalRenderState().setWireframe(true);
+                geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 blockNodes.add(geo);
                 terrainBounds.mergeLocal(mesh.getBound());

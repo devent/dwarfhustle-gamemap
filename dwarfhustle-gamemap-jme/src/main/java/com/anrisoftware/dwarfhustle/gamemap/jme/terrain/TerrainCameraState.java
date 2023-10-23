@@ -20,6 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.jme3.input.MouseInput.AXIS_WHEEL;
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
+import static com.jme3.math.FastMath.DEG_TO_RAD;
 import static java.lang.Math.abs;
 
 import java.util.Optional;
@@ -34,9 +35,11 @@ import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.input.InputManager;
+import com.jme3.input.KeyInput;
 import com.jme3.input.RawInputListener;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
+import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseAxisTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.input.event.JoyAxisEvent;
@@ -45,6 +48,7 @@ import com.jme3.input.event.KeyInputEvent;
 import com.jme3.input.event.MouseButtonEvent;
 import com.jme3.input.event.MouseMotionEvent;
 import com.jme3.input.event.TouchEvent;
+import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
@@ -62,20 +66,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainCameraState extends BaseAppState implements ActionListener, AnalogListener, RawInputListener {
 
-    private static final String MIDDLE_BUTTON_MAPPING = "MoveMapMouseState_middle";
+    private static final String MIDDLE_BUTTON_MAPPING = "TerrainCameraState_middle";
 
-    private static final String RIGHT_BUTTON_MAPPING = "MoveMapMouseState_right";
+    private static final String RIGHT_BUTTON_MAPPING = "TerrainCameraState_right";
 
-    private static final String ZOOM_OUT_MAPPING = "MouseMoveMapState_zoomout";
+    private static final String ZOOM_OUT_MAPPING = "TerrainCameraState_zoomout";
 
-    private static final String ZOOM_IN_MAPPING = "MouseMoveMapState_zoomin";
+    private static final String ZOOM_IN_MAPPING = "TerrainCameraState_zoomin";
 
-    private static final String Z_IN_MAPPING = "MouseMoveMapState_z_in";
+    private static final String Z_IN_MAPPING = "TerrainCameraState_z_in";
 
-    private static final String Z_OUT_MAPPING = "MouseMoveMapState_z_out";
+    private static final String Z_OUT_MAPPING = "TerrainCameraState_z_out";
+
+    private static final String SHIFT_MAPPING = "TerrainCameraState_shift";
 
     private static final String[] MAPPINGS = new String[] { MIDDLE_BUTTON_MAPPING, RIGHT_BUTTON_MAPPING,
-            ZOOM_IN_MAPPING, ZOOM_OUT_MAPPING, Z_IN_MAPPING, Z_OUT_MAPPING };
+            ZOOM_IN_MAPPING, ZOOM_OUT_MAPPING, Z_IN_MAPPING, Z_OUT_MAPPING, SHIFT_MAPPING };
 
     private final Vector2f mouse;
 
@@ -87,7 +93,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private ObjectsGetter objectsg;
 
-    private boolean middleMouseDown;
+    private boolean middleMouseDown = false;
 
     private final Vector3f mapBottomLeft;
 
@@ -105,10 +111,13 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private Node node;
 
+    private boolean shiftDown = false;
+
+    private float cameraTiltY;
+
     @Inject
     public TerrainCameraState() {
         super(TerrainCameraState.class.getSimpleName());
-        this.middleMouseDown = false;
         this.mouse = new Vector2f();
         this.mapBottomLeft = new Vector3f();
         this.mapTopRight = new Vector3f();
@@ -188,6 +197,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private void initKeys() {
         inputManager.addListener(this, MAPPINGS);
         inputManager.addRawInputListener(this);
+        inputManager.addMapping(SHIFT_MAPPING, new KeyTrigger(KeyInput.KEY_LSHIFT),
+                new KeyTrigger(KeyInput.KEY_RSHIFT));
         inputManager.addMapping(MIDDLE_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_MIDDLE));
         inputManager.addMapping(RIGHT_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_RIGHT));
         inputManager.addMapping(Z_IN_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, false));
@@ -210,14 +221,17 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
                 saveCamera();
             }
             middleMouseDown = isPressed;
-            return;
+            break;
         case RIGHT_BUTTON_MAPPING:
             updateScreenCoordinatesMap();
             if (!isPressed && rightMouseDown) {
                 saveCamera();
             }
             rightMouseDown = isPressed;
-            return;
+            break;
+        case SHIFT_MAPPING:
+            shiftDown = isPressed;
+            break;
         }
     }
 
@@ -231,13 +245,13 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
                 boundZMove(m);
                 saveZ();
             }
-            return;
+            break;
         case Z_OUT_MAPPING:
             if (canZ(-m)) {
                 boundZMove(-m);
                 saveZ();
             }
-            return;
+            break;
         }
     }
 
@@ -271,38 +285,44 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         mouse.x = evt.getX();
         mouse.y = evt.getY();
         var temp = TempVars.get();
-        try {
-            var oldpos = temp.vect1;
-            var newpos = temp.vect2;
-            camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
-            camera.getWorldCoordinates(mouse, 0.0f, newpos);
-            updateSelectedObject();
-            if (!middleMouseDown && !rightMouseDown) {
-                return;
-            }
+        var oldpos = temp.vect1;
+        var newpos = temp.vect2;
+        camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
+        camera.getWorldCoordinates(mouse, 0.0f, newpos);
+        updateSelectedObject();
+        if (middleMouseDown || rightMouseDown) {
             updateScreenCoordinatesMap();
             float dx = evt.getDX();
             float dy = -evt.getDY();
             var s = calcSpeed(Math.max(abs(dx), abs(dy)));
-            if (middleMouseDown) {
+            if (shiftDown) {
+                if (rightMouseDown) {
+                    doTilt(dx, dy, s);
+                }
+            } else if (middleMouseDown) {
                 doMove(dx, dy, s);
             } else if (rightMouseDown) {
                 doZoom(dx, dy, s, oldpos, newpos);
             }
-        } finally {
-            temp.release();
         }
+        temp.release();
+    }
+
+    private void doTilt(float dx, float dy, float s) {
+        cameraTiltY += (dy + s) * 0.01f;
+        if (cameraTiltY > 10f) {
+            cameraTiltY = 10f;
+        }
+        System.out.printf("%f-%f %f %f\n", dx, dy, s, cameraTiltY); // TODO
+        camera.setRotation(new Quaternion().fromAngles(DEG_TO_RAD * cameraTiltY, 0, 0));
     }
 
     private void updateSelectedObject() {
         var temp = TempVars.get();
-        try {
-            var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.rootid);
-            var chunk = findChunkUnderCursor(mouse, rootchunk, temp);
-            System.out.println(chunk); // TODO
-        } finally {
-            temp.release();
-        }
+        var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.rootid);
+        var chunk = findChunkUnderCursor(mouse, rootchunk, temp);
+        System.out.println(chunk); // TODO
+        temp.release();
     }
 
     private MapChunk findChunkUnderCursor(Vector2f mouse, MapChunk chunk, TempVars temp) {
@@ -327,9 +347,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
             topc.y = chunk.centery + chunk.extenty;
             topc.z = chunk.centerz + chunk.extentz;
             camera.getScreenCoordinates(topc, topc);
-            System.out.printf("%d# %s - %s - %s - %f/%f/%f - %f/%f/%f\n", chunk.id, bottomc, topc, mouse, chunk.centerx,
-                    chunk.centery, chunk.centerz, chunk.centerx + chunk.extentx, chunk.centery + chunk.extenty,
-                    chunk.centerz + chunk.extentz); // TODO
+//            System.out.printf("%d# %s - %s - %s - %f/%f/%f - %f/%f/%f\n", chunk.id, bottomc, topc, mouse, chunk.centerx,
+//                    chunk.centery, chunk.centerz, chunk.centerx + chunk.extentx, chunk.centery + chunk.extenty,
+//                    chunk.centerz + chunk.extentz); // TODO
             if (mouse.x >= bottomc.x && mouse.y >= bottomc.y && mouse.x <= topc.x && mouse.y <= topc.y) {
                 return chunk;
             } else {
@@ -379,27 +399,24 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         var pos = tmpc.getLocation();
         pos.z += dy * s;
         var temp = TempVars.get();
-        try {
-            var tmpTopRight = temp.vect1;
-            var tmpBottomLeft = temp.vect2;
-            var topright = temp.vect3.set(2f, 2f, 0f);
-            var bottomleft = temp.vect4.set(-2f, -2f, 0f);
-            tmpc.getScreenCoordinates(topright, tmpTopRight);
-            tmpc.getScreenCoordinates(bottomleft, tmpBottomLeft);
-            if (dy > 0) {
-                // zoom out
-                if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 10) {
-                    boundMove(0f, 0f, dy * s);
-                }
-            } else {
-                // zoom in
-                if (tmpTopRight.x > 0f && tmpBottomLeft.x > 0 && tmpTopRight.x - tmpBottomLeft.x < camera.getWidth()) {
-                    boundMove(0f, 0f, dy * s);
-                }
+        var tmpTopRight = temp.vect1;
+        var tmpBottomLeft = temp.vect2;
+        var topright = temp.vect3.set(2f, 2f, 0f);
+        var bottomleft = temp.vect4.set(-2f, -2f, 0f);
+        tmpc.getScreenCoordinates(topright, tmpTopRight);
+        tmpc.getScreenCoordinates(bottomleft, tmpBottomLeft);
+        if (dy > 0) {
+            // zoom out
+            if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 10) {
+                boundMove(0f, 0f, dy * s);
             }
-        } finally {
-            temp.release();
+        } else {
+            // zoom in
+            if (tmpTopRight.x > 0f && tmpBottomLeft.x > 0 && tmpTopRight.x - tmpBottomLeft.x < camera.getWidth()) {
+                boundMove(0f, 0f, dy * s);
+            }
         }
+        temp.release();
     }
 
     private void doMove(float dx, float dy, float s) {
@@ -415,20 +432,20 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private boolean canMoveX(float dx, float s) {
         if (dx > 0) {
             // right
-            return mapBottomLeft.x + dx * s < camera.getWidth() - 50f;
+            return mapBottomLeft.x + dx * s < camera.getWidth() / 2f;
         } else {
             // left
-            return mapTopRight.x - dx * s > 50f;
+            return mapTopRight.x - dx * s > camera.getWidth() / 2f;
         }
     }
 
     private boolean canMoveY(float dy, float s) {
         if (dy > 0) {
             // down
-            return mapTopRight.y + dy * s > 50f;
+            return mapTopRight.y + dy * s > camera.getHeight() / 2f;
         } else {
             // up
-            return mapBottomLeft.y - dy * s < camera.getHeight() - 50f;
+            return mapBottomLeft.y - dy * s < camera.getHeight() / 2f;
         }
     }
 

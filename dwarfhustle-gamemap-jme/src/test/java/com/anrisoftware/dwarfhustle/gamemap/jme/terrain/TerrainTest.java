@@ -139,10 +139,14 @@ public class TerrainTest extends SimpleApplication {
 
     private Deque<byte[]> idsBatch;
 
+    private ResetCameraState resetCameraState;
+
     public TerrainTest() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
         // , new FlyCamAppState()
         );
+        this.resetCameraState = new ResetCameraState();
+        getStateManager().attach(resetCameraState);
     }
 
     private void start(Injector parent) {
@@ -218,6 +222,7 @@ public class TerrainTest extends SimpleApplication {
         this.simpleUpdateCall = tpl -> {
             if (texturesLoaded && modelsLoaded) {
                 actor.tell(new SetGameMapMessage(gm));
+                resetCameraState.updateCamera(gm);
                 simpleUpdateCall = tpl1 -> {
                 };
             }
