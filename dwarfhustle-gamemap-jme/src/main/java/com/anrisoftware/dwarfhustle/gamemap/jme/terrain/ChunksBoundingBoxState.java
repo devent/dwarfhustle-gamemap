@@ -31,14 +31,12 @@ public class ChunksBoundingBoxState extends BaseAppState {
     @Inject
     private ChunksBoundingBoxRenderSystem system;
 
-    private Node node;
+    private Node node = new Node("ChunksBoundingBoxNode");
 
-    private MutableLongObjectMap<Entity> entities;
+    private MutableLongObjectMap<Entity> entities = LongObjectMaps.mutable.empty();
 
     @Override
     protected void initialize(Application app) {
-        this.entities = LongObjectMaps.mutable.empty();
-        this.node = new Node("ChunksBoundingBoxNode");
         system.setNode(node);
     }
 
@@ -69,5 +67,9 @@ public class ChunksBoundingBoxState extends BaseAppState {
             entities.put(root.id, e);
         }
         e.add(new ChunksBoundingBoxComponent(0, bb));
+    }
+
+    public Node getNode() {
+        return node;
     }
 }

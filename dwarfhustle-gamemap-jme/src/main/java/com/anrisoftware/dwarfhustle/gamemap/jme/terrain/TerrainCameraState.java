@@ -20,7 +20,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.jme3.input.MouseInput.AXIS_WHEEL;
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
-import static com.jme3.math.FastMath.DEG_TO_RAD;
 import static java.lang.Math.abs;
 
 import java.util.Optional;
@@ -48,7 +47,6 @@ import com.jme3.input.event.KeyInputEvent;
 import com.jme3.input.event.MouseButtonEvent;
 import com.jme3.input.event.MouseMotionEvent;
 import com.jme3.input.event.TouchEvent;
-import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
@@ -109,11 +107,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private BoundingBox bounds;
 
-    private Node node;
+    private Node terrainNode;
 
     private boolean shiftDown = false;
-
-    private float cameraTiltY;
 
     @Inject
     public TerrainCameraState() {
@@ -151,7 +147,6 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         camera.setLocation(new Vector3f(gm.getCameraPos()[0], gm.getCameraPos()[1], gm.getCameraPos()[2]));
         camera.setRotation(
                 new Quaternion(gm.getCameraRot()[0], gm.getCameraRot()[1], gm.getCameraRot()[2], gm.getCameraRot()[3]));
-        initKeys();
     }
 
     private void saveCamera() {
@@ -168,8 +163,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         saveCamera();
     }
 
-    public void setNode(Node node) {
-        this.node = node;
+    public void setTerrainNode(Node node) {
+        this.terrainNode = node;
     }
 
     @Override
@@ -186,6 +181,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     @Override
     protected void onEnable() {
         log.debug("onEnable");
+        initKeys();
     }
 
     @Override
@@ -206,6 +202,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     }
 
     private void deleteKeys() {
+        inputManager.removeListener(this);
         inputManager.removeRawInputListener(this);
         for (var i = 0; i < MAPPINGS.length; i++) {
             inputManager.deleteMapping(MAPPINGS[i]);
@@ -237,6 +234,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     @Override
     public void onAnalog(String name, float value, float tpf) {
+        if (shiftDown) {
+            return;
+        }
         var m = 1f;
         updateScreenCoordinatesMap();
         switch (name) {
@@ -290,16 +290,12 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
         camera.getWorldCoordinates(mouse, 0.0f, newpos);
         updateSelectedObject();
-        if (middleMouseDown || rightMouseDown) {
+        if (!shiftDown && (middleMouseDown || rightMouseDown)) {
             updateScreenCoordinatesMap();
             float dx = evt.getDX();
             float dy = -evt.getDY();
             var s = calcSpeed(Math.max(abs(dx), abs(dy)));
-            if (shiftDown) {
-                if (rightMouseDown) {
-                    doTilt(dx, dy, s);
-                }
-            } else if (middleMouseDown) {
+            if (middleMouseDown) {
                 doMove(dx, dy, s);
             } else if (rightMouseDown) {
                 doZoom(dx, dy, s, oldpos, newpos);
@@ -308,16 +304,10 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         temp.release();
     }
 
-    private void doTilt(float dx, float dy, float s) {
-        cameraTiltY += (dy + s) * 0.01f;
-        if (cameraTiltY > 10f) {
-            cameraTiltY = 10f;
-        }
-        System.out.printf("%f-%f %f %f\n", dx, dy, s, cameraTiltY); // TODO
-        camera.setRotation(new Quaternion().fromAngles(DEG_TO_RAD * cameraTiltY, 0, 0));
-    }
-
     private void updateSelectedObject() {
+        if (gm == null) {
+            return;
+        }
         var temp = TempVars.get();
         var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.rootid);
         var chunk = findChunkUnderCursor(mouse, rootchunk, temp);
@@ -442,7 +432,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private boolean canMoveY(float dy, float s) {
         if (dy > 0) {
             // down
-            return mapTopRight.y + dy * s > camera.getHeight() / 2f;
+            return mapTopRight.y < 0f || mapTopRight.y + dy * s > camera.getHeight() / 2f;
         } else {
             // up
             return mapBottomLeft.y - dy * s < camera.getHeight() / 2f;

@@ -19,11 +19,10 @@ public class TerrainState extends BaseAppState {
     @Named("rootNode")
     private Node rootNode;
 
-    private Node terrainNode;
+    private Node terrainNode = new Node("terrainNode");
 
     @Override
     protected void initialize(Application app) {
-        terrainNode = new Node("terrainNode");
     }
 
     @Override

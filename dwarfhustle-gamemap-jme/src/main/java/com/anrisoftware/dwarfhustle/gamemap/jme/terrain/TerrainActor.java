@@ -17,6 +17,7 @@ import javax.inject.Inject;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
@@ -25,6 +26,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
@@ -80,6 +82,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainActor {
 
+    private static final String UPDATE_MODEL_MESSAGE_TIMER_KEY = "UpdateModelMessage-Timer";
+
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, TerrainActor.class.getSimpleName());
 
     public static final String NAME = TerrainActor.class.getSimpleName();
@@ -92,6 +96,7 @@ public class TerrainActor {
         public final TerrainState terrainState;
         public final TerrainCameraState cameraState;
         public final ChunksBoundingBoxState chunksBoundingBoxState;
+        public final TerrainRollState terrainRollState;
     }
 
     @RequiredArgsConstructor
@@ -160,15 +165,17 @@ public class TerrainActor {
 
     private static Message attachState(Injector injector) {
         var app = injector.getInstance(Application.class);
-        var terrainState = injector.getInstance(TerrainState.class);
-        var cameraState = injector.getInstance(TerrainCameraState.class);
-        var chunksBoundingBoxState = injector.getInstance(ChunksBoundingBoxState.class);
         try {
             var f = app.enqueue(() -> {
+                var terrainState = injector.getInstance(TerrainState.class);
+                var cameraState = injector.getInstance(TerrainCameraState.class);
+                var chunksBoundingBoxState = injector.getInstance(ChunksBoundingBoxState.class);
+                var terrainRollState = injector.getInstance(TerrainRollState.class);
                 app.getStateManager().attach(terrainState);
                 app.getStateManager().attach(cameraState);
                 app.getStateManager().attach(chunksBoundingBoxState);
-                return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState);
+                app.getStateManager().attach(terrainRollState);
+                return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState, terrainRollState);
             });
             return f.get();
         } catch (Exception ex) {
@@ -223,6 +230,10 @@ public class TerrainActor {
 
     private BoundingBox terrainBounds;
 
+    private ImmutableList<Geometry> copyBlockNodes;
+
+    private Optional<SetGameMapMessage> previousSetGameMap = Optional.empty();
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -260,7 +271,9 @@ public class TerrainActor {
         log.debug("onInitialState");
         this.is = m;
         is.cameraState.setObjectsg(objectsg);
-        is.cameraState.setNode(is.terrainState.getNode());
+        is.cameraState.setTerrainNode(is.terrainState.getNode());
+        is.terrainRollState.setTerrainNode(is.terrainState.getNode());
+        is.terrainRollState.setBoundingNode(is.chunksBoundingBoxState.getNode());
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -273,7 +286,9 @@ public class TerrainActor {
         blockNodes = Lists.mutable.empty();
         terrainBounds = new BoundingBox();
         app.enqueue(() -> is.cameraState.updateCamera(m.gm));
-        timer.startTimerAtFixedRate(new UpdateModelMessage(m.gm), Duration.ofMillis(50));
+        previousSetGameMap = Optional.of(m);
+        timer.startTimerAtFixedRate(UPDATE_MODEL_MESSAGE_TIMER_KEY, new UpdateModelMessage(m.gm),
+                Duration.ofMillis(50));
         return Behaviors.same();
     }
 
@@ -340,14 +355,15 @@ public class TerrainActor {
 
     @SneakyThrows
     private void renderMeshs() {
+        copyBlockNodes = Lists.immutable.ofAll(blockNodes);
         var task = app.enqueue(this::renderMeshs1);
         try {
             task.get(25, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            // continue
+            // log.warn("renderMeshs timeout");
             return;
         } catch (InterruptedException e) {
-            log.warn("renderMeshs interrupted", e);
+            log.error("renderMeshs interrupted", e);
         } catch (ExecutionException e) {
             throw e.getCause();
         }
@@ -355,7 +371,7 @@ public class TerrainActor {
 
     private boolean renderMeshs1() {
         is.terrainState.clearBlockNodes();
-        for (var geo : blockNodes) {
+        for (var geo : copyBlockNodes) {
             is.terrainState.addBlockMesh(geo);
         }
         return true;
@@ -606,6 +622,21 @@ public class TerrainActor {
      * <li>
      * </ul>
      */
+    private Behavior<Message> onAppPaused(AppPausedMessage m) {
+        log.debug("onAppPaused {}", m);
+        if (m.paused) {
+            timer.cancel(UPDATE_MODEL_MESSAGE_TIMER_KEY);
+        } else {
+            previousSetGameMap.ifPresent(this::onSetGameMap);
+        }
+        return Behaviors.same();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
     private Behavior<Message> onShutdown(ShutdownMessage m) {
         log.debug("onShutdown {}", m);
         timer.cancelAll();
@@ -625,6 +656,7 @@ public class TerrainActor {
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(UpdateModelMessage.class, this::onUpdateModel)//
+                .onMessage(AppPausedMessage.class, this::onAppPaused)//
         ;
     }
 }

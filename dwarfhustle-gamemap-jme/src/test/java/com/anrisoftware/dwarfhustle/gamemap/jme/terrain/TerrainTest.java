@@ -47,6 +47,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.actors.ModelsAssetsJcsCacheActor
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.DebugCoordinateAxesState;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.MockStoredObjectsJcsCacheActor.MockStoredObjectsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
@@ -232,6 +233,22 @@ public class TerrainTest extends SimpleApplication {
         createTerrain();
         createPowerLoom();
         createObjectsCache();
+    }
+
+    @Override
+    public void gainFocus() {
+        super.gainFocus();
+        if (!paused) {
+            actor.tell(new AppPausedMessage(false));
+        }
+    }
+
+    @Override
+    public void loseFocus() {
+        super.loseFocus();
+        if (paused) {
+            actor.tell(new AppPausedMessage(true));
+        }
     }
 
     private void createMockTerrain() {
