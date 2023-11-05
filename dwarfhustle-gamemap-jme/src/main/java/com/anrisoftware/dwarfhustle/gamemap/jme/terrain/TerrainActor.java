@@ -493,25 +493,27 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float blockSizeZ, int w, int h, int d) {
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float blockSizeZ, float w, float h, int d) {
         // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
-        float tx = -w + 2.0f * mb.pos.x + 1f;
-        float ty = -h + 2.0f * mb.pos.y + 1f;
+        float x = mb.pos.x, y = mb.pos.y, vx, vy, vz;
+        float tx = -w + 2f * x + 1f;
+        float ty = h - 2f * y - 1;
         float tz = -mb.pos.z * blockSizeZ;
-        float vx, vy, vz;
         for (int i = 0; i < pos.limit(); i += 3) {
             vx = pos.get();
             vy = pos.get();
             vz = pos.get();
+            // System.out.printf("%f/%f/%f\n", vx, vy, vz); // TODO
             vx += tx;
             vy += ty;
             vz += tz;
+            // System.out.printf("%f/%f/%f\n", vx, vy, vz); // TODO
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
-            // System.out.printf("%f/%f/%f\n", vx, vy, vz); // TODO
         }
+        // System.out.println(); // TODO
     }
 
     private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root,
