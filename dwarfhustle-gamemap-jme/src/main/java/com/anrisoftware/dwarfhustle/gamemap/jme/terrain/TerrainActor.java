@@ -441,35 +441,19 @@ public class TerrainActor {
     }
 
     private boolean isSkipCheckNeighborNorth(MapBlock mb) {
-        var n = mb.getNeighborNorth();
-        if (n == 0) {
-            return false;
-        }
-        return true;
+        return mb.getNeighborNorth() != 0;
     }
 
     private boolean isSkipCheckNeighborSouth(MapBlock mb) {
-        var n = mb.getNeighborSouth();
-        if (n == 0) {
-            return false;
-        }
-        return true;
+        return mb.getNeighborSouth() != 0;
     }
 
     private boolean isSkipCheckNeighborEast(MapBlock mb) {
-        var n = mb.getNeighborEast();
-        if (n == 0) {
-            return false;
-        }
-        return true;
+        return mb.getNeighborEast() != 0;
     }
 
     private boolean isSkipCheckNeighborWest(MapBlock mb) {
-        var n = mb.getNeighborWest();
-        if (n == 0) {
-            return false;
-        }
-        return true;
+        return mb.getNeighborWest() != 0;
     }
 
     private void copyNormal(MapBlock mb, Mesh mesh, FloatBuffer cnormal) {

@@ -136,7 +136,8 @@ public class TerrainTest extends SimpleApplication {
 
     private Consumer<Float> simpleUpdateCall;
 
-    private long[] terrain;
+    // [zz][yy][xx]
+    private long[][][] terrain;
 
     private Deque<byte[]> idsBatch;
 
@@ -282,9 +283,9 @@ public class TerrainTest extends SimpleApplication {
 //        gm.height = 4;
 //        gm.depth = 4;
         gm.chunkSize = 1;
-        gm.width = 2;
-        gm.height = 2;
-        gm.depth = 2;
+        gm.width = 4;
+        gm.height = 4;
+        gm.depth = 4;
         gm.setCenterOffset(gm.width / 2f);
         gm.setBlockSize(2f);
         gm.rootid = mcRoot.getId();
@@ -293,7 +294,7 @@ public class TerrainTest extends SimpleApplication {
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
         int ground_depth = Math.round(gm.depth * 0.5f);
         int magma_depth = Math.round(gm.depth * 0.9f);
-        this.terrain = new long[gm.depth];
+        this.terrain = new long[gm.depth][gm.height][gm.width];
         for (int z = 0; z < gm.depth; z++) {
             terrain[z] = 889; // LOAMY-SAND
         }
@@ -546,7 +547,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     @SneakyThrows
-    private void createChunk(Supplier<byte[]> ids, long[] terrain, MapChunk parent,
+    private void createChunk(Supplier<byte[]> ids, long[][][] terrain, MapChunk parent,
             MutableObjectLongMap<GameChunkPos> chunks, int mapid, int x, int y, int z, int ex, int ey, int ez) {
         var chunk = new MapChunk(this.ids.generate());
         chunk.setParent(parent.getId());
@@ -561,7 +562,7 @@ public class TerrainTest extends SimpleApplication {
                     for (int zz = z; zz < z + csize; zz++) {
                         var mb = new MapBlock(ids.get());
                         mb.pos = new GameBlockPos(mapid, xx, yy, zz);
-                        mb.setMaterialRid(terrain[zz]);
+                        mb.setMaterialRid(terrain[zz][yy][xx]);
                         mb.setObjectRid(809);
                         if (mb.getMaterialRid() == 898) {
                             mb.setMined(true);

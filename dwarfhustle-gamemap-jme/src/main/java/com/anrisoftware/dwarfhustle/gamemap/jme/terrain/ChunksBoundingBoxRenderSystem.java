@@ -29,6 +29,7 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IntervalIteratingSystem;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.math.ColorRGBA;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -104,7 +105,9 @@ public class ChunksBoundingBoxRenderSystem extends IntervalIteratingSystem {
         var cc = ChunksBoundingBoxComponent.m.get(entity);
         var n = chunkNodes.get(entity.hashCode());
         var geo = (Geometry) n.getChild(0);
-        geo.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(), cc.bb.getZExtent());
-        geo.setLocalTranslation(cc.bb.getCenter());
+        geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.FrontAndBack);
+        // geo.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(),
+        // cc.bb.getZExtent());
+        // geo.setLocalTranslation(cc.bb.getCenter());
     }
 }
