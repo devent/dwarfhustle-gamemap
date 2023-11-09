@@ -28,16 +28,16 @@ class TerrainLoadImageTest {
 
     static Stream test_load() {
         Stream.of(
-                of(8, 8, 1, 1, 1, TERRAIN_8_8_1_FILE, TERRAIN_8_8_1_EXPECT), //
-                of(8, 8, 4, 2, 2, TERRAIN_8_8_4_FILE, TERRAIN_8_8_4_EXPECT), //
-                of(8, 8, 8, 4, 2, TERRAIN_8_8_8_FILE, TERRAIN_8_8_8_EXPECT), //
+                of(8, 8, 1, 1, TERRAIN_8_8_1_FILE, TERRAIN_8_8_1_EXPECT), //
+                of(8, 8, 4, 2, TERRAIN_8_8_4_FILE, TERRAIN_8_8_4_EXPECT), //
+                of(8, 8, 8, 4, TERRAIN_8_8_8_FILE, TERRAIN_8_8_8_EXPECT), //
                 )
     }
 
     @ParameterizedTest
     @MethodSource
-    void test_load(int w, int h, int d, int columns, int rows, URL file, List expect) {
-        def terrain = new TerrainLoadImage(d, h, w, columns, rows).load(file);
+    void test_load(int w, int h, int d, int columns, URL file, List expect) {
+        def terrain = new TerrainLoadImage(d, h, w, columns).load(file);
         assert terrain.length == d
         assert terrain[0].length == h
         assert terrain[0][0].length == w

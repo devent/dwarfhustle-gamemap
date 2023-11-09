@@ -28,8 +28,6 @@ public class TerrainLoadImage {
 
     private final int columns;
 
-    private final int rows;
-
     public CompletionStage<long[][][]> loadAsync(File file) {
         return CompletableFuture.supplyAsync(() -> load(file));
     }
