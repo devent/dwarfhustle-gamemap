@@ -25,8 +25,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import org.eclipse.collections.impl.factory.Maps;
 import org.scenicview.ScenicView;

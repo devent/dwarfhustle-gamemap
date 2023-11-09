@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;

@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 /**
  * Provides the key mappings for JME3.

@@ -29,8 +29,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.LongObjectMap;

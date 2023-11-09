@@ -2,7 +2,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
 
 import java.net.URL;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;

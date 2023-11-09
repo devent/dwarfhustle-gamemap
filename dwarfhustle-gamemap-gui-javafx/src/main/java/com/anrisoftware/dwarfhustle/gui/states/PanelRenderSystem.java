@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.states;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gui.messages.MainWindowResizedMessage;
 import com.badlogic.ashley.core.Entity;

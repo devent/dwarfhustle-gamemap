@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
-import javax.inject.Provider;
+import jakarta.inject.Provider;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
 import com.fasterxml.jackson.core.Version;

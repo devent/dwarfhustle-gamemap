@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;

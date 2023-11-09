@@ -1,7 +1,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;

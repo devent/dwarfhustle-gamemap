@@ -17,8 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrain.MapTerrainFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.map.MapTerrainModel.MapTerrainModelFactory;

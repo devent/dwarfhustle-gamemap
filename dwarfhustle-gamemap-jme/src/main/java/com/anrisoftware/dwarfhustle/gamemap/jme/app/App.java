@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 
 import javax.imageio.ImageIO;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 

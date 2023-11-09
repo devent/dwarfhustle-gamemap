@@ -22,7 +22,7 @@ import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.create
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;

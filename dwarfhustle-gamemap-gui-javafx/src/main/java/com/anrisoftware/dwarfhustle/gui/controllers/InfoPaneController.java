@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gui.controllers;
 
 import java.util.List;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;

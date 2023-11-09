@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainCameraState;

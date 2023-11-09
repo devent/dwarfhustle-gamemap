@@ -17,8 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;

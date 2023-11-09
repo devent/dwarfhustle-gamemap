@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;

@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.controllers;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;

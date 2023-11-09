@@ -20,7 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.console.antlr;
 import java.time.LocalTime;
 import java.util.Optional;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectHereMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.AddModelObjectMessage;

@@ -20,7 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.jme3.app.Application;

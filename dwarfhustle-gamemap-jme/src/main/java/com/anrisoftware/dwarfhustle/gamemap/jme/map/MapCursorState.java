@@ -19,8 +19,8 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;

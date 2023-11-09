@@ -17,8 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.lights;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import com.badlogic.ashley.core.Engine;
 import com.jme3.app.Application;

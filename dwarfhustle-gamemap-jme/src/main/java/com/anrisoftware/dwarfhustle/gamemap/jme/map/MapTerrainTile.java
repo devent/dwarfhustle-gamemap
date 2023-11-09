@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.map;
 
 import java.util.Objects;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.google.inject.assistedinject.Assisted;

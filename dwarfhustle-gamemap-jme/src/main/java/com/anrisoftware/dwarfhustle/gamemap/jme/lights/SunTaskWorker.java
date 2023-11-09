@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.lights;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.SunModel;

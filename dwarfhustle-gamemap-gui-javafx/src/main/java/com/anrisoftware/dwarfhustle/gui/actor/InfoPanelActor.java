@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.eclipse.collections.impl.factory.Maps;
 

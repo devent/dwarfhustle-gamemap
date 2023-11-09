@@ -19,8 +19,8 @@ package com.anrisoftware.dwarfhustle.gui.controllers
 
 import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.*
 
-import javax.inject.Inject
-import javax.inject.Named
+import jakarta.inject.Inject
+import jakarta.inject.Named
 
 import com.anrisoftware.dwarfhustle.gui.states.JmeMapping
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping

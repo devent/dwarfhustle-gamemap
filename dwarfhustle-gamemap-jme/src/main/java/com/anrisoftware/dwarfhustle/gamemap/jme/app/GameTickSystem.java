@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;

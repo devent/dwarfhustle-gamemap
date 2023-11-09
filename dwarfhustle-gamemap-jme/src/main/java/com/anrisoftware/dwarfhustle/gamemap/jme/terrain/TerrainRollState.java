@@ -20,7 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
 import static com.jme3.math.FastMath.DEG_TO_RAD;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
