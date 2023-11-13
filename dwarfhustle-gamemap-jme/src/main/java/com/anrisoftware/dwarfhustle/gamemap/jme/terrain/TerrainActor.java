@@ -1,3 +1,20 @@
+/*
+ * dwarfhustle-gamemap-jme - Game map.
+ * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
@@ -12,8 +29,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import jakarta.inject.Inject;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
@@ -67,6 +82,7 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
@@ -483,7 +499,7 @@ public class TerrainActor {
         float x = mb.pos.x, y = mb.pos.y, vx, vy, vz;
         float tx = -w + 2f * x + 1f;
         float ty = h - 2f * y - 1;
-        float tz = -mb.pos.z * blockSizeZ;
+        float tz = 0f;
         for (int i = 0; i < pos.limit(); i += 3) {
             vx = pos.get();
             vy = pos.get();

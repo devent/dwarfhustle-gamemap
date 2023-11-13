@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-jme - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,8 +24,6 @@ import static java.lang.Math.abs;
 
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
@@ -54,6 +52,7 @@ import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
 import com.jme3.util.TempVars;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -311,7 +310,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         var temp = TempVars.get();
         var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.rootid);
         var chunk = findChunkUnderCursor(mouse, rootchunk, temp);
-        System.out.println(chunk); // TODO
+        // System.out.println(chunk); // TODO
         temp.release();
     }
 

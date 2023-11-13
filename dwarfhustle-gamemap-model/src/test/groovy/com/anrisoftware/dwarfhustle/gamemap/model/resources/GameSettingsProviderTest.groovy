@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-model - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,12 +36,12 @@ import groovy.util.logging.Slf4j
 @Slf4j
 class GameSettingsProviderTest {
 
-	static gameSettingsSource() {
-		Stream.of(
-				of({
-					def gs = new GameSettings()
-					return gs
-				}, """---
+    static Stream gameSettingsSource() {
+        Stream.of(
+                of({
+                    def gs = new GameSettings()
+                    return gs
+                }, """---
 locale: "en_US"
 tickLength: 0.033333335
 tickLongLength: 0.06666667
@@ -51,37 +51,32 @@ windowHeight: 768
 iconSize: "MEDIUM"
 textPosition: "RIGHT"
 commandsSplitPosition: 0.71
-cameraPosX: 0.002901543
-cameraPosY: -0.013370683
-cameraPosZ: 28.217747
-cameraRotX: -4.8154507E-6
-cameraRotY: 0.9999911
-cameraRotZ: 0.0012241602
-cameraRotW: 0.004027171
 lastCommand: ""
+visibleDepthLayers: 1
+timeUpdateInterval: 0.033333335
 """), //
-				)
-	}
+                )
+    }
 
-	@ParameterizedTest
-	@MethodSource("gameSettingsSource")
-	void save_to_string(def gsp, def expected) {
-		def gs = gsp()
-		def p = new GameSettingsProvider(gs)
-		p.mapper = new ObjectMapperProvider().get()
-		def s = p.saveAsString()
-		log.info "save_to_string {} ```{}```\n```{}```", gs, s, expected
-		assert s == expected
-	}
+    @ParameterizedTest
+    @MethodSource("gameSettingsSource")
+    void save_to_string(def gsp, def expected) {
+        def gs = gsp()
+        def p = new GameSettingsProvider(gs)
+        p.mapper = new ObjectMapperProvider().get()
+        def s = p.saveAsString()
+        log.info "save_to_string {} ```{}```\n```{}```", gs, s, expected
+        assert s == expected
+    }
 
-	@ParameterizedTest
-	@MethodSource("gameSettingsSource")
-	void load_from_string(def gspExpected, def s) {
-		GameSettings expected = gspExpected()
-		def p = new GameSettingsProvider()
-		p.mapper = new ObjectMapperProvider().get()
-		p.loadFromString(s)
-		log.info "load_from_string {} ```{}```", s, expected
-		assert p.get().locale.get() == expected.locale
-	}
+    @ParameterizedTest
+    @MethodSource("gameSettingsSource")
+    void load_from_string(def gspExpected, def s) {
+        GameSettings expected = gspExpected()
+        def p = new GameSettingsProvider()
+        p.mapper = new ObjectMapperProvider().get()
+        p.loadFromString(s)
+        log.info "load_from_string {} ```{}```", s, expected
+        assert p.get().locale.get() == expected.locale
+    }
 }

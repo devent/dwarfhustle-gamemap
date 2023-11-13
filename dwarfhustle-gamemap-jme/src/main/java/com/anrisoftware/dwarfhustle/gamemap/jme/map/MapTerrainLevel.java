@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-jme - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify

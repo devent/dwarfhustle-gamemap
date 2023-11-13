@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource
  */
 class DebugLexerTest {
 
-    static parseExpressionsSource() {
+    static Stream parseExpressionsSource() {
         Stream.of(
                 //
                 of('open scene', { DebugConsoleParserService service ->

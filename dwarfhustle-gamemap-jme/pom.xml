@@ -1,6 +1,6 @@
 <!--
 
-    Dwarf Hustle Game Map - Game map.
+    dwarfhustle-gamemap-jme - Game map.
     Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
 
     This program is free software: you can redistribute it and/or modify
@@ -144,7 +144,7 @@
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-console</artifactId>
-            <version>${project.version}</version>
+            <version>0.0.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>

@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,8 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import jakarta.inject.Inject;
-
 import org.apache.commons.lang3.StringUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
@@ -37,10 +35,12 @@ import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 
+import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -151,8 +151,7 @@ public class MainPaneController {
     private void setupImagePropertiesFields() {
     }
 
-    public void setGameMap(GameMap gm) {
-        var wm = gm.getWorld();
+    public void setMap(WorldMap wm, GameMap gm) {
         fortressNameLabel
                 .setText(texts.getResource("fortress_name", locale).getFormattedText(wm.getName(), gm.getName()));
         gameTimeLabel.setText(gs.get().gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));

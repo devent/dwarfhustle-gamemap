@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-console-antlr - Console debug commands defined in ANTLR 4.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ import akka.actor.typed.ActorRef
  */
 class DebugConsoleProcessorTest {
 
-    static parseExpressionsSource() {
+    static Stream parseExpressionsSource() {
         Stream.of(
                 //
                 of('open scene', { List it ->

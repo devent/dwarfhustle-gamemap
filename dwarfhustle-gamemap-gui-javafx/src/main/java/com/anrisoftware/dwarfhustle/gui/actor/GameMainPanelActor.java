@@ -1,5 +1,5 @@
 /*
- * Dwarf Hustle Game Map - Game map.
+ * dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,9 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
 import org.eclipse.collections.impl.factory.Maps;
 import org.scenicview.ScenicView;
 
@@ -46,12 +43,15 @@ import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
+import com.google.inject.assistedinject.Assisted;
 import com.jayfella.jme.jfx.JavaFxUI;
 import com.jme3.app.Application;
 
@@ -60,6 +60,8 @@ import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -130,6 +132,10 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
 
     @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
+
+    @Inject
+    @Assisted("objects")
+    private ObjectsGetter objectsg;
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
@@ -218,7 +224,8 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
             var controller = initial.controller;
-            controller.setGameMap(m.gm);
+            var wm = objectsg.get(WorldMap.class, WorldMap.OBJECT_TYPE, m.gm.world);
+            controller.setMap(wm, m.gm);
         });
         return Behaviors.same();
     }
