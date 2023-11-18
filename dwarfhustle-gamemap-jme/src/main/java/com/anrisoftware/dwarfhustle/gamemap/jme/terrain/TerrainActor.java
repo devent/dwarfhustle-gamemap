@@ -347,7 +347,7 @@ public class TerrainActor {
                 final var cindex = BufferUtils.createShortBuffer(3 * sindex);
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-                fillBuffers(blocks, m.gm.blockSizeZ, w, h, d, cpos, cindex, cnormal, ctex);
+                fillBuffers(blocks, w, h, d, cpos, cindex, cnormal, ctex);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -393,8 +393,8 @@ public class TerrainActor {
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, float blockSizeZ, int w, int h, int d,
-            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, FloatBuffer cpos,
+            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -448,7 +448,7 @@ public class TerrainActor {
             }
             copyNormal(mb, mesh, cnormal);
             copyTex(mb, mesh, ctex);
-            copyPos(mb, mesh, cpos, blockSizeZ, w, h, d);
+            copyPos(mb, mesh, cpos, w, h, d);
         }
         cpos.flip();
         cindex.flip();
@@ -493,7 +493,7 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float blockSizeZ, float w, float h, int d) {
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float w, float h, int d) {
         // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float x = mb.pos.x, y = mb.pos.y, vx, vy, vz;
@@ -520,7 +520,7 @@ public class TerrainActor {
             BoundingBox bb) {
         int x = 0;
         int y = 0;
-        int z = gm.getCursorZ() + 1;
+        int z = gm.getCursorZ();
         var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
         putChunkSortBlocks(chunksBlocks, firstchunk, z);
         long chunkid;

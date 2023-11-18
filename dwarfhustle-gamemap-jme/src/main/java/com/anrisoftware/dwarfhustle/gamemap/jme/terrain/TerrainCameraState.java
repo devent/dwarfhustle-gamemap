@@ -153,6 +153,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     }
 
     private void saveZ() {
+        System.out.println(gm.getCursorZ()); // TODO
         saveZ.ifPresent(it -> it.accept(gm));
     }
 

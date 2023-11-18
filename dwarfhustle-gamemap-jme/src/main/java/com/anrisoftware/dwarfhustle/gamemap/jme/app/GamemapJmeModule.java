@@ -17,13 +17,11 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
-import jakarta.inject.Named;
-
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.DwarfhustleGamemapJmeMapModule;
-import com.anrisoftware.dwarfhustle.gui.actor.GamemapGuiActorsModule;
-import com.anrisoftware.dwarfhustle.gui.controllers.GamemapGuiControllersModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.DwarfhustleGamemapJmeTerrainModule;
+import com.anrisoftware.dwarfhustle.gui.actor.DwarfhustleGamemapGuiActorsModule;
+import com.anrisoftware.dwarfhustle.gui.controllers.DwarfhustleGamemapGuiControllersModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.jme3.app.Application;
@@ -34,6 +32,7 @@ import com.jme3.renderer.Camera;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 
+import jakarta.inject.Named;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -47,10 +46,10 @@ public class GamemapJmeModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new GamemapGuiActorsModule());
-        install(new GamemapGuiControllersModule());
+        install(new DwarfhustleGamemapGuiActorsModule());
+        install(new DwarfhustleGamemapGuiControllersModule());
         install(new DwarfhustleGamemapActorsModule());
-        install(new DwarfhustleGamemapJmeMapModule());
+        install(new DwarfhustleGamemapJmeTerrainModule());
         install(new DwarfhustleGamemapJmeLightsModule());
     }
 

@@ -17,8 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import jakarta.inject.Inject;
-
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
@@ -29,12 +27,12 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IntervalIteratingSystem;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
-import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.math.ColorRGBA;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
-import com.jme3.scene.shape.Box;
+import com.jme3.scene.shape.StripBox;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -83,13 +81,13 @@ public class ChunksBoundingBoxRenderSystem extends IntervalIteratingSystem {
     private void addChunkBoundingBox(Entity entity) {
         var cc = ChunksBoundingBoxComponent.m.get(entity);
         Node n = new Node("chunkNode-" + cc.level);
-        var box = new Box(1f, 1f, 1f);
+        var box = new StripBox(0.51f, 0.51f, 0.51f);
         var geo = new Geometry("chunkNode-" + cc.level, box);
         geo.setMaterial(new Material(am, "Common/MatDefs/Misc/Unshaded.j3md"));
         geo.getMaterial().getAdditionalRenderState().setWireframe(true);
         geo.getMaterial().setColor("Color", new ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f));
-        geo.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(), cc.bb.getZExtent());
-        geo.setLocalTranslation(cc.bb.getCenter());
+        n.setLocalTranslation(cc.bb.getCenter());
+        n.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(), cc.bb.getZExtent());
         n.attachChild(geo);
         node.attachChild(n);
         chunkNodes.put(entity.hashCode(), n);
@@ -104,10 +102,7 @@ public class ChunksBoundingBoxRenderSystem extends IntervalIteratingSystem {
     protected void processEntity(Entity entity) {
         var cc = ChunksBoundingBoxComponent.m.get(entity);
         var n = chunkNodes.get(entity.hashCode());
-        var geo = (Geometry) n.getChild(0);
-        geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.FrontAndBack);
-        // geo.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(),
-        // cc.bb.getZExtent());
-        // geo.setLocalTranslation(cc.bb.getCenter());
+        n.setLocalTranslation(cc.bb.getCenter());
+        n.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(), cc.bb.getZExtent());
     }
 }

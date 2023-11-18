@@ -30,7 +30,7 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class GamemapGuiActorsModule extends AbstractModule {
+public class DwarfhustleGamemapGuiActorsModule extends AbstractModule {
 
     @Override
     protected void configure() {

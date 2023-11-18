@@ -27,13 +27,12 @@ import java.io.IOException;
 import java.util.concurrent.CompletionStage;
 
 import javax.imageio.ImageIO;
-import jakarta.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor;
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.DebugCoordinateAxesState;
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.GameMapActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.DebugCoordinateAxesState;
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -55,6 +54,7 @@ import com.jme3.system.AppSettings;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.javadsl.AskPattern;
+import jakarta.inject.Inject;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -206,12 +206,12 @@ public class App extends SimpleApplication {
     }
 
     private void createGameMap() {
-        GameMapActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+        TerrainActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
             if (ex != null) {
-                log.error("GameMapActor.create", ex);
+                log.error("TerrainActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
             } else {
-                log.debug("GameMapActor created");
+                log.debug("TerrainActor created");
             }
         });
     }

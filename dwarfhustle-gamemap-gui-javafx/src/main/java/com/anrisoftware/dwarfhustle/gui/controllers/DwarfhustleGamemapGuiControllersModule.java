@@ -32,7 +32,7 @@ import com.google.inject.TypeLiteral;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class GamemapGuiControllersModule extends AbstractModule {
+public class DwarfhustleGamemapGuiControllersModule extends AbstractModule {
 
     @Override
     protected void configure() {

@@ -41,7 +41,6 @@ import org.lable.oss.uniqueid.IDGenerator;
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.MaterialAssetsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.actors.ModelsAssetsJcsCacheActor;
-import com.anrisoftware.dwarfhustle.gamemap.jme.map.DebugCoordinateAxesState;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.MockStoredObjectsJcsCacheActor.MockStoredObjectsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
@@ -269,14 +268,12 @@ public class TerrainTest extends SimpleApplication {
         int h = 2;
         int w = 2;
         int columns = 2;
-        String terrainImageName = "terrain-2-2-2.png";
+        String terrainImageName = String.format("terrain-%d-%d-%d.png", w, h, d);
         this.terrain = new TerrainLoadImage(d, h, w, columns).load(TerrainTest.class.getResource(terrainImageName));
-        gm.chunkSize = 1;
+        gm.chunkSize = w / 2;
         gm.width = w;
         gm.height = h;
         gm.depth = d;
-        gm.setCenterOffset(gm.width / 2f);
-        gm.setBlockSize(2f);
         gm.rootid = mcRoot.id;
 //        gm.setCameraPos(0.0f, 0.0f, 83.0f);
         gm.setCameraPos(0.0f, 0.0f, 12.0f);
@@ -506,8 +503,7 @@ public class TerrainTest extends SimpleApplication {
             }
         }
         chunk.setChunks(chunks);
-        chunk.updateCenterExtent(gm.centerOffsetX, gm.centerOffsetY, gm.centerOffsetZ, gm.blockSizeX, gm.blockSizeY,
-                gm.blockSizeZ);
+        chunk.updateCenterExtent(gm.width, gm.height, gm.depth);
         putObjectToBackend(chunk);
     }
 
@@ -527,8 +523,7 @@ public class TerrainTest extends SimpleApplication {
         var chunk = new MapChunk(this.ids.generate());
         chunk.setParent(parent.getId());
         chunk.setPos(new GameChunkPos(mapid, x, y, z, ex, ey, ez));
-        chunk.updateCenterExtent(gm.centerOffsetX, gm.centerOffsetY, gm.centerOffsetZ, gm.blockSizeX, gm.blockSizeY,
-                gm.blockSizeZ);
+        chunk.updateCenterExtent(gm.width, gm.height, gm.depth);
         int csize = gm.getChunkSize();
         if (ex - x == csize || ey - y == csize || ez - z == csize) {
             MutableMap<GameBlockPos, MapBlock> blocks = Maps.mutable.empty();
