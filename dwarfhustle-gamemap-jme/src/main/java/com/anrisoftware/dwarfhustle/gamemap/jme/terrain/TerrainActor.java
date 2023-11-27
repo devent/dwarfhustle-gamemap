@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
@@ -39,10 +40,10 @@ import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -56,7 +57,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
-import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -224,9 +224,6 @@ public class TerrainActor {
     private ObjectsGetter modelsg;
 
     @Inject
-    private Engine engine;
-
-    @Inject
     private Application app;
 
     @Inject
@@ -234,6 +231,9 @@ public class TerrainActor {
 
     @Inject
     private Camera camera;
+
+    @Inject
+    private GameSettingsProvider gs;
 
     private InitialStateMessage is;
 
@@ -311,12 +311,13 @@ public class TerrainActor {
     /**
      * Reacts to the {@link UpdateModelMessage} message.
      */
+    @SuppressWarnings("unused")
     private Behavior<Message> onUpdateModel(UpdateModelMessage m) {
         // log.debug("onUpdateModel {}", m);
         long oldtime = System.currentTimeMillis();
         var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
-        collectChunks(chunksBlocks, m.gm, root, new BoundingBox());
+        collectChunks(chunksBlocks, root, m.gm.getCursorZ(), m.gm.chunkSize, gs.get().visibleDepthLayers.get());
         var bnum = updateModel(m, root, chunksBlocks);
         renderMeshs();
         is.cameraState.setTerrainBounds(terrainBounds);
@@ -329,6 +330,7 @@ public class TerrainActor {
     private int updateModel(UpdateModelMessage m, GameObject o,
             MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks) {
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
+        int currentZ = m.gm.cursor.z;
         blockNodes.clear();
         int bnum = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
@@ -347,7 +349,7 @@ public class TerrainActor {
                 final var cindex = BufferUtils.createShortBuffer(3 * sindex);
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-                fillBuffers(blocks, w, h, d, cpos, cindex, cnormal, ctex);
+                fillBuffers(blocks, w, h, d, currentZ, cpos, cindex, cnormal, ctex);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -393,8 +395,8 @@ public class TerrainActor {
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, FloatBuffer cpos,
-            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, int currentZ,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -448,7 +450,7 @@ public class TerrainActor {
             }
             copyNormal(mb, mesh, cnormal);
             copyTex(mb, mesh, ctex);
-            copyPos(mb, mesh, cpos, w, h, d);
+            copyPos(mb, mesh, cpos, w, h, d, currentZ);
         }
         cpos.flip();
         cindex.flip();
@@ -461,6 +463,7 @@ public class TerrainActor {
     }
 
     private boolean isSkipCheckNeighborSouth(MapBlock mb) {
+        // TODO if neighbor south is mined return 0
         return mb.getNeighborSouth() != 0;
     }
 
@@ -493,13 +496,13 @@ public class TerrainActor {
     /**
      * Transforms the position values based on the block position.
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float w, float h, int d) {
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float w, float h, float d, int currentZ) {
         // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
-        float x = mb.pos.x, y = mb.pos.y, vx, vy, vz;
+        float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
         float tx = -w + 2f * x + 1f;
         float ty = h - 2f * y - 1;
-        float tz = 0f;
+        float tz = (currentZ - z) * 2f;
         for (int i = 0; i < pos.limit(); i += 3) {
             vx = pos.get();
             vy = pos.get();
@@ -516,12 +519,16 @@ public class TerrainActor {
         // System.out.println(); // TODO
     }
 
-    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, GameMap gm, MapChunk root,
-            BoundingBox bb) {
-        int x = 0;
-        int y = 0;
-        int z = gm.getCursorZ();
-        var firstchunk = root.findMapChunk(x, y, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
+    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int cursorZ,
+            int chunkSize, int visibleDepthLayers) {
+        for (int i = 0, z = cursorZ; i < visibleDepthLayers; i += chunkSize, z += chunkSize) {
+            collectChunksZ(chunksBlocks, root, z);
+        }
+        // log.trace("collectChunks {}", chunksBlocks.size());
+    }
+
+    private void collectChunksZ(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int z) {
+        var firstchunk = root.findMapChunk(0, 0, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
         putChunkSortBlocks(chunksBlocks, firstchunk, z);
         long chunkid;
         var nextchunk = firstchunk;
@@ -541,7 +548,6 @@ public class TerrainActor {
                 putChunkSortBlocks(chunksBlocks, nextchunk, z);
             }
         }
-        // log.trace("collectChunks {}", chunksBlocks.size());
     }
 
     private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z) {

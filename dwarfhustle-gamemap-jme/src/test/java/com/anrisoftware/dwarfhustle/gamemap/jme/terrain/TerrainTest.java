@@ -48,6 +48,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -64,7 +65,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.NeighboringDir;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbcacheModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
@@ -167,11 +168,12 @@ public class TerrainTest extends SimpleApplication {
                 install(new DwarfhustleGamemapJmeTerrainModule());
                 install(new DwarfhustlePowerloomModule());
                 install(new DwarfhustleModelDbStoragesSchemasModule());
-                install(new DwarfhustleModelDbcacheModule());
+                install(new DwarfhustleModelDbCacheModule());
                 install(new DwarfhustleGamemapActorsModule());
                 install(new FactoryModuleBuilder()
                         .implement(MockStoredObjectsJcsCacheActor.class, MockStoredObjectsJcsCacheActor.class)
                         .build(MockStoredObjectsJcsCacheActorFactory.class));
+                bind(GameSettingsProvider.class).asEagerSingleton();
             }
 
             @Provides
@@ -262,12 +264,13 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void createGameMap() {
+        injector.getInstance(GameSettingsProvider.class).get().visibleDepthLayers.set(2);
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-        int d = 2;
-        int h = 2;
-        int w = 2;
-        int columns = 2;
+        int d = 32;
+        int h = 32;
+        int w = 32;
+        int columns = 8;
         String terrainImageName = String.format("terrain-%d-%d-%d.png", w, h, d);
         this.terrain = new TerrainLoadImage(d, h, w, columns).load(TerrainTest.class.getResource(terrainImageName));
         gm.chunkSize = w / 2;
@@ -422,7 +425,7 @@ public class TerrainTest extends SimpleApplication {
                     int wx = x - zs;
                     long b, t, s, n, e, w;
                     if ((b = mcRoot.findChild(x, y, bz, x + xs, y + ys, bz + zs, r)) != 0) {
-                        chunk.setNeighborBottom(b);
+                        chunk.setNeighborTop(b);
                     }
                     if ((t = mcRoot.findChild(x, y, tz, x + xs, y + ys, tz + zs, r)) != 0) {
                         chunk.setNeighborTop(t);
@@ -452,14 +455,14 @@ public class TerrainTest extends SimpleApplication {
         var pos = mb.pos;
         var t = pos.addZ(-1);
         var tb = chunk.getBlock(t);
-        if (tb.isPresent()) {
+        if (tb.isPresent() && checkSetNeighbor(tb.get())) {
             mb.setNeighborTop(tb.get().getId());
         } else {
             long chunkid;
             if ((chunkid = chunk.getNeighborTop()) != 0) {
                 var c = (MapChunk) backendIdsObjects.get(chunkid);
                 tb = c.getBlock(t);
-                if (tb.isPresent()) {
+                if (tb.isPresent() && checkSetNeighbor(tb.get())) {
                     mb.setNeighborTop(tb.get().getId());
                 }
             }
@@ -467,20 +470,24 @@ public class TerrainTest extends SimpleApplication {
         for (var d : NeighboringDir.values()) {
             var b = pos.add(d.pos);
             var bb = chunk.getBlock(b);
-            if (bb.isPresent()) {
+            if (bb.isPresent() && checkSetNeighbor(bb.get())) {
                 mb.setNeighbor(d, bb.get().getId());
             } else {
                 long chunkid;
                 if ((chunkid = chunk.getNeighbor(d)) != 0) {
                     var c = (MapChunk) backendIdsObjects.get(chunkid);
                     bb = c.getBlock(b);
-                    if (bb.isPresent()) {
+                    if (bb.isPresent() && checkSetNeighbor(bb.get())) {
                         mb.setNeighbor(d, bb.get().getId());
                     }
                 }
             }
         }
         putObjectToBackend(mb);
+    }
+
+    private boolean checkSetNeighbor(MapBlock mb) {
+        return !mb.isMined();
     }
 
     @SneakyThrows
@@ -534,6 +541,9 @@ public class TerrainTest extends SimpleApplication {
                         mb.pos = new GameBlockPos(mapid, xx, yy, zz);
                         mb.setMaterialRid(terrain[zz][yy][xx]);
                         mb.setObjectRid(809);
+                        if (mb.getMaterialRid() == 0) {
+                            mb.setMaterialRid(898);
+                        }
                         if (mb.getMaterialRid() == 898) {
                             mb.setMined(true);
                         }

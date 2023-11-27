@@ -19,10 +19,10 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorModule;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GamemapModelModule;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GamemapModelResourcesModule;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
-import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbcacheModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbOrientdbModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
 import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
@@ -47,13 +47,13 @@ public class AppModule extends AbstractModule {
 		install(new GamemapConsoleActorModule());
 		install(new GamemapConsoleAntlrModule());
 		bind(Engine.class).asEagerSingleton();
-		install(new GamemapModelModule());
+		install(new GamemapModelResourcesModule());
 		// Model Modules
 		install(new DwarfhustleModelActorsModule());
 		install(new DwarfhustlePowerloomModule());
 		install(new DwarfhustleModelDbOrientdbModule());
 		install(new DwarfhustleModelApiObjectsModule());
-		install(new DwarfhustleModelDbcacheModule());
+		install(new DwarfhustleModelDbCacheModule());
 		// Resources
 		install(new ImagesResourcesModule());
 		install(new ResourcesImagesCachedMapModule());

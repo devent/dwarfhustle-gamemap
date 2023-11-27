@@ -34,7 +34,7 @@ import com.google.inject.name.Names;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class GamemapModelModule extends AbstractModule {
+public class GamemapModelResourcesModule extends AbstractModule {
 
     @Override
     protected void configure() {

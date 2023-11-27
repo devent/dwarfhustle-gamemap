@@ -20,8 +20,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
 import static com.jme3.math.FastMath.DEG_TO_RAD;
 
-import jakarta.inject.Inject;
-
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
@@ -40,6 +38,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.scene.Node;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -55,6 +54,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TerrainRollState extends BaseAppState implements ActionListener, RawInputListener {
+
+    private static final float MAX_ANGLE = 90f;
 
     private static final String RIGHT_BUTTON_MAPPING = "TerrainRollState_right";
 
@@ -188,18 +189,18 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
 
     private void doTilt(float dx, float dy, float s) {
         roll += (dy + s) * 0.1f;
-        if (roll > 45f) {
-            roll = 45f;
+        if (roll > MAX_ANGLE) {
+            roll = MAX_ANGLE;
         }
-        if (roll < -45f) {
-            roll = -45f;
+        if (roll < -MAX_ANGLE) {
+            roll = -MAX_ANGLE;
         }
         pitch += (dx + s) * 0.1f;
-        if (pitch > 45f) {
-            pitch = 45f;
+        if (pitch > MAX_ANGLE) {
+            pitch = MAX_ANGLE;
         }
-        if (pitch < -45f) {
-            pitch = -45f;
+        if (pitch < -MAX_ANGLE) {
+            pitch = -MAX_ANGLE;
         }
         terrainNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
         boundingNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));

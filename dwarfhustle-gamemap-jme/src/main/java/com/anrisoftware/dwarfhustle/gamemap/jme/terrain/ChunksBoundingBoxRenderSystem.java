@@ -87,7 +87,7 @@ public class ChunksBoundingBoxRenderSystem extends IntervalIteratingSystem {
         geo.getMaterial().getAdditionalRenderState().setWireframe(true);
         geo.getMaterial().setColor("Color", new ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f));
         n.setLocalTranslation(cc.bb.getCenter());
-        n.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(), cc.bb.getZExtent());
+        n.setLocalScale(cc.bb.getXExtent() * 2f, cc.bb.getYExtent() * 2f, cc.bb.getZExtent() * 2f);
         n.attachChild(geo);
         node.attachChild(n);
         chunkNodes.put(entity.hashCode(), n);
@@ -103,6 +103,6 @@ public class ChunksBoundingBoxRenderSystem extends IntervalIteratingSystem {
         var cc = ChunksBoundingBoxComponent.m.get(entity);
         var n = chunkNodes.get(entity.hashCode());
         n.setLocalTranslation(cc.bb.getCenter());
-        n.setLocalScale(cc.bb.getXExtent(), cc.bb.getYExtent(), cc.bb.getZExtent());
+        n.setLocalScale(cc.bb.getXExtent() * 2f, cc.bb.getYExtent() * 2f, cc.bb.getZExtent() * 2f);
     }
 }
