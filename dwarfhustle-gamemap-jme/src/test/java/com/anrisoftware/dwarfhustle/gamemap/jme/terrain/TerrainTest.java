@@ -267,10 +267,10 @@ public class TerrainTest extends SimpleApplication {
         injector.getInstance(GameSettingsProvider.class).get().visibleDepthLayers.set(2);
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-        int d = 32;
-        int h = 32;
-        int w = 32;
-        int columns = 8;
+        int d = 8;
+        int h = 8;
+        int w = 8;
+        int columns = 4;
         String terrainImageName = String.format("terrain-%d-%d-%d.png", w, h, d);
         this.terrain = new TerrainLoadImage(d, h, w, columns).load(TerrainTest.class.getResource(terrainImageName));
         gm.chunkSize = w / 2;
@@ -425,7 +425,7 @@ public class TerrainTest extends SimpleApplication {
                     int wx = x - zs;
                     long b, t, s, n, e, w;
                     if ((b = mcRoot.findChild(x, y, bz, x + xs, y + ys, bz + zs, r)) != 0) {
-                        chunk.setNeighborTop(b);
+                        chunk.setNeighborBottom(b);
                     }
                     if ((t = mcRoot.findChild(x, y, tz, x + xs, y + ys, tz + zs, r)) != 0) {
                         chunk.setNeighborTop(t);
@@ -439,8 +439,14 @@ public class TerrainTest extends SimpleApplication {
                     if ((e = mcRoot.findChild(ex, y, z, ex + xs, y + ys, z + zs, r)) != 0) {
                         chunk.setNeighborEast(e);
                     }
+                    if ((e = mcRoot.findChild(ex, sy, z, ex + xs, y + ys, z + zs, r)) != 0) {
+                        chunk.setNeighborSouthEast(e);
+                    }
                     if ((w = mcRoot.findChild(wx, y, z, wx + xs, y + ys, z + zs, r)) != 0) {
                         chunk.setNeighborWest(w);
+                    }
+                    if ((w = mcRoot.findChild(wx, sy, z, wx + xs, y + ys, z + zs, r)) != 0) {
+                        chunk.setNeighborSouthWest(w);
                     }
                     if (chunk.getBlocks().notEmpty()) {
                         chunk.getBlocks().forEachValue(mb -> setupBlockNeighbors(chunk, mb));

@@ -106,6 +106,10 @@
             <artifactId>pngj</artifactId>
             <version>2.1.2.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+        </dependency>
 
         <!-- Own modules dependencies -->
         <dependency>

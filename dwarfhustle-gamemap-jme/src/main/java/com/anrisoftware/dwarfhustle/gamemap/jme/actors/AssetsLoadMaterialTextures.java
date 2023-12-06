@@ -19,8 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
 
 import java.net.URL;
 
-import jakarta.inject.Inject;
-
 import org.apache.commons.jcs3.access.CacheAccess;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
@@ -40,6 +38,7 @@ import com.jme3.texture.Texture.MinFilter;
 
 import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,7 +64,7 @@ public class AssetsLoadMaterialTextures {
         var engine = new GroovyScriptEngine(
                 new URL[] { AssetsLoadMaterialTextures.class.getResource("/TexturesMaterials.groovy") });
         var binding = new Binding();
-        unknownTextures = am.loadTexture("Textures/Tiles/Unknown/unknown-02-128.png");
+        unknownTextures = am.loadTexture("Textures/Tiles/unknown-02-128.png");
         this.materialTexturesMap = (TexturesMap) engine.run("TexturesMaterials.groovy", binding);
         materialTexturesMap.data.values().parallelStream().forEach((e) -> loadTextureMap(cache, e));
     }
@@ -113,6 +112,9 @@ public class AssetsLoadMaterialTextures {
 
     public TextureCacheObject loadTextureObject(long key) {
         var d = texturesMapFramesDataMap.get(key);
+        if (d == null) {
+            throw new RuntimeException("No texture object with id " + key);
+        }
         var to = loadTextureData(d);
         to.tex = loadTexture(d.image);
         return to;

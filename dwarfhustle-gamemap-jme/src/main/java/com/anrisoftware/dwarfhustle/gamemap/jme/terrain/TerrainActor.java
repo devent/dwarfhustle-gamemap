@@ -317,7 +317,8 @@ public class TerrainActor {
         long oldtime = System.currentTimeMillis();
         var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
-        collectChunks(chunksBlocks, root, m.gm.getCursorZ(), m.gm.chunkSize, gs.get().visibleDepthLayers.get());
+        int z = m.gm.getCursorZ();
+        collectChunks(chunksBlocks, root, z, z, m.gm.chunkSize, gs.get().visibleDepthLayers.get());
         var bnum = updateModel(m, root, chunksBlocks);
         renderMeshs();
         is.cameraState.setTerrainBounds(terrainBounds);
@@ -519,38 +520,38 @@ public class TerrainActor {
         // System.out.println(); // TODO
     }
 
-    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int cursorZ,
-            int chunkSize, int visibleDepthLayers) {
-        for (int i = 0, z = cursorZ; i < visibleDepthLayers; i += chunkSize, z += chunkSize) {
-            collectChunksZ(chunksBlocks, root, z);
+    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int z,
+            int currentZ, int chuckSize, int visibleDepthLayers) {
+        if (z == root.pos.ep.z) {
+            return;
         }
-        // log.trace("collectChunks {}", chunksBlocks.size());
-    }
-
-    private void collectChunksZ(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int z) {
         var firstchunk = root.findMapChunk(0, 0, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
-        putChunkSortBlocks(chunksBlocks, firstchunk, z);
-        long chunkid;
+        putChunkSortBlocks(chunksBlocks, firstchunk, currentZ, visibleDepthLayers);
+        long chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
         while (true) {
             chunkid = nextchunk.getNeighborEast();
             if (chunkid == 0) {
-                long nsid = firstchunk.getNeighborSouth();
-                if (nsid == 0) {
+                chunkid = firstchunk.getNeighborSouth();
+                if (chunkid == 0) {
+                    if (firstchunk.pos.ep.z < currentZ + visibleDepthLayers) {
+                        collectChunks(chunksBlocks, root, firstchunk.pos.ep.z, currentZ, chuckSize, visibleDepthLayers);
+                    }
                     break;
                 }
-                firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, nsid);
+                firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk, z);
+                putChunkSortBlocks(chunksBlocks, nextchunk, currentZ, visibleDepthLayers);
             } else {
                 nextchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk, z);
+                putChunkSortBlocks(chunksBlocks, nextchunk, currentZ, visibleDepthLayers);
             }
         }
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int z) {
+    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int currentZ,
+            int visibleDepthLayers) {
         var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
@@ -558,7 +559,7 @@ public class TerrainActor {
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
             var mb = pair.getTwo();
-            if (isBlockVisible(mb, z)) {
+            if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ)) {
                 blocks.put(mb.getMaterial(), mb);
             }
         }
