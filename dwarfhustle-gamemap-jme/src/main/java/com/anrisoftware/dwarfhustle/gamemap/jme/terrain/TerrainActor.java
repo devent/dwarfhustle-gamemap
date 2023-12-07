@@ -65,6 +65,7 @@ import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState.FaceCullMode;
+import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.Camera.FrustumIntersect;
 import com.jme3.scene.Geometry;
@@ -244,8 +245,6 @@ public class TerrainActor {
 
     private MutableList<Geometry> blockNodes;
 
-    private BoundingBox terrainBounds;
-
     private ImmutableList<Geometry> copyBlockNodes;
 
     private Optional<SetGameMapMessage> previousSetGameMap = Optional.empty();
@@ -300,8 +299,11 @@ public class TerrainActor {
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
         blockNodes = Lists.mutable.empty();
-        terrainBounds = new BoundingBox();
-        app.enqueue(() -> is.cameraState.updateCamera(m.gm));
+        app.enqueue(() -> {
+            is.cameraState.setTerrainBounds(
+                    new BoundingBox(new Vector3f(), m.gm.width, m.gm.width, gs.get().visibleDepthLayers.get()));
+            is.cameraState.updateCamera(m.gm);
+        });
         previousSetGameMap = Optional.of(m);
         timer.startTimerAtFixedRate(UPDATE_MODEL_MESSAGE_TIMER_KEY, new UpdateModelMessage(m.gm),
                 Duration.ofMillis(50));
@@ -321,7 +323,6 @@ public class TerrainActor {
         collectChunks(chunksBlocks, root, z, z, m.gm.chunkSize, gs.get().visibleDepthLayers.get());
         var bnum = updateModel(m, root, chunksBlocks);
         renderMeshs();
-        is.cameraState.setTerrainBounds(terrainBounds);
         long finishtime = System.currentTimeMillis();
         // log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime,
         // bnum);
@@ -366,7 +367,6 @@ public class TerrainActor {
                 geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 blockNodes.add(geo);
-                terrainBounds.mergeLocal(mesh.getBound());
             }
         }
         return bnum;

@@ -138,6 +138,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     public void setTerrainBounds(BoundingBox bounds) {
         this.bounds = bounds;
+        System.out.println(bounds); // TODO
         updateScreenCoordinatesMap();
     }
 

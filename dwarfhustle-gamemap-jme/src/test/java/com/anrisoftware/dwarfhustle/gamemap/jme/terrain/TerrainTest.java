@@ -267,13 +267,13 @@ public class TerrainTest extends SimpleApplication {
         injector.getInstance(GameSettingsProvider.class).get().visibleDepthLayers.set(2);
         this.mcRoot = new MapChunk(ids.generate());
         this.gm = new GameMap(ids.generate());
-        int d = 8;
-        int h = 8;
-        int w = 8;
-        int columns = 4;
+        int d = 32;
+        int h = 32;
+        int w = 32;
+        int columns = 8;
         String terrainImageName = String.format("terrain-%d-%d-%d.png", w, h, d);
         this.terrain = new TerrainLoadImage(d, h, w, columns).load(TerrainTest.class.getResource(terrainImageName));
-        gm.chunkSize = w / 2;
+        gm.chunkSize = 4;
         gm.width = w;
         gm.height = h;
         gm.depth = d;
