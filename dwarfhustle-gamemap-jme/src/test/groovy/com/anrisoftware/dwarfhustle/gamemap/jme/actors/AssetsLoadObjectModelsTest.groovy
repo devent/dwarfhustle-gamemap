@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*
 import org.apache.commons.jcs3.access.CacheAccess
 import org.junit.jupiter.api.Test
 
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadObjectModels
 import com.jme3.asset.AssetManager
 
 /**

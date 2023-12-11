@@ -30,7 +30,6 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.DebugCoordinateAxesState;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
@@ -117,8 +116,6 @@ public class App extends SimpleApplication {
 
     @Inject
     private GameSettingsProvider gsp;
-
-    private GameTickSystem gameTickSystem;
 
     private Injector parent;
 
@@ -219,7 +216,6 @@ public class App extends SimpleApplication {
     @Override
     @SneakyThrows
     public void stop(boolean waitFor) {
-        engine.removeSystem(gameTickSystem);
         updateCammera(gsp);
         gsp.get().windowFullscreen.set(context.getSettings().isFullscreen());
         gsp.save();

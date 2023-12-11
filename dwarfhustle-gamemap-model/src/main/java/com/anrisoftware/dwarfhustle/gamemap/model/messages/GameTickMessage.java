@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
+import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
@@ -27,7 +29,7 @@ import lombok.ToString;
  */
 @RequiredArgsConstructor
 @ToString
-public class GameTickMessage extends GameMapMessage {
+public class GameTickMessage extends Message {
 
     public final long tick;
 

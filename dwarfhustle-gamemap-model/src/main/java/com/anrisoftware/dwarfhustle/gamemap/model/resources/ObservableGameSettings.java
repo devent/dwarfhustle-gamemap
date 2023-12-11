@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.resources;
 
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -52,129 +53,130 @@ import lombok.ToString;
  */
 public class ObservableGameSettings {
 
-	/**
-	 *
-	 * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
-	 */
-	@Data
-	public static class GameSettings {
+    /**
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @Data
+    public static class GameSettings {
 
-		public Locale locale = Locale.US;
+        public Locale locale = Locale.US;
 
-		@JsonIgnore
-		public DateTimeFormatter gameTimeFormat = DateTimeFormatter.ISO_TIME;
+        @JsonIgnore
+        public DateTimeFormatter gameTimeFormat = DateTimeFormatter.ISO_TIME;
 
-		public float tickLength = 1 / 30f;
+        public Duration gameTickDuration = Duration.ofMillis(100);
 
-		public float tickLongLength = 1 / 15f;
+        public Duration terrainUpdateDuration = Duration.ofMillis(50);
 
-		public boolean windowFullscreen = false;
+        public boolean windowFullscreen = false;
 
-		public int windowWidth = 1024;
+        public int windowWidth = 1024;
 
-		public int windowHeight = 768;
+        public int windowHeight = 768;
 
-		public IconSize iconSize = IconSize.MEDIUM;
+        public IconSize iconSize = IconSize.MEDIUM;
 
-		public TextPosition textPosition = TextPosition.RIGHT;
+        public TextPosition textPosition = TextPosition.RIGHT;
 
-		public double commandsSplitPosition = 0.71;
+        public double commandsSplitPosition = 0.71;
 
-		public String lastCommand = "";
+        public String lastCommand = "";
 
         public int visibleDepthLayers = 1;
 
         public float timeUpdateInterval = 1 / 30f;
-	}
+    }
 
-	/**
-	 * Command item with a time stamp.
-	 *
-	 * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
-	 */
-	@Data
-	@NoArgsConstructor
-	@AllArgsConstructor
-	@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-	@ToString(onlyExplicitlyIncluded = true)
-	public static class CommandItem implements Comparable<CommandItem> {
+    /**
+     * Command item with a time stamp.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+    @ToString(onlyExplicitlyIncluded = true)
+    public static class CommandItem implements Comparable<CommandItem> {
 
-		@EqualsAndHashCode.Include
-		public LocalTime time;
+        @EqualsAndHashCode.Include
+        public LocalTime time;
 
-		@ToString.Include
-		public String line;
+        @ToString.Include
+        public String line;
 
-		@Override
-		public int compareTo(CommandItem o) {
-			return time.compareTo(o.time);
-		}
-	}
+        @Override
+        public int compareTo(CommandItem o) {
+            return time.compareTo(o.time);
+        }
+    }
 
-	public final ObjectProperty<Locale> locale;
+    public final ObjectProperty<Locale> locale;
 
-	public final ObjectProperty<DateTimeFormatter> gameTimeFormat;
+    public final ObjectProperty<DateTimeFormatter> gameTimeFormat;
 
-	public final FloatProperty tickLength;
+    public final ObjectProperty<Duration> gameTickDuration;
 
-	public final FloatProperty tickLongLength;
+    public final ObjectProperty<Duration> terrainUpdateDuration;
 
-	public final BooleanProperty windowFullscreen;
+    public final BooleanProperty windowFullscreen;
 
-	public final IntegerProperty windowWidth;
+    public final IntegerProperty windowWidth;
 
-	public final IntegerProperty windowHeight;
+    public final IntegerProperty windowHeight;
 
-	public final ObjectProperty<IconSize> iconSize;
+    public final ObjectProperty<IconSize> iconSize;
 
-	public final ObjectProperty<TextPosition> textPosition;
+    public final ObjectProperty<TextPosition> textPosition;
 
-	public final DoubleProperty commandsSplitPosition;
+    public final DoubleProperty commandsSplitPosition;
 
-	public final ObjectProperty<String> lastCommand;
+    public final ObjectProperty<String> lastCommand;
 
-	public final ObjectProperty<WorldMap> currentWorld;
+    public final ObjectProperty<WorldMap> currentWorld;
 
-	public final ObjectProperty<GameMap> currentMap;
+    public final ObjectProperty<GameMap> currentMap;
 
     public final IntegerProperty visibleDepthLayers;
 
     public final FloatProperty timeUpdateInterval;
 
-	@SuppressWarnings("unchecked")
-	@SneakyThrows
-	public ObservableGameSettings(GameSettings p) {
-		this.locale = JavaBeanObjectPropertyBuilder.create().bean(p).name("locale").build();
-		this.gameTimeFormat = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTimeFormat").build();
-		this.tickLength = JavaBeanFloatPropertyBuilder.create().bean(p).name("tickLength").build();
-		this.tickLongLength = JavaBeanFloatPropertyBuilder.create().bean(p).name("tickLongLength").build();
-		this.windowFullscreen = JavaBeanBooleanPropertyBuilder.create().bean(p).name("windowFullscreen").build();
-		this.windowWidth = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowWidth").build();
-		this.windowHeight = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowHeight").build();
-		this.iconSize = JavaBeanObjectPropertyBuilder.create().bean(p).name("iconSize").build();
-		this.textPosition = JavaBeanObjectPropertyBuilder.create().bean(p).name("textPosition").build();
-		this.commandsSplitPosition = JavaBeanDoublePropertyBuilder.create().bean(p).name("commandsSplitPosition")
-				.build();
-		this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
+    @SuppressWarnings("unchecked")
+    @SneakyThrows
+    public ObservableGameSettings(GameSettings p) {
+        this.locale = JavaBeanObjectPropertyBuilder.create().bean(p).name("locale").build();
+        this.gameTimeFormat = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTimeFormat").build();
+        this.gameTickDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTickDuration").build();
+        this.terrainUpdateDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("terrainUpdateDuration")
+                .build();
+        this.windowFullscreen = JavaBeanBooleanPropertyBuilder.create().bean(p).name("windowFullscreen").build();
+        this.windowWidth = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowWidth").build();
+        this.windowHeight = JavaBeanIntegerPropertyBuilder.create().bean(p).name("windowHeight").build();
+        this.iconSize = JavaBeanObjectPropertyBuilder.create().bean(p).name("iconSize").build();
+        this.textPosition = JavaBeanObjectPropertyBuilder.create().bean(p).name("textPosition").build();
+        this.commandsSplitPosition = JavaBeanDoublePropertyBuilder.create().bean(p).name("commandsSplitPosition")
+                .build();
+        this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
         this.visibleDepthLayers = JavaBeanIntegerPropertyBuilder.create().bean(p).name("visibleDepthLayers").build();
         this.timeUpdateInterval = JavaBeanFloatPropertyBuilder.create().bean(p).name("timeUpdateInterval").build();
-		this.currentWorld = new SimpleObjectProperty<>();
-		this.currentMap = new SimpleObjectProperty<>();
-	}
+        this.currentWorld = new SimpleObjectProperty<>();
+        this.currentMap = new SimpleObjectProperty<>();
+    }
 
-	public void copy(GameSettings other) {
-		locale.set(other.locale);
-		gameTimeFormat.set(other.gameTimeFormat);
-		tickLength.set(other.tickLength);
-		tickLongLength.set(other.tickLongLength);
-		windowFullscreen.set(other.windowFullscreen);
-		windowWidth.set(other.windowWidth);
-		windowHeight.set(other.windowHeight);
-		iconSize.set(other.iconSize);
-		iconSize.set(other.iconSize);
-		commandsSplitPosition.set(other.commandsSplitPosition);
-		lastCommand.set(other.lastCommand);
+    public void copy(GameSettings other) {
+        locale.set(other.locale);
+        gameTimeFormat.set(other.gameTimeFormat);
+        gameTickDuration.set(other.gameTickDuration);
+        terrainUpdateDuration.set(other.terrainUpdateDuration);
+        windowFullscreen.set(other.windowFullscreen);
+        windowWidth.set(other.windowWidth);
+        windowHeight.set(other.windowHeight);
+        iconSize.set(other.iconSize);
+        iconSize.set(other.iconSize);
+        commandsSplitPosition.set(other.commandsSplitPosition);
+        lastCommand.set(other.lastCommand);
         visibleDepthLayers.set(other.visibleDepthLayers);
         timeUpdateInterval.set(other.timeUpdateInterval);
-	}
+    }
 }

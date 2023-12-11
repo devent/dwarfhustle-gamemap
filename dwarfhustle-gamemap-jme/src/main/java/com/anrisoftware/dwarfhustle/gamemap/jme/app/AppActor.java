@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
+package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static java.time.Duration.ofSeconds;
@@ -26,12 +26,9 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import jakarta.inject.Inject;
-
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickSystem;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
@@ -96,6 +93,7 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -320,8 +318,6 @@ public class AppActor {
     private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
 
     private Injector injector;
-
-    private GameTickSystem gameTickSystem;
 
     private int currentMapBlocksLoaded;
 
@@ -555,8 +551,6 @@ public class AppActor {
 
     private void mapBlockLoaded() {
         app.enqueue(() -> {
-            this.gameTickSystem = injector.getInstance(GameTickSystem.class);
-            engine.addSystem(gameTickSystem);
         });
         createSunActor();
         actor.tell(new MapBlockLoadedMessage(currentMapRootBlock));
@@ -634,7 +628,6 @@ public class AppActor {
     private Behavior<Message> onShutdown(ShutdownMessage m) {
         log.debug("onShutdown {}", m);
         app.enqueue(() -> {
-            engine.removeSystem(gameTickSystem);
         });
         return Behaviors.stopped();
     }

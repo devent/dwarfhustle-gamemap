@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.actors;
+package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.AppActor.AppActorFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.MaterialAssetsJcsCacheActor.MaterialAssetsJcsCacheActorFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.ModelsAssetsJcsCacheActor.ModelsAssetsJcsCacheActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.AppActor.AppActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickActor.GameTickActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsJcsCacheActor.MaterialAssetsJcsCacheActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsJcsCacheActor.ModelsAssetsJcsCacheActorFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
@@ -28,7 +29,7 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class DwarfhustleGamemapActorsModule extends AbstractModule {
+public class DwarfhustleGamemapJmeAppModule extends AbstractModule {
 
     @Override
     protected void configure() {
@@ -38,5 +39,7 @@ public class DwarfhustleGamemapActorsModule extends AbstractModule {
                 .build(MaterialAssetsJcsCacheActorFactory.class));
         install(new FactoryModuleBuilder().implement(ModelsAssetsJcsCacheActor.class, ModelsAssetsJcsCacheActor.class)
                 .build(ModelsAssetsJcsCacheActorFactory.class));
+        install(new FactoryModuleBuilder().implement(GameTickActor.class, GameTickActor.class)
+                .build(GameTickActorFactory.class));
     }
 }

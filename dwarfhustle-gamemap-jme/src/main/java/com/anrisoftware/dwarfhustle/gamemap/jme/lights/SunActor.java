@@ -24,11 +24,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import jakarta.inject.Inject;
-
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunTaskWorker.SunTaskWorkerFactory;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -45,6 +43,7 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -68,13 +67,13 @@ public class SunActor {
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class InitialStateMessage extends GameMapMessage {
+    private static class InitialStateMessage extends Message {
         public final LightAppState lightAppState;
     }
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class SetupErrorMessage extends GameMapMessage {
+    private static class SetupErrorMessage extends Message {
         public final Throwable cause;
     }
 
@@ -84,23 +83,23 @@ public class SunActor {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface SunActorFactory {
-        SunActor create(ActorContext<GameMapMessage> context, StashBuffer<GameMapMessage> stash);
+        SunActor create(ActorContext<Message> context, StashBuffer<Message> stash);
     }
 
     /**
      * Creates the {@link SunActor}.
      */
     @SuppressWarnings("unchecked")
-    public static Behavior<GameMapMessage> create(Injector injector) {
+    public static Behavior<Message> create(Injector injector) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
-                    return (GameMapMessage) result;
+                    return (Message) result;
                 } else {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return (Behavior<GameMapMessage>) injector.getInstance(SunActorFactory.class).create(context, stash)
+            return (Behavior<Message>) injector.getInstance(SunActorFactory.class).create(context, stash)
                     .start(injector);
         }));
     }
@@ -118,7 +117,7 @@ public class SunActor {
         return CompletableFuture.supplyAsync(() -> attachState(injector));
     }
 
-    private static GameMapMessage attachState(Injector injector) {
+    private static Message attachState(Injector injector) {
         var app = injector.getInstance(Application.class);
         var lightAppState = injector.getInstance(LightAppState.class);
         try {
@@ -134,11 +133,11 @@ public class SunActor {
 
     @Inject
     @Assisted
-    private ActorContext<GameMapMessage> context;
+    private ActorContext<Message> context;
 
     @Inject
     @Assisted
-    private StashBuffer<GameMapMessage> buffer;
+    private StashBuffer<Message> buffer;
 
     @Inject
     private SunTaskWorkerFactory sunTaskWorkerFactory;
@@ -163,14 +162,14 @@ public class SunActor {
      * </ul>
      */
     public Behavior<? extends Message> start(Injector injector) {
-        return Behaviors.receive(GameMapMessage.class)//
+        return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
-                .onMessage(GameMapMessage.class, this::stashOtherCommand)//
+                .onMessage(Message.class, this::stashOtherCommand)//
                 .build();
     }
 
-    private Behavior<GameMapMessage> stashOtherCommand(GameMapMessage m) {
+    private Behavior<Message> stashOtherCommand(Message m) {
         log.debug("stashOtherCommand: {}", m);
         try {
             buffer.stash(m);
@@ -180,7 +179,7 @@ public class SunActor {
         return Behaviors.same();
     }
 
-    private Behavior<GameMapMessage> onSetupError(SetupErrorMessage m) {
+    private Behavior<Message> onSetupError(SetupErrorMessage m) {
         log.debug("onSetupError: {}", m);
         return Behaviors.stopped();
     }
@@ -188,7 +187,7 @@ public class SunActor {
     /**
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
      */
-    private Behavior<GameMapMessage> onInitialState(InitialStateMessage m) {
+    private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.initialState = m;
         return buffer.unstashAll(getInitialBehavior()//
@@ -198,8 +197,18 @@ public class SunActor {
     /**
      * Reacts to the {@link GameTickMessage} message.
      */
-    private Behavior<GameMapMessage> onGameTick(GameTickMessage m) {
+    private Behavior<Message> onGameTick(GameTickMessage m) {
         app.enqueue(this::runSunTaskWorker);
+        return Behaviors.same();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
+    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
+        app.enqueue(this::createSunTaskWorker);
         return Behaviors.same();
     }
 
@@ -210,16 +219,17 @@ public class SunActor {
      * <li>{@link ShutdownMessage}
      * </ul>
      */
-    private BehaviorBuilder<GameMapMessage> getInitialBehavior() {
-        app.enqueue(this::createSunTaskWorker);
-        return Behaviors.receive(GameMapMessage.class)//
+    private BehaviorBuilder<Message> getInitialBehavior() {
+        return Behaviors.receive(Message.class)//
+                .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(GameTickMessage.class, this::onGameTick)//
         ;
     }
 
     private void createSunTaskWorker() {
-        this.sunTaskWorker = Optional
-                .of(sunTaskWorkerFactory.create(gs.get().currentWorld.get(), gs.get().currentMap.get()));
+        var wm = gs.get().currentWorld.get();
+        var gm = gs.get().currentMap.get();
+        this.sunTaskWorker = Optional.of(sunTaskWorkerFactory.create(wm, gm));
     }
 
     private void runSunTaskWorker() {

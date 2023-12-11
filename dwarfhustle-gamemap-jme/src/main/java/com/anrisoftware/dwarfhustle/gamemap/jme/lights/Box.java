@@ -21,6 +21,7 @@ import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.util.TangentBinormalGenerator;
@@ -56,5 +57,6 @@ public class Box {
         sphereGeo.setLocalTranslation(pos); // Move it a bit
         sphereGeo.rotate(1.6f, 0, 0); // Rotate it a bit
         this.node = sphereGeo;
+        node.setShadowMode(ShadowMode.Cast);
     }
 }

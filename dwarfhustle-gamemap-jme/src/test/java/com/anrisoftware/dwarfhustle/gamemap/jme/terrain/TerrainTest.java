@@ -21,6 +21,9 @@ import static com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage.askCa
 import static java.time.Duration.ofSeconds;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -38,9 +41,12 @@ import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectLongMaps;
 import org.lable.oss.uniqueid.IDGenerator;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.DwarfhustleGamemapActorsModule;
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.MaterialAssetsJcsCacheActor;
-import com.anrisoftware.dwarfhustle.gamemap.jme.actors.ModelsAssetsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.DwarfhustleGamemapJmeAppModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.MockStoredObjectsJcsCacheActor.MockStoredObjectsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
@@ -59,10 +65,12 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameChunkPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapArea;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.NeighboringDir;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
@@ -86,6 +94,7 @@ import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.asset.AssetManager;
 import com.jme3.input.InputManager;
 import com.jme3.renderer.Camera;
+import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
 
@@ -142,6 +151,8 @@ public class TerrainTest extends SimpleApplication {
 
     private ResetCameraState resetCameraState;
 
+    private WorldMap wm;
+
     public TerrainTest() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
         // , new FlyCamAppState()
@@ -169,7 +180,8 @@ public class TerrainTest extends SimpleApplication {
                 install(new DwarfhustlePowerloomModule());
                 install(new DwarfhustleModelDbStoragesSchemasModule());
                 install(new DwarfhustleModelDbCacheModule());
-                install(new DwarfhustleGamemapActorsModule());
+                install(new DwarfhustleGamemapJmeAppModule());
+                install(new DwarfhustleGamemapJmeLightsModule());
                 install(new FactoryModuleBuilder()
                         .implement(MockStoredObjectsJcsCacheActor.class, MockStoredObjectsJcsCacheActor.class)
                         .build(MockStoredObjectsJcsCacheActorFactory.class));
@@ -212,6 +224,11 @@ public class TerrainTest extends SimpleApplication {
                 return engine;
             }
 
+            @Provides
+            public ViewPort getViewPort() {
+                return TerrainTest.this.viewPort;
+            }
+
         });
         createMockTerrain();
         setupApp();
@@ -232,8 +249,10 @@ public class TerrainTest extends SimpleApplication {
         createMaterialAssets();
         createModelsAssets();
         createTerrain();
+        createSun();
         createPowerLoom();
         createObjectsCache();
+        createGameTick();
     }
 
     @Override
@@ -257,6 +276,7 @@ public class TerrainTest extends SimpleApplication {
         createMap(mcRoot, 0, 0, 0, gm.width, gm.height, gm.depth);
         createNeighbors((MapChunk) backendIdsObjects.get(gm.getRootid()));
         putObjectToBackend(gm);
+        putObjectToBackend(wm);
         var block = mcRoot.findMapBlock(0, 0, 0, id -> (MapChunk) backendIdsObjects.get(id));
         block.setMined(true);
         block.setMaterialRid(898);
@@ -264,24 +284,35 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void createGameMap() {
-        injector.getInstance(GameSettingsProvider.class).get().visibleDepthLayers.set(2);
-        this.mcRoot = new MapChunk(ids.generate());
-        this.gm = new GameMap(ids.generate());
+        mcRoot = new MapChunk(ids.generate());
+        gm = new GameMap(ids.generate());
+        wm = new WorldMap(ids.generate());
+        wm.currentMapid = gm.mapid;
+        wm.time = LocalDateTime.of(2023, Month.APRIL, 15, 12, 0);
+        wm.distanceLat = 100f;
+        wm.distanceLon = 100f;
+        gm.world = wm.id;
         int d = 32;
         int h = 32;
         int w = 32;
         int columns = 8;
         String terrainImageName = String.format("terrain-%d-%d-%d.png", w, h, d);
-        this.terrain = new TerrainLoadImage(d, h, w, columns).load(TerrainTest.class.getResource(terrainImageName));
+        terrain = new TerrainLoadImage(d, h, w, columns).load(TerrainTest.class.getResource(terrainImageName));
         gm.chunkSize = 4;
         gm.width = w;
         gm.height = h;
         gm.depth = d;
         gm.rootid = mcRoot.id;
-//        gm.setCameraPos(0.0f, 0.0f, 83.0f);
-        gm.setCameraPos(0.0f, 0.0f, 12.0f);
+        gm.area = MapArea.create(50.99819f, 10.98348f, 50.96610f, 11.05610f);
+        gm.timeZone = ZoneOffset.ofHours(1);
+        gm.setCameraPos(0.0f, 0.0f, 83.0f);
+        // gm.setCameraPos(0.0f, 0.0f, 12.0f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
         gm.setCursorZ(0);
+        var gs = injector.getInstance(GameSettingsProvider.class).get();
+        gs.visibleDepthLayers.set(4);
+        gs.currentMap.set(gm);
+        gs.currentWorld.set(wm);
     }
 
     private void setupApp() {
@@ -308,6 +339,28 @@ public class TerrainTest extends SimpleApplication {
                         log.debug("TerrainActor created");
                     }
                 });
+    }
+
+    private void createSun() {
+        SunActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("SunActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("SunActor created");
+            }
+        });
+    }
+
+    private void createGameTick() {
+        GameTickActor.create(injector, ofSeconds(10)).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("GameTickActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("GameTickActor created");
+            }
+        });
     }
 
     private void createPowerLoom() {

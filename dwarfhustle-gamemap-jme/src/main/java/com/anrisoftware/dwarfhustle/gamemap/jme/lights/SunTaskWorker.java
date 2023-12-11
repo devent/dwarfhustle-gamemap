@@ -17,8 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.lights;
 
-import jakarta.inject.Inject;
-
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.SunModel;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
@@ -27,6 +25,8 @@ import com.badlogic.ashley.core.Entity;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
+
+import jakarta.inject.Inject;
 
 /**
  * Updates the light based on the position of the sun.
@@ -67,9 +67,9 @@ public class SunTaskWorker implements Runnable {
 
     @Override
     public void run() {
-        var lat = gm.getArea().getCenter().lat;
-        var lng = gm.getArea().getCenter().lon;
-        model.update(wm.getTime().atZone(gm.getTimeZone()), lat, lng);
+        var lat = gm.area.getCenter().lat;
+        var lng = gm.area.getCenter().lon;
+        model.update(wm.time.atZone(gm.timeZone), lat, lng);
         var ac = AmbientLightComponent.m.get(entity);
         ac.color.r = model.ambientColor[0];
         ac.color.g = model.ambientColor[1];

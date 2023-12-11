@@ -68,6 +68,7 @@ import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.Camera.FrustumIntersect;
+import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.Mesh.Mode;
@@ -99,7 +100,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainActor {
 
-    private static final String UPDATE_MODEL_MESSAGE_TIMER_KEY = "UpdateModelMessage-Timer";
+    private static final String UPDATE_TERRAIN_MESSAGE_TIMER_KEY = "UpdateModelMessage-Timer";
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, TerrainActor.class.getSimpleName());
 
@@ -124,7 +125,7 @@ public class TerrainActor {
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class UpdateModelMessage extends Message {
+    private static class UpdateTerrainMessage extends Message {
         public final GameMap gm;
     }
 
@@ -192,6 +193,7 @@ public class TerrainActor {
                 app.getStateManager().attach(cameraState);
                 app.getStateManager().attach(chunksBoundingBoxState);
                 app.getStateManager().attach(terrainRollState);
+                chunksBoundingBoxState.setEnabled(false);
                 return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState, terrainRollState);
             });
             return f.get();
@@ -301,35 +303,35 @@ public class TerrainActor {
         blockNodes = Lists.mutable.empty();
         app.enqueue(() -> {
             is.cameraState.setTerrainBounds(
-                    new BoundingBox(new Vector3f(), m.gm.width, m.gm.width, gs.get().visibleDepthLayers.get()));
+                    new BoundingBox(new Vector3f(), m.gm.width, m.gm.height, gs.get().visibleDepthLayers.get()));
             is.cameraState.updateCamera(m.gm);
         });
         previousSetGameMap = Optional.of(m);
-        timer.startTimerAtFixedRate(UPDATE_MODEL_MESSAGE_TIMER_KEY, new UpdateModelMessage(m.gm),
-                Duration.ofMillis(50));
+        timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
+                gs.get().terrainUpdateDuration.get());
         return Behaviors.same();
     }
 
     /**
-     * Reacts to the {@link UpdateModelMessage} message.
+     * Reacts to the {@link UpdateTerrainMessage} message.
      */
-    @SuppressWarnings("unused")
-    private Behavior<Message> onUpdateModel(UpdateModelMessage m) {
+    private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
-        long oldtime = System.currentTimeMillis();
+        // long oldtime = System.currentTimeMillis();
         var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
         int z = m.gm.getCursorZ();
         collectChunks(chunksBlocks, root, z, z, m.gm.chunkSize, gs.get().visibleDepthLayers.get());
-        var bnum = updateModel(m, root, chunksBlocks);
+        // var bnum = updateModel(m, root, chunksBlocks);
+        updateModel(m, root, chunksBlocks);
         renderMeshs();
-        long finishtime = System.currentTimeMillis();
+        // long finishtime = System.currentTimeMillis();
         // log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime,
         // bnum);
         return Behaviors.same();
     }
 
-    private int updateModel(UpdateModelMessage m, GameObject o,
+    private int updateModel(UpdateTerrainMessage m, GameObject o,
             MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks) {
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
         int currentZ = m.gm.cursor.z;
@@ -366,6 +368,7 @@ public class TerrainActor {
                 geo.getMaterial().setColor("Color", tex.baseColor);
                 geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
+                geo.setShadowMode(ShadowMode.Receive);
                 blockNodes.add(geo);
             }
         }
@@ -377,7 +380,7 @@ public class TerrainActor {
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
         var task = app.enqueue(this::renderMeshs1);
         try {
-            task.get(25, TimeUnit.MILLISECONDS);
+            task.get(gs.get().terrainUpdateDuration.get().toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             // log.warn("renderMeshs timeout");
             return;
@@ -634,7 +637,7 @@ public class TerrainActor {
     private Behavior<Message> onAppPaused(AppPausedMessage m) {
         log.debug("onAppPaused {}", m);
         if (m.paused) {
-            timer.cancel(UPDATE_MODEL_MESSAGE_TIMER_KEY);
+            timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
         } else {
             previousSetGameMap.ifPresent(this::onSetGameMap);
         }
@@ -664,7 +667,7 @@ public class TerrainActor {
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
-                .onMessage(UpdateModelMessage.class, this::onUpdateModel)//
+                .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
         ;
     }
