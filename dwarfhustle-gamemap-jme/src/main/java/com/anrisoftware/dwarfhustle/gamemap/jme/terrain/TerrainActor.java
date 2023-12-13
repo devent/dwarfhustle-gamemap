@@ -353,19 +353,20 @@ public class TerrainActor {
                 final var cindex = BufferUtils.createShortBuffer(3 * sindex);
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-                fillBuffers(blocks, w, h, d, currentZ, cpos, cindex, cnormal, ctex);
+                final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
+                fillBuffers(blocks, w, h, d, currentZ, cpos, cindex, cnormal, ctex, ccolor);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
                 mesh.setBuffer(Type.Normal, 3, cnormal);
                 mesh.setBuffer(Type.TexCoord, 2, ctex);
+                mesh.setBuffer(Type.Color, 4, ccolor);
                 mesh.setMode(Mode.Triangles);
                 mesh.updateBound();
                 var geo = new Geometry("block-mesh", mesh);
-                geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
+                // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
                 var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
-                geo.getMaterial().setTexture("ColorMap", tex.tex);
-                geo.getMaterial().setColor("Color", tex.baseColor);
+                setupPBRLighting(geo, tex);
                 geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 geo.setShadowMode(ShadowMode.Receive);
@@ -373,6 +374,22 @@ public class TerrainActor {
             }
         }
         return bnum;
+    }
+
+    private void setupPBRLighting(Geometry geo, TextureCacheObject tex) {
+        geo.setMaterial(new Material(assets, "Common/MatDefs/Light/PBRLighting.j3md"));
+        geo.getMaterial().setTexture("BaseColorMap", tex.tex);
+        geo.getMaterial().setColor("BaseColor", tex.baseColor);
+        geo.getMaterial().setFloat("Metallic", tex.metallic);
+        geo.getMaterial().setFloat("Roughness", tex.roughness);
+        geo.getMaterial().setBoolean("UseVertexColor", true);
+    }
+
+    private void setupLighting(Geometry geo, TextureCacheObject tex) {
+        geo.setMaterial(new Material(assets, "Common/MatDefs/Light/Lighting.j3md"));
+        geo.getMaterial().setTexture("DiffuseMap", tex.tex);
+        geo.getMaterial().setColor("Diffuse", tex.baseColor);
+        geo.getMaterial().setBoolean("UseVertexColor", true);
     }
 
     @SneakyThrows
@@ -400,7 +417,7 @@ public class TerrainActor {
     }
 
     private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, int currentZ,
-            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex) {
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -454,12 +471,13 @@ public class TerrainActor {
             }
             copyNormal(mb, mesh, cnormal);
             copyTex(mb, mesh, ctex);
-            copyPos(mb, mesh, cpos, w, h, d, currentZ);
+            copyPos(mb, mesh, cpos, ccolor, w, h, d, currentZ);
         }
         cpos.flip();
         cindex.flip();
         cnormal.flip();
         ctex.flip();
+        ccolor.flip();
     }
 
     private boolean isSkipCheckNeighborNorth(MapBlock mb) {
@@ -467,7 +485,6 @@ public class TerrainActor {
     }
 
     private boolean isSkipCheckNeighborSouth(MapBlock mb) {
-        // TODO if neighbor south is mined return 0
         return mb.getNeighborSouth() != 0;
     }
 
@@ -499,8 +516,11 @@ public class TerrainActor {
 
     /**
      * Transforms the position values based on the block position.
+     *
+     * @param ccolor
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, float w, float h, float d, int currentZ) {
+    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w, float h, float d,
+            int currentZ) {
         // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
@@ -519,6 +539,17 @@ public class TerrainActor {
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
+            if (mb.pos.z - currentZ > 0) {
+                ccolor.put(1f / ((mb.pos.z - currentZ) * 2f));
+                ccolor.put(1f / ((mb.pos.z - currentZ) * 2f));
+                ccolor.put(1f / ((mb.pos.z - currentZ) * 2f));
+                ccolor.put(1f);
+            } else {
+                ccolor.put(1f);
+                ccolor.put(1f);
+                ccolor.put(1f);
+                ccolor.put(1f);
+            }
         }
         // System.out.println(); // TODO
     }
