@@ -53,6 +53,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
@@ -334,7 +335,7 @@ public class TerrainActor {
     private int updateModel(UpdateTerrainMessage m, GameObject o,
             MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks) {
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
-        int currentZ = m.gm.cursor.z;
+        var cursor = m.gm.cursor;
         blockNodes.clear();
         int bnum = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
@@ -354,7 +355,7 @@ public class TerrainActor {
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
                 final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-                fillBuffers(blocks, w, h, d, currentZ, cpos, cindex, cnormal, ctex, ccolor);
+                fillBuffers(blocks, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -385,6 +386,7 @@ public class TerrainActor {
         geo.getMaterial().setBoolean("UseVertexColor", true);
     }
 
+    @SuppressWarnings("unused")
     private void setupLighting(Geometry geo, TextureCacheObject tex) {
         geo.setMaterial(new Material(assets, "Common/MatDefs/Light/Lighting.j3md"));
         geo.getMaterial().setTexture("DiffuseMap", tex.tex);
@@ -416,7 +418,7 @@ public class TerrainActor {
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, int currentZ,
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, MapCursor cursor,
             FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
@@ -471,7 +473,7 @@ public class TerrainActor {
             }
             copyNormal(mb, mesh, cnormal);
             copyTex(mb, mesh, ctex);
-            copyPos(mb, mesh, cpos, ccolor, w, h, d, currentZ);
+            copyPosColor(mb, mesh, cpos, ccolor, w, h, d, cursor);
         }
         cpos.flip();
         cindex.flip();
@@ -515,18 +517,18 @@ public class TerrainActor {
     }
 
     /**
-     * Transforms the position values based on the block position.
-     *
-     * @param ccolor
+     * Transforms the position values based on the block position. Sets the diffuse
+     * color of the tile.
      */
-    private void copyPos(MapBlock mb, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w, float h, float d,
-            int currentZ) {
+    private void copyPosColor(MapBlock mb, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w, float h, float d,
+            MapCursor cursor) {
         // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
+        float c = mb.pos.isEqual(cursor.x, cursor.y, cursor.z) ? 2f : 1f;
         float tx = -w + 2f * x + 1f;
         float ty = h - 2f * y - 1;
-        float tz = (currentZ - z) * 2f;
+        float tz = (cursor.z - z) * 2f;
         for (int i = 0; i < pos.limit(); i += 3) {
             vx = pos.get();
             vy = pos.get();
@@ -539,16 +541,16 @@ public class TerrainActor {
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
-            if (mb.pos.z - currentZ > 0) {
-                ccolor.put(1f / ((mb.pos.z - currentZ) * 2f));
-                ccolor.put(1f / ((mb.pos.z - currentZ) * 2f));
-                ccolor.put(1f / ((mb.pos.z - currentZ) * 2f));
+            if (mb.pos.z - cursor.z > 0) {
+                ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
+                ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
+                ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
                 ccolor.put(1f);
             } else {
-                ccolor.put(1f);
-                ccolor.put(1f);
-                ccolor.put(1f);
-                ccolor.put(1f);
+                ccolor.put(c);
+                ccolor.put(c);
+                ccolor.put(c);
+                ccolor.put(c);
             }
         }
         // System.out.println(); // TODO
@@ -618,10 +620,10 @@ public class TerrainActor {
 
     private BoundingBox createBb(MapChunk chunk) {
         var bb = new BoundingBox();
-        bb.setXExtent(chunk.extentx);
-        bb.setYExtent(chunk.extenty);
-        bb.setZExtent(chunk.extentz);
-        bb.setCenter(chunk.centerx, chunk.centery, chunk.centerz);
+        bb.setXExtent(chunk.centerExtent.extentx);
+        bb.setYExtent(chunk.centerExtent.extenty);
+        bb.setZExtent(chunk.centerExtent.extentz);
+        bb.setCenter(chunk.centerExtent.centerx, chunk.centerExtent.centery, chunk.centerExtent.centerz);
         return bb;
     }
 

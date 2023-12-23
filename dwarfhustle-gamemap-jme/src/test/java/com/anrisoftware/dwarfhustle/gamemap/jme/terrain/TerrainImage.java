@@ -13,7 +13,7 @@ public enum TerrainImage {
 
     terrain_2_2_2(2, 2, 2, 2, 1),
 
-    terrain_4_4_4(4, 4, 4, 2, 1),
+    terrain_4_4_4(4, 4, 4, 2, 2),
 
     terrain_8_8_8(8, 8, 8, 4, 2),
 

@@ -292,7 +292,7 @@ public class TerrainTest extends SimpleApplication {
         wm.distanceLat = 100f;
         wm.distanceLon = 100f;
         gm.world = wm.id;
-        var terrainImage = TerrainImage.terrain_32_32_32;
+        var terrainImage = TerrainImage.terrain_4_4_4;
         terrain = terrainImage.loadTerrain();
         gm.chunkSize = terrainImage.chunkSize;
         gm.width = terrainImage.w;
@@ -596,6 +596,7 @@ public class TerrainTest extends SimpleApplication {
                         mb.pos = new GameBlockPos(mapid, xx, yy, zz);
                         mb.setMaterialRid(terrain[zz][yy][xx]);
                         mb.setObjectRid(809);
+                        mb.updateCenterExtent(gm.width, gm.height, gm.depth);
                         if (mb.getMaterialRid() == 0) {
                             mb.setMaterialRid(898);
                         }
