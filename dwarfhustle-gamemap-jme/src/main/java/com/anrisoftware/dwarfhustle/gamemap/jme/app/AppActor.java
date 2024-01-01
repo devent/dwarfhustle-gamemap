@@ -79,7 +79,6 @@ import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeRespon
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeResponseMessage.KnowledgeResponseErrorMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeResponseMessage.KnowledgeResponseSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
-import com.badlogic.ashley.core.Engine;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -173,6 +172,7 @@ public class AppActor {
                 if (cause == null) {
                     return result;
                 } else {
+                    log.error("AppActor.create", cause);
                     return new SetupErrorMessage(cause);
                 }
             });
@@ -303,9 +303,6 @@ public class AppActor {
 
     @Inject
     private Application app;
-
-    @Inject
-    private Engine engine;
 
     @SuppressWarnings("rawtypes")
     private ActorRef<DbResponseMessage> dbResponseAdapter;

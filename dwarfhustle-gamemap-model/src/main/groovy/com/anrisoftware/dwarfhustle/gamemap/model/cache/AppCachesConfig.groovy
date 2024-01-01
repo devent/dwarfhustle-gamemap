@@ -17,6 +17,9 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.cache
 
+import static org.hamcrest.MatcherAssert.assertThat
+import static org.hamcrest.Matchers.notNullValue
+
 import java.time.Duration
 
 import org.apache.commons.jcs3.JCS
@@ -34,6 +37,7 @@ class AppCachesConfig {
      * Creates the caches configuration.
      */
     def create(File parentDir) {
+        assertThat(parentDir, notNullValue())
         def config = new Properties()
         def params = [objects: [:], assets: [:], knowledge: [:]]
         params.objects.cache_name = "objects"

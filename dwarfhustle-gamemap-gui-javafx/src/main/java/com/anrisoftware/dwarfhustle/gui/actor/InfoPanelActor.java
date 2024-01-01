@@ -25,8 +25,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
-import jakarta.inject.Inject;
-
 import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
@@ -42,6 +40,7 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
@@ -54,6 +53,7 @@ import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import lombok.extern.slf4j.Slf4j;
@@ -81,8 +81,9 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     public interface InfoPanelActorFactory extends AbstractPaneActorFactory<InfoPaneController> {
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, InfoPanelActorFactory.class,
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
+            CompletionStage<ObjectsGetter> og) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, InfoPanelActorFactory.class,
                 "/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
     }
 

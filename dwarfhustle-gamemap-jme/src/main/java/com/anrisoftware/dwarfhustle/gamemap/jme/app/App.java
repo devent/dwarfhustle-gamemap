@@ -41,6 +41,7 @@ import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinis
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -160,6 +161,7 @@ public class App extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         log.debug("simpleInitApp");
+        createApp();
         createPanel();
     }
 
@@ -175,15 +177,16 @@ public class App extends SimpleApplication {
     }
 
     private void createPanel() {
-        GameMainPanelActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("GameMainPanelActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("GameMainPanelActor created");
-                attachGui(ret);
-            }
-        });
+        GameMainPanelActor.create(injector, ofSeconds(1), actor.getObjectsAsync(StoredObjectsJcsCacheActor.ID))
+                .whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("GameMainPanelActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("GameMainPanelActor created");
+                        attachGui(ret);
+                    }
+                });
     }
 
     private void attachGui(ActorRef<Message> receiver) {
@@ -196,21 +199,22 @@ public class App extends SimpleApplication {
             } else {
                 log.debug("AttachGuiMessage {}", ret);
                 inputManager.deleteMapping(INPUT_MAPPING_EXIT);
-                createApp();
                 createGameMap();
             }
         });
     }
 
     private void createGameMap() {
-        TerrainActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("TerrainActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("TerrainActor created");
-            }
-        });
+        TerrainActor.create(injector, ofSeconds(1), actor.getObjectsAsync(StoredObjectsJcsCacheActor.ID),
+                actor.getObjectsAsync(MaterialAssetsJcsCacheActor.ID),
+                actor.getObjectsAsync(ModelsAssetsJcsCacheActor.ID)).whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("TerrainActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("TerrainActor created");
+                    }
+                });
     }
 
     @Override

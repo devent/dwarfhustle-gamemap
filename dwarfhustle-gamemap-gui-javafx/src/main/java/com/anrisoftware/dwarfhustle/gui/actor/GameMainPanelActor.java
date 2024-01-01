@@ -19,6 +19,7 @@ package com.anrisoftware.dwarfhustle.gui.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.actor.AdditionalCss.ADDITIONAL_CSS;
 import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -51,7 +52,6 @@ import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
-import com.google.inject.assistedinject.Assisted;
 import com.jayfella.jme.jfx.JavaFxUI;
 import com.jme3.app.Application;
 
@@ -102,8 +102,9 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
 
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, GameMainPanelActorFactory.class,
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
+            CompletionStage<ObjectsGetter> og) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, GameMainPanelActorFactory.class,
                 "/main_ui.fxml", panelActors, ADDITIONAL_CSS);
     }
 
@@ -133,15 +134,11 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
     @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
-    @Inject
-    @Assisted("objects")
-    private ObjectsGetter objectsg;
-
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         StatusActor.create(injector, Duration.ofSeconds(1), initial.controller);
-        InfoPanelActor.create(injector, Duration.ofSeconds(1)).whenComplete((v, err) -> {
+        InfoPanelActor.create(injector, Duration.ofSeconds(1), supplyAsync(() -> og)).whenComplete((v, err) -> {
             if (err == null) {
                 v.tell(new AttachGuiMessage(null));
             }
@@ -224,7 +221,7 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
             var controller = initial.controller;
-            var wm = objectsg.get(WorldMap.class, WorldMap.OBJECT_TYPE, m.gm.world);
+            var wm = og.get(WorldMap.class, WorldMap.OBJECT_TYPE, m.gm.world);
             controller.setMap(wm, m.gm);
         });
         return Behaviors.same();
