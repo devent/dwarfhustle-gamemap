@@ -47,7 +47,6 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
-import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.MockStoredObjectsJcsCacheActor.MockStoredObjectsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
@@ -74,6 +73,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.MockStoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
@@ -84,7 +84,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.jme3.app.Application;
 import com.jme3.app.DebugKeysAppState;
 import com.jme3.app.LostFocusBehavior;
@@ -182,9 +181,6 @@ public class TerrainTest extends SimpleApplication {
                 install(new DwarfhustleModelDbCacheModule());
                 install(new DwarfhustleGamemapJmeAppModule());
                 install(new DwarfhustleGamemapJmeLightsModule());
-                install(new FactoryModuleBuilder()
-                        .implement(MockStoredObjectsJcsCacheActor.class, MockStoredObjectsJcsCacheActor.class)
-                        .build(MockStoredObjectsJcsCacheActorFactory.class));
                 bind(GameSettingsProvider.class).asEagerSingleton();
             }
 
@@ -274,7 +270,7 @@ public class TerrainTest extends SimpleApplication {
     private void createMockTerrain() {
         createGameMap();
         createMap(mcRoot, 0, 0, 0, gm.width, gm.height, gm.depth);
-        createNeighbors((MapChunk) backendIdsObjects.get(gm.getRootid()));
+        createNeighbors((MapChunk) backendIdsObjects.get(gm.root));
         putObjectToBackend(gm);
         putObjectToBackend(wm);
         var block = mcRoot.findMapBlock(0, 0, 0, id -> (MapChunk) backendIdsObjects.get(id));
@@ -287,7 +283,7 @@ public class TerrainTest extends SimpleApplication {
         mcRoot = new MapChunk(ids.generate());
         gm = new GameMap(ids.generate());
         wm = new WorldMap(ids.generate());
-        wm.currentMapid = gm.mapid;
+        wm.currentMap = gm.id;
         wm.time = LocalDateTime.of(2023, Month.APRIL, 15, 12, 0);
         wm.distanceLat = 100f;
         wm.distanceLon = 100f;
@@ -298,7 +294,7 @@ public class TerrainTest extends SimpleApplication {
         gm.width = terrainImage.w;
         gm.height = terrainImage.h;
         gm.depth = terrainImage.d;
-        gm.rootid = mcRoot.id;
+        gm.root = mcRoot.id;
         gm.area = MapArea.create(50.99819f, 10.98348f, 50.96610f, 11.05610f);
         gm.timeZone = ZoneOffset.ofHours(1);
         gm.setCameraPos(0.0f, 0.0f, 83.0f);
@@ -451,7 +447,7 @@ public class TerrainTest extends SimpleApplication {
 
     private void createNeighbors(MapChunk rootc) {
         var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
-        int mapid = rootc.pos.mapid;
+        long mapid = rootc.pos.map;
         var pos = rootc.pos;
         int xs = (pos.ep.x - pos.x) / 2;
         int ys = (pos.ep.y - pos.y) / 2;
@@ -547,7 +543,7 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void createMap(MapChunk chunk, int sx, int sy, int sz, int ex, int ey, int ez) {
-        chunk.setPos(new GameChunkPos(gm.mapid, sx, sy, sz, ex, ey, ez));
+        chunk.setPos(new GameChunkPos(gm.id, sx, sy, sz, ex, ey, ez));
         if (chunk.pos.ep.x == gm.width && chunk.pos.ep.y == gm.height && chunk.pos.ep.z == gm.depth) {
             chunk.setRoot(true);
         }
@@ -560,7 +556,7 @@ public class TerrainTest extends SimpleApplication {
         for (int xx = sx; xx < ex; xx += cx) {
             for (int yy = sy; yy < ey; yy += cy) {
                 for (int zz = sz; zz < ez; zz += cz) {
-                    createChunk(idsSupplier, terrain, chunk, chunks, gm.mapid, xx, yy, zz, xx + cx, yy + cy, zz + cz);
+                    createChunk(idsSupplier, terrain, chunk, chunks, gm.id, xx, yy, zz, xx + cx, yy + cy, zz + cz);
                 }
             }
         }
@@ -581,10 +577,10 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void createChunk(Supplier<byte[]> ids, long[][][] terrain, MapChunk parent,
-            MutableObjectLongMap<GameChunkPos> chunks, int mapid, int x, int y, int z, int ex, int ey, int ez) {
+            MutableObjectLongMap<GameChunkPos> chunks, long id, int x, int y, int z, int ex, int ey, int ez) {
         var chunk = new MapChunk(this.ids.generate());
         chunk.setParent(parent.getId());
-        chunk.setPos(new GameChunkPos(mapid, x, y, z, ex, ey, ez));
+        chunk.setPos(new GameChunkPos(id, x, y, z, ex, ey, ez));
         chunk.updateCenterExtent(gm.width, gm.height, gm.depth);
         int csize = gm.getChunkSize();
         if (ex - x == csize || ey - y == csize || ez - z == csize) {
@@ -593,7 +589,7 @@ public class TerrainTest extends SimpleApplication {
                 for (int yy = y; yy < ey; yy++) {
                     for (int zz = z; zz < ez; zz++) {
                         var mb = new MapBlock(ids.get());
-                        mb.pos = new GameBlockPos(mapid, xx, yy, zz);
+                        mb.pos = new GameBlockPos(id, xx, yy, zz);
                         mb.setMaterialRid(terrain[zz][yy][xx]);
                         mb.setObjectRid(809);
                         mb.updateCenterExtent(gm.width, gm.height, gm.depth);

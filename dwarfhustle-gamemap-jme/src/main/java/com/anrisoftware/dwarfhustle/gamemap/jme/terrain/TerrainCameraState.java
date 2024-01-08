@@ -321,7 +321,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
             return;
         }
         var temp = TempVars.get();
-        var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.rootid);
+        var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.root);
         var z = gm.cursor.z;
         var chunk = findChunkUnderCursor(mouse, rootchunk, z, temp);
         if (chunk != null) {

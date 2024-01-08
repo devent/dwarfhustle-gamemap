@@ -319,7 +319,7 @@ public class TerrainActor {
     private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
         // long oldtime = System.currentTimeMillis();
-        var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.getRootid());
+        var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.root);
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
         int z = m.gm.getCursorZ();
         collectChunks(chunksBlocks, root, z, z, m.gm.chunkSize, gs.get().visibleDepthLayers.get());
