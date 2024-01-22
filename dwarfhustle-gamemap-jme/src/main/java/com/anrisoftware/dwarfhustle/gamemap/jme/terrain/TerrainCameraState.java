@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
 import static com.jme3.input.MouseInput.AXIS_WHEEL;
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
@@ -336,7 +337,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private MapBlock findBlockUnderCursor(Vector2f mouse, MapChunk chunk, int z, TempVars temp) {
         for (var k : chunk.blocks.keyValuesView()) {
-            var block = k.getTwo();
+            var blockid = k.getTwo();
+            var block = getMapBlock(objectsg, blockid);
             if (block.pos.z == z && checkCenterExtent(mouse, block.centerExtent, temp)) {
                 return block;
             }

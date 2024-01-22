@@ -434,9 +434,9 @@ public class AppActor {
             var w = m.gm.getWidth();
             var h = m.gm.getHeight();
             var d = m.gm.getDepth();
-            var p = new GameChunkPos(m.gm.id, 0, 0, 0, w, h, d);
+            var p = new GameChunkPos(0, 0, 0, w, h, d);
             var query = "SELECT * from ? where objecttype = ? and mapid = ? and sx = ? and sy = ? and sz = ? and ex = ? and ey = ? and ez = ? limit 1";
-            return db.query(query, MapChunk.OBJECT_TYPE, MapChunk.OBJECT_TYPE, p.map, p.getX(), p.getY(), p.getZ(),
+            return db.query(query, MapChunk.OBJECT_TYPE, MapChunk.OBJECT_TYPE, m.gm.id, p.getX(), p.getY(), p.getZ(),
                     p.getEp().getX(), p.getEp().getY(), p.getEp().getZ());
         }));
     }
@@ -528,22 +528,22 @@ public class AppActor {
                 if (!mb.getBlocks().isEmpty()) {
                     currentMapBlocksLoaded = 0;
                     currentMapBlocksCount = ogs.get().currentMap.get().getBlocksCount();
-                    retrieveChildMapBlocks(mb.getPos());
+                    retrieveChildMapBlocks(ogs.get().currentMap.get().id, mb.getPos());
                 }
             }
         }
         return Behaviors.same();
     }
 
-    private void retrieveChildMapBlocks(GameChunkPos p) {
+    private void retrieveChildMapBlocks(long map, GameChunkPos p) {
         actor.tell(new LoadObjectsMessage<>(dbResponseAdapter, MapChunk.OBJECT_TYPE, go -> {
-            var mb = (MapChunk) go;
-            actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
+            var mc = (MapChunk) go;
+            actor.tell(new CachePutMessage<>(cacheResponseAdapter, mc.getId(), mc));
             currentMapBlocksLoaded++;
             if (currentMapBlocksLoaded == currentMapBlocksCount) {
                 mapBlockLoaded();
             }
-        }, db -> createQuery(p, db)));
+        }, db -> createQuery(map, p, db)));
     }
 
     private void mapBlockLoaded() {
@@ -564,9 +564,9 @@ public class AppActor {
         });
     }
 
-    private OResultSet createQuery(GameChunkPos p, ODatabaseDocument db) {
+    private OResultSet createQuery(long map, GameChunkPos p, ODatabaseDocument db) {
         var query = "SELECT * from ? where mapid = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ?";
-        return db.query(query, MapChunk.OBJECT_TYPE, p.map, p.getX(), p.getY(), p.getZ(), p.getEp().getX(),
+        return db.query(query, MapChunk.OBJECT_TYPE, map, p.getX(), p.getY(), p.getZ(), p.getEp().getX(),
                 p.getEp().getY(), p.getEp().getZ());
     }
 

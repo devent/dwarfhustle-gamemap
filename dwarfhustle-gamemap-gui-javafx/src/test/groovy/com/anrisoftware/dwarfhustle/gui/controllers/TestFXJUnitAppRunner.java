@@ -90,7 +90,7 @@ public class TestFXJUnitAppRunner extends ApplicationTest {
         interact(() -> {
             var mt = new MapBlock(1);
             // mt.setMaterial("Soil");
-            mt.setPos(new GameBlockPos(1, 5, 5, 5));
+            mt.setPos(new GameBlockPos(5, 5, 5));
             var p = new Person(1);
             p.setFirstName("Gorbir");
             p.setLastName("Shatterfeet");

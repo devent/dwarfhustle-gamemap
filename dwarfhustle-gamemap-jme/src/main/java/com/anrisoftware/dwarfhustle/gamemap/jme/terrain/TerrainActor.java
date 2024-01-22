@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.nio.FloatBuffer;
@@ -594,7 +595,8 @@ public class TerrainActor {
         }
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
-            var mb = pair.getTwo();
+            var mbid = pair.getTwo();
+            var mb = getMapBlock(objectsg, mbid);
             if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ)) {
                 blocks.put(mb.getMaterial(), mb);
             }

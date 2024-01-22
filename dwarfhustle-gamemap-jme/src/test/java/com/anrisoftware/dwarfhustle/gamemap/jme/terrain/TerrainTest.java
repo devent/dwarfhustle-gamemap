@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getMapChunk;
 import static com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage.askCachePuts;
 import static java.time.Duration.ofSeconds;
 
@@ -39,6 +41,7 @@ import org.eclipse.collections.api.map.primitive.MutableObjectLongMap;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectLongMaps;
+import org.lable.oss.uniqueid.GeneratorException;
 import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.DwarfhustleGamemapJmeAppModule;
@@ -273,7 +276,8 @@ public class TerrainTest extends SimpleApplication {
         createNeighbors((MapChunk) backendIdsObjects.get(gm.root));
         putObjectToBackend(gm);
         putObjectToBackend(wm);
-        var block = mcRoot.findMapBlock(0, 0, 0, id -> (MapChunk) backendIdsObjects.get(id));
+        var blockid = mcRoot.findMapBlock(0, 0, 0, id -> (MapChunk) backendIdsObjects.get(id));
+        var block = getMapBlock(og, blockid);
         block.setMined(true);
         block.setMaterialRid(898);
     }
@@ -446,18 +450,15 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createNeighbors(MapChunk rootc) {
-        var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
-        long mapid = rootc.pos.map;
         var pos = rootc.pos;
         int xs = (pos.ep.x - pos.x) / 2;
         int ys = (pos.ep.y - pos.y) / 2;
         int zs = (pos.ep.z - pos.z) / 2;
-        Function<Long, MapChunk> r = id -> (MapChunk) backend.get(id);
+        Function<Long, MapChunk> r = id -> getMapChunk(og, id);
         for (int x = pos.x; x < pos.ep.x; x += xs) {
             for (int y = pos.y; y < pos.ep.y; y += ys) {
                 for (int z = pos.z; z < pos.ep.z; z += zs) {
-                    var chunk = (MapChunk) backend
-                            .get(rootc.chunks.get(new GameChunkPos(mapid, x, y, z, x + xs, y + ys, z + zs)));
+                    var chunk = getMapChunk(og, rootc.chunks.get(new GameChunkPos(x, y, z, x + xs, y + ys, z + zs)));
                     assert chunk != null;
                     if (xs > gm.chunkSize && ys > gm.chunkSize && zs > gm.chunkSize) {
                         createNeighbors(chunk);
@@ -502,34 +503,36 @@ public class TerrainTest extends SimpleApplication {
         }
     }
 
-    private void setupBlockNeighbors(MapChunk chunk, MapBlock mb) {
+    private void setupBlockNeighbors(MapChunk chunk, long id) {
+        var mb = getMapBlock(og, id);
         var pos = mb.pos;
         var t = pos.addZ(-1);
-        var tb = chunk.getBlock(t);
-        if (tb.isPresent() && checkSetNeighbor(tb.get())) {
-            mb.setNeighborTop(tb.get().getId());
+        long tbid = chunk.getBlock(t);
+        final long empty = chunk.getBlocksEmptyValue();
+        if (tbid != empty && checkSetNeighbor(getMapBlock(og, tbid))) {
+            mb.setNeighborTop(tbid);
         } else {
             long chunkid;
             if ((chunkid = chunk.getNeighborTop()) != 0) {
-                var c = (MapChunk) backendIdsObjects.get(chunkid);
-                tb = c.getBlock(t);
-                if (tb.isPresent() && checkSetNeighbor(tb.get())) {
-                    mb.setNeighborTop(tb.get().getId());
+                var c = getMapChunk(og, chunkid);
+                tbid = c.getBlock(t);
+                if (tbid != empty && checkSetNeighbor(getMapBlock(og, tbid))) {
+                    mb.setNeighborTop(tbid);
                 }
             }
         }
         for (var d : NeighboringDir.values()) {
             var b = pos.add(d.pos);
-            var bb = chunk.getBlock(b);
-            if (bb.isPresent() && checkSetNeighbor(bb.get())) {
-                mb.setNeighbor(d, bb.get().getId());
+            var bbid = chunk.getBlock(b);
+            if (bbid != empty && checkSetNeighbor(getMapBlock(og, bbid))) {
+                mb.setNeighbor(d, bbid);
             } else {
                 long chunkid;
                 if ((chunkid = chunk.getNeighbor(d)) != 0) {
-                    var c = (MapChunk) backendIdsObjects.get(chunkid);
-                    bb = c.getBlock(b);
-                    if (bb.isPresent() && checkSetNeighbor(bb.get())) {
-                        mb.setNeighbor(d, bb.get().getId());
+                    var c = getMapChunk(og, chunkid);
+                    bbid = c.getBlock(b);
+                    if (bbid != empty && checkSetNeighbor(getMapBlock(og, bbid))) {
+                        mb.setNeighbor(d, bbid);
                     }
                 }
             }
@@ -543,10 +546,7 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void createMap(MapChunk chunk, int sx, int sy, int sz, int ex, int ey, int ez) {
-        chunk.setPos(new GameChunkPos(gm.id, sx, sy, sz, ex, ey, ez));
-        if (chunk.pos.ep.x == gm.width && chunk.pos.ep.y == gm.height && chunk.pos.ep.z == gm.depth) {
-            chunk.setRoot(true);
-        }
+        chunk.setPos(new GameChunkPos(sx, sy, sz, ex, ey, ez));
         MutableObjectLongMap<GameChunkPos> chunks = ObjectLongMaps.mutable.empty();
         this.idsBatch = ids.batch(128);
         Supplier<byte[]> idsSupplier = this::supplyIds;
@@ -556,7 +556,7 @@ public class TerrainTest extends SimpleApplication {
         for (int xx = sx; xx < ex; xx += cx) {
             for (int yy = sy; yy < ey; yy += cy) {
                 for (int zz = sz; zz < ez; zz += cz) {
-                    createChunk(idsSupplier, terrain, chunk, chunks, gm.id, xx, yy, zz, xx + cx, yy + cy, zz + cz);
+                    createChunk(idsSupplier, terrain, chunk, chunks, xx, yy, zz, xx + cx, yy + cy, zz + cz);
                 }
             }
         }
@@ -577,19 +577,21 @@ public class TerrainTest extends SimpleApplication {
 
     @SneakyThrows
     private void createChunk(Supplier<byte[]> ids, long[][][] terrain, MapChunk parent,
-            MutableObjectLongMap<GameChunkPos> chunks, long id, int x, int y, int z, int ex, int ey, int ez) {
+            MutableObjectLongMap<GameChunkPos> chunks, int x, int y, int z, int ex, int ey, int ez)
+            throws GeneratorException {
         var chunk = new MapChunk(this.ids.generate());
         chunk.setParent(parent.getId());
-        chunk.setPos(new GameChunkPos(id, x, y, z, ex, ey, ez));
+        chunk.setPos(new GameChunkPos(x, y, z, ex, ey, ez));
         chunk.updateCenterExtent(gm.width, gm.height, gm.depth);
         int csize = gm.getChunkSize();
         if (ex - x == csize || ey - y == csize || ez - z == csize) {
             MutableMap<GameBlockPos, MapBlock> blocks = Maps.mutable.empty();
+            MutableObjectLongMap<GameBlockPos> blocksids = ObjectLongMaps.mutable.empty();
             for (int xx = x; xx < ex; xx++) {
                 for (int yy = y; yy < ey; yy++) {
                     for (int zz = z; zz < ez; zz++) {
                         var mb = new MapBlock(ids.get());
-                        mb.pos = new GameBlockPos(id, xx, yy, zz);
+                        mb.pos = new GameBlockPos(xx, yy, zz);
                         mb.setMaterialRid(terrain[zz][yy][xx]);
                         mb.setObjectRid(809);
                         mb.updateCenterExtent(gm.width, gm.height, gm.depth);
@@ -600,15 +602,24 @@ public class TerrainTest extends SimpleApplication {
                             mb.setMined(true);
                         }
                         blocks.put(mb.pos, mb);
+                        blocksids.put(mb.pos, mb.id);
                     }
                 }
             }
-            chunk.setBlocks(blocks);
+            chunk.setBlocks(blocksids);
+            putObjectsToBackend(MapBlock.class, blocks.values());
         } else {
             createMap(chunk, x, y, z, ex, ey, ez);
         }
         chunks.put(chunk.pos, chunk.getId());
         putObjectToBackend(chunk);
+    }
+
+    private void putObjectsToBackend(Class<?> keyType, Iterable<? extends GameObject> values) {
+        var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
+        for (GameObject go : values) {
+            backend.put(go.id, go);
+        }
     }
 
     private void putObjectToBackend(GameObject go) {
