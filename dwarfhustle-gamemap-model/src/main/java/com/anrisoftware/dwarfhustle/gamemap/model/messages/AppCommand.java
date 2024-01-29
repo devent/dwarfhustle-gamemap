@@ -32,15 +32,15 @@ public interface AppCommand {
 
 	boolean isSkipLoad();
 
-	String getRemoteServer();
+	String getDbServer();
 
-	String getRemoteUser();
+	String getDbUser();
 
-	String getRemotePassword();
+	String getDbPassword();
 
-	String getRemoteDatabase();
+	String getDbName();
 
-	default boolean isUseRemoteServer() {
-		return StringUtils.isNotBlank(getRemoteServer());
+	default boolean isUseRemoteDb() {
+		return StringUtils.isNotBlank(getDbServer());
 	}
 }

@@ -68,6 +68,7 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.ConnectDbSuccessMess
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbMessage.DbErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DbMessage.DbResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage.LoadObjectNotFoundMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage.LoadObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectsMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
@@ -107,6 +108,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class AppActor {
+
+    private static final Duration ACTOR_TIMEOUT = Duration.ofSeconds(30);
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, AppActor.class.getSimpleName());
 
@@ -199,14 +202,14 @@ public class AppActor {
         createPowerLoom(injector);
         createConsole(injector);
         createObjectsCache(injector);
-        createAssetsActor(injector);
+        createMaterialAssetsActor(injector);
+        createModelsAssetsActor(injector);
         return new InitialStateMessage();
     }
 
     private static void createObjectsCache(Injector injector) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        var task = StoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30),
-                actor.getObjectsAsync(OrientDbActor.ID));
+        var task = StoredObjectsJcsCacheActor.create(injector, ACTOR_TIMEOUT, actor.getObjectsAsync(OrientDbActor.ID));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
@@ -216,20 +219,31 @@ public class AppActor {
         });
     }
 
-    private static void createAssetsActor(Injector injector) {
-        var task = MaterialAssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+    private static void createMaterialAssetsActor(Injector injector) {
+        var task = MaterialAssetsJcsCacheActor.create(injector, ACTOR_TIMEOUT);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
-                log.error("AssetsActor.create", ex);
+                log.error("MaterialAssetsJcsCacheActor.create", ex);
             } else {
-                log.debug("AssetsActor created");
+                log.debug("MaterialAssetsJcsCacheActor created");
+            }
+        });
+    }
+
+    private static void createModelsAssetsActor(Injector injector) {
+        var task = ModelsAssetsJcsCacheActor.create(injector, ACTOR_TIMEOUT);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ModelsAssetsJcsCacheActor.create", ex);
+            } else {
+                log.debug("ModelsAssetsJcsCacheActor created");
             }
         });
     }
 
     private static void createDb(Injector injector, AppCommand command) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        OrientDbActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+        OrientDbActor.create(injector, ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("OrientDbActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
@@ -246,7 +260,7 @@ public class AppActor {
 
     private static void createPowerLoom(Injector injector) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        PowerLoomKnowledgeActor.create(injector, ofSeconds(1), actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
+        PowerLoomKnowledgeActor.create(injector, ACTOR_TIMEOUT, actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("PowerLoomKnowledgeActor.create", ex);
@@ -260,7 +274,7 @@ public class AppActor {
 
     private static void createKnowledgeCache(Injector injector, ActorRef<Message> powerLoom) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsAsync(PowerLoomKnowledgeActor.ID))
+        KnowledgeJcsCacheActor.create(injector, ACTOR_TIMEOUT, actor.getObjectsAsync(PowerLoomKnowledgeActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("KnowledgeJcsCacheActor.create", ex);
@@ -273,7 +287,7 @@ public class AppActor {
 
     private static void createConsole(Injector injector) {
         var actor = injector.getInstance(ActorSystemProvider.class);
-        ConsoleActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+        ConsoleActor.create(injector, ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ConsoleActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
@@ -379,9 +393,9 @@ public class AppActor {
     private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
         log.debug("onLoadWorld {}", m);
         actor.tell(new LoadTexturesMessage<>(assetsResponseAdapter));
-        if (command.isUseRemoteServer()) {
-            actor.tell(new ConnectDbRemoteMessage<>(dbResponseAdapter, command.getRemoteServer(),
-                    command.getRemoteDatabase(), command.getRemoteUser(), command.getRemotePassword()));
+        if (command.isUseRemoteDb()) {
+            actor.tell(new ConnectDbRemoteMessage<>(dbResponseAdapter, command.getDbServer(), command.getDbName(),
+                    command.getDbUser(), command.getDbPassword()));
         } else {
             actor.tell(new StartEmbeddedServerMessage<>(dbResponseAdapter, m.dir.getAbsolutePath(), dbConfig));
         }
@@ -505,7 +519,8 @@ public class AppActor {
         } else if (response instanceof StartEmbeddedServerSuccessMessage) {
             log.debug("Started embedded server");
             var rm = (StartEmbeddedServerSuccessMessage<?>) response;
-            actor.tell(new ConnectDbEmbeddedMessage<>(dbResponseAdapter, rm.server, "test", "root", "admin"));
+            actor.tell(new ConnectDbEmbeddedMessage<>(dbResponseAdapter, rm.server, command.getDbName(),
+                    command.getDbUser(), command.getDbPassword()));
         } else if (response instanceof ConnectDbSuccessMessage) {
             log.debug("Connected to server");
             actor.tell(new LoadObjectMessage<>(dbResponseAdapter, WorldMap.OBJECT_TYPE, db -> {
@@ -513,6 +528,7 @@ public class AppActor {
                 return db.query(query, WorldMap.OBJECT_TYPE);
             }));
         } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
+            log.debug("Loaded object successfully {}", rm.go);
             if (rm.go instanceof WorldMap wm) {
                 ogs.get().currentWorld.set(wm);
                 actor.tell(new SetWorldMapMessage(wm));
@@ -531,6 +547,10 @@ public class AppActor {
                     retrieveChildMapBlocks(ogs.get().currentMap.get().id, mb.getPos());
                 }
             }
+        } else if (response instanceof LoadObjectNotFoundMessage rm) {
+            log.error("Object not found", rm);
+            actor.tell(new AppErrorMessage(new Exception("Object not found")));
+            return Behaviors.stopped();
         }
         return Behaviors.same();
     }

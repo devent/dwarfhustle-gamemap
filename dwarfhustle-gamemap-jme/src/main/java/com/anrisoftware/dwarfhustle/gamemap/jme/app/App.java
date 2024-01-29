@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
+import static akka.actor.typed.javadsl.AskPattern.ask;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
@@ -53,7 +54,6 @@ import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.system.AppSettings;
 
 import akka.actor.typed.ActorRef;
-import akka.actor.typed.javadsl.AskPattern;
 import jakarta.inject.Inject;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -80,21 +80,17 @@ public class App extends SimpleApplication {
         @Option(names = { "-skip" }, paramLabel = "SKIP-LOAD", description = "skip loading of the world")
         private boolean skipLoad = false;
 
-        @Option(names = {
-                "-remote-server" }, paramLabel = "REMOTE-SERVER", description = "using the remote server instead of starting embedded server")
-        private String remoteServer;
+        @Option(names = { "-db-server" }, paramLabel = "DB-SERVER", description = "the database server host")
+        private String dbServer = "";
 
-        @Option(names = {
-                "-remote-user" }, paramLabel = "REMOTE-USER", description = "using the remote server instead of starting embedded server")
-        private String remoteUser;
+        @Option(names = { "-db-user" }, paramLabel = "DB-USER", description = "the database user")
+        private String dbUser = "root";
 
-        @Option(names = {
-                "-remote-password" }, paramLabel = "REMOTE-PASSWORD", description = "using the remote server instead of starting embedded server")
-        private String remotePassword;
+        @Option(names = { "-db-password" }, paramLabel = "DB-PASSWORD", description = "the database password")
+        private String dbPassword = "admin";
 
-        @Option(names = {
-                "-remote-database" }, paramLabel = "REMOTE-DATABASE", description = "using the remote server instead of starting embedded server")
-        private String remoteDatabase;
+        @Option(names = { "-db-name" }, paramLabel = "DB-NAME", description = "the database name")
+        private String dbName = "terrain_8_8_8";
 
         @Override
         public void run() {
@@ -190,7 +186,7 @@ public class App extends SimpleApplication {
     }
 
     private void attachGui(ActorRef<Message> receiver) {
-        CompletionStage<AttachGuiFinishedMessage> result = AskPattern.ask(receiver, AttachGuiMessage::new, ofMinutes(1),
+        CompletionStage<AttachGuiFinishedMessage> result = ask(receiver, AttachGuiMessage::new, ofMinutes(1),
                 actor.getActorSystem().scheduler());
         result.whenComplete((ret, ex) -> {
             if (ex != null) {

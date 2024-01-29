@@ -29,7 +29,6 @@ import java.time.ZoneOffset;
 import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -630,9 +629,8 @@ public class TerrainTest extends SimpleApplication {
     @SneakyThrows
     private void cacheAllObjects() {
         log.debug("cacheAllObjects");
-        var cache = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(30, TimeUnit.SECONDS);
-        askCachePuts(cache, Long.class, GameObject::getId, backendIdsObjects.values(), ofSeconds(10),
-                actor.getScheduler()).whenComplete((reply, failure) -> {
+        askCachePuts(actor.getActorSystem(), ofSeconds(10), Long.class, GameObject::getId, backendIdsObjects.values())
+                .whenComplete((reply, failure) -> {
                     if (failure != null) {
                         log.error("Cache failure", failure);
                     } else {

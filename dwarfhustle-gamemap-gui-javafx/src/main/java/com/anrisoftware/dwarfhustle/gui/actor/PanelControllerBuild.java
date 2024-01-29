@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import jakarta.inject.Inject;
-
 import org.apache.commons.io.IOUtils;
 
 import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
@@ -35,6 +33,7 @@ import com.google.inject.Injector;
 import com.jayfella.jme.jfx.JavaFxUI;
 import com.jme3.app.Application;
 
+import jakarta.inject.Inject;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
