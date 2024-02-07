@@ -79,6 +79,7 @@ public class AssetsLoadMaterialTextures {
             map.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
+            System.out.println("put cache " + to.id); // TODO
             cache.put(to.id, to);
         }
     }

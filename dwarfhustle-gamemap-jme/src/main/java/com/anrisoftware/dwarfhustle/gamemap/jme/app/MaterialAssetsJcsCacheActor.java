@@ -20,12 +20,11 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import jakarta.inject.Inject;
 
 import org.apache.commons.jcs3.JCS;
 import org.apache.commons.jcs3.access.CacheAccess;
@@ -55,6 +54,7 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -171,7 +171,9 @@ public class MaterialAssetsJcsCacheActor extends AbstractJcsCacheActor {
     private Behavior<Message> onLoadTextures(@SuppressWarnings("rawtypes") LoadTexturesMessage m) {
         log.debug("onLoadTextures {}", m);
         try {
+            System.out.println("MaterialAssetsJcsCacheActor.onLoadTextures() " + Objects.hash(cache)); // TODO
             textures.loadMaterialTextures(cache);
+            System.out.println("sending LoadTexturesSuccessMessage"); // TODO
             m.replyTo.tell(new LoadTexturesSuccessMessage<>(m));
         } catch (Throwable e) {
             log.error("onLoadTextures", e);

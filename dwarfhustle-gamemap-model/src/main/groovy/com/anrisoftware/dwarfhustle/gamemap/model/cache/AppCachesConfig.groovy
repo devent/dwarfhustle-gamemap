@@ -39,7 +39,7 @@ class AppCachesConfig {
     def create(File parentDir) {
         assertThat(parentDir, notNullValue())
         def config = new Properties()
-        def params = [objects: [:], assets: [:], knowledge: [:]]
+        def params = [objects: [:], assets_material: [:], assets_models: [:], knowledge: [:]]
         params.objects.cache_name = "objects"
         params.objects.max_objects = 10000
         params.objects.is_eternal = false
@@ -49,14 +49,23 @@ class AppCachesConfig {
         params.objects.have_file_aux = true
         params.objects.parent_dir = parentDir
         //
-        params.assets.cache_name = "assets"
-        params.assets.max_objects = 1000
-        params.assets.is_eternal = false
-        params.assets.max_idle = Duration.ofHours(24).seconds
-        params.assets.max_life = Duration.ofHours(24).seconds
-        params.assets.max_key_size = 1000
-        params.assets.have_file_aux = true
-        params.assets.parent_dir = parentDir
+        params.assets_material.cache_name = "assets-material"
+        params.assets_material.max_objects = 1000
+        params.assets_material.is_eternal = false
+        params.assets_material.max_idle = Duration.ofHours(24).seconds
+        params.assets_material.max_life = Duration.ofHours(24).seconds
+        params.assets_material.max_key_size = 1000
+        params.assets_material.have_file_aux = true
+        params.assets_material.parent_dir = parentDir
+        //
+        params.assets_models.cache_name = "assets-models"
+        params.assets_models.max_objects = 1000
+        params.assets_models.is_eternal = false
+        params.assets_models.max_idle = Duration.ofHours(24).seconds
+        params.assets_models.max_life = Duration.ofHours(24).seconds
+        params.assets_models.max_key_size = 1000
+        params.assets_models.have_file_aux = true
+        params.assets_models.parent_dir = parentDir
         //
         params.knowledge.cache_name = "knowledge"
         params.knowledge.max_objects = 1000
