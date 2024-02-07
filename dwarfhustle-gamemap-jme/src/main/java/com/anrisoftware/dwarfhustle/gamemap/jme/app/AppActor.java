@@ -18,14 +18,12 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static java.time.Duration.ofSeconds;
 
 import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
@@ -76,6 +74,7 @@ import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage.LoadObjectNotFoundMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectMessage.LoadObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectsMessage;
+import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.LoadObjectsMessage.LoadObjectsSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.OrientDbActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerMessage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.StartEmbeddedServerMessage.StartEmbeddedServerSuccessMessage;
@@ -348,11 +347,7 @@ public class AppActor {
     @SuppressWarnings("rawtypes")
     private ActorRef<AssetsResponseMessage> modelsAssetsResponseAdapter;
 
-    private CountDownLatch assetsLoaded = new CountDownLatch(2);
-
     private AtomicInteger currentChunksLoaded = new AtomicInteger(0);
-
-    private int currentChunksCount = 0;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -552,10 +547,13 @@ public class AppActor {
                 actor.tell(new SetGameMapMessage(gm));
             } else if (rm.go instanceof MapChunk mc) {
                 updateAndCache(mc);
-                if (mc.root) {
-                    this.currentChunksCount = ogs.get().currentMap.get().getBlocksCount();
-                }
                 retrieveChunksBlocks(mc);
+            }
+        } else if (response instanceof LoadObjectsSuccessMessage rm) {
+            var gm = ogs.get().currentMap.get();
+            System.out.printf("loaded: %d = %d + %d = %d\n", currentChunksLoaded.get(), gm.chunksCount, gm.blocksCount,
+                    gm.chunksCount + gm.blocksCount); // TODO
+            if (currentChunksLoaded.get() == gm.chunksCount + gm.blocksCount - 1) {
                 mapBlockLoaded();
             }
         } else if (response instanceof LoadObjectNotFoundMessage rm) {
@@ -600,12 +598,24 @@ public class AppActor {
     @SneakyThrows
     private void mapBlockLoaded() {
         createSunActor();
+        createGameTickActor();
         // assetsLoaded.await();
         actor.tell(new MapChunksLoadedMessage(ogs.get().currentMap.get()));
     }
 
+    private void createGameTickActor() {
+        GameTickActor.create(injector, ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("GameTickActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("GameTickActor created");
+            }
+        });
+    }
+
     private void createSunActor() {
-        SunActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+        SunActor.create(injector, ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("SunActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
@@ -667,7 +677,6 @@ public class AppActor {
             actor.tell(new AppErrorMessage(rm.e));
             return Behaviors.stopped();
         } else if (m.response instanceof LoadTexturesSuccessMessage<?> rm) {
-            assetsLoaded.countDown();
         }
         return Behaviors.same();
     }
@@ -683,7 +692,6 @@ public class AppActor {
             actor.tell(new AppErrorMessage(rm.e));
             return Behaviors.stopped();
         } else if (m.response instanceof LoadModelsSuccessMessage<?> rm) {
-            assetsLoaded.countDown();
         }
         return Behaviors.same();
     }

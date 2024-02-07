@@ -17,6 +17,9 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.id2Kid;
+import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
+
 import java.net.URL;
 
 import org.apache.commons.jcs3.access.CacheAccess;
@@ -28,7 +31,6 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMapData;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMapFramesData;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.AssetNotFoundException;
 import com.jme3.math.ColorRGBA;
@@ -77,15 +79,14 @@ public class AssetsLoadMaterialTextures {
             map.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
-            long id = KnowledgeObject.kid2Id(v.getKey());
-            to.setId(id);
-            to.setRid(v.getKey());
-            cache.put(id, to);
+            cache.put(to.id, to);
         }
     }
 
     private TextureCacheObject loadTextureData(TexturesMapFramesData data) {
         var to = new TextureCacheObject();
+        to.id = kid2Id(data.rid);
+        to.rid = data.rid;
         to.specular = new ColorRGBA(data.specular[0], data.specular[1], data.specular[2], data.specular[3]);
         to.baseColor = new ColorRGBA(data.color[0], data.color[1], data.color[2], data.color[3]);
         to.metallic = data.metallic;
@@ -113,7 +114,7 @@ public class AssetsLoadMaterialTextures {
     }
 
     public TextureCacheObject loadTextureObject(long key) {
-        var d = texturesMapFramesDataMap.get(key);
+        var d = texturesMapFramesDataMap.get(id2Kid(key));
         if (d == null) {
             throw new RuntimeException("No texture object with id " + key);
         }

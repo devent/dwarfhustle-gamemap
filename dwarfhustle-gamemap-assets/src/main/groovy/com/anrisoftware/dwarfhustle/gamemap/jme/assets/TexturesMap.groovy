@@ -52,6 +52,7 @@ class TexturesMapData {
     def frames(def args) {
         long rid = args.rid
         def data = new TexturesMapFramesData()
+        data.rid = rid
         data.image = image
         data.set(args)
         frames[rid] = data
@@ -66,6 +67,8 @@ class TexturesMapData {
  */
 @ToString
 class TexturesMapFramesData {
+
+    public long rid
 
     public String image
 
