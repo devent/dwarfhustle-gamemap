@@ -19,8 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import java.net.URL;
 
-import jakarta.inject.Inject;
-
 import org.apache.commons.jcs3.access.CacheAccess;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMap;
@@ -34,6 +32,7 @@ import com.jme3.scene.Spatial;
 
 import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,14 +65,13 @@ public class AssetsLoadObjectModels {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
         mo.model = model;
-        long id = KnowledgeObject.kid2Id(data.rid);
-        mo.setId(id);
-        mo.setRid(data.rid);
-        cache.put(id, mo);
+        cache.put(mo.id, mo);
     }
 
     private ModelCacheObject loadModelData(ModelMapData data) {
         var mo = new ModelCacheObject();
+        mo.id = KnowledgeObject.kid2Id(data.rid);
+        mo.rid = data.rid;
         return mo;
     }
 
@@ -90,7 +88,7 @@ public class AssetsLoadObjectModels {
     }
 
     public ModelCacheObject loadModelObject(long key) {
-        var d = modelMap.data.get(key);
+        var d = modelMap.data.get(KnowledgeObject.id2Kid(key));
         var to = loadModelData(d);
         to.model = loadModel(d.model);
         return to;

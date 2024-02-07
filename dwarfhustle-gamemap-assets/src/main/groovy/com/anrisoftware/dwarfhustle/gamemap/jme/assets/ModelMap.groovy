@@ -29,7 +29,7 @@ class ModelMap {
 
     public Map<Long, ModelMapData> data = [:]
 
-    def putAt(def rid, def v) {
+    def putAt(long rid, def v) {
         if (data[rid] == null) {
             data[rid] = new ModelMapData()
         }
@@ -37,7 +37,7 @@ class ModelMap {
         data[rid].set(v)
     }
 
-    def getAt(def rid) {
+    def getAt(long rid) {
         data[rid]
     }
 

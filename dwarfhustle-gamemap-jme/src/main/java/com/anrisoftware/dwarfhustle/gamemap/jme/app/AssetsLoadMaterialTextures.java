@@ -66,13 +66,15 @@ public class AssetsLoadMaterialTextures {
         var binding = new Binding();
         unknownTextures = am.loadTexture("Textures/Tiles/unknown-02-128.png");
         this.materialTexturesMap = (TexturesMap) engine.run("TexturesMaterials.groovy", binding);
-        materialTexturesMap.data.values().parallelStream().forEach((e) -> loadTextureMap(cache, e));
+        var syncMap = texturesMapFramesDataMap.asSynchronized();
+        materialTexturesMap.data.values().parallelStream().forEach((e) -> loadTextureMap(syncMap, cache, e));
     }
 
-    public void loadTextureMap(CacheAccess<Object, GameObject> cache, TexturesMapData data) {
+    public void loadTextureMap(MutableLongObjectMap<TexturesMapFramesData> map, CacheAccess<Object, GameObject> cache,
+            TexturesMapData data) {
         var tex = loadTexture(data.image);
         for (var v : data.frames.entrySet()) {
-            texturesMapFramesDataMap.put(v.getKey(), v.getValue());
+            map.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
             long id = KnowledgeObject.kid2Id(v.getKey());

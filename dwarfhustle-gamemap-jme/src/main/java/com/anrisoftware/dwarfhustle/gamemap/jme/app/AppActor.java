@@ -25,6 +25,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
@@ -34,11 +36,13 @@ import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadWorldMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapBlockLoadedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapChunksLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -55,6 +59,7 @@ import com.anrisoftware.dwarfhustle.model.api.materials.SpecialStoneLayer;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameChunkPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
@@ -95,6 +100,7 @@ import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -153,7 +159,13 @@ public class AppActor {
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class WrappedAssetsResponse extends Message {
+    private static class WrappedMaterialAssetsResponse extends Message {
+        private final AssetsResponseMessage<?> response;
+    }
+
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    private static class WrappedModelsAssetsResponse extends Message {
         private final AssetsResponseMessage<?> response;
     }
 
@@ -330,14 +342,17 @@ public class AppActor {
 
     private Injector injector;
 
-    private int currentMapBlocksLoaded;
-
-    private int currentMapBlocksCount;
-
-    private MapChunk currentMapRootBlock;
+    @SuppressWarnings("rawtypes")
+    private ActorRef<AssetsResponseMessage> materialAssetsResponseAdapter;
 
     @SuppressWarnings("rawtypes")
-    private ActorRef<AssetsResponseMessage> assetsResponseAdapter;
+    private ActorRef<AssetsResponseMessage> modelsAssetsResponseAdapter;
+
+    private CountDownLatch assetsLoaded = new CountDownLatch(2);
+
+    private AtomicInteger currentChunksLoaded = new AtomicInteger(0);
+
+    private int currentChunksCount = 0;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -354,7 +369,10 @@ public class AppActor {
         this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         this.knowledgeResponseAdapter = context.messageAdapter(KnowledgeResponseMessage.class,
                 WrappedKnowledgeResponse::new);
-        this.assetsResponseAdapter = context.messageAdapter(AssetsResponseMessage.class, WrappedAssetsResponse::new);
+        this.materialAssetsResponseAdapter = context.messageAdapter(AssetsResponseMessage.class,
+                WrappedMaterialAssetsResponse::new);
+        this.modelsAssetsResponseAdapter = context.messageAdapter(AssetsResponseMessage.class,
+                WrappedModelsAssetsResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -363,13 +381,13 @@ public class AppActor {
     }
 
     private Behavior<Message> stashOtherCommand(Message m) {
-        log.debug("stashOtherCommand: {}", m);
+        log.trace("stashOtherCommand: {}", m);
         buffer.stash(m);
         return Behaviors.same();
     }
 
     private Behavior<Message> onSetupError(SetupErrorMessage m) {
-        log.debug("onSetupError: {}", m);
+        log.trace("onSetupError: {}", m);
         return Behaviors.stopped();
     }
 
@@ -382,7 +400,7 @@ public class AppActor {
      * </ul>
      */
     private Behavior<Message> onInitialState(InitialStateMessage m) {
-        log.debug("onInitialState");
+        log.trace("onInitialState");
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -391,8 +409,9 @@ public class AppActor {
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
      */
     private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
-        log.debug("onLoadWorld {}", m);
-        actor.tell(new LoadTexturesMessage<>(assetsResponseAdapter));
+        log.trace("onLoadWorld {}", m);
+        actor.tell(new LoadTexturesMessage<>(materialAssetsResponseAdapter));
+        actor.tell(new LoadModelsMessage<>(modelsAssetsResponseAdapter));
         if (command.isUseRemoteDb()) {
             actor.tell(new ConnectDbRemoteMessage<>(dbResponseAdapter, command.getDbServer(), command.getDbName(),
                     command.getDbUser(), command.getDbPassword()));
@@ -408,11 +427,11 @@ public class AppActor {
      * </ul>
      */
     private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
-        log.debug("onSetWorldMap {}", m);
+        log.trace("onSetWorldMap {}", m);
         actor.tell(new CachePutMessage<>(cacheResponseAdapter, m.wm.getId(), m.wm));
         ogs.get().currentWorld.set(m.wm);
         actor.tell(new LoadObjectMessage<>(dbResponseAdapter, GameMap.OBJECT_TYPE, db -> {
-            var query = "SELECT * from ? where objecttype = ? and mapid = ?";
+            var query = "SELECT * from ? where objecttype = ? and objectid = ?";
             return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.currentMap);
         }));
         return Behaviors.same();
@@ -424,7 +443,7 @@ public class AppActor {
      * </ul>
      */
     private Behavior<Message> onSetLayersTerrain(SetLayersTerrainMessage m) {
-        log.debug("onSetLayersTerrain {}", m);
+        log.trace("onSetLayersTerrain {}", m);
         ogs.get().visibleDepthLayers.set(m.layers);
         return Behaviors.same();
     }
@@ -437,21 +456,16 @@ public class AppActor {
      * called.
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
-        log.debug("onSetGameMap {}", m);
+        log.trace("onSetGameMap {}", m);
         actor.tell(new CachePutMessage<>(cacheResponseAdapter, m.gm.getId(), m.gm));
-        loadRootMapBlock(m);
+        loadRootMapChunk(m);
         return Behaviors.same();
     }
 
-    private void loadRootMapBlock(SetGameMapMessage m) {
+    private void loadRootMapChunk(SetGameMapMessage m) {
         actor.tell(new LoadObjectMessage<>(dbResponseAdapter, MapChunk.OBJECT_TYPE, db -> {
-            var w = m.gm.getWidth();
-            var h = m.gm.getHeight();
-            var d = m.gm.getDepth();
-            var p = new GameChunkPos(0, 0, 0, w, h, d);
-            var query = "SELECT * from ? where objecttype = ? and mapid = ? and sx = ? and sy = ? and sz = ? and ex = ? and ey = ? and ez = ? limit 1";
-            return db.query(query, MapChunk.OBJECT_TYPE, MapChunk.OBJECT_TYPE, m.gm.id, p.getX(), p.getY(), p.getZ(),
-                    p.getEp().getX(), p.getEp().getY(), p.getEp().getZ());
+            var query = "SELECT * from ? where objecttype = ? and objectid = ? limit 1";
+            return db.query(query, MapChunk.OBJECT_TYPE, MapChunk.OBJECT_TYPE, m.gm.root);
         }));
     }
 
@@ -461,7 +475,7 @@ public class AppActor {
      * </ul>
      */
     private Behavior<Message> onSetTimeWorld(SetTimeWorldMessage m) {
-        log.debug("onSetTimeWorld {}", m);
+        log.trace("onSetTimeWorld {}", m);
         ogs.get().currentWorld.get().setTime(LocalDateTime.from(ogs.get().currentWorld.get().getTime()).with(m.time));
         return Behaviors.same();
     }
@@ -473,7 +487,7 @@ public class AppActor {
      * {@link #onWrappedKnowledgeResponse(WrappedKnowledgeResponse)}.
      */
     private Behavior<Message> onLoadKnowledge(LoadKnowledgeMessage m) {
-        log.debug("onLoadKnowledge {}", m);
+        log.trace("onLoadKnowledge {}", m);
         actor.tell(cKgM(Sedimentary.class, Sedimentary.TYPE));
         actor.tell(cKgM(IgneousIntrusive.class, IgneousIntrusive.TYPE));
         actor.tell(cKgM(IgneousExtrusive.class, IgneousExtrusive.TYPE));
@@ -510,7 +524,7 @@ public class AppActor {
      * </dl>
      */
     private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
-        log.debug("onWrappedDbResponse {}", m);
+        log.trace("onWrappedDbResponse {}", m);
         var response = m.response;
         if (response instanceof DbErrorMessage<?> rm) {
             log.error("Db error", rm);
@@ -536,16 +550,13 @@ public class AppActor {
                 gm.setWorld(ogs.get().currentWorld.get().id);
                 ogs.get().currentMap.set(gm);
                 actor.tell(new SetGameMapMessage(gm));
-            } else if (rm.go instanceof MapChunk mb) {
-                actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.getId(), mb));
-                if (mb.isRoot()) {
-                    currentMapRootBlock = mb;
+            } else if (rm.go instanceof MapChunk mc) {
+                updateAndCache(mc);
+                if (mc.root) {
+                    this.currentChunksCount = ogs.get().currentMap.get().getBlocksCount();
                 }
-                if (!mb.getBlocks().isEmpty()) {
-                    currentMapBlocksLoaded = 0;
-                    currentMapBlocksCount = ogs.get().currentMap.get().getBlocksCount();
-                    retrieveChildMapBlocks(ogs.get().currentMap.get().id, mb.getPos());
-                }
+                retrieveChunksBlocks(mc);
+                mapBlockLoaded();
             }
         } else if (response instanceof LoadObjectNotFoundMessage rm) {
             log.error("Object not found", rm);
@@ -555,22 +566,42 @@ public class AppActor {
         return Behaviors.same();
     }
 
-    private void retrieveChildMapBlocks(long map, GameChunkPos p) {
+    private void retrieveChunksBlocks(MapChunk mc) {
+        int w = mc.pos.getSizeX() / 2;
+        int h = mc.pos.getSizeY() / 2;
+        int d = mc.pos.getSizeZ() / 2;
         actor.tell(new LoadObjectsMessage<>(dbResponseAdapter, MapChunk.OBJECT_TYPE, go -> {
-            var mc = (MapChunk) go;
-            actor.tell(new CachePutMessage<>(cacheResponseAdapter, mc.getId(), mc));
-            currentMapBlocksLoaded++;
-            if (currentMapBlocksLoaded == currentMapBlocksCount) {
-                mapBlockLoaded();
-            }
-        }, db -> createQuery(map, p, db)));
+            updateAndCache((MapChunk) go);
+            currentChunksLoaded.incrementAndGet();
+            retrieveChunksBlocks((MapChunk) go);
+        }, db -> {
+            return createQueryChunks(db, mc.map, mc.pos, w, h, d);
+        }));
+        if (mc.blocks.notEmpty()) {
+            actor.tell(new LoadObjectsMessage<>(dbResponseAdapter, MapBlock.OBJECT_TYPE, go -> {
+                updateAndCache((MapBlock) go);
+                currentChunksLoaded.incrementAndGet();
+            }, db -> createQueryBlocks(db, mc.id)));
+        }
     }
 
+    private void updateAndCache(MapBlock mb) {
+        mb.updateCenterExtent(ogs.get().currentMap.get().width, ogs.get().currentMap.get().height,
+                ogs.get().currentMap.get().depth);
+        actor.tell(new CachePutMessage<>(cacheResponseAdapter, mb.id, mb));
+    }
+
+    private void updateAndCache(MapChunk mc) {
+        mc.updateCenterExtent(ogs.get().currentMap.get().width, ogs.get().currentMap.get().height,
+                ogs.get().currentMap.get().depth);
+        actor.tell(new CachePutMessage<>(cacheResponseAdapter, mc.id, mc));
+    }
+
+    @SneakyThrows
     private void mapBlockLoaded() {
-        app.enqueue(() -> {
-        });
         createSunActor();
-        actor.tell(new MapBlockLoadedMessage(currentMapRootBlock));
+        // assetsLoaded.await();
+        actor.tell(new MapChunksLoadedMessage(ogs.get().currentMap.get()));
     }
 
     private void createSunActor() {
@@ -584,10 +615,14 @@ public class AppActor {
         });
     }
 
-    private OResultSet createQuery(long map, GameChunkPos p, ODatabaseDocument db) {
-        var query = "SELECT * from ? where mapid = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ?";
-        return db.query(query, MapChunk.OBJECT_TYPE, map, p.getX(), p.getY(), p.getZ(), p.getEp().getX(),
-                p.getEp().getY(), p.getEp().getZ());
+    private OResultSet createQueryChunks(ODatabaseDocument db, long map, GameChunkPos p, int w, int h, int d) {
+        var query = "SELECT * from ? where map = ? and sx >= ? and sy >= ? and sz >= ? and ex <= ? and ey <= ? and ez <= ? and (ex - sx = ?) and (ey - sy = ?) and (ez - sz = ?)";
+        return db.query(query, MapChunk.OBJECT_TYPE, map, p.x, p.y, p.z, p.ep.x, p.ep.y, p.ep.z, w, h, d);
+    }
+
+    private OResultSet createQueryBlocks(ODatabaseDocument db, long chunk) {
+        var query = "SELECT * from ? where chunk = ?";
+        return db.query(query, MapBlock.OBJECT_TYPE, chunk);
     }
 
     /**
@@ -611,7 +646,7 @@ public class AppActor {
      * from {@link #getInitialBehavior()}.
      */
     private Behavior<Message> onWrappedKnowledgeResponse(WrappedKnowledgeResponse m) {
-        log.debug("onWrappedKnowledgeBaseResponse {}", m);
+        log.trace("onWrappedKnowledgeBaseResponse {}", m);
         if (m.response instanceof KnowledgeResponseErrorMessage rm) {
             log.error("Error load materials", rm.error);
             actor.tell(new AppErrorMessage(rm.error));
@@ -622,17 +657,33 @@ public class AppActor {
     }
 
     /**
-     * Handles {@link WrappedAssetsResponse}. Returns a behavior for the messages
-     * from {@link #getInitialBehavior()}.
+     * Handles {@link WrappedMaterialAssetsResponse}. Returns a behavior for the
+     * messages from {@link #getInitialBehavior()}.
      */
-    private Behavior<Message> onWrappedAssetsResponse(WrappedAssetsResponse m) {
-        log.debug("onWrappedAssetsResponse {}", m);
+    private Behavior<Message> onWrappedMaterialAssetsResponse(WrappedMaterialAssetsResponse m) {
+        log.trace("onWrappedMaterialAssetsResponse {}", m);
         if (m.response instanceof LoadTexturesErrorMessage<?> rm) {
             log.error("Error load textures", rm.e);
             actor.tell(new AppErrorMessage(rm.e));
             return Behaviors.stopped();
         } else if (m.response instanceof LoadTexturesSuccessMessage<?> rm) {
+            assetsLoaded.countDown();
+        }
+        return Behaviors.same();
+    }
 
+    /**
+     * Handles {@link WrappedModelsAssetsResponse}. Returns a behavior for the
+     * messages from {@link #getInitialBehavior()}.
+     */
+    private Behavior<Message> onWrappedModelsAssetsResponse(WrappedModelsAssetsResponse m) {
+        log.trace("onWrappedModelsAssetsResponse {}", m);
+        if (m.response instanceof LoadTexturesErrorMessage<?> rm) {
+            log.error("Error load textures", rm.e);
+            actor.tell(new AppErrorMessage(rm.e));
+            return Behaviors.stopped();
+        } else if (m.response instanceof LoadModelsSuccessMessage<?> rm) {
+            assetsLoaded.countDown();
         }
         return Behaviors.same();
     }
@@ -643,7 +694,7 @@ public class AppActor {
      * </ul>
      */
     private Behavior<Message> onShutdown(ShutdownMessage m) {
-        log.debug("onShutdown {}", m);
+        log.trace("onShutdown {}", m);
         app.enqueue(() -> {
         });
         return Behaviors.stopped();
@@ -663,7 +714,8 @@ public class AppActor {
      * <li>{@link LoadKnowledgeMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedCacheResponse}
-     * <li>{@link WrappedAssetsResponse}
+     * <li>{@link WrappedMaterialAssetsResponse}
+     * <li>{@link WrappedModelsAssetsResponse}
      * </ul>
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
@@ -678,7 +730,8 @@ public class AppActor {
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(WrappedKnowledgeResponse.class, this::onWrappedKnowledgeResponse)//
-                .onMessage(WrappedAssetsResponse.class, this::onWrappedAssetsResponse)//
+                .onMessage(WrappedMaterialAssetsResponse.class, this::onWrappedMaterialAssetsResponse)//
+                .onMessage(WrappedModelsAssetsResponse.class, this::onWrappedModelsAssetsResponse)//
         ;
     }
 }

@@ -43,7 +43,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapChunksLoadedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
@@ -56,10 +56,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage.CacheGetSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
-import com.badlogic.ashley.core.Entity;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -129,12 +125,6 @@ public class TerrainActor {
     @ToString(callSuper = true)
     private static class UpdateTerrainMessage extends Message {
         public final GameMap gm;
-    }
-
-    @RequiredArgsConstructor
-    @ToString(callSuper = true)
-    private static class WrappedCacheResponse extends Message {
-        private final CacheResponseMessage<?> response;
     }
 
     /**
@@ -242,16 +232,11 @@ public class TerrainActor {
 
     private InitialStateMessage is;
 
-    @SuppressWarnings("rawtypes")
-    private ActorRef<CacheResponseMessage> cacheResponseAdapter;
-
-    private Optional<Entity> cursorEntity = Optional.empty();
-
     private MutableList<Geometry> blockNodes;
 
     private ImmutableList<Geometry> copyBlockNodes;
 
-    private Optional<SetGameMapMessage> previousSetGameMap = Optional.empty();
+    private Optional<MapChunksLoadedMessage> previousMapBlockLoadedMessage = Optional.empty();
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -264,7 +249,6 @@ public class TerrainActor {
      */
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
-        this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -298,17 +282,17 @@ public class TerrainActor {
     }
 
     /**
-     * Reacts to the {@link SetGameMapMessage} message.
+     * Reacts to the {@link MapChunksLoadedMessage} message.
      */
-    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
-        log.debug("onSetGameMap {}", m);
-        blockNodes = Lists.mutable.empty();
+    private Behavior<Message> onMapChunksLoaded(MapChunksLoadedMessage m) {
+        log.debug("onMapChunksLoaded {}", m);
+        this.blockNodes = Lists.mutable.empty();
+        this.previousMapBlockLoadedMessage = Optional.of(m);
         app.enqueue(() -> {
             is.cameraState.setTerrainBounds(
                     new BoundingBox(new Vector3f(), m.gm.width, m.gm.height, gs.get().visibleDepthLayers.get()));
             is.cameraState.updateCamera(m.gm);
         });
-        previousSetGameMap = Optional.of(m);
         timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
                 gs.get().terrainUpdateDuration.get());
         return Behaviors.same();
@@ -523,7 +507,6 @@ public class TerrainActor {
      */
     private void copyPosColor(MapBlock mb, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w, float h, float d,
             MapCursor cursor) {
-        // System.out.println(mb); // TODO
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
         float c = mb.pos.isEqual(cursor.x, cursor.y, cursor.z) ? 2f : 1f;
@@ -534,11 +517,9 @@ public class TerrainActor {
             vx = pos.get();
             vy = pos.get();
             vz = pos.get();
-            // System.out.printf("%f/%f/%f\n", vx, vy, vz); // TODO
             vx += tx;
             vy += ty;
             vz += tz;
-            // System.out.printf("%f/%f/%f\n", vx, vy, vz); // TODO
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
@@ -554,7 +535,6 @@ public class TerrainActor {
                 ccolor.put(c);
             }
         }
-        // System.out.println(); // TODO
     }
 
     private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int z,
@@ -655,26 +635,12 @@ public class TerrainActor {
      * <li>
      * </ul>
      */
-    private Behavior<Message> onWrappedCacheResponse(WrappedCacheResponse m) {
-        if (m.response instanceof CacheGetSuccessMessage<?> rm) {
-        } else if (m.response instanceof CacheErrorMessage<?> rm) {
-            log.error("Cache error {}", m);
-            return Behaviors.stopped();
-        }
-        return Behaviors.same();
-    }
-
-    /**
-     * <ul>
-     * <li>
-     * </ul>
-     */
     private Behavior<Message> onAppPaused(AppPausedMessage m) {
         log.debug("onAppPaused {}", m);
         if (m.paused) {
             timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
         } else {
-            previousSetGameMap.ifPresent(this::onSetGameMap);
+            previousMapBlockLoadedMessage.ifPresent(this::onMapChunksLoaded);
         }
         return Behaviors.same();
     }
@@ -700,8 +666,7 @@ public class TerrainActor {
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
-                .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
-                .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
+                .onMessage(MapChunksLoadedMessage.class, this::onMapChunksLoaded)//
                 .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
         ;
