@@ -19,8 +19,8 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.AppActor.AppActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickActor.GameTickActorFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsJcsCacheActor.MaterialAssetsJcsCacheActorFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsJcsCacheActor.ModelsAssetsJcsCacheActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor.MaterialAssetsJcsCacheActorFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor.ModelsAssetsJcsCacheActorFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
@@ -35,9 +35,9 @@ public class DwarfhustleGamemapJmeAppModule extends AbstractModule {
     protected void configure() {
         install(new FactoryModuleBuilder().implement(AppActor.class, AppActor.class).build(AppActorFactory.class));
         install(new FactoryModuleBuilder()
-                .implement(MaterialAssetsJcsCacheActor.class, MaterialAssetsJcsCacheActor.class)
+                .implement(MaterialAssetsCacheActor.class, MaterialAssetsCacheActor.class)
                 .build(MaterialAssetsJcsCacheActorFactory.class));
-        install(new FactoryModuleBuilder().implement(ModelsAssetsJcsCacheActor.class, ModelsAssetsJcsCacheActor.class)
+        install(new FactoryModuleBuilder().implement(ModelsAssetsCacheActor.class, ModelsAssetsCacheActor.class)
                 .build(ModelsAssetsJcsCacheActorFactory.class));
         install(new FactoryModuleBuilder().implement(GameTickActor.class, GameTickActor.class)
                 .build(GameTickActorFactory.class));

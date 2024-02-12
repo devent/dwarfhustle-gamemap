@@ -19,12 +19,12 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import java.net.URL;
 
-import org.apache.commons.jcs3.access.CacheAccess;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMap;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMapData;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.AssetNotFoundException;
@@ -52,7 +52,7 @@ public class AssetsLoadObjectModels {
     private ModelMap modelMap;
 
     @SneakyThrows
-    public void loadObjectModels(CacheAccess<Object, GameObject> cache) {
+    public void loadObjectModels(MutableLongObjectMap<AssetCacheObject> cache) {
         var engine = new GroovyScriptEngine(
                 new URL[] { AssetsLoadObjectModels.class.getResource("/ObjectModels.groovy") });
         var binding = new Binding();
@@ -61,7 +61,7 @@ public class AssetsLoadObjectModels {
         modelMap.data.values().parallelStream().forEach((e) -> loadModelMap(cache, e));
     }
 
-    public void loadModelMap(CacheAccess<Object, GameObject> cache, ModelMapData data) {
+    public void loadModelMap(MutableLongObjectMap<AssetCacheObject> cache, ModelMapData data) {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
         mo.model = model;

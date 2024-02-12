@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-model - Game map.
+ * dwarfhustle-gamemap-console - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,24 +15,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model.messages;
+package com.anrisoftware.dwarfhustle.gamemap.console.actor;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Message that the {@link MapChunk}s of the current {@link GameMap} was loaded
- * from the backend into the cache.
+ * Event that the visible layers of the terrain should be changed.
  *
- * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ * @author Erwin Müller
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class MapChunksLoadedMessage extends Message {
+public class SetVisibleDepthLayersMessage extends Message {
 
-    public final GameMap gm;
+    public final int layers;
 }

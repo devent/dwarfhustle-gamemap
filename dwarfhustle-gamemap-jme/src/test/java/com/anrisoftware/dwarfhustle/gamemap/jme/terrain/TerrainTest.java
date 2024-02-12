@@ -45,8 +45,8 @@ import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.DwarfhustleGamemapJmeAppModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickActor;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsJcsCacheActor;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
@@ -325,8 +325,8 @@ public class TerrainTest extends SimpleApplication {
 
     private void createTerrain() {
         TerrainActor.create(injector, ofSeconds(1), CompletableFuture.supplyAsync(() -> og),
-                actor.getObjectsAsync(MaterialAssetsJcsCacheActor.ID),
-                actor.getObjectsAsync(ModelsAssetsJcsCacheActor.ID)).whenComplete((ret, ex) -> {
+                actor.getObjectsAsync(MaterialAssetsCacheActor.ID),
+                actor.getObjectsAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
@@ -397,7 +397,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createMaterialAssets() {
-        var task = MaterialAssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        var task = MaterialAssetsCacheActor.create(injector, Duration.ofSeconds(30));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("MaterialAssetsJcsCacheActor.create", ex);
@@ -409,7 +409,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createModelsAssets() {
-        var task = ModelsAssetsJcsCacheActor.create(injector, Duration.ofSeconds(30));
+        var task = ModelsAssetsCacheActor.create(injector, Duration.ofSeconds(30));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ModelsAssetsJcsCacheActor.create", ex);

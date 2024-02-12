@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.collections.impl.factory.Maps;
 import org.scenicview.ScenicView;
@@ -48,6 +49,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -63,6 +65,7 @@ import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -134,9 +137,14 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
     @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheResponseAdapter;
 
+    private ActorRef<Message> objectsActor;
+
+    @SneakyThrows
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
+        this.objectsActor = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(1,
+                TimeUnit.SECONDS);
         StatusActor.create(injector, Duration.ofSeconds(1), initial.controller);
         InfoPanelActor.create(injector, Duration.ofSeconds(1), supplyAsync(() -> og)).whenComplete((v, err) -> {
             if (err == null) {
@@ -154,7 +162,7 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
     }
 
     private void saveGameMap(GameMap gm) {
-        actor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
+        objectsActor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
     }
 
     /**

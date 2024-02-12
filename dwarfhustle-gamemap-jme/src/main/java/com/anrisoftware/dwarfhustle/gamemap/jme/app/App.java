@@ -90,7 +90,7 @@ public class App extends SimpleApplication {
         private String dbPassword = "admin";
 
         @Option(names = { "-db-name" }, paramLabel = "DB-NAME", description = "the database name")
-        private String dbName = "terrain_8_8_8";
+        private String dbName = "terrain_32_32_32";
 
         @Override
         public void run() {
@@ -202,8 +202,8 @@ public class App extends SimpleApplication {
 
     private void createGameMap() {
         TerrainActor.create(injector, ofSeconds(1), actor.getObjectsAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectsAsync(MaterialAssetsJcsCacheActor.ID),
-                actor.getObjectsAsync(ModelsAssetsJcsCacheActor.ID)).whenComplete((ret, ex) -> {
+                actor.getObjectsAsync(MaterialAssetsCacheActor.ID),
+                actor.getObjectsAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));

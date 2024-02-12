@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetVisibleDepthLayersMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message
@@ -72,7 +72,7 @@ class DebugConsoleProcessorTest {
                 of('set layers 4 to terrain', { List it ->
                     assertEquals it.size(), 2
                     assertEquals it[0].class, ParsedLineMessage
-                    assertEquals it[1].class, SetLayersTerrainMessage
+                    assertEquals it[1].class, SetVisibleDepthLayersMessage
                     assertEquals it[1].layers, 4
                 }),
                 //

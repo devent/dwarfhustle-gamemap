@@ -27,7 +27,7 @@ import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapChunksLoadedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -158,14 +158,14 @@ public class StatusActor {
     }
 
     /**
-     * Processing {@link MapChunksLoadedMessage}.
+     * Processing {@link GameMapCachedMessage}.
      * <p>
      * Sets the status text that the world and game map is finished loading.
      * <p>
      * Returns a behavior that reacts to the messages from
      * {@link #getInitialBehavior()}.
      */
-    private Behavior<Message> onMapBlockLoaded(MapChunksLoadedMessage m) {
+    private Behavior<Message> onMapBlockLoaded(GameMapCachedMessage m) {
         log.debug("onMapBlockLoaded {}", m);
         runFxThread(() -> {
             controller.statusLabel.setText("Game map loaded.");
@@ -178,7 +178,7 @@ public class StatusActor {
      *
      * <ul>
      * <li>{@link SetGameMapMessage}
-     * <li>{@link MapChunksLoadedMessage}
+     * <li>{@link GameMapCachedMessage}
      * </ul>
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
@@ -186,7 +186,7 @@ public class StatusActor {
                 .onMessage(UnknownLineMessage.class, this::onUnknownLine)//
                 .onMessage(ParsedLineMessage.class, this::onParsedLine)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
-                .onMessage(MapChunksLoadedMessage.class, this::onMapBlockLoaded)//
+                .onMessage(GameMapCachedMessage.class, this::onMapBlockLoaded)//
         ;
     }
 

@@ -22,15 +22,14 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid
 
 import java.net.URL;
 
-import org.apache.commons.jcs3.access.CacheAccess;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMap;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMapData;
 import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMapFramesData;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.jme3.asset.AssetManager;
 import com.jme3.asset.AssetNotFoundException;
 import com.jme3.math.ColorRGBA;
@@ -62,7 +61,7 @@ public class AssetsLoadMaterialTextures {
     private MutableLongObjectMap<TexturesMapFramesData> texturesMapFramesDataMap = LongObjectMaps.mutable.empty();
 
     @SneakyThrows
-    public void loadMaterialTextures(CacheAccess<Object, GameObject> cache) {
+    public void loadMaterialTextures(MutableLongObjectMap<AssetCacheObject> cache) {
         var engine = new GroovyScriptEngine(
                 new URL[] { AssetsLoadMaterialTextures.class.getResource("/TexturesMaterials.groovy") });
         var binding = new Binding();
@@ -72,14 +71,13 @@ public class AssetsLoadMaterialTextures {
         materialTexturesMap.data.values().parallelStream().forEach((e) -> loadTextureMap(syncMap, cache, e));
     }
 
-    public void loadTextureMap(MutableLongObjectMap<TexturesMapFramesData> map, CacheAccess<Object, GameObject> cache,
-            TexturesMapData data) {
+    public void loadTextureMap(MutableLongObjectMap<TexturesMapFramesData> map,
+            MutableLongObjectMap<AssetCacheObject> cache, TexturesMapData data) {
         var tex = loadTexture(data.image);
         for (var v : data.frames.entrySet()) {
             map.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
-            System.out.println("put cache " + to.id); // TODO
             cache.put(to.id, to);
         }
     }

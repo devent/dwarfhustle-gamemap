@@ -43,7 +43,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapChunksLoadedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
@@ -236,7 +236,7 @@ public class TerrainActor {
 
     private ImmutableList<Geometry> copyBlockNodes;
 
-    private Optional<MapChunksLoadedMessage> previousMapBlockLoadedMessage = Optional.empty();
+    private Optional<GameMapCachedMessage> previousMapBlockLoadedMessage = Optional.empty();
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -282,9 +282,9 @@ public class TerrainActor {
     }
 
     /**
-     * Reacts to the {@link MapChunksLoadedMessage} message.
+     * Reacts to the {@link GameMapCachedMessage} message.
      */
-    private Behavior<Message> onMapChunksLoaded(MapChunksLoadedMessage m) {
+    private Behavior<Message> onMapChunksLoaded(GameMapCachedMessage m) {
         log.debug("onMapChunksLoaded {}", m);
         this.blockNodes = Lists.mutable.empty();
         this.previousMapBlockLoadedMessage = Optional.of(m);
@@ -666,7 +666,7 @@ public class TerrainActor {
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
-                .onMessage(MapChunksLoadedMessage.class, this::onMapChunksLoaded)//
+                .onMessage(GameMapCachedMessage.class, this::onMapChunksLoaded)//
                 .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
         ;

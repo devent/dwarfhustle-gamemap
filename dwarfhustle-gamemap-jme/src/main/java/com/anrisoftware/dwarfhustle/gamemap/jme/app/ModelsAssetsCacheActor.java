@@ -20,29 +20,16 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
-import java.util.function.Function;
-
-import jakarta.inject.Inject;
-
-import org.apache.commons.jcs3.JCS;
-import org.apache.commons.jcs3.access.CacheAccess;
-import org.apache.commons.jcs3.access.exception.CacheException;
-import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
-import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
-import org.eclipse.collections.impl.map.mutable.primitive.SynchronizedLongObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.AssetCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.db.cache.AbstractJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
 import com.google.inject.Injector;
 
@@ -51,8 +38,8 @@ import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,33 +49,28 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
-public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
+public class ModelsAssetsCacheActor extends AbstractAssetsCacheActor {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-            ModelsAssetsJcsCacheActor.class.getSimpleName());
+            ModelsAssetsCacheActor.class.getSimpleName());
 
-    public static final String NAME = ModelsAssetsJcsCacheActor.class.getSimpleName();
+    public static final String NAME = ModelsAssetsCacheActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
 
     /**
-     * Factory to create {@link ModelsAssetsJcsCacheActor}.
+     * Factory to create {@link ModelsAssetsCacheActor}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
-    public interface ModelsAssetsJcsCacheActorFactory extends AbstractJcsCacheActorFactory {
+    public interface ModelsAssetsJcsCacheActorFactory extends AbstractAssetsCacheActorFactory {
 
         @Override
-        ModelsAssetsJcsCacheActor create(ActorContext<Message> context, StashBuffer<Message> stash, ObjectsGetter og);
-    }
-
-    public static Behavior<Message> create(Injector injector, AbstractJcsCacheActorFactory actorFactory,
-            CompletionStage<ObjectsGetter> og, CompletionStage<CacheAccess<Object, GameObject>> initCacheAsync) {
-        return AbstractJcsCacheActor.create(injector, actorFactory, og, initCacheAsync);
+        ModelsAssetsCacheActor create(ActorContext<Message> context);
     }
 
     /**
-     * Creates the {@link ModelsAssetsJcsCacheActor}.
+     * Creates the {@link ModelsAssetsCacheActor}.
      *
      * @param injector the {@link Injector} injector.
      * @param timeout  the {@link Duration} timeout.
@@ -96,40 +78,11 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         var actorFactory = injector.getInstance(ModelsAssetsJcsCacheActorFactory.class);
-        var initCache = createInitCacheAsync();
-        CompletionStage<ObjectsGetter> og = CompletableFuture.supplyAsync(() -> new ObjectsGetter() {
-
-            @Override
-            public <T extends GameObject> T get(Class<T> typeClass, String type, Object key)
-                    throws ObjectsGetterException {
-                throw new UnsupportedOperationException();
-            }
-        });
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, actorFactory, og, initCache));
-    }
-
-    public static CompletableFuture<CacheAccess<Object, GameObject>> createInitCacheAsync() {
-        CompletableFuture<CacheAccess<Object, GameObject>> initCache = CompletableFuture.supplyAsync(() -> {
-            try {
-                return JCS.getInstance("assets-models");
-            } catch (CacheException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        return initCache;
+        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, actorFactory));
     }
 
     @Inject
     private AssetsLoadObjectModels models;
-
-    private MutableLongObjectMap<ModelCacheObject> localCache;
-
-    @Override
-    protected Behavior<Message> initialStage(InitialStateMessage m) {
-        log.debug("initialStage {}", m);
-        this.localCache = new SynchronizedLongObjectMap<>(LongObjectMaps.mutable.ofInitialCapacity(100));
-        return super.initialStage(m);
-    }
 
     @Override
     protected int getId() {
@@ -143,21 +96,9 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
     }
 
     @Override
-    protected void storeValueBackend(Object key, GameObject go) {
-        // nop
-    }
-
-    @Override
-    protected void storeValueBackend(Class<?> keyType, Function<GameObject, Object> key, GameObject go) {
-        // nop
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
     @SneakyThrows
-    protected <T extends GameObject> T getValueFromBackend(Class<T> typeClass, String type, Object key) {
-        var to = models.loadModelObject((long) key);
-        return (T) to;
+    protected <T extends GameObject> AssetCacheObject getValueFromBackend(Class<T> typeClass, String type, Object key) {
+        return models.loadModelObject((long) key);
     }
 
     /**
@@ -183,16 +124,5 @@ public class ModelsAssetsJcsCacheActor extends AbstractJcsCacheActor {
         return super.getInitialBehavior()//
                 .onMessage(LoadModelsMessage.class, this::onLoadModels)//
         ;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) throws ObjectsGetterException {
-        var v = localCache.get((long) key);
-        if (v == null) {
-            v = (ModelCacheObject) super.get(typeClass, type, key);
-            localCache.put(v.id, v);
-        }
-        return (T) v;
     }
 }

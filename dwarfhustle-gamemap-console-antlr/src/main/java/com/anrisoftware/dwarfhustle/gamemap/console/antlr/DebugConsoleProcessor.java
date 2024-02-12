@@ -29,7 +29,7 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleProcessor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetCameraPositionMessage;
-import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetLayersTerrainMessage;
+import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetVisibleDepthLayersMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkCoordinatesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetMarkScaleMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetObjectCoordinatesMessage;
@@ -205,7 +205,7 @@ public class DebugConsoleProcessor implements ConsoleProcessor {
             case "layers":
                 switch (parser.object.get()) {
                 case "terrain":
-                    return parser.layers.map(SetLayersTerrainMessage::new).orElse(null);
+                    return parser.layers.map(SetVisibleDepthLayersMessage::new).orElse(null);
                 default:
                     return null;
                 }
