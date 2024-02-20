@@ -358,7 +358,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
                 }
             }
         } else {
-            if (chunk.pos.z <= z && chunk.pos.ep.z > z && checkCenterExtent(mouse, chunk.centerExtent, temp)) {
+            if (chunk.pos.z <= z && chunk.getPos().ep.z > z && checkCenterExtent(mouse, chunk.centerExtent, temp)) {
                 return chunk;
             }
         }
@@ -366,6 +366,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     }
 
     private boolean checkCenterExtent(Vector2f mouse, CenterExtent centerExtent, TempVars temp) {
+        if (centerExtent == null) {
+            return false;
+        }
         var bottomc = temp.vect1;
         var topc = temp.vect2;
         bottomc.x = centerExtent.getBottomX();

@@ -325,8 +325,8 @@ public class TerrainTest extends SimpleApplication {
 
     private void createTerrain() {
         TerrainActor.create(injector, ofSeconds(1), CompletableFuture.supplyAsync(() -> og),
-                actor.getObjectsAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectsAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
+                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
+                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
@@ -372,7 +372,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createKnowledgeCache(ActorRef<Message> powerLoom) {
-        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectsAsync(PowerLoomKnowledgeActor.ID))
+        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectGetterAsync(PowerLoomKnowledgeActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("KnowledgeJcsCacheActor.create", ex);
@@ -449,7 +449,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createNeighbors(MapChunk rootc) {
-        var pos = rootc.pos;
+        var pos = rootc.getPos();
         int xs = (pos.ep.x - pos.x) / 2;
         int ys = (pos.ep.y - pos.y) / 2;
         int zs = (pos.ep.z - pos.z) / 2;
@@ -610,7 +610,7 @@ public class TerrainTest extends SimpleApplication {
         } else {
             createMap(chunk, x, y, z, ex, ey, ez);
         }
-        chunks.put(chunk.pos, chunk.getId());
+        chunks.put(chunk.getPos(), chunk.getId());
         putObjectToBackend(chunk);
     }
 

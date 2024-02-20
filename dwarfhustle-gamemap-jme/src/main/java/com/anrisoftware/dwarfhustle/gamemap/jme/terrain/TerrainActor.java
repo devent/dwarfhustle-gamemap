@@ -208,7 +208,7 @@ public class TerrainActor {
 
     @Inject
     @Assisted("objects")
-    private ObjectsGetter objectsg;
+    private ObjectsGetter og;
 
     @Inject
     @Assisted("materials")
@@ -273,7 +273,7 @@ public class TerrainActor {
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.is = m;
-        is.cameraState.setObjectsg(objectsg);
+        is.cameraState.setObjectsg(og);
         is.cameraState.setTerrainNode(is.terrainState.getNode());
         is.terrainRollState.setTerrainNode(is.terrainState.getNode());
         is.terrainRollState.setBoundingNode(is.chunksBoundingBoxState.getNode());
@@ -304,7 +304,7 @@ public class TerrainActor {
     private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
         // long oldtime = System.currentTimeMillis();
-        var root = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.root);
+        var root = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.root);
         MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
         int z = m.gm.getCursorZ();
         collectChunks(chunksBlocks, root, z, z, m.gm.chunkSize, gs.get().visibleDepthLayers.get());
@@ -539,10 +539,10 @@ public class TerrainActor {
 
     private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int z,
             int currentZ, int chuckSize, int visibleDepthLayers) {
-        if (z == root.pos.ep.z) {
+        if (z == root.getPos().ep.z) {
             return;
         }
-        var firstchunk = root.findMapChunk(0, 0, z, id -> objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
+        var firstchunk = root.findMapChunk(0, 0, z, id -> og.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
         putChunkSortBlocks(chunksBlocks, firstchunk, currentZ, visibleDepthLayers);
         long chunkid = 0;
         var nextchunk = firstchunk;
@@ -552,16 +552,17 @@ public class TerrainActor {
             if (chunkid == 0) {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
-                    if (firstchunk.pos.ep.z < currentZ + visibleDepthLayers) {
-                        collectChunks(chunksBlocks, root, firstchunk.pos.ep.z, currentZ, chuckSize, visibleDepthLayers);
+                    int firstz = firstchunk.getPos().ep.z;
+                    if (firstz < currentZ + visibleDepthLayers) {
+                        collectChunks(chunksBlocks, root, firstz, currentZ, chuckSize, visibleDepthLayers);
                     }
                     break;
                 }
-                firstchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
+                firstchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
                 nextchunk = firstchunk;
                 putChunkSortBlocks(chunksBlocks, nextchunk, currentZ, visibleDepthLayers);
             } else {
-                nextchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
+                nextchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
                 putChunkSortBlocks(chunksBlocks, nextchunk, currentZ, visibleDepthLayers);
             }
         }
@@ -576,7 +577,7 @@ public class TerrainActor {
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var pair : chunk.getBlocks().keyValuesView()) {
             var mbid = pair.getTwo();
-            var mb = getMapBlock(objectsg, mbid);
+            var mb = getMapBlock(og, mbid);
             if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ)) {
                 blocks.put(mb.getMaterial(), mb);
             }
@@ -620,7 +621,7 @@ public class TerrainActor {
             if (mb.isSolid()) {
                 long nt;
                 if ((nt = mb.getNeighborTop()) != 0) {
-                    var bt = objectsg.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
+                    var bt = og.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
                     if (bt.isSolid()) {
                         return false;
                     }

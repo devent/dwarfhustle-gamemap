@@ -173,7 +173,7 @@ public class App extends SimpleApplication {
     }
 
     private void createPanel() {
-        GameMainPanelActor.create(injector, ofSeconds(1), actor.getObjectsAsync(StoredObjectsJcsCacheActor.ID))
+        GameMainPanelActor.create(injector, ofSeconds(1), actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("GameMainPanelActor.create", ex);
@@ -201,9 +201,9 @@ public class App extends SimpleApplication {
     }
 
     private void createGameMap() {
-        TerrainActor.create(injector, ofSeconds(1), actor.getObjectsAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectsAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectsAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
+        TerrainActor.create(injector, ofSeconds(1), actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
+                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
+                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));

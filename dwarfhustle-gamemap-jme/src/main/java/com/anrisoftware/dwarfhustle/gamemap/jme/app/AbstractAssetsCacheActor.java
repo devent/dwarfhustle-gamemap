@@ -217,7 +217,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) throws ObjectsGetterException {
+    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) {
         return (T) cache.getIfAbsentPut((long) key, () -> supplyValue(typeClass, type, key));
     }
 
