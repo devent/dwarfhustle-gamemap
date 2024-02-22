@@ -96,6 +96,35 @@ public class LoadGameMapActor {
     public static class LoadGameMapToCacheFinishedMessage extends LoadGameMapToCacheResponseMessage {
     }
 
+    /**
+     * Message to give an update how many {@link MapChunk}s and {@link MapBlock}s
+     * are already loaded. Replies with the
+     * {@link LoadGameMapToCacheRetrieveLoadedReplyMessage}.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    public static class LoadGameMapToCacheRetrieveLoadedMessage<T extends LoadGameMapToCacheResponseMessage>
+            extends Message {
+        public final ActorRef<T> replyTo;
+        public final GameMap gm;
+    }
+
+    /**
+     * Reply message to give an update how many {@link MapChunk}s and
+     * {@link MapBlock}s are already loaded.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    public static class LoadGameMapToCacheRetrieveLoadedReplyMessage extends LoadGameMapToCacheResponseMessage {
+        public final GameMap gm;
+        public final int chunksCount;
+        public final int chunksLoaded;
+    }
+
     @RequiredArgsConstructor
     @ToString
     private static class WrappedDbResponse extends Message {
@@ -223,6 +252,17 @@ public class LoadGameMapActor {
     }
 
     /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Behavior<Message> onLoadGameMapToCacheRetrieveLoaded(LoadGameMapToCacheRetrieveLoadedMessage m) {
+        m.replyTo.tell(new LoadGameMapToCacheRetrieveLoadedReplyMessage(m.gm, chunksCount, currentChunksLoaded.get()));
+        return Behaviors.same();
+    }
+
+    /**
      * Reacts to the {@link WrappedObjectsResponse} message from the objects actor.
      */
     @SneakyThrows
@@ -275,6 +315,7 @@ public class LoadGameMapActor {
      *
      * <ul>
      * <li>{@link LoadGameMapToCacheMessage}
+     * <li>{@link LoadGameMapToCacheRetrieveLoadedMessage}
      * <li>{@link ShutdownMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedCacheResponse}
@@ -283,6 +324,7 @@ public class LoadGameMapActor {
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
                 .onMessage(LoadGameMapToCacheMessage.class, this::onLoadGameMapToCache)//
+                .onMessage(LoadGameMapToCacheRetrieveLoadedMessage.class, this::onLoadGameMapToCacheRetrieveLoaded)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//

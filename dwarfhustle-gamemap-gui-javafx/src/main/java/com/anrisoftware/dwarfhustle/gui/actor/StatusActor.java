@@ -19,20 +19,22 @@ package com.anrisoftware.dwarfhustle.gui.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static java.lang.String.format;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.CompletionStage;
-
-import jakarta.inject.Inject;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedProgressMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.CreateSchemasMessage;
+import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 
@@ -42,6 +44,8 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -94,6 +98,10 @@ public class StatusActor {
     @Inject
     @Assisted
     private MainPaneController controller;
+
+    @Inject
+    @Named("AppTexts")
+    private Texts appTexts;
 
     /**
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
@@ -158,6 +166,20 @@ public class StatusActor {
     }
 
     /**
+     * Processing {@link GameMapCachedProgressMessage}. Returns a behavior that
+     * reacts to the messages from {@link #getInitialBehavior()}.
+     */
+    private Behavior<Message> onSetGameMapProgress(GameMapCachedProgressMessage m) {
+        log.debug("onSetGameMapProgress {}", m);
+        runFxThread(() -> {
+            controller.statusLabel
+                    .setText(format(Locale.US, appTexts.getResource("game_map_cached_progress", Locale.US).getText(),
+                            (float) m.chunksLoaded / m.chunksCount * 100f));
+        });
+        return Behaviors.same();
+    }
+
+    /**
      * Processing {@link GameMapCachedMessage}.
      * <p>
      * Sets the status text that the world and game map is finished loading.
@@ -165,8 +187,8 @@ public class StatusActor {
      * Returns a behavior that reacts to the messages from
      * {@link #getInitialBehavior()}.
      */
-    private Behavior<Message> onMapBlockLoaded(GameMapCachedMessage m) {
-        log.debug("onMapBlockLoaded {}", m);
+    private Behavior<Message> onGameMapCached(GameMapCachedMessage m) {
+        log.debug("GameMapCached {}", m);
         runFxThread(() -> {
             controller.statusLabel.setText("Game map loaded.");
         });
@@ -186,7 +208,8 @@ public class StatusActor {
                 .onMessage(UnknownLineMessage.class, this::onUnknownLine)//
                 .onMessage(ParsedLineMessage.class, this::onParsedLine)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
-                .onMessage(GameMapCachedMessage.class, this::onMapBlockLoaded)//
+                .onMessage(GameMapCachedProgressMessage.class, this::onSetGameMapProgress)//
+                .onMessage(GameMapCachedMessage.class, this::onGameMapCached)//
         ;
     }
 

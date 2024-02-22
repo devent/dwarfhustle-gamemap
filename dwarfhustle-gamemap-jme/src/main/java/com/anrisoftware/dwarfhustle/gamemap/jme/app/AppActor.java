@@ -32,12 +32,15 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetVisibleDepthLayersM
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheFinishedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheResponseMessage;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheRetrieveLoadedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheRetrieveLoadedReplyMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedProgressMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
@@ -139,6 +142,8 @@ public class AppActor {
     @RequiredArgsConstructor
     @ToString
     private static class CheckGameMapCachedMessage extends Message {
+        private final ActorRef<Message> loadActor;
+        private final GameMap gm;
     }
 
     @RequiredArgsConstructor
@@ -372,6 +377,8 @@ public class AppActor {
 
     private boolean modelsLoaded = false;
 
+    private boolean mapCacheLoaded = false;
+
     private ActorRef<Message> objectsActor;
 
     private ActorRef<Message> dbActor;
@@ -585,10 +592,15 @@ public class AppActor {
                         actor.tell(new AppErrorMessage(ex));
                     } else {
                         log.debug("LoadGameMapActor created");
-                        ret.tell(new LoadGameMapToCacheMessage<>(loadGameMapActorAdapter, ogs.get().currentMap.get(),
-                                mc));
+                        startLoadGameMapToCache(mc, ret);
                     }
                 });
+    }
+
+    private void startLoadGameMapToCache(MapChunk mc, ActorRef<Message> ret) {
+        ret.tell(new LoadGameMapToCacheMessage<>(loadGameMapActorAdapter, ogs.get().currentMap.get(), mc));
+        timer.startTimerAtFixedRate(CHECK_GAMEMAP_CACHED_TIMER,
+                new CheckGameMapCachedMessage(ret, ogs.get().currentMap.get()), Duration.ofSeconds(3));
     }
 
     /**
@@ -597,9 +609,10 @@ public class AppActor {
      */
     private Behavior<Message> onWrappedLoadGameMapToCacheResponse(WrappedLoadGameMapToCacheResponse m) {
         log.trace("onWrappedLoadGameMapToCacheResponse {}", m);
-        if (m.response instanceof LoadGameMapToCacheFinishedMessage rm) {
-            timer.startTimerAtFixedRate(CHECK_GAMEMAP_CACHED_TIMER, new CheckGameMapCachedMessage(),
-                    Duration.ofSeconds(1));
+        if (m.response instanceof LoadGameMapToCacheRetrieveLoadedReplyMessage rm) {
+            actor.tell(new GameMapCachedProgressMessage(rm.gm, rm.chunksCount, rm.chunksLoaded));
+        } else if (m.response instanceof LoadGameMapToCacheFinishedMessage rm) {
+            this.mapCacheLoaded = true;
         }
         return Behaviors.same();
     }
@@ -607,6 +620,10 @@ public class AppActor {
     @SneakyThrows
     private Behavior<Message> onCheckGameMapCached(CheckGameMapCachedMessage m) {
         log.debug("onCheckGameMapCached", m);
+        if (!mapCacheLoaded) {
+            m.loadActor.tell(new LoadGameMapToCacheRetrieveLoadedMessage<>(loadGameMapActorAdapter, m.gm));
+            return Behaviors.same();
+        }
         if (!knowledgeLoaded || !texturesLoaded || !modelsLoaded) {
             return Behaviors.same();
         }
