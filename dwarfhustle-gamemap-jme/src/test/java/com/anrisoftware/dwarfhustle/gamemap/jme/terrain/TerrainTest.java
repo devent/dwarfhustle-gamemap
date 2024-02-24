@@ -19,7 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getMapChunk;
-import static com.anrisoftware.dwarfhustle.model.db.cache.CachePutsMessage.askCachePuts;
 import static java.time.Duration.ofSeconds;
 
 import java.time.Duration;
@@ -72,8 +71,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.NeighboringDir;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.MockStoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
@@ -629,20 +626,20 @@ public class TerrainTest extends SimpleApplication {
     @SneakyThrows
     private void cacheAllObjects() {
         log.debug("cacheAllObjects");
-        askCachePuts(actor.getActorSystem(), ofSeconds(10), Long.class, GameObject::getId, backendIdsObjects.values())
-                .whenComplete((reply, failure) -> {
-                    if (failure != null) {
-                        log.error("Cache failure", failure);
-                    } else {
-                        if (reply instanceof CacheSuccessMessage<?> m) {
-                            log.debug("CacheSuccessMessage {}", m);
-                        } else if (reply instanceof CacheErrorMessage<?> em) {
-                            log.error("CacheErrorMessage", em.error);
-                        } else {
-                            log.error("CachePutMessage", failure);
-                        }
-                    }
-                });
+//        askCachePuts(actor.getActorSystem(), ofSeconds(10), Long.class, GameObject::getId, backendIdsObjects.values())
+//                .whenComplete((reply, failure) -> {
+//                    if (failure != null) {
+//                        log.error("Cache failure", failure);
+//                    } else {
+//                        if (reply instanceof CacheSuccessMessage<?> m) {
+//                            log.debug("CacheSuccessMessage {}", m);
+//                        } else if (reply instanceof CacheErrorMessage<?> em) {
+//                            log.error("CacheErrorMessage", em.error);
+//                        } else {
+//                            log.error("CachePutMessage", failure);
+//                        }
+//                    }
+//                });
     }
 
     @Override

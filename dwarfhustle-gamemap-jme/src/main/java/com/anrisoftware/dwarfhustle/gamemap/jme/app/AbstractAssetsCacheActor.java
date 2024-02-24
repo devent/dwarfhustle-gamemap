@@ -108,7 +108,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
         log.debug("onCachePuts {}", m);
         for (var o : m.values) {
             var go = (GameObject) o;
-            cache.put((long) m.key.apply(o), (AssetCacheObject) go);
+            cache.put(go.id, (AssetCacheObject) go);
         }
         m.replyTo.tell(new CacheSuccessMessage<>(m));
         return Behaviors.same();
