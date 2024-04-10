@@ -17,29 +17,18 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
-import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getMapChunk;
-import static java.time.Duration.ofSeconds;
-
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
-import java.util.Deque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
-import org.eclipse.collections.api.map.MutableMap;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.collections.api.map.primitive.LongObjectMap;
-import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
-import org.eclipse.collections.api.map.primitive.MutableObjectLongMap;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
-import org.eclipse.collections.impl.factory.primitive.ObjectLongMaps;
-import org.lable.oss.uniqueid.GeneratorException;
 import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.DwarfhustleGamemapJmeAppModule;
@@ -60,24 +49,23 @@ import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameChunkPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapArea;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.NeighboringDir;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbMockCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.MockStoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
+import com.anrisoftware.dwarfhustle.model.terrainimage.TerrainImage;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -111,6 +99,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainTest extends SimpleApplication {
 
+    private static final Duration CREATE_ACTOR_TIMEOUT = Duration.ofSeconds(30);
+
     public static void main(String[] args) {
         var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule());
         var app = injector.getInstance(TerrainTest.class);
@@ -142,14 +132,13 @@ public class TerrainTest extends SimpleApplication {
 
     private Consumer<Float> simpleUpdateCall;
 
-    // [zz][yy][xx]
-    private long[][][] terrain;
-
-    private Deque<byte[]> idsBatch;
-
     private ResetCameraState resetCameraState;
 
     private WorldMap wm;
+
+    private TerrainImage terrainImage;
+
+    private MapChunksStore store;
 
     public TerrainTest() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
@@ -180,6 +169,7 @@ public class TerrainTest extends SimpleApplication {
                 install(new DwarfhustleModelDbCacheModule());
                 install(new DwarfhustleGamemapJmeAppModule());
                 install(new DwarfhustleGamemapJmeLightsModule());
+                install(new DwarfhustleModelDbMockCacheModule());
                 bind(GameSettingsProvider.class).asEagerSingleton();
             }
 
@@ -267,20 +257,28 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createMockTerrain() {
+        this.terrainImage = TerrainImage.terrain_4_4_4_2;
+        createMapStorage();
         createGameMap();
-        createMap(mcRoot, 0, 0, 0, gm.width, gm.height, gm.depth);
-        createNeighbors((MapChunk) backendIdsObjects.get(gm.root));
-        putObjectToBackend(gm);
-        putObjectToBackend(wm);
-        var blockid = mcRoot.findMapBlock(0, 0, 0, id -> (MapChunk) backendIdsObjects.get(id));
-        var block = getMapBlock(og, blockid);
+        var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
         block.setMined(true);
         block.setMaterialRid(898);
     }
 
     @SneakyThrows
+    private void createMapStorage() {
+        var fileName = String.format("terrain_%d_%d_%d_%d_%d.map", terrainImage.w, terrainImage.h, terrainImage.d,
+                terrainImage.chunkSize, terrainImage.chunksCount);
+        var file = Files.createTempDirectory("TerrainTest").resolve(fileName);
+        var res = TerrainTest.class.getResource("/com/anrisoftware/dwarfhustle/model/api/objects/" + fileName + ".txt");
+        assert res != null;
+        IOUtils.copy(res, file.toFile());
+        this.store = new MapChunksStore(file, terrainImage.chunkSize, terrainImage.chunksCount);
+        this.mcRoot = store.getChunk(0);
+    }
+
+    @SneakyThrows
     private void createGameMap() {
-        mcRoot = new MapChunk(ids.generate());
         gm = new GameMap(ids.generate());
         wm = new WorldMap(ids.generate());
         wm.currentMap = gm.id;
@@ -288,13 +286,10 @@ public class TerrainTest extends SimpleApplication {
         wm.distanceLat = 100f;
         wm.distanceLon = 100f;
         gm.world = wm.id;
-        var terrainImage = TerrainImage.terrain_4_4_4;
-        terrain = terrainImage.loadTerrain();
         gm.chunkSize = terrainImage.chunkSize;
         gm.width = terrainImage.w;
         gm.height = terrainImage.h;
         gm.depth = terrainImage.d;
-        gm.root = mcRoot.id;
         gm.area = MapArea.create(50.99819f, 10.98348f, 50.96610f, 11.05610f);
         gm.timeZone = ZoneOffset.ofHours(1);
         gm.setCameraPos(0.0f, 0.0f, 83.0f);
@@ -321,8 +316,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createTerrain() {
-        TerrainActor.create(injector, ofSeconds(1), CompletableFuture.supplyAsync(() -> og),
-                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
+        TerrainActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
                 actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
@@ -334,7 +328,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createSun() {
-        SunActor.create(injector, ofSeconds(1)).whenComplete((ret, ex) -> {
+        SunActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("SunActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
@@ -345,7 +339,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createGameTick() {
-        GameTickActor.create(injector, ofSeconds(10)).whenComplete((ret, ex) -> {
+        GameTickActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("GameTickActor.create", ex);
                 actor.tell(new AppErrorMessage(ex));
@@ -356,7 +350,8 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createPowerLoom() {
-        PowerLoomKnowledgeActor.create(injector, ofSeconds(1), actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
+        PowerLoomKnowledgeActor
+                .create(injector, CREATE_ACTOR_TIMEOUT, actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("PowerLoomKnowledgeActor.create", ex);
@@ -369,7 +364,8 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createKnowledgeCache(ActorRef<Message> powerLoom) {
-        KnowledgeJcsCacheActor.create(injector, ofSeconds(10), actor.getObjectGetterAsync(PowerLoomKnowledgeActor.ID))
+        KnowledgeJcsCacheActor
+                .create(injector, CREATE_ACTOR_TIMEOUT, actor.getObjectGetterAsync(PowerLoomKnowledgeActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("KnowledgeJcsCacheActor.create", ex);
@@ -381,20 +377,19 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createObjectsCache() {
-        var task = MockStoredObjectsJcsCacheActor.create(injector, Duration.ofSeconds(30),
+        var task = MockStoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT,
                 CompletableFuture.supplyAsync(() -> og));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
             } else {
                 log.debug("ObjectsJcsCacheActor created");
-                cacheAllObjects();
             }
         });
     }
 
     private void createMaterialAssets() {
-        var task = MaterialAssetsCacheActor.create(injector, Duration.ofSeconds(30));
+        var task = MaterialAssetsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("MaterialAssetsJcsCacheActor.create", ex);
@@ -406,7 +401,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createModelsAssets() {
-        var task = ModelsAssetsCacheActor.create(injector, Duration.ofSeconds(30));
+        var task = ModelsAssetsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ModelsAssetsJcsCacheActor.create", ex);
@@ -419,7 +414,7 @@ public class TerrainTest extends SimpleApplication {
 
     private void loadTextures() {
         CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadTexturesMessage::new,
-                Duration.ofSeconds(60), actor.getScheduler());
+                CREATE_ACTOR_TIMEOUT, actor.getScheduler());
         result.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("LoadTexturesMessage", ex);
@@ -433,7 +428,7 @@ public class TerrainTest extends SimpleApplication {
 
     private void loadModels() {
         CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadModelsMessage::new,
-                Duration.ofSeconds(30), actor.getScheduler());
+                CREATE_ACTOR_TIMEOUT, actor.getScheduler());
         result.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("LoadModelsMessage", ex);
@@ -443,203 +438,6 @@ public class TerrainTest extends SimpleApplication {
                 modelsLoaded = true;
             }
         });
-    }
-
-    private void createNeighbors(MapChunk rootc) {
-        var pos = rootc.getPos();
-        int xs = (pos.ep.x - pos.x) / 2;
-        int ys = (pos.ep.y - pos.y) / 2;
-        int zs = (pos.ep.z - pos.z) / 2;
-        Function<Long, MapChunk> r = id -> getMapChunk(og, id);
-        for (int x = pos.x; x < pos.ep.x; x += xs) {
-            for (int y = pos.y; y < pos.ep.y; y += ys) {
-                for (int z = pos.z; z < pos.ep.z; z += zs) {
-                    var chunk = getMapChunk(og, rootc.chunks.get(new GameChunkPos(x, y, z, x + xs, y + ys, z + zs)));
-                    assert chunk != null;
-                    if (xs > gm.chunkSize && ys > gm.chunkSize && zs > gm.chunkSize) {
-                        createNeighbors(chunk);
-                    }
-                    int bz = z + zs;
-                    int tz = z - zs;
-                    int sy = y + zs;
-                    int ny = y - zs;
-                    int ex = x + zs;
-                    int wx = x - zs;
-                    long b, t, s, n, e, w;
-                    if ((b = mcRoot.findChild(x, y, bz, x + xs, y + ys, bz + zs, r)) != 0) {
-                        chunk.setNeighborBottom(b);
-                    }
-                    if ((t = mcRoot.findChild(x, y, tz, x + xs, y + ys, tz + zs, r)) != 0) {
-                        chunk.setNeighborTop(t);
-                    }
-                    if ((s = mcRoot.findChild(x, sy, z, x + xs, sy + ys, z + zs, r)) != 0) {
-                        chunk.setNeighborSouth(s);
-                    }
-                    if ((n = mcRoot.findChild(x, ny, z, x + xs, ny + ys, z + zs, r)) != 0) {
-                        chunk.setNeighborNorth(n);
-                    }
-                    if ((e = mcRoot.findChild(ex, y, z, ex + xs, y + ys, z + zs, r)) != 0) {
-                        chunk.setNeighborEast(e);
-                    }
-                    if ((e = mcRoot.findChild(ex, sy, z, ex + xs, y + ys, z + zs, r)) != 0) {
-                        chunk.setNeighborSouthEast(e);
-                    }
-                    if ((w = mcRoot.findChild(wx, y, z, wx + xs, y + ys, z + zs, r)) != 0) {
-                        chunk.setNeighborWest(w);
-                    }
-                    if ((w = mcRoot.findChild(wx, sy, z, wx + xs, y + ys, z + zs, r)) != 0) {
-                        chunk.setNeighborSouthWest(w);
-                    }
-                    if (chunk.getBlocks().notEmpty()) {
-                        chunk.getBlocks().forEachValue(mb -> setupBlockNeighbors(chunk, mb));
-                    }
-                    putObjectToBackend(chunk);
-                }
-            }
-        }
-    }
-
-    private void setupBlockNeighbors(MapChunk chunk, long id) {
-        var mb = getMapBlock(og, id);
-        var pos = mb.pos;
-        var t = pos.addZ(-1);
-        long tbid = chunk.getBlock(t);
-        final long empty = chunk.getBlocksEmptyValue();
-        if (tbid != empty && checkSetNeighbor(getMapBlock(og, tbid))) {
-            mb.setNeighborTop(tbid);
-        } else {
-            long chunkid;
-            if ((chunkid = chunk.getNeighborTop()) != 0) {
-                var c = getMapChunk(og, chunkid);
-                tbid = c.getBlock(t);
-                if (tbid != empty && checkSetNeighbor(getMapBlock(og, tbid))) {
-                    mb.setNeighborTop(tbid);
-                }
-            }
-        }
-        for (var d : NeighboringDir.values()) {
-            var b = pos.add(d.pos);
-            var bbid = chunk.getBlock(b);
-            if (bbid != empty && checkSetNeighbor(getMapBlock(og, bbid))) {
-                mb.setNeighbor(d, bbid);
-            } else {
-                long chunkid;
-                if ((chunkid = chunk.getNeighbor(d)) != 0) {
-                    var c = getMapChunk(og, chunkid);
-                    bbid = c.getBlock(b);
-                    if (bbid != empty && checkSetNeighbor(getMapBlock(og, bbid))) {
-                        mb.setNeighbor(d, bbid);
-                    }
-                }
-            }
-        }
-        putObjectToBackend(mb);
-    }
-
-    private boolean checkSetNeighbor(MapBlock mb) {
-        return !mb.isMined();
-    }
-
-    @SneakyThrows
-    private void createMap(MapChunk chunk, int sx, int sy, int sz, int ex, int ey, int ez) {
-        chunk.setPos(new GameChunkPos(sx, sy, sz, ex, ey, ez));
-        MutableObjectLongMap<GameChunkPos> chunks = ObjectLongMaps.mutable.empty();
-        this.idsBatch = ids.batch(128);
-        Supplier<byte[]> idsSupplier = this::supplyIds;
-        int cx = (ex - sx) / 2;
-        int cy = (ey - sy) / 2;
-        int cz = (ez - sz) / 2;
-        for (int xx = sx; xx < ex; xx += cx) {
-            for (int yy = sy; yy < ey; yy += cy) {
-                for (int zz = sz; zz < ez; zz += cz) {
-                    createChunk(idsSupplier, terrain, chunk, chunks, xx, yy, zz, xx + cx, yy + cy, zz + cz);
-                }
-            }
-        }
-        chunk.setChunks(chunks);
-        chunk.updateCenterExtent(gm.width, gm.height, gm.depth);
-        putObjectToBackend(chunk);
-    }
-
-    @SneakyThrows
-    private byte[] supplyIds() {
-        var next = idsBatch.poll();
-        if (next == null) {
-            idsBatch = ids.batch(128);
-            next = idsBatch.poll();
-        }
-        return next;
-    }
-
-    @SneakyThrows
-    private void createChunk(Supplier<byte[]> ids, long[][][] terrain, MapChunk parent,
-            MutableObjectLongMap<GameChunkPos> chunks, int x, int y, int z, int ex, int ey, int ez)
-            throws GeneratorException {
-        var chunk = new MapChunk(this.ids.generate());
-        chunk.setParent(parent.getId());
-        chunk.setPos(new GameChunkPos(x, y, z, ex, ey, ez));
-        chunk.updateCenterExtent(gm.width, gm.height, gm.depth);
-        int csize = gm.getChunkSize();
-        if (ex - x == csize || ey - y == csize || ez - z == csize) {
-            MutableMap<GameBlockPos, MapBlock> blocks = Maps.mutable.empty();
-            MutableObjectLongMap<GameBlockPos> blocksids = ObjectLongMaps.mutable.empty();
-            for (int xx = x; xx < ex; xx++) {
-                for (int yy = y; yy < ey; yy++) {
-                    for (int zz = z; zz < ez; zz++) {
-                        var mb = new MapBlock(ids.get());
-                        mb.pos = new GameBlockPos(xx, yy, zz);
-                        mb.setMaterialRid(terrain[zz][yy][xx]);
-                        mb.setObjectRid(809);
-                        mb.updateCenterExtent(gm.width, gm.height, gm.depth);
-                        if (mb.getMaterialRid() == 0) {
-                            mb.setMaterialRid(898);
-                        }
-                        if (mb.getMaterialRid() == 898) {
-                            mb.setMined(true);
-                        }
-                        blocks.put(mb.pos, mb);
-                        blocksids.put(mb.pos, mb.id);
-                    }
-                }
-            }
-            chunk.setBlocks(blocksids);
-            putObjectsToBackend(MapBlock.class, blocks.values());
-        } else {
-            createMap(chunk, x, y, z, ex, ey, ez);
-        }
-        chunks.put(chunk.getPos(), chunk.getId());
-        putObjectToBackend(chunk);
-    }
-
-    private void putObjectsToBackend(Class<?> keyType, Iterable<? extends GameObject> values) {
-        var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
-        for (GameObject go : values) {
-            backend.put(go.id, go);
-        }
-    }
-
-    private void putObjectToBackend(GameObject go) {
-        var backend = (MutableLongObjectMap<GameObject>) this.backendIdsObjects;
-        backend.put(go.id, go);
-    }
-
-    @SneakyThrows
-    private void cacheAllObjects() {
-        log.debug("cacheAllObjects");
-//        askCachePuts(actor.getActorSystem(), ofSeconds(10), Long.class, GameObject::getId, backendIdsObjects.values())
-//                .whenComplete((reply, failure) -> {
-//                    if (failure != null) {
-//                        log.error("Cache failure", failure);
-//                    } else {
-//                        if (reply instanceof CacheSuccessMessage<?> m) {
-//                            log.debug("CacheSuccessMessage {}", m);
-//                        } else if (reply instanceof CacheErrorMessage<?> em) {
-//                            log.error("CacheErrorMessage", em.error);
-//                        } else {
-//                            log.error("CachePutMessage", failure);
-//                        }
-//                    }
-//                });
     }
 
     @Override

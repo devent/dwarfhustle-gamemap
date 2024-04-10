@@ -17,7 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
 import static com.jme3.input.MouseInput.AXIS_WHEEL;
 import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
@@ -26,12 +25,7 @@ import static java.lang.Math.abs;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.CenterExtent;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.bounding.BoundingBox;
@@ -53,7 +47,6 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
-import com.jme3.scene.Node;
 import com.jme3.util.TempVars;
 
 import jakarta.inject.Inject;
@@ -92,8 +85,6 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     @Inject
     private Camera camera;
 
-    private ObjectsGetter objectsg;
-
     private boolean middleMouseDown = false;
 
     private final Vector3f mapBottomLeft;
@@ -106,13 +97,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private Optional<Consumer<GameMap>> saveZ = Optional.empty();
 
-    private Optional<Consumer<GameMap>> saveSelectedMapBlock = Optional.empty();
-
     private boolean rightMouseDown;
 
     private BoundingBox bounds;
-
-    private Node terrainNode;
 
     private boolean shiftDown = false;
 
@@ -125,20 +112,12 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         this.bounds = new BoundingBox(new Vector3f(), 10f, 10f, 10f);
     }
 
-    public void setObjectsg(ObjectsGetter objectsg) {
-        this.objectsg = objectsg;
-    }
-
     public void setSaveCamera(Consumer<GameMap> saveCamera) {
         this.saveCamera = Optional.of(saveCamera);
     }
 
     public void setSaveZ(Consumer<GameMap> saveZ) {
         this.saveZ = Optional.of(saveZ);
-    }
-
-    public void setSaveSelectedMapBlock(Consumer<GameMap> saveSelectedMapBlock) {
-        this.saveSelectedMapBlock = Optional.of(saveSelectedMapBlock);
     }
 
     public void resetCamera() {
@@ -166,18 +145,10 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         saveZ.ifPresent(it -> it.accept(gm));
     }
 
-    private void saveSelectedMapBlock() {
-        saveSelectedMapBlock.ifPresent(it -> it.accept(gm));
-    }
-
     public void setCameraPos(float x, float y, float z) {
         camera.setLocation(new Vector3f(x, y, z));
         camera.update();
         saveCamera();
-    }
-
-    public void setTerrainNode(Node node) {
-        this.terrainNode = node;
     }
 
     @Override
@@ -302,7 +273,6 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         var newpos = temp.vect2;
         camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
         camera.getWorldCoordinates(mouse, 0.0f, newpos);
-        updateSelectedObject();
         if (!shiftDown && (middleMouseDown || rightMouseDown)) {
             updateScreenCoordinatesMap();
             float dx = evt.getDX();
@@ -315,75 +285,6 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
             }
         }
         temp.release();
-    }
-
-    private void updateSelectedObject() {
-        if (gm == null) {
-            return;
-        }
-        var temp = TempVars.get();
-        var rootchunk = objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, gm.root);
-        var z = gm.cursor.z;
-        var chunk = findChunkUnderCursor(mouse, rootchunk, z, temp);
-        if (chunk != null) {
-            var mb = findBlockUnderCursor(mouse, chunk, z, temp);
-            if (mb != null) {
-                gm.cursor = new MapCursor(mb.pos.x, mb.pos.y, z);
-                saveSelectedMapBlock();
-            }
-        }
-        temp.release();
-    }
-
-    private MapBlock findBlockUnderCursor(Vector2f mouse, MapChunk chunk, int z, TempVars temp) {
-        for (var k : chunk.blocks.keyValuesView()) {
-            var blockid = k.getTwo();
-            var block = getMapBlock(objectsg, blockid);
-            if (block.pos.z == z && checkCenterExtent(mouse, block.centerExtent, temp)) {
-                return block;
-            }
-        }
-        return null;
-    }
-
-    private MapChunk findChunkUnderCursor(Vector2f mouse, MapChunk chunk, int z, TempVars temp) {
-        if (chunk.blocks.isEmpty()) {
-            for (var kvalues : chunk.chunks.keyValuesView()) {
-                var id = kvalues.getTwo();
-                var c = findChunkUnderCursor(mouse, objectsg.get(MapChunk.class, MapChunk.OBJECT_TYPE, id), z, temp);
-                if (c == null) {
-                    continue;
-                } else {
-                    return c;
-                }
-            }
-        } else {
-            if (chunk.pos.z <= z && chunk.getPos().ep.z > z && checkCenterExtent(mouse, chunk.centerExtent, temp)) {
-                return chunk;
-            }
-        }
-        return null;
-    }
-
-    private boolean checkCenterExtent(Vector2f mouse, CenterExtent centerExtent, TempVars temp) {
-        if (centerExtent == null) {
-            return false;
-        }
-        var bottomc = temp.vect1;
-        var topc = temp.vect2;
-        bottomc.x = centerExtent.getBottomX();
-        bottomc.y = centerExtent.getBottomY();
-        bottomc.z = centerExtent.getBottomZ();
-        camera.getScreenCoordinates(bottomc, bottomc);
-        topc.x = centerExtent.getTopX();
-        topc.y = centerExtent.getTopY();
-        topc.z = centerExtent.getTopZ();
-        camera.getScreenCoordinates(topc, topc);
-        if (mouse.x >= bottomc.x && mouse.y >= bottomc.y && mouse.x <= topc.x && mouse.y <= topc.y) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override

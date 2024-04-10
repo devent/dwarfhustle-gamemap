@@ -88,9 +88,8 @@ public class TestFXJUnitAppRunner extends ApplicationTest {
     @Test
     public void testBlueHasOnlyOneEntry() {
         interact(() -> {
-            var mt = new MapBlock(1);
+            var mt = new MapBlock(1, new GameBlockPos(5, 5, 5));
             // mt.setMaterial("Soil");
-            mt.setPos(new GameBlockPos(5, 5, 5));
             var p = new Person(1);
             p.setFirstName("Gorbir");
             p.setLastName("Shatterfeet");

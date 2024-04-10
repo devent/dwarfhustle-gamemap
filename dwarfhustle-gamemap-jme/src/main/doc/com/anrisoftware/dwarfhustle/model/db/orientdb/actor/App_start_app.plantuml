@@ -1,0 +1,29 @@
+@startuml
+title App - Start Application
+
+state simpleInitApp_fork <<fork>>
+createApp : Creates AppActor.
+setupApp : Setups JMonkeyEngine application.
+createPanel : Creates GameMainPanelActor.\nDepdencies:\n< StoredObjectsJcsCacheActor
+attachGui : Sends AttachGuiMessage
+createGameMap : Creates the TerrainActor.\nDepdencies:\n< StoredObjectsJcsCacheActor\n< MaterialAssetsCacheActor\n< ModelsAssetsCacheActor
+
+[*] --> setupApp
+setupApp --> simpleInitApp
+simpleInitApp --> simpleInitApp_fork
+simpleInitApp_fork --> createApp
+simpleInitApp_fork --> createPanel
+
+state simpleInitApp_join <<join>>
+
+createApp --> simpleInitApp_join
+createPanel --> attachGui
+attachGui --> createGameMap : on AttachGuiFinishedMessage
+createGameMap --> simpleInitApp_join
+
+simpleInitApp_join --> simpleUpdate
+simpleUpdate --> simpleUpdate : Until game is exited.
+simpleUpdate --> stop : Game was exited.
+stop --> [*]
+
+@enduml

@@ -39,7 +39,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedProgressMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
@@ -504,15 +504,7 @@ public class AppActor {
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.trace("onSetGameMap {}", m);
         objectsActor.tell(new CachePutMessage<>(objectsAdapter, m.gm.getId(), m.gm));
-        loadRootMapChunk(m);
         return Behaviors.same();
-    }
-
-    private void loadRootMapChunk(SetGameMapMessage m) {
-        dbActor.tell(new LoadObjectMessage<>(dbAdapter, MapChunk.OBJECT_TYPE, db -> {
-            var query = "SELECT * from ? where objecttype = ? and objectid = ? limit 1";
-            return db.query(query, MapChunk.OBJECT_TYPE, MapChunk.OBJECT_TYPE, m.gm.root);
-        }));
     }
 
     /**
@@ -629,7 +621,7 @@ public class AppActor {
         }
         timer.cancel(CHECK_GAMEMAP_CACHED_TIMER);
         createGameTickActor();
-        actor.tell(new GameMapCachedMessage(ogs.get().currentMap.get()));
+        actor.tell(new StartTerrainForGameMapMessage(ogs.get().currentMap.get()));
         return Behaviors.same();
     }
 

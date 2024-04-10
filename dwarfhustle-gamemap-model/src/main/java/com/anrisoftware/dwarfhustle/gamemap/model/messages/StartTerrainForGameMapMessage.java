@@ -19,20 +19,21 @@ package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Message that the {@link MapChunk}s of the current {@link GameMap} was loaded
- * from the backend into the cache.
+ * Message that the terrain should be displayed for the {@link GameMap}.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @RequiredArgsConstructor
 @ToString(callSuper = true)
-public class GameMapCachedMessage extends Message {
+public class StartTerrainForGameMapMessage extends Message {
 
     public final GameMap gm;
+
+    public final MapChunksStore store;
 }

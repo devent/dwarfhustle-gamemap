@@ -185,6 +185,7 @@ public class App extends SimpleApplication {
                 });
     }
 
+    @SuppressWarnings("unused")
     private void attachGui(ActorRef<Message> receiver) {
         CompletionStage<AttachGuiFinishedMessage> result = ask(receiver, AttachGuiMessage::new, ofMinutes(1),
                 actor.getActorSystem().scheduler());
@@ -192,7 +193,7 @@ public class App extends SimpleApplication {
             if (ex != null) {
                 log.error("AttachGuiMessage", ex);
                 actor.tell(new AppErrorMessage(ex));
-            } else {
+            } else if (ret instanceof AttachGuiFinishedMessage rm) {
                 log.debug("AttachGuiMessage {}", ret);
                 inputManager.deleteMapping(INPUT_MAPPING_EXIT);
                 createGameMap();
@@ -201,9 +202,11 @@ public class App extends SimpleApplication {
     }
 
     private void createGameMap() {
-        TerrainActor.create(injector, ofSeconds(1), actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
+        TerrainActor.create(injector, ofSeconds(1), //
+                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID), //
+                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID), //
+                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)). //
+                whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));

@@ -18,7 +18,6 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.getMapBlock;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.nio.FloatBuffer;
@@ -30,20 +29,21 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
+import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
@@ -51,9 +51,9 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.google.inject.Injector;
@@ -111,6 +111,7 @@ public class TerrainActor {
     private static class InitialStateMessage extends Message {
         public final TerrainState terrainState;
         public final TerrainCameraState cameraState;
+        public final TerrainSelectBlockState selectBlockState;
         public final ChunksBoundingBoxState chunksBoundingBoxState;
         public final TerrainRollState terrainRollState;
     }
@@ -125,6 +126,7 @@ public class TerrainActor {
     @ToString(callSuper = true)
     private static class UpdateTerrainMessage extends Message {
         public final GameMap gm;
+        public final MapChunksStore store;
     }
 
     /**
@@ -134,15 +136,14 @@ public class TerrainActor {
      */
     public interface TerrainActorFactory {
         TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
-                @Assisted("objects") ObjectsGetter objects, @Assisted("materials") ObjectsGetter materials,
-                @Assisted("models") ObjectsGetter models);
+                @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models);
     }
 
     /**
      * Creates the {@link TerrainActor}.
      */
-    public static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> objects,
-            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models) {
+    public static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> materials,
+            CompletionStage<ObjectsGetter> models) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
@@ -151,10 +152,9 @@ public class TerrainActor {
                     return new SetupErrorMessage(cause);
                 }
             });
-            var o = objects.toCompletableFuture().get(15, SECONDS);
             var ma = materials.toCompletableFuture().get(15, SECONDS);
             var mo = models.toCompletableFuture().get(15, SECONDS);
-            return injector.getInstance(TerrainActorFactory.class).create(context, stash, timer, o, ma, mo)
+            return injector.getInstance(TerrainActorFactory.class).create(context, stash, timer, ma, mo)
                     .start(injector);
         })));
     }
@@ -163,10 +163,9 @@ public class TerrainActor {
      * Creates the {@link TerrainActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> objects, CompletionStage<ObjectsGetter> materials,
-            CompletionStage<ObjectsGetter> models) {
+            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, objects, materials, models));
+        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, materials, models));
     }
 
     private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
@@ -181,12 +180,14 @@ public class TerrainActor {
                 var cameraState = injector.getInstance(TerrainCameraState.class);
                 var chunksBoundingBoxState = injector.getInstance(ChunksBoundingBoxState.class);
                 var terrainRollState = injector.getInstance(TerrainRollState.class);
+                var selectBlockState = injector.getInstance(TerrainSelectBlockState.class);
                 app.getStateManager().attach(terrainState);
                 app.getStateManager().attach(cameraState);
                 app.getStateManager().attach(chunksBoundingBoxState);
                 app.getStateManager().attach(terrainRollState);
                 chunksBoundingBoxState.setEnabled(false);
-                return new InitialStateMessage(terrainState, cameraState, chunksBoundingBoxState, terrainRollState);
+                return new InitialStateMessage(terrainState, cameraState, selectBlockState, chunksBoundingBoxState,
+                        terrainRollState);
             });
             return f.get();
         } catch (Exception ex) {
@@ -205,10 +206,6 @@ public class TerrainActor {
     @Inject
     @Assisted
     private TimerScheduler<Message> timer;
-
-    @Inject
-    @Assisted("objects")
-    private ObjectsGetter og;
 
     @Inject
     @Assisted("materials")
@@ -236,7 +233,7 @@ public class TerrainActor {
 
     private ImmutableList<Geometry> copyBlockNodes;
 
-    private Optional<GameMapCachedMessage> previousMapBlockLoadedMessage = Optional.empty();
+    private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -273,27 +270,27 @@ public class TerrainActor {
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.is = m;
-        is.cameraState.setObjectsg(og);
-        is.cameraState.setTerrainNode(is.terrainState.getNode());
-        is.terrainRollState.setTerrainNode(is.terrainState.getNode());
-        is.terrainRollState.setBoundingNode(is.chunksBoundingBoxState.getNode());
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
 
     /**
-     * Reacts to the {@link GameMapCachedMessage} message.
+     * Reacts to the {@link StartTerrainForGameMapMessage} message.
      */
-    private Behavior<Message> onMapChunksLoaded(GameMapCachedMessage m) {
-        log.debug("onMapChunksLoaded {}", m);
+    private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
+        log.debug("onStartTerrainForGameMap {}", m);
         this.blockNodes = Lists.mutable.empty();
-        this.previousMapBlockLoadedMessage = Optional.of(m);
+        this.previousStartTerrainForGameMapMessage = Optional.of(m);
         app.enqueue(() -> {
+            is.selectBlockState.setRetriever(m.store::getChunk);
+            app.getStateManager().attach(is.selectBlockState);
             is.cameraState.setTerrainBounds(
                     new BoundingBox(new Vector3f(), m.gm.width, m.gm.height, gs.get().visibleDepthLayers.get()));
             is.cameraState.updateCamera(m.gm);
+            is.terrainRollState.setTerrainNode(is.terrainState.getNode());
+            is.terrainRollState.setBoundingNode(is.chunksBoundingBoxState.getNode());
         });
-        timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
+        timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm, m.store),
                 gs.get().terrainUpdateDuration.get());
         return Behaviors.same();
     }
@@ -303,27 +300,27 @@ public class TerrainActor {
      */
     private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
-        // long oldtime = System.currentTimeMillis();
-        var root = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, m.gm.root);
-        MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks = LongObjectMaps.mutable.empty();
+        long oldtime = System.currentTimeMillis();
+        var root = m.store.getChunk(0);
+        MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks = IntObjectMaps.mutable.empty();
         int z = m.gm.getCursorZ();
-        collectChunks(chunksBlocks, root, z, z, m.gm.chunkSize, gs.get().visibleDepthLayers.get());
-        // var bnum = updateModel(m, root, chunksBlocks);
-        updateModel(m, root, chunksBlocks);
+        collectChunks(chunksBlocks, m.store::getChunk, root, z, z, gs.get().visibleDepthLayers.get());
+        int bnum = updateModel(m, root, chunksBlocks, m.store::getChunk);
+        // updateModel(m, root, chunksBlocks);
         renderMeshs();
-        // long finishtime = System.currentTimeMillis();
-        // log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime,
-        // bnum);
+        long finishtime = System.currentTimeMillis();
+        log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
         return Behaviors.same();
     }
 
-    private int updateModel(UpdateTerrainMessage m, GameObject o,
-            MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks) {
+    private int updateModel(UpdateTerrainMessage m, MapChunk root,
+            MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks, Function<Integer, MapChunk> retriever) {
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
         var cursor = m.gm.cursor;
         blockNodes.clear();
         int bnum = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
+            var chunk = retriever.apply(chunks.getOne());
             for (var blocks : chunks.getTwo().keyMultiValuePairsView()) {
                 int spos = 0;
                 int sindex = 0;
@@ -340,7 +337,7 @@ public class TerrainActor {
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
                 final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-                fillBuffers(blocks, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+                fillBuffers(blocks, chunk, retriever, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
                 var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -403,8 +400,9 @@ public class TerrainActor {
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, MapCursor cursor,
-            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, MapChunk chunk,
+            Function<Integer, MapChunk> retriever, int w, int h, int d, MapCursor cursor, FloatBuffer cpos,
+            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -440,16 +438,16 @@ public class TerrainActor {
                 if (n0z < 0.0f) {
                     continue;
                 }
-                if (n0x < 0.0f && isSkipCheckNeighborWest(mb)) {
+                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
                     continue;
                 }
-                if (n0x > 0.0f && isSkipCheckNeighborEast(mb)) {
+                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, retriever)) {
                     continue;
                 }
-                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb)) {
+                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, retriever)) {
                     continue;
                 }
-                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb)) {
+                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, retriever)) {
                     continue;
                 }
                 cindex.put((short) (in0 + delta));
@@ -467,20 +465,20 @@ public class TerrainActor {
         ccolor.flip();
     }
 
-    private boolean isSkipCheckNeighborNorth(MapBlock mb) {
-        return mb.getNeighborNorth() != 0;
+    private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
+        return mb.getNeighborNorth(chunk, retriever) != null;
     }
 
-    private boolean isSkipCheckNeighborSouth(MapBlock mb) {
-        return mb.getNeighborSouth() != 0;
+    private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
+        return mb.getNeighborSouth(chunk, retriever) != null;
     }
 
-    private boolean isSkipCheckNeighborEast(MapBlock mb) {
-        return mb.getNeighborEast() != 0;
+    private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
+        return mb.getNeighborEast(chunk, retriever) != null;
     }
 
-    private boolean isSkipCheckNeighborWest(MapBlock mb) {
-        return mb.getNeighborWest() != 0;
+    private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
+        return mb.getNeighborWest(chunk, retriever) != null;
     }
 
     private void copyNormal(MapBlock mb, Mesh mesh, FloatBuffer cnormal) {
@@ -537,14 +535,14 @@ public class TerrainActor {
         }
     }
 
-    private void collectChunks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunksBlocks, MapChunk root, int z,
-            int currentZ, int chuckSize, int visibleDepthLayers) {
+    private void collectChunks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks,
+            Function<Integer, MapChunk> retriever, MapChunk root, int z, int currentZ, int visibleDepthLayers) {
         if (z == root.getPos().ep.z) {
             return;
         }
-        var firstchunk = root.findMapChunk(0, 0, z, id -> og.get(MapChunk.class, MapChunk.OBJECT_TYPE, id));
-        putChunkSortBlocks(chunksBlocks, firstchunk, currentZ, visibleDepthLayers);
-        long chunkid = 0;
+        var firstchunk = root.findChunk(0, 0, z, retriever);
+        putChunkSortBlocks(chunksBlocks, firstchunk, retriever, currentZ, visibleDepthLayers);
+        int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
         while (true) {
@@ -554,35 +552,33 @@ public class TerrainActor {
                 if (chunkid == 0) {
                     int firstz = firstchunk.getPos().ep.z;
                     if (firstz < currentZ + visibleDepthLayers) {
-                        collectChunks(chunksBlocks, root, firstz, currentZ, chuckSize, visibleDepthLayers);
+                        collectChunks(chunksBlocks, retriever, root, firstz, currentZ, visibleDepthLayers);
                     }
                     break;
                 }
-                firstchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
+                firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk, currentZ, visibleDepthLayers);
+                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers);
             } else {
-                nextchunk = og.get(MapChunk.class, MapChunk.OBJECT_TYPE, chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk, currentZ, visibleDepthLayers);
+                nextchunk = retriever.apply(chunkid);
+                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers);
             }
         }
     }
 
-    private void putChunkSortBlocks(MutableLongObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk, int currentZ,
-            int visibleDepthLayers) {
+    private void putChunkSortBlocks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk,
+            Function<Integer, MapChunk> retriever, int currentZ, int visibleDepthLayers) {
         var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
-        for (var pair : chunk.getBlocks().keyValuesView()) {
-            var mbid = pair.getTwo();
-            var mb = getMapBlock(og, mbid);
-            if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ)) {
+        for (var mb : chunk.getBlocks()) {
+            if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ, chunk, retriever)) {
                 blocks.put(mb.getMaterial(), mb);
             }
         }
-        chunks.put(chunk.getId(), blocks);
+        chunks.put(chunk.cid, blocks);
     }
 
     private FrustumIntersect getIntersectBb(MapChunk chunk) {
@@ -610,7 +606,7 @@ public class TerrainActor {
         return bb;
     }
 
-    private boolean isBlockVisible(MapBlock mb, int z) {
+    private boolean isBlockVisible(MapBlock mb, int z, MapChunk chunk, Function<Integer, MapChunk> retriever) {
         if (mb.pos.z < z) {
             return false;
         }
@@ -619,9 +615,8 @@ public class TerrainActor {
         }
         if (mb.pos.z > z) {
             if (mb.isSolid()) {
-                long nt;
-                if ((nt = mb.getNeighborTop()) != 0) {
-                    var bt = og.get(MapBlock.class, MapBlock.OBJECT_TYPE, nt);
+                MapBlock bt;
+                if ((bt = mb.getNeighborUp(chunk, retriever)) != null) {
                     if (bt.isSolid()) {
                         return false;
                     }
@@ -641,7 +636,7 @@ public class TerrainActor {
         if (m.paused) {
             timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
         } else {
-            previousMapBlockLoadedMessage.ifPresent(this::onMapChunksLoaded);
+            previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
         }
         return Behaviors.same();
     }
@@ -667,7 +662,7 @@ public class TerrainActor {
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
-                .onMessage(GameMapCachedMessage.class, this::onMapChunksLoaded)//
+                .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
                 .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
         ;

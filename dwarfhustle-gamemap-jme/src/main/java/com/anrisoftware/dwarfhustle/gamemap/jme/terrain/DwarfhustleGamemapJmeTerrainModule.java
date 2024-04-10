@@ -28,9 +28,9 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
  */
 public class DwarfhustleGamemapJmeTerrainModule extends AbstractModule {
 
-	@Override
-	protected void configure() {
+    @Override
+    protected void configure() {
         install(new FactoryModuleBuilder().implement(TerrainActor.class, TerrainActor.class)
                 .build(TerrainActorFactory.class));
-	}
+    }
 }

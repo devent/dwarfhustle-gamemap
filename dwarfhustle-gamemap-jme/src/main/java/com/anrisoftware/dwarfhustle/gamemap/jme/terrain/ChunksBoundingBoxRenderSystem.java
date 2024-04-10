@@ -33,13 +33,11 @@ import com.jme3.scene.Node;
 import com.jme3.scene.shape.StripBox;
 
 import jakarta.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  * @author Erwin Müller {@literal <erwin@muellerpublic.de}
  */
-@Slf4j
 public class ChunksBoundingBoxRenderSystem extends IntervalIteratingSystem {
 
     public static final Family f = Family.all(ChunksBoundingBoxComponent.class).get();

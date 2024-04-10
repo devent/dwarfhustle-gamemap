@@ -132,6 +132,10 @@
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-model-generate-map</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-model</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -148,7 +152,7 @@
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-console</artifactId>
-            <version>0.0.2-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
