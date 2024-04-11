@@ -304,7 +304,8 @@ public class TerrainActor {
         var root = m.store.getChunk(0);
         MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks = IntObjectMaps.mutable.empty();
         int z = m.gm.getCursorZ();
-        collectChunks(chunksBlocks, m.store::getChunk, root, z, z, gs.get().visibleDepthLayers.get());
+        int depthLayers = gs.get().visibleDepthLayers.get();
+        collectChunks(chunksBlocks, m.store::getChunk, root, z, z, depthLayers, m.gm.width, m.gm.height);
         int bnum = updateModel(m, root, chunksBlocks, m.store::getChunk);
         // updateModel(m, root, chunksBlocks);
         renderMeshs();
@@ -536,12 +537,13 @@ public class TerrainActor {
     }
 
     private void collectChunks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks,
-            Function<Integer, MapChunk> retriever, MapChunk root, int z, int currentZ, int visibleDepthLayers) {
+            Function<Integer, MapChunk> retriever, MapChunk root, int z, int currentZ, int visibleDepthLayers, float w,
+            float h) {
         if (z == root.getPos().ep.z) {
             return;
         }
         var firstchunk = root.findChunk(0, 0, z, retriever);
-        putChunkSortBlocks(chunksBlocks, firstchunk, retriever, currentZ, visibleDepthLayers);
+        putChunkSortBlocks(chunksBlocks, firstchunk, retriever, currentZ, visibleDepthLayers, w, h);
         int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -552,23 +554,23 @@ public class TerrainActor {
                 if (chunkid == 0) {
                     int firstz = firstchunk.getPos().ep.z;
                     if (firstz < currentZ + visibleDepthLayers) {
-                        collectChunks(chunksBlocks, retriever, root, firstz, currentZ, visibleDepthLayers);
+                        collectChunks(chunksBlocks, retriever, root, firstz, currentZ, visibleDepthLayers, w, h);
                     }
                     break;
                 }
                 firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers);
+                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
             } else {
                 nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers);
+                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
             }
         }
     }
 
     private void putChunkSortBlocks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk,
-            Function<Integer, MapChunk> retriever, int currentZ, int visibleDepthLayers) {
-        var contains = getIntersectBb(chunk);
+            Function<Integer, MapChunk> retriever, int currentZ, int visibleDepthLayers, float w, float h) {
+        var contains = getIntersectBb(w, h, chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
@@ -581,8 +583,8 @@ public class TerrainActor {
         chunks.put(chunk.cid, blocks);
     }
 
-    private FrustumIntersect getIntersectBb(MapChunk chunk) {
-        var bb = createBb(chunk);
+    private FrustumIntersect getIntersectBb(float w, float h, MapChunk chunk) {
+        var bb = createBb(w, h, chunk);
         app.enqueue(() -> {
             is.chunksBoundingBoxState.setChunk(chunk, bb);
         });
@@ -597,12 +599,20 @@ public class TerrainActor {
         return contains;
     }
 
-    private BoundingBox createBb(MapChunk chunk) {
+    private BoundingBox createBb(float w, float h, MapChunk chunk) {
         var bb = new BoundingBox();
-        bb.setXExtent(chunk.centerExtent.extentx);
-        bb.setYExtent(chunk.centerExtent.extenty);
-        bb.setZExtent(chunk.centerExtent.extentz);
-        bb.setCenter(chunk.centerExtent.centerx, chunk.centerExtent.centery, chunk.centerExtent.centerz);
+        float tx = -w + 2f * chunk.pos.x + chunk.pos.getSizeX();
+        float ty = h - 2f * chunk.pos.y - chunk.pos.getSizeY();
+        float centerx = tx;
+        float centery = ty;
+        float centerz = 0f;
+        float extentx = chunk.pos.getSizeX();
+        float extenty = chunk.pos.getSizeY();
+        float extentz = chunk.pos.getSizeZ();
+        bb.setXExtent(extentx);
+        bb.setYExtent(extenty);
+        bb.setZExtent(extentz);
+        bb.setCenter(centerx, centery, centerz);
         return bb;
     }
 
@@ -635,6 +645,9 @@ public class TerrainActor {
         log.debug("onAppPaused {}", m);
         if (m.paused) {
             timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
+            app.enqueue(() -> {
+                app.getStateManager().detach(is.selectBlockState);
+            });
         } else {
             previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
         }

@@ -43,6 +43,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
@@ -226,6 +227,7 @@ public class TerrainTest extends SimpleApplication {
         this.simpleUpdateCall = tpl -> {
             if (texturesLoaded && modelsLoaded) {
                 actor.tell(new SetGameMapMessage(gm));
+                actor.tell(new StartTerrainForGameMapMessage(gm, store));
                 resetCameraState.updateCamera(gm);
                 simpleUpdateCall = tpl1 -> {
                 };
@@ -257,7 +259,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createMockTerrain() {
-        this.terrainImage = TerrainImage.terrain_4_4_4_2;
+        this.terrainImage = TerrainImage.terrain_32_32_32_4;
         createMapStorage();
         createGameMap();
         var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
