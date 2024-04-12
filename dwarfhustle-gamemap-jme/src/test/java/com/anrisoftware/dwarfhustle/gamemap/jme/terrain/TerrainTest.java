@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -259,7 +260,7 @@ public class TerrainTest extends SimpleApplication {
     }
 
     private void createMockTerrain() {
-        this.terrainImage = TerrainImage.terrain_32_32_32_4;
+        this.terrainImage = TerrainImage.terrain_256_256_128_16;
         createMapStorage();
         createGameMap();
         var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
@@ -272,7 +273,7 @@ public class TerrainTest extends SimpleApplication {
         var fileName = String.format("terrain_%d_%d_%d_%d_%d.map", terrainImage.w, terrainImage.h, terrainImage.d,
                 terrainImage.chunkSize, terrainImage.chunksCount);
         var file = Files.createTempDirectory("TerrainTest").resolve(fileName);
-        var res = TerrainTest.class.getResource("/com/anrisoftware/dwarfhustle/model/api/objects/" + fileName + ".txt");
+        var res = new File("/home/devent/Projects/dwarf-hustle/docu/terrain-maps/" + fileName).toURI().toURL();
         assert res != null;
         IOUtils.copy(res, file.toFile());
         this.store = new MapChunksStore(file, terrainImage.chunkSize, terrainImage.chunksCount);
@@ -294,8 +295,14 @@ public class TerrainTest extends SimpleApplication {
         gm.depth = terrainImage.d;
         gm.area = MapArea.create(50.99819f, 10.98348f, 50.96610f, 11.05610f);
         gm.timeZone = ZoneOffset.ofHours(1);
-        gm.setCameraPos(0.0f, 0.0f, 83.0f);
-        // gm.setCameraPos(0.0f, 0.0f, 12.0f);
+
+//        Camera Position: (-6.882555, 0.09426513, 34.164684)
+//        Camera Rotation: (0.0, 1.0, 0.0, 0.0)
+//        Camera Direction: (0.0, 0.0, -1.0)
+//        cam.setLocation(new Vector3f(-6.882555f, 0.09426513f, 34.164684f));
+//        cam.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
+
+        gm.setCameraPos(0.0f, 0.0f, 34f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
         gm.setCursorZ(0);
         var gs = injector.getInstance(GameSettingsProvider.class).get();

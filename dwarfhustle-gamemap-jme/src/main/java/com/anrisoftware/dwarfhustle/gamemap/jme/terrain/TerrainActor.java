@@ -539,7 +539,7 @@ public class TerrainActor {
     private void collectChunks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks,
             Function<Integer, MapChunk> retriever, MapChunk root, int z, int currentZ, int visibleDepthLayers, float w,
             float h) {
-        if (z == root.getPos().ep.z) {
+        if (z < root.getPos().z) {
             return;
         }
         var firstchunk = root.findChunk(0, 0, z, retriever);
