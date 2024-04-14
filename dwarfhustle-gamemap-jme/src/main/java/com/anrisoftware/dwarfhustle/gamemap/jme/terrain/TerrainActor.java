@@ -185,6 +185,7 @@ public class TerrainActor {
                 app.getStateManager().attach(cameraState);
                 app.getStateManager().attach(chunksBoundingBoxState);
                 app.getStateManager().attach(terrainRollState);
+                app.getStateManager().attach(selectBlockState);
                 chunksBoundingBoxState.setEnabled(false);
                 return new InitialStateMessage(terrainState, cameraState, selectBlockState, chunksBoundingBoxState,
                         terrainRollState);
@@ -282,8 +283,8 @@ public class TerrainActor {
         this.blockNodes = Lists.mutable.empty();
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
         app.enqueue(() -> {
-            is.selectBlockState.setRetriever(m.store::getChunk);
-            app.getStateManager().attach(is.selectBlockState);
+            is.selectBlockState.setRetriever(m.store);
+            is.selectBlockState.setGameMap(m.gm);
             is.cameraState.setTerrainBounds(
                     new BoundingBox(new Vector3f(), m.gm.width, m.gm.height, gs.get().visibleDepthLayers.get()));
             is.cameraState.updateCamera(m.gm);
@@ -601,18 +602,10 @@ public class TerrainActor {
 
     private BoundingBox createBb(float w, float h, MapChunk chunk) {
         var bb = new BoundingBox();
-        float tx = -w + 2f * chunk.pos.x + chunk.pos.getSizeX();
-        float ty = h - 2f * chunk.pos.y - chunk.pos.getSizeY();
-        float centerx = tx;
-        float centery = ty;
-        float centerz = 0f;
-        float extentx = chunk.pos.getSizeX();
-        float extenty = chunk.pos.getSizeY();
-        float extentz = chunk.pos.getSizeZ();
-        bb.setXExtent(extentx);
-        bb.setYExtent(extenty);
-        bb.setZExtent(extentz);
-        bb.setCenter(centerx, centery, centerz);
+        bb.setXExtent(chunk.getCenterExtent().extentx);
+        bb.setYExtent(chunk.getCenterExtent().extenty);
+        bb.setZExtent(chunk.getCenterExtent().extentz);
+        bb.setCenter(chunk.getCenterExtent().centerx, chunk.getCenterExtent().centery, chunk.getCenterExtent().centerz);
         return bb;
     }
 
@@ -645,9 +638,6 @@ public class TerrainActor {
         log.debug("onAppPaused {}", m);
         if (m.paused) {
             timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
-            app.enqueue(() -> {
-                app.getStateManager().detach(is.selectBlockState);
-            });
         } else {
             previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
         }

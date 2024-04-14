@@ -53,5 +53,6 @@
 	<logger name="com.anrisoftware" level="ALL" />
 	<logger name="com.anrisoftware.dwarfhustle.model" level="ERROR" />
     <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.app.AppActor" level="DEBUG" />
+    <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor" level="DEBUG" />
 
 </configuration>

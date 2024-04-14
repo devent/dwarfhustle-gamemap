@@ -261,8 +261,8 @@ public class TerrainTest extends SimpleApplication {
 
     private void createMockTerrain() {
         this.terrainImage = TerrainImage.terrain_256_256_128_16;
-        createMapStorage();
         createGameMap();
+        createMapStorage();
         var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
         block.setMined(true);
         block.setMaterialRid(898);
@@ -276,7 +276,7 @@ public class TerrainTest extends SimpleApplication {
         var res = new File("/home/devent/Projects/dwarf-hustle/docu/terrain-maps/" + fileName).toURI().toURL();
         assert res != null;
         IOUtils.copy(res, file.toFile());
-        this.store = new MapChunksStore(file, terrainImage.chunkSize, terrainImage.chunksCount);
+        this.store = new MapChunksStore(file, gm.width, gm.height, terrainImage.chunkSize, terrainImage.chunksCount);
         this.mcRoot = store.getChunk(0);
     }
 

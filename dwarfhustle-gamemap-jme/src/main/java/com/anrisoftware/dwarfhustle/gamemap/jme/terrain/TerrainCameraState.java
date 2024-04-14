@@ -103,6 +103,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private boolean shiftDown = false;
 
+    private boolean keyInit = false;
+
     @Inject
     public TerrainCameraState() {
         super(TerrainCameraState.class.getSimpleName());
@@ -135,6 +137,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         camera.setLocation(new Vector3f(gm.getCameraPos()[0], gm.getCameraPos()[1], gm.getCameraPos()[2]));
         camera.setRotation(
                 new Quaternion(gm.getCameraRot()[0], gm.getCameraRot()[1], gm.getCameraRot()[2], gm.getCameraRot()[3]));
+        if (!keyInit) {
+            initKeys();
+        }
     }
 
     private void saveCamera() {
@@ -165,13 +170,14 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     @Override
     protected void onEnable() {
         log.debug("onEnable");
-        initKeys();
     }
 
     @Override
     protected void onDisable() {
         log.debug("onDisable");
-        deleteKeys();
+        if (keyInit) {
+            deleteKeys();
+        }
     }
 
     private void initKeys() {
@@ -183,6 +189,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         inputManager.addMapping(RIGHT_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_RIGHT));
         inputManager.addMapping(Z_IN_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, false));
         inputManager.addMapping(Z_OUT_MAPPING, new MouseAxisTrigger(AXIS_WHEEL, true));
+        this.keyInit = true;
     }
 
     private void deleteKeys() {
@@ -191,6 +198,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         for (var i = 0; i < MAPPINGS.length; i++) {
             inputManager.deleteMapping(MAPPINGS[i]);
         }
+        this.keyInit = false;
     }
 
     @Override

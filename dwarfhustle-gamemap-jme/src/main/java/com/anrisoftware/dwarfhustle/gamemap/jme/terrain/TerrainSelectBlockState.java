@@ -17,14 +17,10 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
@@ -64,9 +60,9 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private GameMap gm;
 
-    private Optional<Consumer<GameMap>> saveSelectedMapBlock = Optional.empty();
+    private MapChunksStore store;
 
-    private Function<Integer, MapChunk> retriever;
+    private boolean keyInit = false;
 
     @Inject
     public TerrainSelectBlockState() {
@@ -74,20 +70,15 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         this.mouse = new Vector2f();
     }
 
-    public void setRetriever(Function<Integer, MapChunk> retriever) {
-        this.retriever = retriever;
-    }
-
-    public void setSaveSelectedMapBlock(Consumer<GameMap> saveSelectedMapBlock) {
-        this.saveSelectedMapBlock = Optional.of(saveSelectedMapBlock);
+    public void setRetriever(MapChunksStore store) {
+        this.store = store;
     }
 
     public void setGameMap(GameMap gm) {
         this.gm = gm;
-    }
-
-    private void saveSelectedMapBlock() {
-        saveSelectedMapBlock.ifPresent(it -> it.accept(gm));
+        if (!keyInit) {
+            initKeys();
+        }
     }
 
     @Override
@@ -103,18 +94,20 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     @Override
     protected void onEnable() {
         log.debug("onEnable");
-        initKeys();
     }
 
     @Override
     protected void onDisable() {
         log.debug("onDisable");
-        deleteKeys();
+        if (keyInit) {
+            deleteKeys();
+        }
     }
 
     private void initKeys() {
-        inputManager.addListener(this, MAPPINGS);
         inputManager.addRawInputListener(this);
+        inputManager.addListener(this, MAPPINGS);
+        this.keyInit = true;
     }
 
     private void deleteKeys() {
@@ -123,6 +116,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         for (var i = 0; i < MAPPINGS.length; i++) {
             inputManager.deleteMapping(MAPPINGS[i]);
         }
+        this.keyInit = false;
     }
 
     @Override
@@ -154,30 +148,24 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         mouse.x = evt.getX();
         mouse.y = evt.getY();
         var temp = TempVars.get();
-        var oldpos = temp.vect1;
-        var newpos = temp.vect2;
-        camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
-        camera.getWorldCoordinates(mouse, 0.0f, newpos);
-        updateSelectedObject();
+        updateSelectedObject(temp, mouse);
         temp.release();
     }
 
-    private void updateSelectedObject() {
-        if (gm == null) {
-            return;
-        }
-        var temp = TempVars.get();
-        var rootchunk = retriever.apply(0);
-        var z = gm.cursor.z;
-        var chunk = findChunkUnderCursor(temp, mouse, rootchunk, z, gm.width, gm.height);
-        if (chunk != null) {
-            var mb = findBlockUnderCursor(temp, mouse, chunk, z, gm.width, gm.height);
-            if (mb != null) {
-                gm.cursor = new MapCursor(mb.pos.x, mb.pos.y, z);
-                saveSelectedMapBlock();
+    private void updateSelectedObject(TempVars temp, Vector2f mouse) {
+        int z = gm.cursor.z;
+        int depthz = gm.chunkSize - gm.cursor.z;
+        store.forEachValue((chunk) -> {
+            if (chunk.isLeaf() && chunk.pos.z <= z && chunk.pos.ep.z >= depthz) {
+                var c = chunk.getCenterExtent();
+                if (checkCenterExtent(temp, mouse, c.centerx, c.centery, c.centerz, c.extentx, c.extenty, c.extentz)) {
+                    MapBlock mb;
+                    if ((mb = findBlockUnderCursor(temp, mouse, chunk, gm.cursor.z, gm.width, gm.height)) != null) {
+                        gm.setCursor(mb.pos.x, mb.pos.y, mb.pos.z);
+                    }
+                }
             }
-        }
-        temp.release();
+        });
     }
 
     private MapBlock findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int z, float w, float h) {
@@ -198,34 +186,6 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         return null;
     }
 
-    private MapChunk findChunkUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int z, float w, float h) {
-        if (chunk.blocks.isEmpty()) {
-            for (var kvalues : chunk.getChunks().keyValuesView()) {
-                var id = kvalues.getOne();
-                var c = findChunkUnderCursor(temp, mouse, retriever.apply(id), z, w, h);
-                if (c == null) {
-                    continue;
-                } else {
-                    return c;
-                }
-            }
-        } else {
-            float tx = -w + 2f * chunk.pos.x + chunk.pos.getSizeX();
-            float ty = h - 2f * chunk.pos.y - chunk.pos.getSizeY();
-            float centerx = tx;
-            float centery = ty;
-            float centerz = 0f;
-            float extentx = chunk.pos.getSizeX();
-            float extenty = chunk.pos.getSizeY();
-            float extentz = chunk.pos.getSizeZ();
-            if (chunk.pos.z <= z && chunk.getPos().ep.z > z
-                    && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                return chunk;
-            }
-        }
-        return null;
-    }
-
     private boolean checkCenterExtent(TempVars temp, Vector2f mouse, float centerx, float centery, float centerz,
             float extentx, float extenty, float extentz) {
         var bottomc = temp.vect1;
@@ -238,6 +198,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         topc.y = centery + extenty;
         topc.z = centerz + extentz;
         camera.getScreenCoordinates(topc, topc);
+        // System.out.printf("%s - %s - %s\n", mouse, topc, bottomc); // TODO
         if (mouse.x >= bottomc.x && mouse.y >= bottomc.y && mouse.x <= topc.x && mouse.y <= topc.y) {
             return true;
         } else {
