@@ -468,19 +468,59 @@ public class TerrainActor {
     }
 
     private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        return mb.getNeighborNorth(chunk, retriever) != null;
+        var nmb = mb.getNeighborNorth(chunk, retriever);
+        if (nmb != null) {
+            if (nmb.isSolid()) {
+                return true;
+            } else if (nmb.isRamp()) {
+                return true;
+            } else if (nmb.isMined()) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        return mb.getNeighborSouth(chunk, retriever) != null;
+        var nmb = mb.getNeighborSouth(chunk, retriever);
+        if (nmb != null) {
+            if (nmb.isSolid()) {
+                return true;
+            } else if (nmb.isRamp()) {
+                return true;
+            } else if (nmb.isMined()) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        return mb.getNeighborEast(chunk, retriever) != null;
+        var nmb = mb.getNeighborEast(chunk, retriever);
+        if (nmb != null) {
+            if (nmb.isSolid()) {
+                return true;
+            } else if (nmb.isRamp()) {
+                return true;
+            } else if (nmb.isMined()) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        return mb.getNeighborWest(chunk, retriever) != null;
+        var nmb = mb.getNeighborWest(chunk, retriever);
+        if (nmb != null) {
+            if (nmb.isSolid()) {
+                return true;
+            } else if (nmb.isRamp()) {
+                return true;
+            } else if (nmb.isMined()) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private void copyNormal(MapBlock mb, Mesh mesh, FloatBuffer cnormal) {
