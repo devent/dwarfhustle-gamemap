@@ -19,8 +19,6 @@ package com.anrisoftware.dwarfhustle.gui.controllers;
 
 import java.util.List;
 
-import jakarta.inject.Inject;
-
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
@@ -28,6 +26,7 @@ import org.eclipse.collections.impl.factory.Maps;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.google.inject.Injector;
 
+import jakarta.inject.Inject;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;

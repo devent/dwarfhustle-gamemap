@@ -24,7 +24,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.scenicview.ScenicView;
 import org.testfx.api.FxToolkit;
 import org.testfx.framework.junit5.ApplicationTest;
 import org.testfx.robot.Motion;
@@ -98,7 +97,7 @@ public class TestFXJUnitAppRunner extends ApplicationTest {
             controller.items.add(new MapTileItem(p));
         });
         clickOn(controller.infoBox, Motion.DIRECT, MouseButton.PRIMARY);
-        interact(() -> ScenicView.show(scene));
+        // interact(() -> ScenicView.show(scene));
         sleep(600, TimeUnit.SECONDS);
     }
 }

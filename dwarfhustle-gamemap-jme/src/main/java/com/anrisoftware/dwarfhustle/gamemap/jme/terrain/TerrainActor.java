@@ -469,54 +469,33 @@ public class TerrainActor {
 
     private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
         var nmb = mb.getNeighborNorth(chunk, retriever);
-        if (nmb != null) {
-            if (nmb.isSolid()) {
-                return true;
-            } else if (nmb.isRamp()) {
-                return true;
-            } else if (nmb.isMined()) {
-                return false;
-            }
-        }
-        return false;
+        return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
         var nmb = mb.getNeighborSouth(chunk, retriever);
-        if (nmb != null) {
-            if (nmb.isSolid()) {
-                return true;
-            } else if (nmb.isRamp()) {
-                return true;
-            } else if (nmb.isMined()) {
-                return false;
-            }
-        }
-        return false;
+        return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
         var nmb = mb.getNeighborEast(chunk, retriever);
-        if (nmb != null) {
-            if (nmb.isSolid()) {
-                return true;
-            } else if (nmb.isRamp()) {
-                return true;
-            } else if (nmb.isMined()) {
-                return false;
-            }
-        }
-        return false;
+        return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
         var nmb = mb.getNeighborWest(chunk, retriever);
+        return isSkipCheckNeighborEdge(nmb);
+    }
+
+    private boolean isSkipCheckNeighborEdge(MapBlock nmb) {
         if (nmb != null) {
-            if (nmb.isSolid()) {
+            if (nmb.isFilled()) {
                 return true;
             } else if (nmb.isRamp()) {
                 return true;
-            } else if (nmb.isMined()) {
+            } else if (nmb.isLiquid()) {
+                return true;
+            } else if (nmb.isEmpty()) {
                 return false;
             }
         }
@@ -653,15 +632,19 @@ public class TerrainActor {
         if (mb.pos.z < z) {
             return false;
         }
-        if (mb.isMined()) {
+        if (mb.isEmpty()) {
             return false;
         }
         if (mb.pos.z > z) {
-            if (mb.isSolid()) {
+            if (mb.isFilled()) {
                 MapBlock bt;
                 if ((bt = mb.getNeighborUp(chunk, retriever)) != null) {
-                    if (bt.isSolid()) {
+                    if (bt.isFilled()) {
                         return false;
+                    } else if (bt.isLiquid()) {
+                        return true;
+                    } else if (bt.isEmpty()) {
+                        return true;
                     }
                 }
             }

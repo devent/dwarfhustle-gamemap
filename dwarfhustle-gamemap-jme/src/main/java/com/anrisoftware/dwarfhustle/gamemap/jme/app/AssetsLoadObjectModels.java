@@ -56,7 +56,7 @@ public class AssetsLoadObjectModels {
         var engine = new GroovyScriptEngine(
                 new URL[] { AssetsLoadObjectModels.class.getResource("/ObjectModels.groovy") });
         var binding = new Binding();
-        unknown = am.loadModel("Models/tile-cube/tile-cube.j3o");
+        unknown = am.loadModel("Models/tile-block/tile-block.j3o");
         this.modelMap = (ModelMap) engine.run("ObjectModels.groovy", binding);
         modelMap.data.values().parallelStream().forEach((e) -> loadModelMap(cache, e));
     }
