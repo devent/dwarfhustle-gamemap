@@ -62,8 +62,11 @@ class ModelMapData {
 
     public String model
 
+    public float[] rotation = new float[3]
+
     def set(Map args) {
         this.model = args.model
+        this.rotation = args.rotation
         this
     }
 }
