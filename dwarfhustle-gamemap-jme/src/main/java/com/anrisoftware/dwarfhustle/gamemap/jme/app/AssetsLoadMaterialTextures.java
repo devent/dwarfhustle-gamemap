@@ -58,7 +58,7 @@ public class AssetsLoadMaterialTextures {
 
     private TexturesMap materialTexturesMap;
 
-    private MutableLongObjectMap<TexturesMapFramesData> texturesMapFramesDataMap = LongObjectMaps.mutable.empty();
+    private final MutableLongObjectMap<TexturesMapFramesData> texturesMapFramesDataMap = LongObjectMaps.mutable.empty();
 
     @SneakyThrows
     public void loadMaterialTextures(MutableLongObjectMap<AssetCacheObject> cache) {
@@ -115,7 +115,7 @@ public class AssetsLoadMaterialTextures {
     public TextureCacheObject loadTextureObject(long key) {
         var d = texturesMapFramesDataMap.get(id2Kid(key));
         if (d == null) {
-            throw new RuntimeException("No texture object with id " + key);
+            throw new RuntimeException("No texture object with kid " + id2Kid(key));
         }
         var to = loadTextureData(d);
         to.tex = loadTexture(d.image);

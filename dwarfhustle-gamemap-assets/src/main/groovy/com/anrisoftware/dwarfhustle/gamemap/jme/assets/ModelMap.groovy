@@ -66,7 +66,12 @@ class ModelMapData {
 
     def set(Map args) {
         this.model = args.model
-        this.rotation = args.rotation
+        if (args.rotation) {
+            this.rotation = args.rotation
+        }
+        if (args.rotationDeg) {
+            args.rotationDeg.eachWithIndex { it, i -> rotation[i] = Math.toRadians(it) }
+        }
         this
     }
 }

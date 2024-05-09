@@ -260,7 +260,7 @@ public class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void createMockTerrain() {
-        this.terrainImage = TerrainImage.terrain_32_32_32_4;
+        this.terrainImage = TerrainImage.terrain_4_4_4_2;
         createGameMap();
         createMapStorage();
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));

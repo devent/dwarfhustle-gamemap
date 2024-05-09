@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.jme3.math.FastMath.approximateEquals;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.nio.FloatBuffer;
@@ -70,7 +71,6 @@ import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.Mesh.Mode;
-import com.jme3.scene.Node;
 import com.jme3.scene.VertexBuffer.Type;
 import com.jme3.util.BufferUtils;
 
@@ -328,7 +328,27 @@ public class TerrainActor {
                 int sindex = 0;
                 for (MapBlock mb : blocks.getTwo()) {
                     var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
-                    var mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
+                    var mesh = ((Geometry) (model.model)).getMesh();
+//                    switch ((int) mb.getObjectRid()) {
+//                    // TILE-RAMP-CORNER-NW
+//                    case 821:
+//                        if (!mb.p.get(20)) {
+//                            AssetsLoadObjectModels.rotateMechGeo(mesh, new float[] { (float) Math.toRadians(0),
+//                                    (float) Math.toRadians(0), (float) Math.toRadians(90) });
+//                            mb.p.set(20);
+//                        }
+//                        chunk.setBlock(mb);
+//                        break;
+//                    // TILE-RAMP-TRI-S
+//                    case 840:
+//                        if (!mb.p.get(20)) {
+//                            AssetsLoadObjectModels.rotateMechGeo(mesh, new float[] { (float) Math.toRadians(0),
+//                                    (float) Math.toRadians(0), (float) Math.toRadians(45) });
+//                            mb.p.set(20);
+//                        }
+//                        chunk.setBlock(mb);
+//                        break;
+//                    }
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
                     bnum++;
@@ -414,7 +434,7 @@ public class TerrainActor {
         FloatBuffer bnormal;
         for (MapBlock mb : blocks.getTwo()) {
             model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
-            mesh = ((Geometry) ((Node) model.model).getChild(0)).getMesh();
+            mesh = ((Geometry) (model.model)).getMesh();
             bindex = mesh.getShortBuffer(Type.Index).rewind();
             bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
             delta = cpos.position() / 3;
@@ -437,21 +457,21 @@ public class TerrainActor {
                 n0x = (n0x + n1x + n2x) / 3f;
                 n0y = (n0y + n1y + n2y) / 3f;
                 n0z = (n0z + n1z + n2z) / 3f;
-                if (n0z < 0.0f) {
+                if (approximateEquals(n0z, -1.0f)) {
                     continue;
                 }
-                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
-                    continue;
-                }
-                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, retriever)) {
-                    continue;
-                }
-                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, retriever)) {
-                    continue;
-                }
-                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, retriever)) {
-                    continue;
-                }
+//                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
+//                    continue;
+//                }
+//                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, retriever)) {
+//                    continue;
+//                }
+//                if (n0y < 0.0f && isSkipCheckNeighborNorth(mb, chunk, retriever)) {
+//                    continue;
+//                }
+//                if (n0y > 0.0f && isSkipCheckNeighborSouth(mb, chunk, retriever)) {
+//                    continue;
+//                }
                 cindex.put((short) (in0 + delta));
                 cindex.put((short) (in1 + delta));
                 cindex.put((short) (in2 + delta));
@@ -573,7 +593,9 @@ public class TerrainActor {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
                     int firstz = firstchunk.getPos().ep.z;
-                    if (firstz < currentZ + visibleDepthLayers) {
+                    // System.out.printf("%d-%d-%d\n", firstz, currentZ, visibleDepthLayers); //
+                    // TODO
+                    if (visibleDepthLayers - currentZ > firstz) {
                         collectChunks(chunksBlocks, retriever, root, firstz, currentZ, visibleDepthLayers, w, h);
                     }
                     break;
