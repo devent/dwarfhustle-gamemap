@@ -70,29 +70,18 @@ public class AssetsLoadObjectModels {
     public void loadModelMap(MutableLongObjectMap<AssetCacheObject> cache, ModelMapData data) {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
-        // var geo = ((Geometry) ((Node) model).getChild(0)).clone();
-        // geo.setLocalRotation(new Quaternion(data.rotation));
-        // mo.model = geo;
         var mesh = ((Geometry) ((Node) model).getChild(0)).getMesh().deepClone();
-        if (data.rid == 821) {
-            System.out.println("AssetsLoadObjectModels.loadModelMap()"); // TODO
-            rotateMechGeo(mesh, data.rotation, true);
-        } else {
-            rotateMechGeo(mesh, data.rotation, false);
-        }
+        rotateMechGeo(mesh, data.rotation);
         var geo = new Geometry(data.model, mesh);
         mo.model = geo;
         cache.put(mo.id, mo);
     }
 
-    public static Mesh rotateMechGeo(Mesh mesh, float[] rotation, boolean debug) {
-        System.out.println("AssetsLoadObjectModels.rotateMechGeo()"); // TODO
+    public static Mesh rotateMechGeo(Mesh mesh, float[] rotation) {
         mesh.getFloatBuffer(Type.Position);
         var q = new Quaternion(rotation);
-        var index = mesh.getShortBuffer(Type.Index).rewind();
         var normal = mesh.getFloatBuffer(Type.Normal).rewind();
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
-        short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         var tmp = TempVars.get();
         for (int i = 0; i < normal.limit() / 9; i++) {
@@ -115,15 +104,9 @@ public class AssetsLoadObjectModels {
             tmp.vect3.x = n2x;
             tmp.vect3.y = n2y;
             tmp.vect3.z = n2z;
-            if (debug) {
-                System.out.printf("%s-%s-%s\n", tmp.vect1, tmp.vect2, tmp.vect3); // TODO
-            }
             q.multLocal(tmp.vect1);
             q.multLocal(tmp.vect2);
             q.multLocal(tmp.vect3);
-            if (debug) {
-                System.out.printf("%s-%s-%s\n", tmp.vect1, tmp.vect2, tmp.vect3); // TODO
-            }
             normal.reset();
             normal.put(tmp.vect1.x);
             normal.put(tmp.vect1.y);
@@ -139,13 +122,7 @@ public class AssetsLoadObjectModels {
             tmp.vect1.x = pos.get(i);
             tmp.vect1.y = pos.get(i + 1);
             tmp.vect1.z = pos.get(i + 2);
-            if (debug) {
-                System.out.printf("%s\n", tmp.vect1); // TODO
-            }
             q.multLocal(tmp.vect1);
-            if (debug) {
-                System.out.printf("%s\n", tmp.vect1); // TODO
-            }
             pos.put(i, tmp.vect1.x);
             pos.put(i + 1, tmp.vect1.y);
             pos.put(i + 2, tmp.vect1.z);
