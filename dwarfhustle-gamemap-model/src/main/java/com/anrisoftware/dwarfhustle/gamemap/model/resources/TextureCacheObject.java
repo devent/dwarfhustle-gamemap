@@ -65,6 +65,8 @@ public class TextureCacheObject extends AssetCacheObject {
 
     public float roughness;
 
+    public boolean transparent;
+
     public TextureCacheObject(byte[] idbuf) {
         super(idbuf);
     }

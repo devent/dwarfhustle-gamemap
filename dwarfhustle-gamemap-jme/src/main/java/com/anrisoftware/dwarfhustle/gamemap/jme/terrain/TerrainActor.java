@@ -63,10 +63,12 @@ import com.jme3.app.Application;
 import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
+import com.jme3.material.RenderState.BlendMode;
 import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.Camera.FrustumIntersect;
+import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
@@ -329,26 +331,6 @@ public class TerrainActor {
                 for (MapBlock mb : blocks.getTwo()) {
                     var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
                     var mesh = ((Geometry) (model.model)).getMesh();
-//                    switch ((int) mb.getObjectRid()) {
-//                    // TILE-RAMP-CORNER-NW
-//                    case 821:
-//                        if (!mb.p.get(20)) {
-//                            AssetsLoadObjectModels.rotateMechGeo(mesh, new float[] { (float) Math.toRadians(0),
-//                                    (float) Math.toRadians(0), (float) Math.toRadians(90) });
-//                            mb.p.set(20);
-//                        }
-//                        chunk.setBlock(mb);
-//                        break;
-//                    // TILE-RAMP-TRI-S
-//                    case 840:
-//                        if (!mb.p.get(20)) {
-//                            AssetsLoadObjectModels.rotateMechGeo(mesh, new float[] { (float) Math.toRadians(0),
-//                                    (float) Math.toRadians(0), (float) Math.toRadians(45) });
-//                            mb.p.set(20);
-//                        }
-//                        chunk.setBlock(mb);
-//                        break;
-//                    }
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
                     bnum++;
@@ -375,6 +357,9 @@ public class TerrainActor {
                 geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 geo.setShadowMode(ShadowMode.Receive);
+                if (tex.transparent) {
+                    geo.setQueueBucket(Bucket.Transparent);
+                }
                 blockNodes.add(geo);
             }
         }
@@ -382,12 +367,14 @@ public class TerrainActor {
     }
 
     private void setupPBRLighting(Geometry geo, TextureCacheObject tex) {
-        geo.setMaterial(new Material(assets, "Common/MatDefs/Light/PBRLighting.j3md"));
-        geo.getMaterial().setTexture("BaseColorMap", tex.tex);
-        geo.getMaterial().setColor("BaseColor", tex.baseColor);
-        geo.getMaterial().setFloat("Metallic", tex.metallic);
-        geo.getMaterial().setFloat("Roughness", tex.roughness);
-        geo.getMaterial().setBoolean("UseVertexColor", true);
+        var m = new Material(assets, "Common/MatDefs/Light/PBRLighting.j3md");
+        m.setTexture("BaseColorMap", tex.tex);
+        m.setColor("BaseColor", tex.baseColor);
+        m.setFloat("Metallic", tex.metallic);
+        m.setFloat("Roughness", tex.roughness);
+        m.setBoolean("UseVertexColor", true);
+        m.getAdditionalRenderState().setBlendMode(tex.transparent ? BlendMode.Alpha : BlendMode.Off);
+        geo.setMaterial(m);
     }
 
     @SuppressWarnings("unused")

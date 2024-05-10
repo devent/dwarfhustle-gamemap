@@ -91,6 +91,7 @@ public class AssetsLoadMaterialTextures {
         to.metallic = data.metallic;
         to.glossiness = data.glossiness;
         to.roughness = data.roughness;
+        to.transparent = data.transparent;
         to.x = data.x / (float) data.ww;
         to.y = data.y / (float) data.hh;
         to.w = data.w / (float) data.ww;
