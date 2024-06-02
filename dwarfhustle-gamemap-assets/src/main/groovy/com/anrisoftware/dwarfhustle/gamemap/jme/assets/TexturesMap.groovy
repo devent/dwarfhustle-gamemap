@@ -68,7 +68,7 @@ class TexturesMapData {
 @ToString
 class TexturesMapFramesData {
 
-    public long rid
+    public int rid
 
     public String image
 

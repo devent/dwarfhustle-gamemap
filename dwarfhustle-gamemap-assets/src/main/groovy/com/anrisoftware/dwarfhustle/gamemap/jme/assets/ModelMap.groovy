@@ -27,9 +27,9 @@ import groovy.transform.ToString;
 @ToString
 class ModelMap {
 
-    public Map<Long, ModelMapData> data = [:]
+    public Map<Integer, ModelMapData> data = [:]
 
-    def putAt(long rid, def v) {
+    def putAt(int rid, def v) {
         if (data[rid] == null) {
             data[rid] = new ModelMapData()
         }
@@ -37,11 +37,11 @@ class ModelMap {
         data[rid].set(v)
     }
 
-    def getAt(long rid) {
+    def getAt(int rid) {
         data[rid]
     }
 
-    def propertyMissing(long rid) {
+    def propertyMissing(int rid) {
         if (data[rid] == null) {
             data[rid] = new ModelMapData()
         }
@@ -58,7 +58,7 @@ class ModelMap {
 @ToString
 class ModelMapData {
 
-    public long rid
+    public int rid
 
     public String model
 

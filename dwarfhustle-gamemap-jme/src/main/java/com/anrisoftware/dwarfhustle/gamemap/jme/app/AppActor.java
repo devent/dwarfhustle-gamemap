@@ -29,18 +29,11 @@ import java.util.concurrent.CompletionStage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ConsoleActor;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetTimeWorldMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.SetVisibleDepthLayersMessage;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheFinishedMessage;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheMessage;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheResponseMessage;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheRetrieveLoadedMessage;
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.LoadGameMapActor.LoadGameMapToCacheRetrieveLoadedReplyMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedProgressMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
@@ -57,10 +50,10 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.materials.Gas;
 import com.anrisoftware.dwarfhustle.model.api.materials.IgneousExtrusive;
 import com.anrisoftware.dwarfhustle.model.api.materials.IgneousIntrusive;
+import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.materials.Metamorphic;
 import com.anrisoftware.dwarfhustle.model.api.materials.Sedimentary;
 import com.anrisoftware.dwarfhustle.model.api.materials.Soil;
-import com.anrisoftware.dwarfhustle.model.api.materials.SpecialStoneLayer;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
@@ -168,12 +161,6 @@ public class AppActor {
     @ToString(callSuper = true)
     private static class WrappedAssetsCacheResponse extends Message {
         private final AssetsResponseMessage<?> response;
-    }
-
-    @RequiredArgsConstructor
-    @ToString(callSuper = true)
-    private static class WrappedLoadGameMapToCacheResponse extends Message {
-        private final LoadGameMapToCacheResponseMessage response;
     }
 
     /**
@@ -364,7 +351,7 @@ public class AppActor {
 
     private ActorRef<KnowledgeResponseMessage> knowledgeAdapter;
 
-    private URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
+    private final URL dbConfig = AppActor.class.getResource("/orientdb-config.xml");
 
     private Injector injector;
 
@@ -377,13 +364,11 @@ public class AppActor {
 
     private boolean modelsLoaded = false;
 
-    private boolean mapCacheLoaded = false;
+    private final boolean mapCacheLoaded = false;
 
     private ActorRef<Message> objectsActor;
 
     private ActorRef<Message> dbActor;
-
-    private ActorRef<LoadGameMapToCacheResponseMessage> loadGameMapActorAdapter;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -400,8 +385,6 @@ public class AppActor {
         this.objectsAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         this.knowledgeAdapter = context.messageAdapter(KnowledgeResponseMessage.class, WrappedKnowledgeResponse::new);
         this.assetsCacheAdapter = context.messageAdapter(AssetsResponseMessage.class, WrappedAssetsCacheResponse::new);
-        this.loadGameMapActorAdapter = context.messageAdapter(LoadGameMapToCacheResponseMessage.class,
-                WrappedLoadGameMapToCacheResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -458,7 +441,7 @@ public class AppActor {
         actor.tell(cKgM(IgneousIntrusive.class, IgneousIntrusive.TYPE));
         actor.tell(cKgM(IgneousExtrusive.class, IgneousExtrusive.TYPE));
         actor.tell(cKgM(Metamorphic.class, Metamorphic.TYPE));
-        actor.tell(cKgM(SpecialStoneLayer.class, SpecialStoneLayer.TYPE));
+        actor.tell(cKgM(Liquid.class, Liquid.TYPE));
         actor.tell(cKgM(Soil.class, Soil.TYPE));
         actor.tell(cKgM(Gas.class, Gas.TYPE));
     }
@@ -565,63 +548,12 @@ public class AppActor {
             } else if (rm.go instanceof GameMap gm) {
                 ogs.get().currentMap.set(gm);
                 actor.tell(new SetGameMapMessage(gm));
-            } else if (rm.go instanceof MapChunk mc) {
-                retrieveChunksBlocks(mc);
             }
         } else if (response instanceof LoadObjectNotFoundMessage rm) {
             log.error("Object not found", rm);
             actor.tell(new AppErrorMessage(new Exception("Object not found")));
             return Behaviors.stopped();
         }
-        return Behaviors.same();
-    }
-
-    private void retrieveChunksBlocks(MapChunk mc) {
-        LoadGameMapActor.create(injector, ACTOR_TIMEOUT, actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID))
-                .whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("LoadGameMapActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("LoadGameMapActor created");
-                        startLoadGameMapToCache(mc, ret);
-                    }
-                });
-    }
-
-    private void startLoadGameMapToCache(MapChunk mc, ActorRef<Message> ret) {
-        ret.tell(new LoadGameMapToCacheMessage<>(loadGameMapActorAdapter, ogs.get().currentMap.get(), mc));
-        timer.startTimerAtFixedRate(CHECK_GAMEMAP_CACHED_TIMER,
-                new CheckGameMapCachedMessage(ret, ogs.get().currentMap.get()), Duration.ofSeconds(3));
-    }
-
-    /**
-     * Handles {@link WrappedLoadGameMapToCacheResponse}. Returns a behavior for the
-     * messages from {@link #getInitialBehavior()}.
-     */
-    private Behavior<Message> onWrappedLoadGameMapToCacheResponse(WrappedLoadGameMapToCacheResponse m) {
-        log.trace("onWrappedLoadGameMapToCacheResponse {}", m);
-        if (m.response instanceof LoadGameMapToCacheRetrieveLoadedReplyMessage rm) {
-            actor.tell(new GameMapCachedProgressMessage(rm.gm, rm.chunksCount, rm.chunksLoaded));
-        } else if (m.response instanceof LoadGameMapToCacheFinishedMessage rm) {
-            this.mapCacheLoaded = true;
-        }
-        return Behaviors.same();
-    }
-
-    @SneakyThrows
-    private Behavior<Message> onCheckGameMapCached(CheckGameMapCachedMessage m) {
-        log.debug("onCheckGameMapCached", m);
-        if (!mapCacheLoaded) {
-            m.loadActor.tell(new LoadGameMapToCacheRetrieveLoadedMessage<>(loadGameMapActorAdapter, m.gm));
-            return Behaviors.same();
-        }
-        if (!knowledgeLoaded || !texturesLoaded || !modelsLoaded) {
-            return Behaviors.same();
-        }
-        timer.cancel(CHECK_GAMEMAP_CACHED_TIMER);
-        createGameTickActor();
-        actor.tell(new StartTerrainForGameMapMessage(ogs.get().currentMap.get()));
         return Behaviors.same();
     }
 
@@ -712,11 +644,9 @@ public class AppActor {
      * <li>{@link SetVisibleDepthLayersMessage}
      * <li>{@link SetGameMapMessage}
      * <li>{@link SetTimeWorldMessage}
-     * <li>{@link CheckGameMapCachedMessage}
      * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedCacheResponse}
      * <li>{@link WrappedAssetsCacheResponse}
-     * <li>{@link WrappedLoadGameMapToCacheResponse}
      * </ul>
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
@@ -727,12 +657,10 @@ public class AppActor {
                 .onMessage(SetVisibleDepthLayersMessage.class, this::onSetVisibleDepthLayers)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(SetTimeWorldMessage.class, this::onSetTimeWorld)//
-                .onMessage(CheckGameMapCachedMessage.class, this::onCheckGameMapCached)//
                 .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(WrappedKnowledgeResponse.class, this::onWrappedKnowledgeResponse)//
                 .onMessage(WrappedAssetsCacheResponse.class, this::onWrappedAssetsCacheResponse)//
-                .onMessage(WrappedLoadGameMapToCacheResponse.class, this::onWrappedLoadGameMapToCacheResponse)//
         ;
     }
 }

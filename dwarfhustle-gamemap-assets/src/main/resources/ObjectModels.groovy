@@ -51,11 +51,11 @@ rid["TILE-BLOCK"] = 819
 
 m = new ModelMap()
 
-m[rid["TILE-RAMP-TRI-S"]] = [model: "Models/block-ramp-tri/block-ramp-tri.j3o", rotationDeg: [0, 0, 270]]
-m[rid["TILE-RAMP-TRI-W"]] = [model: "Models/block-ramp-tri/block-ramp-tri.j3o", rotationDeg: [0, 0, 180]]
-m[rid["TILE-RAMP-TRI-E"]] = [model: "Models/block-ramp-tri/block-ramp-tri.j3o", rotationDeg: [0, 0, 0]]
-m[rid["TILE-RAMP-TRI-N"]] = [model: "Models/block-ramp-tri/block-ramp-tri.j3o", rotationDeg: [0, 0, 90]]
-m[rid["TILE-RAMP-SINGLE"]] = [model: "Models/block-ramp-single/block-ramp-single.j3o", rotationDeg: [0, 0, 0]]
+m[rid["TILE-RAMP-TRI-S"]] = [model: "Models/block-ramp-tri/block-ramp-tri-flat.j3o", rotationDeg: [0, 0, 270]]
+m[rid["TILE-RAMP-TRI-W"]] = [model: "Models/block-ramp-tri/block-ramp-tri-flat.j3o", rotationDeg: [0, 0, 180]]
+m[rid["TILE-RAMP-TRI-E"]] = [model: "Models/block-ramp-tri/block-ramp-tri-flat.j3o", rotationDeg: [0, 0, 0]]
+m[rid["TILE-RAMP-TRI-N"]] = [model: "Models/block-ramp-tri/block-ramp-tri-flat.j3o", rotationDeg: [0, 0, 90]]
+m[rid["TILE-RAMP-SINGLE"]] = [model: "Models/block-ramp-single/blocks-ramp-single-flat.j3o", rotationDeg: [0, 0, 0]]
 m[rid["TILE-RAMP-PERP-W"]] = [model: "Models/block-ramp-perp/block-ramp-perp.j3o"]
 m[rid["TILE-RAMP-PERP-S"]] = [model: "Models/block-ramp-perp/block-ramp-perp.j3o"]
 m[rid["TILE-RAMP-PERP-E"]] = [model: "Models/block-ramp-perp/block-ramp-perp.j3o"]
@@ -68,10 +68,10 @@ m[rid["TILE-RAMP-EDGE-IN-SW"]] = [model: "Models/block-ramp-edge-in/block-ramp-e
 m[rid["TILE-RAMP-EDGE-IN-SE"]] = [model: "Models/block-ramp-edge-in/block-ramp-edge-in.j3o"]
 m[rid["TILE-RAMP-EDGE-IN-NW"]] = [model: "Models/block-ramp-edge-in/block-ramp-edge-in.j3o"]
 m[rid["TILE-RAMP-EDGE-IN-NE"]] = [model: "Models/block-ramp-edge-in/block-ramp-edge-in.j3o"]
-m[rid["TILE-RAMP-CORNER-SW"]] = [model: "Models/block-ramp-corner/block-ramp-corner.j3o", rotationDeg: [0, 0, 0]]
-m[rid["TILE-RAMP-CORNER-SE"]] = [model: "Models/block-ramp-corner/block-ramp-corner.j3o", rotationDeg: [0, 0, 90]]
-m[rid["TILE-RAMP-CORNER-NW"]] = [model: "Models/block-ramp-corner/block-ramp-corner.j3o", rotationDeg: [0, 0, 270]]
-m[rid["TILE-RAMP-CORNER-NE"]] = [model: "Models/block-ramp-corner/block-ramp-corner.j3o", rotationDeg: [0, 0, 180]]
+m[rid["TILE-RAMP-CORNER-SW"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 0]]
+m[rid["TILE-RAMP-CORNER-SE"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 90]]
+m[rid["TILE-RAMP-CORNER-NW"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 270]]
+m[rid["TILE-RAMP-CORNER-NE"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 180]]
 m[rid["TILE-BLOCK"]] = [model: "Models/tile-block/tile-block.j3o"]
 
 m

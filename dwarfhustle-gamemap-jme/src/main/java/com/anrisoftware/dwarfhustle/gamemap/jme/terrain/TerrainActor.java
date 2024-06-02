@@ -329,7 +329,7 @@ public class TerrainActor {
                 int spos = 0;
                 int sindex = 0;
                 for (MapBlock mb : blocks.getTwo()) {
-                    var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
+                    var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
                     var mesh = ((Geometry) (model.model)).getMesh();
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
@@ -420,7 +420,7 @@ public class TerrainActor {
         ShortBuffer bindex;
         FloatBuffer bnormal;
         for (MapBlock mb : blocks.getTwo()) {
-            model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObject());
+            model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
             mesh = ((Geometry) (model.model)).getMesh();
             bindex = mesh.getShortBuffer(Type.Index).rewind();
             bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
@@ -516,7 +516,7 @@ public class TerrainActor {
 
     private void copyTex(MapBlock mb, Mesh mesh, FloatBuffer ctex) {
         var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
-        var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, mb.getMaterial());
+        var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, mb.getMaterialId());
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
             float ty = btex.get();
@@ -580,8 +580,6 @@ public class TerrainActor {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
                     int firstz = firstchunk.getPos().ep.z;
-                    // System.out.printf("%d-%d-%d\n", firstz, currentZ, visibleDepthLayers); //
-                    // TODO
                     if (visibleDepthLayers - currentZ > firstz) {
                         collectChunks(chunksBlocks, retriever, root, firstz, currentZ, visibleDepthLayers, w, h);
                     }
@@ -606,7 +604,7 @@ public class TerrainActor {
         MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var mb : chunk.getBlocks()) {
             if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ, chunk, retriever)) {
-                blocks.put(mb.getMaterial(), mb);
+                blocks.put(mb.getMaterialId(), mb);
             }
         }
         chunks.put(chunk.cid, blocks);
