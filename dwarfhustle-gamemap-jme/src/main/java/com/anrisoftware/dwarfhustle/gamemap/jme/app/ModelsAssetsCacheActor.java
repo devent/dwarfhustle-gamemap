@@ -98,7 +98,7 @@ public class ModelsAssetsCacheActor extends AbstractAssetsCacheActor {
     @Override
     @SneakyThrows
     protected <T extends GameObject> AssetCacheObject getValueFromBackend(Class<T> typeClass, String type, Object key) {
-        return models.loadModelObject((int) key);
+        return models.loadModelObject((long) key);
     }
 
     /**
