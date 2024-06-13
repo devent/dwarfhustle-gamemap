@@ -53,7 +53,7 @@ public class SunTaskWorker implements Runnable {
     @Inject
     private SunModel model;
 
-    private Engine engine;
+    private final Engine engine;
 
     @Inject
     public SunTaskWorker(Engine engine) {
@@ -84,8 +84,9 @@ public class SunTaskWorker implements Runnable {
         dc.color.r = model.color[0];
         dc.color.g = model.color[1];
         dc.color.b = model.color[2];
-
+        gm.setSunPosition(dc.d.x, dc.d.y, dc.d.z);
     }
+
     public void stop() {
         engine.removeEntity(entity);
     }

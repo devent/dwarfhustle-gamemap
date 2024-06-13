@@ -113,8 +113,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     private void deleteKeys() {
         inputManager.removeListener(this);
         inputManager.removeRawInputListener(this);
-        for (var i = 0; i < MAPPINGS.length; i++) {
-            inputManager.deleteMapping(MAPPINGS[i]);
+        for (String element : MAPPINGS) {
+            inputManager.deleteMapping(element);
         }
         this.keyInit = false;
     }
@@ -180,7 +180,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
             float extentz = 1f;
             if (block.pos.z == z
                     && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                System.out.println(block); // TODO
+                // System.out.println(block); // TODO
                 return block;
             }
         }

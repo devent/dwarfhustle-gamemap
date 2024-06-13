@@ -18,78 +18,79 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.assets.TexturesMap
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 rid = [:]
+
 // Clay
-rid["FIRE-CLAY"] = 900
-rid["SILTY-CLAY"] = 898
-rid["SANDY-CLAY"] = 896
-rid["CLAY-LOAM"] = 894
+rid["FIRE-CLAY"] = 901
+rid["SILTY-CLAY"] = 899
+rid["SANDY-CLAY"] = 897
+rid["CLAY-LOAM"] = 895
 rid["CLAY"] = 779
 
 // Gas
-rid["SULFUR-DIOXIDE"] = 928
-rid["CARBON-DIOXIDE"] = 927
-rid["POLLUTED-OXYGEN"] = 925
-rid["OXYGEN"] = 923
-rid["VACUUM"] = 922
+rid["SULFUR-DIOXIDE"] = 929
+rid["CARBON-DIOXIDE"] = 928
+rid["POLLUTED-OXYGEN"] = 926
+rid["OXYGEN"] = 924
+rid["VACUUM"] = 923
 
 // Igneous-Extrusive
-rid["RHYOLITE"] = 862
-rid["OBSIDIAN"] = 861
-rid["DACITE"] = 860
-rid["BASALT"] = 859
-rid["ANDESITE"] = 858
+rid["RHYOLITE"] = 863
+rid["OBSIDIAN"] = 862
+rid["DACITE"] = 861
+rid["BASALT"] = 860
+rid["ANDESITE"] = 859
 
 // Igneous-Intrusive
-rid["GRANITE"] = 856
-rid["GABBRO"] = 855
-rid["DIORITE"] = 854
+rid["GRANITE"] = 857
+rid["GABBRO"] = 856
+rid["DIORITE"] = 855
 
 // Metamorphic
-rid["SLATE"] = 869
-rid["SCHIST"] = 868
-rid["QUARTZITE"] = 867
-rid["PHYLLITE"] = 866
-rid["MARBLE"] = 865
-rid["GNEISS"] = 864
+rid["SLATE"] = 870
+rid["SCHIST"] = 869
+rid["QUARTZITE"] = 868
+rid["PHYLLITE"] = 867
+rid["MARBLE"] = 866
+rid["GNEISS"] = 865
 
 // Sand
-rid["YELLOW-SAND"] = 906
-rid["WHITE-SAND"] = 905
-rid["RED-SAND"] = 904
-rid["BLACK-SAND"] = 903
+rid["YELLOW-SAND"] = 907
+rid["WHITE-SAND"] = 906
+rid["RED-SAND"] = 905
+rid["BLACK-SAND"] = 904
 rid["SAND"] = 778
 
 // Seabed
-rid["CALCAREOUS-OOZE"] = 910
-rid["SILICEOUS-OOZE"] = 909
-rid["PELAGIC-CLAY"] = 908
+rid["CALCAREOUS-OOZE"] = 911
+rid["SILICEOUS-OOZE"] = 910
+rid["PELAGIC-CLAY"] = 909
 
 // Sedimentary
-rid["SILTSTONE"] = 852
-rid["SHALE"] = 851
-rid["SANDSTONE"] = 850
-rid["ROCK-SALT"] = 849
-rid["MUDSTONE"] = 848
-rid["LIMESTONE"] = 847
-rid["DOLOMITE"] = 846
-rid["CONGLOMERATE"] = 845
-rid["CLAYSTONE"] = 844
-rid["CHERT"] = 843
-rid["CHALK"] = 842
+rid["SILTSTONE"] = 853
+rid["SHALE"] = 852
+rid["SANDSTONE"] = 851
+rid["ROCK-SALT"] = 850
+rid["MUDSTONE"] = 849
+rid["LIMESTONE"] = 848
+rid["DOLOMITE"] = 847
+rid["CONGLOMERATE"] = 846
+rid["CLAYSTONE"] = 845
+rid["CHERT"] = 844
+rid["CHALK"] = 843
 
 // Liquid
-rid["MAGMA"] = 931
-rid["WATER"] = 930
+rid["MAGMA"] = 932
+rid["WATER"] = 931
 
 // Topsoil
-rid["SILT-LOAM"] = 920
-rid["SILTY-CLAY-LOAM"] = 919
-rid["SILT"] = 918
-rid["SANDY-LOAM"] = 917
-rid["SANDY-CLAY-LOAM"] = 916
-rid["PEAT"] = 915
-rid["LOAMY-SAND"] = 914
-rid["LOAM"] = 913
+rid["SILT-LOAM"] = 921
+rid["SILTY-CLAY-LOAM"] = 920
+rid["SILT"] = 919
+rid["SANDY-LOAM"] = 918
+rid["SANDY-CLAY-LOAM"] = 917
+rid["PEAT"] = 916
+rid["LOAMY-SAND"] = 915
+rid["LOAM"] = 914
 
 rid["UNKNOWN"] = 0xffff
 

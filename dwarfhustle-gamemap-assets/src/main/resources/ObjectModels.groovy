@@ -26,27 +26,28 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMap
 rid = [:]
 
 // ObjectType
-rid["TILE-RAMP-TRI-S"] = 840
-rid["TILE-RAMP-TRI-W"] = 839
-rid["TILE-RAMP-TRI-E"] = 838
-rid["TILE-RAMP-TRI-N"] = 837
-rid["TILE-RAMP-SINGLE"] = 836
-rid["TILE-RAMP-PERP-W"] = 835
-rid["TILE-RAMP-PERP-S"] = 834
-rid["TILE-RAMP-PERP-E"] = 833
-rid["TILE-RAMP-PERP-N"] = 832
-rid["TILE-RAMP-EDGE-OUT-SW"] = 831
-rid["TILE-RAMP-EDGE-OUT-SE"] = 830
-rid["TILE-RAMP-EDGE-OUT-NW"] = 829
-rid["TILE-RAMP-EDGE-OUT-NE"] = 828
-rid["TILE-RAMP-EDGE-IN-SW"] = 827
-rid["TILE-RAMP-EDGE-IN-SE"] = 826
-rid["TILE-RAMP-EDGE-IN-NW"] = 825
-rid["TILE-RAMP-EDGE-IN-NE"] = 824
-rid["TILE-RAMP-CORNER-SW"] = 823
-rid["TILE-RAMP-CORNER-SE"] = 822
-rid["TILE-RAMP-CORNER-NW"] = 821
-rid["TILE-RAMP-CORNER-NE"] = 820
+rid["TILE-RAMP-TRI-S"] = 841
+rid["TILE-RAMP-TRI-W"] = 840
+rid["TILE-RAMP-TRI-E"] = 839
+rid["TILE-RAMP-TRI-N"] = 838
+rid["TILE-RAMP-SINGLE"] = 837
+rid["TILE-RAMP-PERP-W"] = 836
+rid["TILE-RAMP-PERP-S"] = 835
+rid["TILE-RAMP-PERP-E"] = 834
+rid["TILE-RAMP-PERP-N"] = 833
+rid["TILE-RAMP-EDGE-OUT-SW"] = 832
+rid["TILE-RAMP-EDGE-OUT-SE"] = 831
+rid["TILE-RAMP-EDGE-OUT-NW"] = 830
+rid["TILE-RAMP-EDGE-OUT-NE"] = 829
+rid["TILE-RAMP-EDGE-IN-SW"] = 828
+rid["TILE-RAMP-EDGE-IN-SE"] = 827
+rid["TILE-RAMP-EDGE-IN-NW"] = 826
+rid["TILE-RAMP-EDGE-IN-NE"] = 825
+rid["TILE-RAMP-CORNER-SW"] = 824
+rid["TILE-RAMP-CORNER-SE"] = 823
+rid["TILE-RAMP-CORNER-NW"] = 822
+rid["TILE-RAMP-CORNER-NE"] = 821
+rid["TILE-WATER"] = 820
 rid["TILE-BLOCK"] = 819
 
 m = new ModelMap()
@@ -72,6 +73,7 @@ m[rid["TILE-RAMP-CORNER-SW"]] = [model: "Models/block-ramp-corner/block-ramp-cor
 m[rid["TILE-RAMP-CORNER-SE"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 90]]
 m[rid["TILE-RAMP-CORNER-NW"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 270]]
 m[rid["TILE-RAMP-CORNER-NE"]] = [model: "Models/block-ramp-corner/block-ramp-corner-flat.j3o", rotationDeg: [0, 0, 180]]
+m[rid["TILE-WATER"]] = [model: "Models/block-water/block-water.j3o"]
 m[rid["TILE-BLOCK"]] = [model: "Models/tile-block/tile-block.j3o"]
 
 m

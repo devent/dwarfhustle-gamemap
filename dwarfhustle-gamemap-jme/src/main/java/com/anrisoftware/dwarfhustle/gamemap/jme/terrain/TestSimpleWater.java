@@ -22,7 +22,10 @@ import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.material.Material;
+import com.jme3.math.ColorRGBA;
+import com.jme3.math.Plane;
 import com.jme3.math.Vector3f;
+import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -44,6 +47,8 @@ public class TestSimpleWater extends SimpleApplication implements ActionListener
     Node sceneNode;
     boolean useWater = true;
     private final Vector3f lightPos = new Vector3f(33, 12, -29);
+    private Geometry geom;
+    private Box mesh;
 
     public static void main(String[] args) {
         TestSimpleWater app = new TestSimpleWater();
@@ -81,8 +86,8 @@ public class TestSimpleWater extends SimpleApplication implements ActionListener
         sceneNode = new Node("Scene");
         mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setTexture("ColorMap", assetManager.loadTexture("Interface/Logo/Monkey.jpg"));
-        Box b = new Box(1, 1, 1);
-        Geometry geom = new Geometry("Box", b);
+        this.mesh = new Box(1, 1, 1);
+        this.geom = new Geometry("Box", mesh);
         geom.setMaterial(mat);
         sceneNode.attachChild(geom);
 
@@ -117,12 +122,28 @@ public class TestSimpleWater extends SimpleApplication implements ActionListener
         inputManager.addListener(this, "lightback");
     }
 
+    float time = 0f;
+
     @Override
     public void simpleUpdate(float tpf) {
         fpsText.setText("Light Position: " + lightPos.toString()
                 + " Change Light position with [U], [H], [J], [K] and [T], [G] Turn off water with [O]");
         lightSphere.setLocalTranslation(lightPos);
         waterProcessor.setLightPosition(lightPos);
+        time += tpf;
+        if (time > 1f) {
+            time = 0f;
+            waterProcessor.setDebug(true);
+            waterProcessor.setPlane(new Plane(Vector3f.UNIT_Y, new Vector3f(0f, 0f, 0f)));
+            waterProcessor.setWaterColor(new ColorRGBA(1f, 0f, 0f, 1f)); // transparency of water
+            waterProcessor.setWaterDepth(1f); // transparency of water
+            waterProcessor.setDistortionScale(1.05f); // strength of waves
+            waterProcessor.setWaveSpeed(0.05f); // speed of waves
+            if (waterPlane != null) {
+                waterPlane.setLocalScale(40);
+                waterPlane.setQueueBucket(Bucket.Translucent);
+            }
+        }
     }
 
     @Override

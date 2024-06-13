@@ -18,7 +18,9 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
 import static com.jme3.math.FastMath.approximateEquals;
+import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.nio.FloatBuffer;
@@ -34,9 +36,12 @@ import java.util.function.Function;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.primitive.IntLongMaps;
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
+import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
@@ -51,7 +56,10 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
+import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
@@ -108,6 +116,8 @@ public class TerrainActor {
 
     public static final int ID = KEY.hashCode();
 
+    private static int BLOCK_MATERIAL_WATER = "water".hashCode();
+
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
@@ -138,14 +148,15 @@ public class TerrainActor {
      */
     public interface TerrainActorFactory {
         TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
-                @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models);
+                @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
+                @Assisted("blockMaterials") ImmutableIntLongMap blockMaterials);
     }
 
     /**
      * Creates the {@link TerrainActor}.
      */
     public static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> materials,
-            CompletionStage<ObjectsGetter> models) {
+            CompletionStage<ObjectsGetter> models, CompletionStage<ActorRef<Message>> knowledge) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
@@ -156,8 +167,18 @@ public class TerrainActor {
             });
             var ma = materials.toCompletableFuture().get(15, SECONDS);
             var mo = models.toCompletableFuture().get(15, SECONDS);
-            return injector.getInstance(TerrainActorFactory.class).create(context, stash, timer, ma, mo)
-                    .start(injector);
+            var ko = knowledge.toCompletableFuture().get(15, SECONDS);
+            var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
+            MutableIntLongMap blockMaterials = IntLongMaps.mutable.ofInitialCapacity(100);
+            blockMaterials.put(BLOCK_MATERIAL_WATER,
+                    askKnowledgeObjects(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE)
+                            .toCompletableFuture().get(15, SECONDS).collectIf((o) -> {
+                                var bm = (BlockMaterial) o;
+                                return bm.getName().equalsIgnoreCase("water");
+                            }, KnowledgeObject::getId).getFirst());
+            System.out.println(blockMaterials); // TODO;
+            return injector.getInstance(TerrainActorFactory.class)
+                    .create(context, stash, timer, ma, mo, blockMaterials.toImmutable()).start(injector);
         })));
     }
 
@@ -165,9 +186,10 @@ public class TerrainActor {
      * Creates the {@link TerrainActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models) {
+            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models,
+            CompletionStage<ActorRef<Message>> knowledge) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, materials, models));
+        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, materials, models, knowledge));
     }
 
     private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
@@ -212,11 +234,15 @@ public class TerrainActor {
 
     @Inject
     @Assisted("materials")
-    private ObjectsGetter materialsg;
+    private ObjectsGetter materials;
 
     @Inject
     @Assisted("models")
-    private ObjectsGetter modelsg;
+    private ObjectsGetter models;
+
+    @Inject
+    @Assisted("blockMaterials")
+    private ImmutableIntLongMap blockMaterials;
 
     @Inject
     private Application app;
@@ -237,6 +263,12 @@ public class TerrainActor {
     private ImmutableList<Geometry> copyBlockNodes;
 
     private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
+
+    private MutableList<Geometry> waterNodes;
+
+    private ImmutableList<Geometry> copyWaterNodes;
+
+    private GameMap gm;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -283,6 +315,7 @@ public class TerrainActor {
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
         log.debug("onStartTerrainForGameMap {}", m);
         this.blockNodes = Lists.mutable.empty();
+        this.waterNodes = Lists.mutable.empty();
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
         app.enqueue(() -> {
             is.selectBlockState.setRetriever(m.store);
@@ -311,7 +344,7 @@ public class TerrainActor {
         collectChunks(chunksBlocks, m.store::getChunk, root, z, z, depthLayers, m.gm.width, m.gm.height);
         int bnum = updateModel(m, root, chunksBlocks, m.store::getChunk);
         // updateModel(m, root, chunksBlocks);
-        renderMeshs();
+        renderMeshs(m.gm);
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
         return Behaviors.same();
@@ -322,6 +355,7 @@ public class TerrainActor {
         int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
         var cursor = m.gm.cursor;
         blockNodes.clear();
+        waterNodes.clear();
         int bnum = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
             var chunk = retriever.apply(chunks.getOne());
@@ -329,7 +363,10 @@ public class TerrainActor {
                 int spos = 0;
                 int sindex = 0;
                 for (MapBlock mb : blocks.getTwo()) {
-                    var model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
+                    if (mb.getObject() == 820) {
+                        System.out.print("\0"); // TODO
+                    }
+                    var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
                     var mesh = ((Geometry) (model.model)).getMesh();
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
@@ -352,13 +389,16 @@ public class TerrainActor {
                 mesh.updateBound();
                 var geo = new Geometry("block-mesh", mesh);
                 // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-                var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
+                var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
                 setupPBRLighting(geo, tex);
                 geo.getMaterial().getAdditionalRenderState().setWireframe(false);
                 geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
                 geo.setShadowMode(ShadowMode.Receive);
                 if (tex.transparent) {
                     geo.setQueueBucket(Bucket.Transparent);
+                }
+                if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_WATER)) {
+                    waterNodes.add(geo);
                 }
                 blockNodes.add(geo);
             }
@@ -386,8 +426,10 @@ public class TerrainActor {
     }
 
     @SneakyThrows
-    private void renderMeshs() {
+    private void renderMeshs(GameMap gm) {
+        this.gm = gm;
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
+        copyWaterNodes = Lists.immutable.ofAll(waterNodes);
         var task = app.enqueue(this::renderMeshs1);
         try {
             task.get(gs.get().terrainUpdateDuration.get().toMillis(), TimeUnit.MILLISECONDS);
@@ -402,9 +444,14 @@ public class TerrainActor {
     }
 
     private boolean renderMeshs1() {
+        is.terrainState.setLightDir(gm.sunPos[0], gm.sunPos[1], gm.sunPos[2]);
         is.terrainState.clearBlockNodes();
+        is.terrainState.clearWaterNodes();
         for (var geo : copyBlockNodes) {
             is.terrainState.addBlockMesh(geo);
+        }
+        for (var geo : copyWaterNodes) {
+            is.terrainState.addWaterMesh(geo);
         }
         return true;
     }
@@ -420,7 +467,7 @@ public class TerrainActor {
         ShortBuffer bindex;
         FloatBuffer bnormal;
         for (MapBlock mb : blocks.getTwo()) {
-            model = modelsg.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
+            model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
             mesh = ((Geometry) (model.model)).getMesh();
             bindex = mesh.getShortBuffer(Type.Index).rewind();
             bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
@@ -516,7 +563,7 @@ public class TerrainActor {
 
     private void copyTex(MapBlock mb, Mesh mesh, FloatBuffer ctex) {
         var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
-        var tex = materialsg.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, mb.getMaterialId());
+        var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, mb.getMaterialId());
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
             float ty = btex.get();

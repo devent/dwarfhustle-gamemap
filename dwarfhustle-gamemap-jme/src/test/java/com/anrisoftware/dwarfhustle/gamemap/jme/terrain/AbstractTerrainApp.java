@@ -326,7 +326,8 @@ public class AbstractTerrainApp extends SimpleApplication {
 
     private void createTerrain() {
         TerrainActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)).whenComplete((ret, ex) -> {
+                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID), actor.getActorAsync(PowerLoomKnowledgeActor.ID))
+                .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("TerrainActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
