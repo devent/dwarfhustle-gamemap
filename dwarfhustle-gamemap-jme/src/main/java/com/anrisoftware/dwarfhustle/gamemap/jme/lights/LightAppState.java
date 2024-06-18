@@ -17,15 +17,14 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.lights;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
 import com.badlogic.ashley.core.Engine;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Node;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +46,7 @@ public class LightAppState extends BaseAppState {
     @Inject
     private DirectionalLightsRenderSystem dirLightsRenderSystem;
 
-    @Named("rootNode")
+    @Named("sceneNode")
     @Inject
     private Node sceneNode;
 
@@ -77,6 +76,8 @@ public class LightAppState extends BaseAppState {
         sceneNode.attachChild(box2.node);
         var box3 = new Box(getApplication().getAssetManager(), new Vector3f(2f, 2f, 2f));
         sceneNode.attachChild(box3.node);
+        var box4 = new Box(getApplication().getAssetManager(), new Vector3f(-1f, -1f, -1f));
+        sceneNode.attachChild(box4.node);
     }
 
     @Override

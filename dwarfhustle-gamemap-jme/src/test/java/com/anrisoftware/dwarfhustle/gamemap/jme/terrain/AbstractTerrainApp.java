@@ -75,7 +75,6 @@ import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.jme3.app.Application;
 import com.jme3.app.DebugKeysAppState;
-import com.jme3.app.LostFocusBehavior;
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.StatsAppState;
 import com.jme3.app.state.ConstantVerifierState;
@@ -142,6 +141,8 @@ public class AbstractTerrainApp extends SimpleApplication {
 
     private MapChunksStore store;
 
+    private Node sceneNode;
+
     public AbstractTerrainApp() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
         // , new FlyCamAppState()
@@ -197,6 +198,12 @@ public class AbstractTerrainApp extends SimpleApplication {
             }
 
             @Provides
+            @Named("sceneNode")
+            public Node getSceneNode() {
+                return AbstractTerrainApp.this.sceneNode;
+            }
+
+            @Provides
             public AssetManager getAssetManger() {
                 return AbstractTerrainApp.this.assetManager;
             }
@@ -225,6 +232,8 @@ public class AbstractTerrainApp extends SimpleApplication {
     @Override
     public void simpleInitApp() {
         log.debug("simpleInitApp");
+        this.sceneNode = new Node("Scene-Node");
+        rootNode.attachChild(sceneNode);
         this.simpleUpdateCall = tpl -> {
             if (texturesLoaded && modelsLoaded) {
                 actor.tell(new SetGameMapMessage(gm));
@@ -260,7 +269,7 @@ public class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void createMockTerrain() {
-        this.terrainImage = TerrainImage.terrain_8_8_8_4;
+        this.terrainImage = TerrainImage.terrain_4_4_4_2;
         createGameMap();
         createMapStorage();
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
@@ -320,7 +329,7 @@ public class AbstractTerrainApp extends SimpleApplication {
         s.setHeight(720);
         s.setVSync(false);
         s.setOpenCLSupport(false);
-        setLostFocusBehavior(LostFocusBehavior.PauseOnLostFocus);
+        setPauseOnLostFocus(true);
         setSettings(s);
     }
 

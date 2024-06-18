@@ -18,7 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
 import static com.jme3.math.FastMath.approximateEquals;
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -56,10 +56,8 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
@@ -116,7 +114,9 @@ public class TerrainActor {
 
     public static final int ID = KEY.hashCode();
 
-    private static int BLOCK_MATERIAL_WATER = "water".hashCode();
+    private static final int BLOCK_MATERIAL_WATER = "water".hashCode();
+
+    private static final int BLOCK_MATERIAL_MAGMA = "magma".hashCode();
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
@@ -171,12 +171,9 @@ public class TerrainActor {
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap blockMaterials = IntLongMaps.mutable.ofInitialCapacity(100);
             blockMaterials.put(BLOCK_MATERIAL_WATER,
-                    askKnowledgeObjects(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE)
-                            .toCompletableFuture().get(15, SECONDS).collectIf((o) -> {
-                                var bm = (BlockMaterial) o;
-                                return bm.getName().equalsIgnoreCase("water");
-                            }, KnowledgeObject::getId).getFirst());
-            System.out.println(blockMaterials); // TODO;
+                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE, "water"));
+            blockMaterials.put(BLOCK_MATERIAL_MAGMA,
+                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE, "magma"));
             return injector.getInstance(TerrainActorFactory.class)
                     .create(context, stash, timer, ma, mo, blockMaterials.toImmutable()).start(injector);
         })));
@@ -268,6 +265,10 @@ public class TerrainActor {
 
     private ImmutableList<Geometry> copyWaterNodes;
 
+    private MutableList<Geometry> magmaNodes;
+
+    private ImmutableList<Geometry> copyMagmaNodes;
+
     private GameMap gm;
 
     /**
@@ -316,6 +317,7 @@ public class TerrainActor {
         log.debug("onStartTerrainForGameMap {}", m);
         this.blockNodes = Lists.mutable.empty();
         this.waterNodes = Lists.mutable.empty();
+        this.magmaNodes = Lists.mutable.empty();
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
         app.enqueue(() -> {
             is.selectBlockState.setRetriever(m.store);
@@ -323,7 +325,8 @@ public class TerrainActor {
             is.cameraState.setTerrainBounds(
                     new BoundingBox(new Vector3f(), m.gm.width, m.gm.height, gs.get().visibleDepthLayers.get()));
             is.cameraState.updateCamera(m.gm);
-            is.terrainRollState.setTerrainNode(is.terrainState.getNode());
+            is.terrainRollState.setTerrainNode(is.terrainState.getTerrainNode());
+            is.terrainRollState.setWaterNode(is.terrainState.getWaterNode());
             is.terrainRollState.setBoundingNode(is.chunksBoundingBoxState.getNode());
         });
         timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm, m.store),
@@ -356,6 +359,7 @@ public class TerrainActor {
         var cursor = m.gm.cursor;
         blockNodes.clear();
         waterNodes.clear();
+        magmaNodes.clear();
         int bnum = 0;
         for (var chunks : chunksBlocks.keyValuesView()) {
             var chunk = retriever.apply(chunks.getOne());
@@ -363,9 +367,6 @@ public class TerrainActor {
                 int spos = 0;
                 int sindex = 0;
                 for (MapBlock mb : blocks.getTwo()) {
-                    if (mb.getObject() == 820) {
-                        System.out.print("\0"); // TODO
-                    }
                     var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
                     var mesh = ((Geometry) (model.model)).getMesh();
                     spos += mesh.getBuffer(Type.Position).getNumElements();
@@ -399,8 +400,13 @@ public class TerrainActor {
                 }
                 if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_WATER)) {
                     waterNodes.add(geo);
+                    is.terrainState.setWaterPos(((BoundingBox) mesh.getBound()).getCenter().z);
+                } else if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_MAGMA)) {
+                    magmaNodes.add(geo);
+                    is.terrainState.setMagmaPos(((BoundingBox) mesh.getBound()).getCenter().z);
+                } else {
+                    blockNodes.add(geo);
                 }
-                blockNodes.add(geo);
             }
         }
         return bnum;
@@ -430,6 +436,7 @@ public class TerrainActor {
         this.gm = gm;
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
         copyWaterNodes = Lists.immutable.ofAll(waterNodes);
+        copyMagmaNodes = Lists.immutable.ofAll(magmaNodes);
         var task = app.enqueue(this::renderMeshs1);
         try {
             task.get(gs.get().terrainUpdateDuration.get().toMillis(), TimeUnit.MILLISECONDS);
@@ -452,6 +459,9 @@ public class TerrainActor {
         }
         for (var geo : copyWaterNodes) {
             is.terrainState.addWaterMesh(geo);
+        }
+        for (var geo : copyMagmaNodes) {
+            is.terrainState.addMagmaMesh(geo);
         }
         return true;
     }
@@ -714,9 +724,9 @@ public class TerrainActor {
     private Behavior<Message> onAppPaused(AppPausedMessage m) {
         log.debug("onAppPaused {}", m);
         if (m.paused) {
-            timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
+            // timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
         } else {
-            previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
+            // previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
         }
         return Behaviors.same();
     }

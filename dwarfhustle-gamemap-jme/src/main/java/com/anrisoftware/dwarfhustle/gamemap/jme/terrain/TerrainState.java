@@ -24,6 +24,7 @@ import com.jme3.app.state.BaseAppState;
 import com.jme3.asset.AssetManager;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Plane;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Geometry;
@@ -31,6 +32,7 @@ import com.jme3.scene.Mesh;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
 import com.jme3.util.SkyFactory;
+import com.jme3.util.TempVars;
 import com.jme3.water.SimpleWaterProcessor;
 
 import jakarta.inject.Inject;
@@ -48,11 +50,17 @@ public class TerrainState extends BaseAppState {
     private Node rootNode;
 
     @Inject
+    @Named("sceneNode")
+    private Node sceneNode;
+
+    @Inject
     private ViewPort viewPort;
 
-    private final Node terrainNode = new Node("terrainNode");
+    private final Node terrainNode = new Node("Terrain-Node");
 
-    private final Node skyNode = new Node("Sky");
+    private final Node waterNode = new Node("Water-Node");
+
+    private final Node skyNode = new Node("Sky-Node");
 
     private SimpleWaterProcessor waterProcessor;
 
@@ -60,28 +68,55 @@ public class TerrainState extends BaseAppState {
 
     private final Vector3f lightDir = new Vector3f(0, 0, -1);
 
-    private Mesh mesh;
+    private Mesh waterMesh;
 
-    private Geometry geo;
+    private Geometry waterGeo;
+
+    private SimpleWaterProcessor magmaProcessor;
+
+    private Geometry magmaGeo;
+
+    private Mesh magmaMesh;
 
     @Override
     protected void initialize(Application app) {
         createSky(app.getAssetManager());
-        waterProcessor = new SimpleWaterProcessor(app.getAssetManager());
-        waterProcessor.setReflectionScene(skyNode);
-        waterProcessor.setDebug(true);
-        waterProcessor.setPlane(new Plane(Vector3f.UNIT_Z, Vector3f.ZERO));
-        waterProcessor.setWaterDepth(1); // transparency of water
-        waterProcessor.setDistortionScale(0.05f); // strength of waves
-        waterProcessor.setWaveSpeed(0.05f); // speed of waves
+        this.waterProcessor = createWaterProcessor(app.getAssetManager());
+        this.magmaProcessor = createMagmaProcessor(app.getAssetManager());
         viewPort.addProcessor(waterProcessor);
+        viewPort.addProcessor(magmaProcessor);
+    }
+
+    private SimpleWaterProcessor createWaterProcessor(AssetManager as) {
+        var p = new SimpleWaterProcessor(as);
+        p.setReflectionScene(sceneNode);
+        p.setRefractionClippingOffset(0.3f);
+        p.setDistortionScale(0.05f);
+        p.setWaterColor(ColorRGBA.Blue.mult(0.1f));
+        p.setWaterTransparency(1f);
+        p.setWaterDepth(0.1f);
+        p.setWaveSpeed(0.01f);
+        p.setLightPosition(lightDir);
+        return p;
+    }
+
+    private SimpleWaterProcessor createMagmaProcessor(AssetManager as) {
+        var p = new SimpleWaterProcessor(as);
+        p.setReflectionScene(sceneNode);
+        p.setReflectionClippingOffset(-5f);
+        p.setRefractionClippingOffset(0.5f);
+        p.setDistortionScale(0.05f);
+        p.setWaterColor(ColorRGBA.Red.mult(1.0f));
+        p.setWaterTransparency(1000f);
+        p.setWaterDepth(0.1f);
+        p.setWaveSpeed(0.01f);
+        return p;
     }
 
     private void createSky(AssetManager as) {
         this.sky = SkyFactory.createSky(as, "Textures/Sky/Bright/BrightSky.dds", SkyFactory.EnvMapType.CubeMap);
         sky.rotate(DEG_TO_RAD * 90f, 0, 0);
         skyNode.attachChild(sky);
-        rootNode.attachChild(skyNode);
     }
 
     @Override
@@ -90,12 +125,16 @@ public class TerrainState extends BaseAppState {
 
     @Override
     protected void onEnable() {
-        rootNode.attachChild(terrainNode);
+        sceneNode.attachChild(terrainNode);
+        sceneNode.attachChild(skyNode);
+        rootNode.attachChild(waterNode);
     }
 
     @Override
     protected void onDisable() {
-        rootNode.detachChild(terrainNode);
+        sceneNode.detachChild(terrainNode);
+        sceneNode.detachChild(skyNode);
+        rootNode.detachChild(waterNode);
     }
 
     public void clearBlockNodes() {
@@ -106,46 +145,61 @@ public class TerrainState extends BaseAppState {
         terrainNode.attachChild(geo);
     }
 
-    public Node getNode() {
+    public Node getTerrainNode() {
         return terrainNode;
     }
 
+    public Node getWaterNode() {
+        return waterNode;
+    }
+
     public void clearWaterNodes() {
+        waterNode.detachAllChildren();
     }
 
     public void addWaterMesh(Geometry geo) {
-        this.geo = geo;
-        this.mesh = geo.getMesh();
+        this.waterGeo = geo;
+        this.waterMesh = geo.getMesh();
+        waterProcessor.setWaterTransparency(100f);
+        waterMesh.scaleTextureCoordinates(new Vector2f(0.25f, 0.25f));
         geo.setMaterial(waterProcessor.getMaterial());
+        waterNode.attachChild(geo);
+    }
+
+    public void addMagmaMesh(Geometry geo) {
+        this.magmaGeo = geo;
+        this.magmaMesh = geo.getMesh();
+        magmaMesh.scaleTextureCoordinates(new Vector2f(0.5f, 0.5f));
+        geo.setMaterial(magmaProcessor.getMaterial());
+        waterNode.attachChild(geo);
     }
 
     public void setLightDir(Vector3f lightDir) {
-        this.lightDir.set(lightDir);
+        setLightDir(lightDir.x, lightDir.y, lightDir.z);
     }
 
     public void setLightDir(float x, float y, float z) {
         this.lightDir.set(x, y, z);
+        waterProcessor.setLightPosition(lightDir);
+        magmaProcessor.setLightPosition(lightDir);
     }
 
-    float time = 0f;
-
-    @Override
-    public void update(float tpf) {
-        time += tpf;
-        if (time > 1f) {
-            time = 0f;
-            waterProcessor.setDebug(true);
-            var waterLocation = new Vector3f(0, 0, 2f);
-            waterProcessor.setPlane(new Plane(Vector3f.UNIT_Z, waterLocation.dot(Vector3f.UNIT_Z)));
-            waterProcessor.setRefractionClippingOffset(1.0f);
-            waterProcessor.setDistortionScale(1.05f); // strength of waves
-            waterProcessor.setWaterColor(ColorRGBA.Red.mult(1.0f));
-            waterProcessor.setWaterDepth(1000f); // transparency of water
-            waterProcessor.setWaveSpeed(0.1f); // speed of waves
-            if (geo != null) {
-                // geo.setMaterial(waterProcessor.getMaterial());
-                // mesh.scaleTextureCoordinates(new Vector2f(2f, 2f));
-            }
-        }
+    public void setWaterPos(float z) {
+        var tmp = TempVars.get();
+        tmp.vect1.x = 0;
+        tmp.vect1.y = 0;
+        tmp.vect1.z = z;
+        waterProcessor.setPlane(new Plane(Vector3f.UNIT_Z, tmp.vect1.dot(Vector3f.UNIT_Z)));
+        tmp.release();
     }
+
+    public void setMagmaPos(float z) {
+        var tmp = TempVars.get();
+        tmp.vect1.x = 0;
+        tmp.vect1.y = 0;
+        tmp.vect1.z = z;
+        magmaProcessor.setPlane(new Plane(Vector3f.UNIT_Z, tmp.vect1.dot(Vector3f.UNIT_Z)));
+        tmp.release();
+    }
+
 }

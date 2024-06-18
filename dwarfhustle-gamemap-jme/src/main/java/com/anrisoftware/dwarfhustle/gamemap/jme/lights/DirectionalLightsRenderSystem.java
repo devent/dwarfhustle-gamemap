@@ -19,9 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.lights;
 
 import java.util.Map;
 
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
 import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -39,6 +36,8 @@ import com.jme3.scene.Node;
 import com.jme3.shadow.DirectionalLightShadowFilter;
 import com.jme3.shadow.EdgeFilteringMode;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -87,7 +86,7 @@ public class DirectionalLightsRenderSystem extends IntervalIteratingSystem {
     }
 
     @Inject
-    public void setSceneNode(@Named("rootNode") Node sceneNode) {
+    public void setSceneNode(@Named("sceneNode") Node sceneNode) {
         this.sceneNode = sceneNode;
     }
 

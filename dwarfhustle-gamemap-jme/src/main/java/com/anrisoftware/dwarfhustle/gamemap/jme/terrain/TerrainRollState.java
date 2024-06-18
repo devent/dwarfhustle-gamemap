@@ -82,6 +82,8 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
 
     private Node boundingNode;
 
+    private Node waterNode;
+
     @Inject
     public TerrainRollState() {
         super(TerrainRollState.class.getSimpleName());
@@ -94,11 +96,16 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
         this.roll = 0f;
         this.pitch = 0f;
         terrainNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
+        waterNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
         boundingNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
     }
 
     public void setTerrainNode(Node node) {
         this.terrainNode = node;
+    }
+
+    public void setWaterNode(Node node) {
+        this.waterNode = node;
     }
 
     public void setBoundingNode(Node node) {
@@ -137,8 +144,8 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
     private void deleteKeys() {
         inputManager.removeListener(this);
         inputManager.removeRawInputListener(this);
-        for (var i = 0; i < MAPPINGS.length; i++) {
-            inputManager.deleteMapping(MAPPINGS[i]);
+        for (String element : MAPPINGS) {
+            inputManager.deleteMapping(element);
         }
     }
 
@@ -203,6 +210,7 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
             pitch = -MAX_ANGLE;
         }
         terrainNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
+        waterNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
         boundingNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
     }
 
