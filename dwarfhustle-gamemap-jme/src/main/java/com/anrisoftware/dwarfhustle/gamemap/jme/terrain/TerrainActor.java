@@ -400,10 +400,8 @@ public class TerrainActor {
                 }
                 if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_WATER)) {
                     waterNodes.add(geo);
-                    is.terrainState.setWaterPos(((BoundingBox) mesh.getBound()).getCenter().z);
                 } else if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_MAGMA)) {
                     magmaNodes.add(geo);
-                    is.terrainState.setMagmaPos(((BoundingBox) mesh.getBound()).getCenter().z);
                 } else {
                     blockNodes.add(geo);
                 }
@@ -437,7 +435,7 @@ public class TerrainActor {
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
         copyWaterNodes = Lists.immutable.ofAll(waterNodes);
         copyMagmaNodes = Lists.immutable.ofAll(magmaNodes);
-        var task = app.enqueue(this::renderMeshs1);
+        var task = app.enqueue(this::renderMeshsOnRenderingThread);
         try {
             task.get(gs.get().terrainUpdateDuration.get().toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
@@ -450,7 +448,8 @@ public class TerrainActor {
         }
     }
 
-    private boolean renderMeshs1() {
+    private boolean renderMeshsOnRenderingThread() {
+        System.out.println("TerrainActor.renderMeshsOnRenderingThread()"); // TODO
         is.terrainState.setLightDir(gm.sunPos[0], gm.sunPos[1], gm.sunPos[2]);
         is.terrainState.clearBlockNodes();
         is.terrainState.clearWaterNodes();
@@ -458,6 +457,7 @@ public class TerrainActor {
             is.terrainState.addBlockMesh(geo);
         }
         for (var geo : copyWaterNodes) {
+            System.out.println(geo.getModelBound().getCenter()); // TODO
             is.terrainState.addWaterMesh(geo);
         }
         for (var geo : copyMagmaNodes) {

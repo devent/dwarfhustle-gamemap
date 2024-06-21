@@ -78,6 +78,10 @@ public class TerrainState extends BaseAppState {
 
     private Mesh magmaMesh;
 
+    private float waterPos;
+
+    private float magmaPos;
+
     @Override
     protected void initialize(Application app) {
         createSky(app.getAssetManager());
@@ -185,21 +189,28 @@ public class TerrainState extends BaseAppState {
     }
 
     public void setWaterPos(float z) {
-        var tmp = TempVars.get();
-        tmp.vect1.x = 0;
-        tmp.vect1.y = 0;
-        tmp.vect1.z = z;
-        waterProcessor.setPlane(new Plane(Vector3f.UNIT_Z, tmp.vect1.dot(Vector3f.UNIT_Z)));
-        tmp.release();
+        if (waterPos != z) {
+            System.out.printf("TerrainState.setWaterPos() %f - %f\n", waterPos, z); // TODO
+            this.waterPos = z;
+            var tmp = TempVars.get();
+            tmp.vect1.x = 0;
+            tmp.vect1.y = 0;
+            tmp.vect1.z = z;
+            waterProcessor.setPlane(tmp.vect1, Vector3f.UNIT_Z);
+            tmp.release();
+        }
     }
 
     public void setMagmaPos(float z) {
-        var tmp = TempVars.get();
-        tmp.vect1.x = 0;
-        tmp.vect1.y = 0;
-        tmp.vect1.z = z;
-        magmaProcessor.setPlane(new Plane(Vector3f.UNIT_Z, tmp.vect1.dot(Vector3f.UNIT_Z)));
-        tmp.release();
+        if (magmaPos != z) {
+            this.magmaPos = z;
+            var tmp = TempVars.get();
+            tmp.vect1.x = 0;
+            tmp.vect1.y = 0;
+            tmp.vect1.z = z;
+            magmaProcessor.setPlane(new Plane(Vector3f.UNIT_Z, tmp.vect1.dot(Vector3f.UNIT_Z)));
+            tmp.release();
+        }
     }
 
 }

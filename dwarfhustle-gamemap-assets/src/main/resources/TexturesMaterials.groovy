@@ -161,8 +161,8 @@ m["Sedimentary"].frames rid: rid["CHERT"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, h
 m["Sedimentary"].frames rid: rid["CHALK"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m["Liquid"].image = "Textures/Tiles/liquid-map.png"
-m["Liquid"].frames rid: rid["MAGMA"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: [1f, 1f, 1f, 0.5f], transparent: true, glossiness: 1f, metallic: 0f, roughness: 0f
-m["Liquid"].frames rid: rid["WATER"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: [1f, 1f, 1f, 0.5f], transparent: true, glossiness: 1f, metallic: 0f, roughness: 0f
+m["Liquid"].frames rid: rid["MAGMA"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: [1f, 1f, 1f, 0.5f], transparent: false, glossiness: 1f, metallic: 0f, roughness: 0f
+m["Liquid"].frames rid: rid["WATER"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: [1f, 1f, 1f, 0.5f], transparent: false, glossiness: 1f, metallic: 0f, roughness: 0f
 m["Liquid"].frames rid: rid["UNKNOWN"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m["Topsoil"].image = "Textures/Tiles/topsoil-map.png"
