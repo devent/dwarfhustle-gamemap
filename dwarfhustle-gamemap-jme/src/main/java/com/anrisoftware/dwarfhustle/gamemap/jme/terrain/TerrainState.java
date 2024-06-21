@@ -190,7 +190,6 @@ public class TerrainState extends BaseAppState {
 
     public void setWaterPos(float z) {
         if (waterPos != z) {
-            System.out.printf("TerrainState.setWaterPos() %f - %f\n", waterPos, z); // TODO
             this.waterPos = z;
             var tmp = TempVars.get();
             tmp.vect1.x = 0;

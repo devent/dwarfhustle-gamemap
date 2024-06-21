@@ -37,12 +37,10 @@ import java.util.function.Function;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.primitive.IntLongMaps;
-import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
-import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
@@ -341,11 +339,11 @@ public class TerrainActor {
         // log.debug("onUpdateModel {}", m);
         long oldtime = System.currentTimeMillis();
         var root = m.store.getChunk(0);
-        MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks = IntObjectMaps.mutable.empty();
+        MutableMultimap<Long, MapBlock> materialBlocks = Multimaps.mutable.list.empty();
         int z = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        collectChunks(chunksBlocks, m.store::getChunk, root, z, z, depthLayers, m.gm.width, m.gm.height);
-        int bnum = updateModel(m, root, chunksBlocks, m.store::getChunk);
+        collectChunks(materialBlocks, m.store::getChunk, root, z, z, depthLayers, m.gm.width, m.gm.height);
+        int bnum = updateModel(m.gm, root, materialBlocks, m.store::getChunk);
         // updateModel(m, root, chunksBlocks);
         renderMeshs(m.gm);
         long finishtime = System.currentTimeMillis();
@@ -353,61 +351,59 @@ public class TerrainActor {
         return Behaviors.same();
     }
 
-    private int updateModel(UpdateTerrainMessage m, MapChunk root,
-            MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks, Function<Integer, MapChunk> retriever) {
-        int w = m.gm.getWidth(), h = m.gm.getHeight(), d = m.gm.getDepth();
-        var cursor = m.gm.cursor;
+    private int updateModel(GameMap gm, MapChunk root, Multimap<Long, MapBlock> materialBlocks,
+            Function<Integer, MapChunk> retriever) {
+        int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
+        var cursor = gm.cursor;
         blockNodes.clear();
         waterNodes.clear();
         magmaNodes.clear();
         int bnum = 0;
-        for (var chunks : chunksBlocks.keyValuesView()) {
-            var chunk = retriever.apply(chunks.getOne());
-            for (var blocks : chunks.getTwo().keyMultiValuePairsView()) {
-                int spos = 0;
-                int sindex = 0;
-                for (MapBlock mb : blocks.getTwo()) {
-                    var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
-                    var mesh = ((Geometry) (model.model)).getMesh();
-                    spos += mesh.getBuffer(Type.Position).getNumElements();
-                    sindex += mesh.getBuffer(Type.Index).getNumElements();
-                    bnum++;
-                }
-                final long material = blocks.getOne();
-                final var cpos = BufferUtils.createFloatBuffer(3 * spos);
-                final var cindex = BufferUtils.createShortBuffer(3 * sindex);
-                final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
-                final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-                final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-                fillBuffers(blocks, chunk, retriever, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
-                var mesh = new Mesh();
-                mesh.setBuffer(Type.Position, 3, cpos);
-                mesh.setBuffer(Type.Index, 1, cindex);
-                mesh.setBuffer(Type.Normal, 3, cnormal);
-                mesh.setBuffer(Type.TexCoord, 2, ctex);
-                mesh.setBuffer(Type.Color, 4, ccolor);
-                mesh.setMode(Mode.Triangles);
-                mesh.updateBound();
-                var geo = new Geometry("block-mesh", mesh);
-                // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-                var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
-                setupPBRLighting(geo, tex);
-                geo.getMaterial().getAdditionalRenderState().setWireframe(false);
-                geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
-                geo.setShadowMode(ShadowMode.Receive);
-                if (tex.transparent) {
-                    geo.setQueueBucket(Bucket.Transparent);
-                }
-                if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_WATER)) {
-                    waterNodes.add(geo);
-                } else if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_MAGMA)) {
-                    magmaNodes.add(geo);
-                } else {
-                    blockNodes.add(geo);
-                }
+        int spos = 0;
+        int sindex = 0;
+        for (Pair<Long, RichIterable<MapBlock>> blocks : materialBlocks.keyMultiValuePairsView()) {
+            for (MapBlock mb : blocks.getTwo()) {
+                var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
+                var mesh = ((Geometry) (model.model)).getMesh();
+                spos += mesh.getBuffer(Type.Position).getNumElements();
+                sindex += mesh.getBuffer(Type.Index).getNumElements();
+                bnum++;
+            }
+            final long material = blocks.getOne();
+            final var cpos = BufferUtils.createFloatBuffer(3 * spos);
+            final var cindex = BufferUtils.createShortBuffer(3 * sindex);
+            final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
+            final var ctex = BufferUtils.createFloatBuffer(2 * spos);
+            final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
+            fillBuffers(blocks, retriever, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+            var mesh = new Mesh();
+            mesh.setBuffer(Type.Position, 3, cpos);
+            mesh.setBuffer(Type.Index, 1, cindex);
+            mesh.setBuffer(Type.Normal, 3, cnormal);
+            mesh.setBuffer(Type.TexCoord, 2, ctex);
+            mesh.setBuffer(Type.Color, 4, ccolor);
+            mesh.setMode(Mode.Triangles);
+            mesh.updateBound();
+            var geo = new Geometry("block-mesh", mesh);
+            // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
+            var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
+            setupPBRLighting(geo, tex);
+            geo.getMaterial().getAdditionalRenderState().setWireframe(false);
+            geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
+            geo.setShadowMode(ShadowMode.Receive);
+            if (tex.transparent) {
+                geo.setQueueBucket(Bucket.Transparent);
+            }
+            if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_WATER)) {
+                waterNodes.add(geo);
+            } else if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_MAGMA)) {
+                magmaNodes.add(geo);
+            } else {
+                blockNodes.add(geo);
             }
         }
         return bnum;
+
     }
 
     private void setupPBRLighting(Geometry geo, TextureCacheObject tex) {
@@ -449,7 +445,6 @@ public class TerrainActor {
     }
 
     private boolean renderMeshsOnRenderingThread() {
-        System.out.println("TerrainActor.renderMeshsOnRenderingThread()"); // TODO
         is.terrainState.setLightDir(gm.sunPos[0], gm.sunPos[1], gm.sunPos[2]);
         is.terrainState.clearBlockNodes();
         is.terrainState.clearWaterNodes();
@@ -457,18 +452,19 @@ public class TerrainActor {
             is.terrainState.addBlockMesh(geo);
         }
         for (var geo : copyWaterNodes) {
-            System.out.println(geo.getModelBound().getCenter()); // TODO
             is.terrainState.addWaterMesh(geo);
+            is.terrainState.setWaterPos(geo.getModelBound().getCenter().z);
         }
         for (var geo : copyMagmaNodes) {
             is.terrainState.addMagmaMesh(geo);
+            is.terrainState.setMagmaPos(geo.getModelBound().getCenter().z);
         }
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, MapChunk chunk,
-            Function<Integer, MapChunk> retriever, int w, int h, int d, MapCursor cursor, FloatBuffer cpos,
-            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, Function<Integer, MapChunk> retriever, int w,
+            int h, int d, MapCursor cursor, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex,
+            FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -620,14 +616,13 @@ public class TerrainActor {
         }
     }
 
-    private void collectChunks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunksBlocks,
-            Function<Integer, MapChunk> retriever, MapChunk root, int z, int currentZ, int visibleDepthLayers, float w,
-            float h) {
+    private void collectChunks(MutableMultimap<Long, MapBlock> blocks, Function<Integer, MapChunk> retriever,
+            MapChunk root, int z, int currentZ, int visibleDepthLayers, float w, float h) {
         if (z < root.getPos().z) {
             return;
         }
         var firstchunk = root.findChunk(0, 0, z, retriever);
-        putChunkSortBlocks(chunksBlocks, firstchunk, retriever, currentZ, visibleDepthLayers, w, h);
+        putChunkSortBlocks(blocks, firstchunk, retriever, currentZ, visibleDepthLayers, w, h);
         int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -638,33 +633,31 @@ public class TerrainActor {
                 if (chunkid == 0) {
                     int firstz = firstchunk.getPos().ep.z;
                     if (visibleDepthLayers - currentZ > firstz) {
-                        collectChunks(chunksBlocks, retriever, root, firstz, currentZ, visibleDepthLayers, w, h);
+                        collectChunks(blocks, retriever, root, firstz, currentZ, visibleDepthLayers, w, h);
                     }
                     break;
                 }
                 firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
+                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
             } else {
                 nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(chunksBlocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
+                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
             }
         }
     }
 
-    private void putChunkSortBlocks(MutableIntObjectMap<Multimap<Long, MapBlock>> chunks, MapChunk chunk,
+    private void putChunkSortBlocks(MutableMultimap<Long, MapBlock> blocks, MapChunk chunk,
             Function<Integer, MapChunk> retriever, int currentZ, int visibleDepthLayers, float w, float h) {
         var contains = getIntersectBb(w, h, chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
-        MutableMultimap<Long, MapBlock> blocks = Multimaps.mutable.list.empty();
         for (var mb : chunk.getBlocks()) {
             if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ, chunk, retriever)) {
                 blocks.put(mb.getMaterialId(), mb);
             }
         }
-        chunks.put(chunk.cid, blocks);
     }
 
     private FrustumIntersect getIntersectBb(float w, float h, MapChunk chunk) {
