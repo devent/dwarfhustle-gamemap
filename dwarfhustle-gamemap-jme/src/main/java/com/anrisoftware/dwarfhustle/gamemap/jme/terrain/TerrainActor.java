@@ -617,12 +617,12 @@ public class TerrainActor {
     }
 
     private void collectChunks(MutableMultimap<Long, MapBlock> blocks, Function<Integer, MapChunk> retriever,
-            MapChunk root, int z, int currentZ, int visibleDepthLayers, float w, float h) {
+            MapChunk root, int z, int currentZ, int visible, float w, float h) {
         if (z < root.getPos().z) {
             return;
         }
         var firstchunk = root.findChunk(0, 0, z, retriever);
-        putChunkSortBlocks(blocks, firstchunk, retriever, currentZ, visibleDepthLayers, w, h);
+        putChunkSortBlocks(blocks, firstchunk, retriever, currentZ, visible, w, h);
         int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -631,18 +631,18 @@ public class TerrainActor {
             if (chunkid == 0) {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
-                    int firstz = firstchunk.getPos().ep.z;
-                    if (visibleDepthLayers - currentZ > firstz) {
-                        collectChunks(blocks, retriever, root, firstz, currentZ, visibleDepthLayers, w, h);
+                    if (z + visible - nextchunk.pos.ep.z > 0) {
+                        nextchunk = root.findChunk(0, 0, nextchunk.pos.ep.z, retriever);
+                        collectChunks(blocks, retriever, nextchunk, nextchunk.pos.z, currentZ, visible, w, h);
                     }
                     break;
                 }
                 firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
+                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visible, w, h);
             } else {
                 nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visibleDepthLayers, w, h);
+                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visible, w, h);
             }
         }
     }
