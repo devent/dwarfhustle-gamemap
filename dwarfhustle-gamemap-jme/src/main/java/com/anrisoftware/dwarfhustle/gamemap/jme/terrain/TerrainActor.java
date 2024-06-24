@@ -19,6 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askObjectTypeId;
 import static com.jme3.math.FastMath.approximateEquals;
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -41,7 +42,6 @@ import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
-import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
@@ -54,6 +54,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.map.ObjectType;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
@@ -116,6 +117,8 @@ public class TerrainActor {
 
     private static final int BLOCK_MATERIAL_MAGMA = "magma".hashCode();
 
+    private static final int OBJECT_BLOCK_CEILING = "OBJECT_BLOCK_CEILING".hashCode();
+
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
@@ -147,7 +150,7 @@ public class TerrainActor {
     public interface TerrainActorFactory {
         TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
                 @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
-                @Assisted("blockMaterials") ImmutableIntLongMap blockMaterials);
+                @Assisted("knowledges") ImmutableIntLongMap knowledges);
     }
 
     /**
@@ -167,13 +170,15 @@ public class TerrainActor {
             var mo = models.toCompletableFuture().get(15, SECONDS);
             var ko = knowledge.toCompletableFuture().get(15, SECONDS);
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-            MutableIntLongMap blockMaterials = IntLongMaps.mutable.ofInitialCapacity(100);
-            blockMaterials.put(BLOCK_MATERIAL_WATER,
+            MutableIntLongMap knowledges = IntLongMaps.mutable.ofInitialCapacity(100);
+            knowledges.put(BLOCK_MATERIAL_WATER,
                     askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE, "water"));
-            blockMaterials.put(BLOCK_MATERIAL_MAGMA,
+            knowledges.put(BLOCK_MATERIAL_MAGMA,
                     askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE, "magma"));
+            knowledges.put(OBJECT_BLOCK_CEILING, askObjectTypeId(ko, ofSeconds(15), system.scheduler(),
+                    ObjectType.class, ObjectType.TYPE, "block-ceiling"));
             return injector.getInstance(TerrainActorFactory.class)
-                    .create(context, stash, timer, ma, mo, blockMaterials.toImmutable()).start(injector);
+                    .create(context, stash, timer, ma, mo, knowledges.toImmutable()).start(injector);
         })));
     }
 
@@ -236,8 +241,8 @@ public class TerrainActor {
     private ObjectsGetter models;
 
     @Inject
-    @Assisted("blockMaterials")
-    private ImmutableIntLongMap blockMaterials;
+    @Assisted("knowledges")
+    private ImmutableIntLongMap knowledges;
 
     @Inject
     private Application app;
@@ -268,6 +273,10 @@ public class TerrainActor {
     private ImmutableList<Geometry> copyMagmaNodes;
 
     private GameMap gm;
+
+    private MutableMultimap<Long, MapBlock> materialBlocks;
+
+    private Function<Integer, MapChunk> retriever;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -317,6 +326,8 @@ public class TerrainActor {
         this.waterNodes = Lists.mutable.empty();
         this.magmaNodes = Lists.mutable.empty();
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
+        this.materialBlocks = Multimaps.mutable.list.empty();
+        this.retriever = m.store::getChunk;
         app.enqueue(() -> {
             is.selectBlockState.setRetriever(m.store);
             is.selectBlockState.setGameMap(m.gm);
@@ -339,11 +350,11 @@ public class TerrainActor {
         // log.debug("onUpdateModel {}", m);
         long oldtime = System.currentTimeMillis();
         var root = m.store.getChunk(0);
-        MutableMultimap<Long, MapBlock> materialBlocks = Multimaps.mutable.list.empty();
+        materialBlocks.clear();
         int z = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        collectChunks(materialBlocks, m.store::getChunk, root, z, z, depthLayers, m.gm.width, m.gm.height);
-        int bnum = updateModel(m.gm, root, materialBlocks, m.store::getChunk);
+        collectChunks(root, z, z, depthLayers, m.gm.width, m.gm.height);
+        int bnum = updateModel(m.gm, root);
         // updateModel(m, root, chunksBlocks);
         renderMeshs(m.gm);
         long finishtime = System.currentTimeMillis();
@@ -351,8 +362,7 @@ public class TerrainActor {
         return Behaviors.same();
     }
 
-    private int updateModel(GameMap gm, MapChunk root, Multimap<Long, MapBlock> materialBlocks,
-            Function<Integer, MapChunk> retriever) {
+    private int updateModel(GameMap gm, MapChunk root) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
         var cursor = gm.cursor;
         blockNodes.clear();
@@ -394,9 +404,9 @@ public class TerrainActor {
             if (tex.transparent) {
                 geo.setQueueBucket(Bucket.Transparent);
             }
-            if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_WATER)) {
+            if (blocks.getOne() == knowledges.get(BLOCK_MATERIAL_WATER)) {
                 waterNodes.add(geo);
-            } else if (blocks.getOne() == blockMaterials.get(BLOCK_MATERIAL_MAGMA)) {
+            } else if (blocks.getOne() == knowledges.get(BLOCK_MATERIAL_MAGMA)) {
                 magmaNodes.add(geo);
             } else {
                 blockNodes.add(geo);
@@ -616,13 +626,12 @@ public class TerrainActor {
         }
     }
 
-    private void collectChunks(MutableMultimap<Long, MapBlock> blocks, Function<Integer, MapChunk> retriever,
-            MapChunk root, int z, int currentZ, int visible, float w, float h) {
+    private void collectChunks(MapChunk root, int z, int currentZ, int visible, float w, float h) {
         if (z < root.getPos().z) {
             return;
         }
         var firstchunk = root.findChunk(0, 0, z, retriever);
-        putChunkSortBlocks(blocks, firstchunk, retriever, currentZ, visible, w, h);
+        putChunkSortBlocks(firstchunk, currentZ, visible, w, h);
         int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -633,29 +642,28 @@ public class TerrainActor {
                 if (chunkid == 0) {
                     if (z + visible - nextchunk.pos.ep.z > 0) {
                         nextchunk = root.findChunk(0, 0, nextchunk.pos.ep.z, retriever);
-                        collectChunks(blocks, retriever, nextchunk, nextchunk.pos.z, currentZ, visible, w, h);
+                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, w, h);
                     }
                     break;
                 }
                 firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visible, w, h);
+                putChunkSortBlocks(nextchunk, currentZ, visible, w, h);
             } else {
                 nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(blocks, nextchunk, retriever, currentZ, visible, w, h);
+                putChunkSortBlocks(nextchunk, currentZ, visible, w, h);
             }
         }
     }
 
-    private void putChunkSortBlocks(MutableMultimap<Long, MapBlock> blocks, MapChunk chunk,
-            Function<Integer, MapChunk> retriever, int currentZ, int visibleDepthLayers, float w, float h) {
+    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visibleDepthLayers, float w, float h) {
         var contains = getIntersectBb(w, h, chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
         for (var mb : chunk.getBlocks()) {
             if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ, chunk, retriever)) {
-                blocks.put(mb.getMaterialId(), mb);
+                this.materialBlocks.put(mb.getMaterialId(), mb);
             }
         }
     }
