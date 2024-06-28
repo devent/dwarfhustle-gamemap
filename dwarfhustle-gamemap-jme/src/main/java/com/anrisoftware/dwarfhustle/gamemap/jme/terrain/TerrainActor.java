@@ -262,6 +262,10 @@ public class TerrainActor {
 
     private ImmutableList<Geometry> copyBlockNodes;
 
+    private MutableList<Geometry> ceilingNodes;
+
+    private ImmutableList<Geometry> copyCeilingNodes;
+
     private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
 
     private MutableList<Geometry> waterNodes;
@@ -275,6 +279,8 @@ public class TerrainActor {
     private GameMap gm;
 
     private MutableMultimap<Long, MapBlock> materialBlocks;
+
+    private MutableMultimap<Long, MapBlock> materialCeilings;
 
     private Function<Integer, MapChunk> retriever;
 
@@ -323,10 +329,12 @@ public class TerrainActor {
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
         log.debug("onStartTerrainForGameMap {}", m);
         this.blockNodes = Lists.mutable.empty();
+        this.ceilingNodes = Lists.mutable.empty();
         this.waterNodes = Lists.mutable.empty();
         this.magmaNodes = Lists.mutable.empty();
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
         this.materialBlocks = Multimaps.mutable.list.empty();
+        this.materialCeilings = Multimaps.mutable.list.empty();
         this.retriever = m.store::getChunk;
         app.enqueue(() -> {
             is.selectBlockState.setRetriever(m.store);
@@ -347,25 +355,35 @@ public class TerrainActor {
      * Reacts to the {@link UpdateTerrainMessage} message.
      */
     private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
+        try {
+            onUpdateModel0(m);
+        } catch (Exception e) {
+            log.error("", e);
+        }
+        return Behaviors.same();
+    }
+
+    private void onUpdateModel0(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
         long oldtime = System.currentTimeMillis();
         var root = m.store.getChunk(0);
         materialBlocks.clear();
+        materialCeilings.clear();
         int z = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        collectChunks(root, z, z, depthLayers, m.gm.width, m.gm.height);
+        collectChunks(root, z, z, depthLayers, m.gm.depth);
         int bnum = updateModel(m.gm, root);
         // updateModel(m, root, chunksBlocks);
         renderMeshs(m.gm);
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
-        return Behaviors.same();
     }
 
     private int updateModel(GameMap gm, MapChunk root) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
         var cursor = gm.cursor;
         blockNodes.clear();
+        ceilingNodes.clear();
         waterNodes.clear();
         magmaNodes.clear();
         int bnum = 0;
@@ -385,8 +403,8 @@ public class TerrainActor {
             final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
             final var ctex = BufferUtils.createFloatBuffer(2 * spos);
             final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-            fillBuffers(blocks, retriever, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
-            var mesh = new Mesh();
+            fillBuffersBlocks(blocks, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+            final var mesh = new Mesh();
             mesh.setBuffer(Type.Position, 3, cpos);
             mesh.setBuffer(Type.Index, 1, cindex);
             mesh.setBuffer(Type.Normal, 3, cnormal);
@@ -394,9 +412,9 @@ public class TerrainActor {
             mesh.setBuffer(Type.Color, 4, ccolor);
             mesh.setMode(Mode.Triangles);
             mesh.updateBound();
-            var geo = new Geometry("block-mesh", mesh);
+            final var geo = new Geometry("block-mesh", mesh);
             // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-            var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
+            final var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
             setupPBRLighting(geo, tex);
             geo.getMaterial().getAdditionalRenderState().setWireframe(false);
             geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
@@ -411,6 +429,42 @@ public class TerrainActor {
             } else {
                 blockNodes.add(geo);
             }
+        }
+        for (Pair<Long, RichIterable<MapBlock>> blocks : materialCeilings.keyMultiValuePairsView()) {
+            for (MapBlock mb : blocks.getTwo()) {
+                var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE,
+                        knowledges.get(OBJECT_BLOCK_CEILING));
+                var mesh = ((Geometry) (model.model)).getMesh();
+                spos += mesh.getBuffer(Type.Position).getNumElements();
+                sindex += mesh.getBuffer(Type.Index).getNumElements();
+                bnum++;
+            }
+            final long material = blocks.getOne();
+            final var cpos = BufferUtils.createFloatBuffer(3 * spos);
+            final var cindex = BufferUtils.createShortBuffer(3 * sindex);
+            final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
+            final var ctex = BufferUtils.createFloatBuffer(2 * spos);
+            final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
+            fillBuffersCeilings(blocks, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+            final var mesh = new Mesh();
+            mesh.setBuffer(Type.Position, 3, cpos);
+            mesh.setBuffer(Type.Index, 1, cindex);
+            mesh.setBuffer(Type.Normal, 3, cnormal);
+            mesh.setBuffer(Type.TexCoord, 2, ctex);
+            mesh.setBuffer(Type.Color, 4, ccolor);
+            mesh.setMode(Mode.Triangles);
+            mesh.updateBound();
+            final var geo = new Geometry("block-ceiling", mesh);
+            // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
+            final var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
+            setupPBRLighting(geo, tex);
+            geo.getMaterial().getAdditionalRenderState().setWireframe(false);
+            geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
+            geo.setShadowMode(ShadowMode.Off);
+            if (tex.transparent) {
+                geo.setQueueBucket(Bucket.Transparent);
+            }
+            ceilingNodes.add(geo);
         }
         return bnum;
 
@@ -439,6 +493,7 @@ public class TerrainActor {
     private void renderMeshs(GameMap gm) {
         this.gm = gm;
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
+        copyCeilingNodes = Lists.immutable.ofAll(ceilingNodes);
         copyWaterNodes = Lists.immutable.ofAll(waterNodes);
         copyMagmaNodes = Lists.immutable.ofAll(magmaNodes);
         var task = app.enqueue(this::renderMeshsOnRenderingThread);
@@ -457,9 +512,13 @@ public class TerrainActor {
     private boolean renderMeshsOnRenderingThread() {
         is.terrainState.setLightDir(gm.sunPos[0], gm.sunPos[1], gm.sunPos[2]);
         is.terrainState.clearBlockNodes();
+        is.terrainState.clearCeilingNodes();
         is.terrainState.clearWaterNodes();
         for (var geo : copyBlockNodes) {
             is.terrainState.addBlockMesh(geo);
+        }
+        for (var geo : copyCeilingNodes) {
+            is.terrainState.addCeilingMesh(geo);
         }
         for (var geo : copyWaterNodes) {
             is.terrainState.addWaterMesh(geo);
@@ -472,19 +531,39 @@ public class TerrainActor {
         return true;
     }
 
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, Function<Integer, MapChunk> retriever, int w,
-            int h, int d, MapCursor cursor, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex,
-            FloatBuffer ccolor) {
+    private void fillBuffersBlocks(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, MapCursor cursor,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+        fillBuffers(blocks, (mb) -> {
+            var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
+            return ((Geometry) (model.model)).getMesh();
+
+        }, (mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
+            return approximateEquals(n0z, -1.0f);
+        }, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+    }
+
+    private void fillBuffersCeilings(Pair<Long, RichIterable<MapBlock>> blocks, int w, int h, int d, MapCursor cursor,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+        fillBuffers(blocks, (mb) -> {
+            var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE,
+                    knowledges.get(OBJECT_BLOCK_CEILING));
+            return ((Geometry) (model.model)).getMesh();
+        }, (mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
+            return false;
+        }, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+    }
+
+    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, Function<MapBlock, Mesh> meshSupplier,
+            NormalsPredicate faceSkipTest, int w, int h, int d, MapCursor cursor, FloatBuffer cpos, ShortBuffer cindex,
+            FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
-        ModelCacheObject model;
         Mesh mesh;
         ShortBuffer bindex;
         FloatBuffer bnormal;
         for (MapBlock mb : blocks.getTwo()) {
-            model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
-            mesh = ((Geometry) (model.model)).getMesh();
+            mesh = meshSupplier.apply(mb);
             bindex = mesh.getShortBuffer(Type.Index).rewind();
             bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
             delta = cpos.position() / 3;
@@ -507,7 +586,7 @@ public class TerrainActor {
                 n0x = (n0x + n1x + n2x) / 3f;
                 n0y = (n0y + n1y + n2y) / 3f;
                 n0z = (n0z + n1z + n2z) / 3f;
-                if (approximateEquals(n0z, -1.0f)) {
+                if (faceSkipTest.test(mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z)) {
                     continue;
                 }
 //                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
@@ -626,12 +705,9 @@ public class TerrainActor {
         }
     }
 
-    private void collectChunks(MapChunk root, int z, int currentZ, int visible, float w, float h) {
-        if (z < root.getPos().z) {
-            return;
-        }
+    private void collectChunks(MapChunk root, int z, int currentZ, int visible, int d) {
         var firstchunk = root.findChunk(0, 0, z, retriever);
-        putChunkSortBlocks(firstchunk, currentZ, visible, w, h);
+        putChunkSortBlocks(firstchunk, currentZ, visible);
         int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -640,36 +716,39 @@ public class TerrainActor {
             if (chunkid == 0) {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
-                    if (z + visible - nextchunk.pos.ep.z > 0) {
+                    if (nextchunk.pos.ep.z < d && currentZ + visible - nextchunk.pos.ep.z > 0) {
                         nextchunk = root.findChunk(0, 0, nextchunk.pos.ep.z, retriever);
-                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, w, h);
+                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, d);
                     }
                     break;
                 }
                 firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(nextchunk, currentZ, visible, w, h);
+                putChunkSortBlocks(nextchunk, currentZ, visible);
             } else {
                 nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(nextchunk, currentZ, visible, w, h);
+                putChunkSortBlocks(nextchunk, currentZ, visible);
             }
         }
     }
 
-    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visibleDepthLayers, float w, float h) {
-        var contains = getIntersectBb(w, h, chunk);
+    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visibleDepthLayers) {
+        var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
         for (var mb : chunk.getBlocks()) {
             if (mb.pos.z < currentZ + visibleDepthLayers && isBlockVisible(mb, currentZ, chunk, retriever)) {
                 this.materialBlocks.put(mb.getMaterialId(), mb);
+                if (!mb.isHaveNaturalLight()) {
+                    this.materialCeilings.put(mb.getNeighborUp(chunk, retriever).getMaterialId(), mb);
+                }
             }
         }
     }
 
-    private FrustumIntersect getIntersectBb(float w, float h, MapChunk chunk) {
-        var bb = createBb(w, h, chunk);
+    private FrustumIntersect getIntersectBb(MapChunk chunk) {
+        var bb = createBb(chunk);
         app.enqueue(() -> {
             is.chunksBoundingBoxState.setChunk(chunk, bb);
         });
@@ -684,7 +763,7 @@ public class TerrainActor {
         return contains;
     }
 
-    private BoundingBox createBb(float w, float h, MapChunk chunk) {
+    private BoundingBox createBb(MapChunk chunk) {
         var bb = new BoundingBox();
         bb.setXExtent(chunk.getCenterExtent().extentx);
         bb.setYExtent(chunk.getCenterExtent().extenty);

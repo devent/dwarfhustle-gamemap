@@ -58,6 +58,8 @@ public class TerrainState extends BaseAppState {
 
     private final Node terrainNode = new Node("Terrain-Node");
 
+    private final Node ceilingNode = new Node("Ceiling-Node");
+
     private final Node waterNode = new Node("Water-Node");
 
     private final Node skyNode = new Node("Sky-Node");
@@ -130,6 +132,7 @@ public class TerrainState extends BaseAppState {
     @Override
     protected void onEnable() {
         sceneNode.attachChild(terrainNode);
+        sceneNode.attachChild(ceilingNode);
         sceneNode.attachChild(skyNode);
         rootNode.attachChild(waterNode);
     }
@@ -137,6 +140,7 @@ public class TerrainState extends BaseAppState {
     @Override
     protected void onDisable() {
         sceneNode.detachChild(terrainNode);
+        sceneNode.detachChild(ceilingNode);
         sceneNode.detachChild(skyNode);
         rootNode.detachChild(waterNode);
     }
@@ -176,6 +180,14 @@ public class TerrainState extends BaseAppState {
         magmaMesh.scaleTextureCoordinates(new Vector2f(0.5f, 0.5f));
         geo.setMaterial(magmaProcessor.getMaterial());
         waterNode.attachChild(geo);
+    }
+
+    public void clearCeilingNodes() {
+        ceilingNode.detachAllChildren();
+    }
+
+    public void addCeilingMesh(Geometry geo) {
+        ceilingNode.attachChild(geo);
     }
 
     public void setLightDir(Vector3f lightDir) {
