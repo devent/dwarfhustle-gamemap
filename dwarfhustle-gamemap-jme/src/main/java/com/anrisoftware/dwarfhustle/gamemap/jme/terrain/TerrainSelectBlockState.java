@@ -180,7 +180,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
             float extentz = 1f;
             if (block.pos.z == z
                     && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                System.out.println(block); // TODO
+                // System.out.println(block); // TODO
                 return block;
             }
         }

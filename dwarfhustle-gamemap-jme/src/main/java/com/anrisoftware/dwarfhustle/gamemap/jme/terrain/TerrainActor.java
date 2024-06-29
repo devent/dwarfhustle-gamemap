@@ -59,7 +59,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
-import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
@@ -237,9 +236,6 @@ public class TerrainActor {
     private Application app;
 
     @Inject
-    private AssetManager assets;
-
-    @Inject
     private GameSettingsProvider gs;
 
     private InitialStateMessage is;
@@ -381,10 +377,7 @@ public class TerrainActor {
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
         this.materialBlocks.put(mb.getMaterialId(), mb);
         if (mb.pos.z <= CursorZ && !mb.isHaveNaturalLight()) {
-//            if (mb.pos.x == 6 && mb.pos.y == 4 && mb.pos.z == 5) {
-//                System.out.println(mb); // TODO
             this.materialCeilings.put(mb.getNeighborUp(chunk, retriever).getMaterialId(), mb);
-            // }
         }
     }
 
@@ -465,9 +458,9 @@ public class TerrainActor {
     private Behavior<Message> onAppPaused(AppPausedMessage m) {
         log.debug("onAppPaused {}", m);
         if (m.paused) {
-            // timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
+            timer.cancel(UPDATE_TERRAIN_MESSAGE_TIMER_KEY);
         } else {
-            // previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
+            previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
         }
         return Behaviors.same();
     }

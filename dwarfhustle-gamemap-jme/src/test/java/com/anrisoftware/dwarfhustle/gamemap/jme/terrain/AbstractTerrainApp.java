@@ -269,7 +269,7 @@ public class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void createMockTerrain() {
-        this.terrainImage = TerrainImage.terrain_8_8_8_4;
+        this.terrainImage = TerrainImage.terrain_32_32_32_8;
         createGameMap();
         createMapStorage();
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
@@ -313,7 +313,7 @@ public class AbstractTerrainApp extends SimpleApplication {
 
         gm.setCameraPos(0.0f, 0.0f, 34f);
         gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
-        gm.setCursorZ(0);
+        gm.setCursorZ(8);
         var gs = injector.getInstance(GameSettingsProvider.class).get();
         gs.visibleDepthLayers.set(4);
         gs.currentMap.set(gm);

@@ -103,7 +103,7 @@ public class TerrainState extends BaseAppState {
         p.setWaterDepth(0.1f);
         p.setWaveSpeed(0.01f);
         p.setLightPosition(lightDir);
-        p.setDebug(true);
+        p.setDebug(false);
         return p;
     }
 

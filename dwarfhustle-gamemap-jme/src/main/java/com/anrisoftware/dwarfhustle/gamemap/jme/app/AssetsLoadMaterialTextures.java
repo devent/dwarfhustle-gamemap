@@ -116,7 +116,8 @@ public class AssetsLoadMaterialTextures {
     public TextureCacheObject loadTextureObject(long key) {
         var d = texturesMapFramesDataMap.get(id2Kid(key));
         if (d == null) {
-            throw new RuntimeException("No texture object with kid " + id2Kid(key));
+            d = texturesMapFramesDataMap.get(0xffff);
+            log.error("No texture object with kid {}", id2Kid(key));
         }
         var to = loadTextureData(d);
         to.tex = loadTexture(d.image);

@@ -70,11 +70,16 @@ public class AssetsLoadObjectModels {
     public void loadModelMap(MutableLongObjectMap<AssetCacheObject> cache, ModelMapData data) {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
+        var geo = rotateMesh(data, model);
+        mo.model = geo;
+        cache.put(mo.id, mo);
+    }
+
+    private Geometry rotateMesh(ModelMapData data, Spatial model) {
         var mesh = ((Geometry) ((Node) model).getChild(0)).getMesh().deepClone();
         rotateMechGeo(mesh, data.rotation);
         var geo = new Geometry(data.model, mesh);
-        mo.model = geo;
-        cache.put(mo.id, mo);
+        return geo;
     }
 
     public static Mesh rotateMechGeo(Mesh mesh, float[] rotation) {
@@ -153,8 +158,13 @@ public class AssetsLoadObjectModels {
 
     public ModelCacheObject loadModelObject(long key) {
         var d = modelMap.data.get(KnowledgeObject.id2Kid(key));
+        if (d == null) {
+            d = modelMap.data.get(819);
+            log.error("No model for KID {}", KnowledgeObject.id2Kid(key));
+        }
         var to = loadModelData(d);
-        to.model = loadModel(d.model);
+        var model = loadModel(d.model);
+        to.model = rotateMesh(d, model);
         return to;
     }
 
