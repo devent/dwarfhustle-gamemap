@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor.TerrainActorFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
@@ -32,5 +33,7 @@ public class DwarfhustleGamemapJmeTerrainModule extends AbstractModule {
     protected void configure() {
         install(new FactoryModuleBuilder().implement(TerrainActor.class, TerrainActor.class)
                 .build(TerrainActorFactory.class));
+        install(new FactoryModuleBuilder().implement(BlockModelUpdate.class, BlockModelUpdate.class)
+                .build(BlockModelUpdateFactory.class));
     }
 }
