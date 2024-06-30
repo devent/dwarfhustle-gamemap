@@ -148,8 +148,13 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         mouse.x = evt.getX();
         mouse.y = evt.getY();
         var temp = TempVars.get();
-        updateSelectedObject(temp, mouse);
-        temp.release();
+        try {
+            updateSelectedObject(temp, mouse);
+        } catch (Exception e) {
+            log.error("", e);
+        } finally {
+            temp.release();
+        }
     }
 
     private void updateSelectedObject(TempVars temp, Vector2f mouse) {
@@ -180,7 +185,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
             float extentz = 1f;
             if (block.pos.z == z
                     && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                // System.out.println(block); // TODO
+                System.out.println(block); // TODO
                 return block;
             }
         }
