@@ -170,7 +170,7 @@ public class BlockModelUpdate {
             mesh.updateBound();
             final var geo = new Geometry("block-mesh", mesh);
             // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-            final var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, material);
+            final TextureCacheObject tex = materials.get(TextureCacheObject.OBJECT_TYPE, material);
             setupPBRLighting(geo, tex);
             geo.getMaterial().getAdditionalRenderState().setWireframe(false);
             geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
@@ -303,7 +303,7 @@ public class BlockModelUpdate {
 
     private void copyTex(MapBlock mb, Mesh mesh, FloatBuffer ctex) {
         var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
-        var tex = materials.get(TextureCacheObject.class, TextureCacheObject.OBJECT_TYPE, mb.getMaterialId());
+        TextureCacheObject tex = materials.get(TextureCacheObject.OBJECT_TYPE, mb.getMaterialId());
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
             float ty = btex.get();

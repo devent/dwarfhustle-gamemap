@@ -36,9 +36,7 @@ import lombok.ToString;
 @Data
 public class TextureCacheObject extends AssetCacheObject {
 
-    private static final long serialVersionUID = 1L;
-
-    public static final String OBJECT_TYPE = TextureCacheObject.class.getSimpleName();
+    public static final int OBJECT_TYPE = TextureCacheObject.class.getSimpleName().hashCode();
 
     public Texture tex;
 
@@ -76,7 +74,7 @@ public class TextureCacheObject extends AssetCacheObject {
     }
 
     @Override
-    public String getObjectType() {
+    public int getObjectType() {
         return TextureCacheObject.OBJECT_TYPE;
     }
 

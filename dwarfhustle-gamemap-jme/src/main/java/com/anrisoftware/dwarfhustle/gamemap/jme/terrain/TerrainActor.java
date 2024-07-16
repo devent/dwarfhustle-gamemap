@@ -157,11 +157,11 @@ public class TerrainActor {
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap knowledges = IntLongMaps.mutable.ofInitialCapacity(100);
             knowledges.put(BLOCK_MATERIAL_WATER,
-                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE, "water"));
+                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.TYPE, "water"));
             knowledges.put(BLOCK_MATERIAL_MAGMA,
-                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.class, Liquid.TYPE, "magma"));
-            knowledges.put(OBJECT_BLOCK_CEILING, askObjectTypeId(ko, ofSeconds(15), system.scheduler(),
-                    ObjectType.class, ObjectType.TYPE, "block-ceiling"));
+                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.TYPE, "magma"));
+            knowledges.put(OBJECT_BLOCK_CEILING,
+                    askObjectTypeId(ko, ofSeconds(15), system.scheduler(), ObjectType.TYPE, "block-ceiling"));
             return injector.getInstance(TerrainActorFactory.class)
                     .create(context, stash, timer, ma, mo, knowledges.toImmutable()).start(injector);
         })));
@@ -382,13 +382,12 @@ public class TerrainActor {
     }
 
     private Mesh retrieveBlockMesh(MapBlock mb) {
-        var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
+        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
         return ((Geometry) (model.model)).getMesh();
     }
 
     private Mesh retrieveCeilingMesh(MapBlock mb) {
-        var model = models.get(ModelCacheObject.class, ModelCacheObject.OBJECT_TYPE,
-                knowledges.get(OBJECT_BLOCK_CEILING));
+        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, knowledges.get(OBJECT_BLOCK_CEILING));
         return ((Geometry) (model.model)).getMesh();
     }
 

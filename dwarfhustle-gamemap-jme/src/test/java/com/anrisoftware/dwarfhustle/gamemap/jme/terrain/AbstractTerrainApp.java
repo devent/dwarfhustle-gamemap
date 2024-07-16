@@ -17,18 +17,20 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static java.util.concurrent.CompletableFuture.supplyAsync;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.collections.api.map.primitive.LongObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
 import org.lable.oss.uniqueid.IDGenerator;
 
@@ -58,6 +60,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapArea;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbMockCacheModule;
@@ -125,7 +128,7 @@ public class AbstractTerrainApp extends SimpleApplication {
 
     private ObjectsGetter og;
 
-    private LongObjectMap<GameObject> backendIdsObjects;
+    private MutableLongObjectMap<GameObject> backendIdsObjects;
 
     private boolean texturesLoaded = false;
 
@@ -143,6 +146,8 @@ public class AbstractTerrainApp extends SimpleApplication {
 
     private Node sceneNode;
 
+    private ObjectsSetter os;
+
     public AbstractTerrainApp() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
         // , new FlyCamAppState()
@@ -158,9 +163,22 @@ public class AbstractTerrainApp extends SimpleApplication {
 
             @SuppressWarnings("unchecked")
             @Override
-            public <T extends GameObject> T get(Class<T> typeClass, String type, Object key)
-                    throws ObjectsGetterException {
+            public <T extends GameObject> T get(int type, Object key) throws ObjectsGetterException {
                 return (T) backendIdsObjects.get((long) key);
+            }
+        };
+        this.os = new ObjectsSetter() {
+
+            @Override
+            public void set(int type, GameObject go) throws ObjectsSetterException {
+                backendIdsObjects.put(go.getId(), go);
+            }
+
+            @Override
+            public void set(int type, Iterable<GameObject> values) throws ObjectsSetterException {
+                for (var go : values) {
+                    backendIdsObjects.put(go.getId(), go);
+                }
             }
         };
         this.injector = parent.createChildInjector(new AbstractModule() {
@@ -396,8 +414,8 @@ public class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void createObjectsCache() {
-        var task = MockStoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT,
-                CompletableFuture.supplyAsync(() -> og));
+        var task = MockStoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, supplyAsync(() -> og),
+                supplyAsync(() -> os));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);

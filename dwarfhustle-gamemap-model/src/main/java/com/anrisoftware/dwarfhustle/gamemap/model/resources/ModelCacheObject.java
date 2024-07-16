@@ -35,9 +35,7 @@ import lombok.ToString;
 @Data
 public class ModelCacheObject extends AssetCacheObject {
 
-    private static final long serialVersionUID = 1L;
-
-    public static final String OBJECT_TYPE = ModelCacheObject.class.getSimpleName();
+    public static final int OBJECT_TYPE = ModelCacheObject.class.getSimpleName().hashCode();
 
     /**
      * {@link Spatial} model.
@@ -58,7 +56,7 @@ public class ModelCacheObject extends AssetCacheObject {
     }
 
     @Override
-    public String getObjectType() {
+    public int getObjectType() {
         return ModelCacheObject.OBJECT_TYPE;
     }
 

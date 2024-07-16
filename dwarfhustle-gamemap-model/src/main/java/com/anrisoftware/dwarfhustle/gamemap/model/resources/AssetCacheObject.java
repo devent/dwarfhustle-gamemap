@@ -33,11 +33,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class AssetCacheObject extends GameObject {
-
-    private static final long serialVersionUID = 1L;
-
-    public static final String OBJECT_TYPE = AssetCacheObject.class.getSimpleName();
+public abstract class AssetCacheObject extends GameObject {
 
     public AssetCacheObject(byte[] idbuf) {
         super(idbuf);
@@ -46,10 +42,4 @@ public class AssetCacheObject extends GameObject {
     public AssetCacheObject(long id) {
         super(id);
     }
-
-    @Override
-    public String getObjectType() {
-        return AssetCacheObject.OBJECT_TYPE;
-    }
-
 }

@@ -95,7 +95,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
     @SuppressWarnings("unchecked")
     private Behavior<Message> onCachePut(@SuppressWarnings("rawtypes") CachePutMessage m) {
         log.debug("onCachePut {}", m);
-        cache.put((long) m.key, (AssetCacheObject) m.value);
+        cache.put(m.value.getId(), (AssetCacheObject) m.value);
         m.replyTo.tell(new CacheSuccessMessage<>(m));
         return Behaviors.same();
     }
@@ -208,8 +208,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
     /**
      * Returns the value from the backend.
      */
-    protected abstract <T extends GameObject> AssetCacheObject getValueFromBackend(Class<T> typeClass, String type,
-            Object key);
+    protected abstract <T extends GameObject> AssetCacheObject getValueFromBackend(int type, Object key);
 
     /**
      * Returns the value for the key directly from the cache without sending of
@@ -217,12 +216,12 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends GameObject> T get(Class<T> typeClass, String type, Object key) {
-        return (T) cache.getIfAbsentPut((long) key, () -> supplyValue(typeClass, type, key));
+    public <T extends GameObject> T get(int type, Object key) {
+        return (T) cache.getIfAbsentPut((long) key, () -> supplyValue(type, key));
     }
 
-    private AssetCacheObject supplyValue(Class<? extends GameObject> typeClass, String type, Object key) {
-        return getValueFromBackend(typeClass, type, key);
+    private AssetCacheObject supplyValue(int type, Object key) {
+        return getValueFromBackend(type, key);
     }
 
 }
