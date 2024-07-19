@@ -123,18 +123,7 @@ public class BlockModelUpdate {
             return false;
         }
         if (mb.pos.z > z) {
-            if (mb.isFilled()) {
-                MapBlock bt;
-                if ((bt = mb.getNeighborUp(chunk, retriever)) != null) {
-                    if (bt.isFilled()) {
-                        return false;
-                    } else if (bt.isLiquid()) {
-                        return true;
-                    } else if (bt.isEmpty()) {
-                        return true;
-                    }
-                }
-            }
+            return mb.isVisible();
         }
         return true;
     }
