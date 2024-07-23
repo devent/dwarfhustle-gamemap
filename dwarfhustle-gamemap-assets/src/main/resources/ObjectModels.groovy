@@ -52,17 +52,18 @@ rid["BLOCK-RAMP-CORNER-NE"] = 967
 rid["BLOCK-CEILING"] = 966
 rid["BLOCK-WATER"] = 965
 rid["BLOCK-NORMAL"] = 964
-rid["BLUEBERRIES"] = 1015
-rid["RED-POPPY"] = 1013
-rid["DAISY"] = 1012
-rid["CARROT"] = 1011
-rid["WHEAT"] = 1009
-rid["PINE"] = 1017
-rid["PINE-ROOT"] = 1018
-rid["PINE-TRUNK"] = 1019
-rid["PINE-BRANCH"] = 1020
-rid["PINE-TWIG"] = 1021
-rid["PINE-LEAF"] = 1022
+rid["RED-POPPY"] = 1014
+rid["DAISY"] = 1013
+rid["CARROT"] = 1012
+rid["WHEAT"] = 1010
+rid["BLUEBERRIES"] = 1016
+rid["PINE"] = 1018
+rid["PINE-SAMPLING"] = 1019
+rid["PINE-ROOT"] = 1020
+rid["PINE-TRUNK"] = 1021
+rid["PINE-BRANCH"] = 1022
+rid["PINE-TWIG"] = 1023
+rid["PINE-LEAF"] = 1024
 
 m = new ModelMap()
 
@@ -92,5 +93,6 @@ m[rid["BLOCK-RAMP-CORNER-NE"]] = [model: "Models/block-ramp-corner/block-ramp-co
 m[rid["BLOCK-CEILING"]] = [model: "Models/block-ceiling/block-ceiling.j3o"]
 m[rid["BLOCK-WATER"]] = [model: "Models/block-water/block-water.j3o"]
 m[rid["BLOCK-NORMAL"]] = [model: "Models/block-normal/block-normal.j3o"]
+m[rid["PINE-SAMPLING"]] = [model: "Models/tree-sampling-pine/tree-sampling-pine-2.j3o"]
 
 m
