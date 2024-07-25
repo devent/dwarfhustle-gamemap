@@ -49,10 +49,8 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
-import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
@@ -73,7 +71,6 @@ import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowle
 import com.anrisoftware.dwarfhustle.model.terrainimage.TerrainImage;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.jme3.app.Application;
@@ -104,12 +101,6 @@ import lombok.extern.slf4j.Slf4j;
 public class AbstractTerrainApp extends SimpleApplication {
 
     private static final Duration CREATE_ACTOR_TIMEOUT = Duration.ofSeconds(30);
-
-    public static void main(String[] args) {
-        var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule());
-        var app = injector.getInstance(AbstractTerrainApp.class);
-        app.start(injector);
-    }
 
     @Inject
     private ActorSystemProvider actor;
@@ -147,6 +138,8 @@ public class AbstractTerrainApp extends SimpleApplication {
     private Node sceneNode;
 
     private ObjectsSetter os;
+
+    private TerrainTestKeysState terrainTestKeysState;
 
     public AbstractTerrainApp() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
@@ -261,6 +254,10 @@ public class AbstractTerrainApp extends SimpleApplication {
                 };
             }
         };
+        this.terrainTestKeysState = injector.getInstance(TerrainTestKeysState.class);
+        terrainTestKeysState.setRetriever(store);
+        terrainTestKeysState.setGameMap(gm);
+        getStateManager().attach(terrainTestKeysState);
         createMaterialAssets();
         createModelsAssets();
         createTerrain();

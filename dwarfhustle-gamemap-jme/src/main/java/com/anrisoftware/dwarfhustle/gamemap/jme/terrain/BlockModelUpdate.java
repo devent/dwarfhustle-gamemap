@@ -10,10 +10,10 @@ import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.Pair;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.asset.AssetManager;
@@ -188,8 +188,8 @@ public class BlockModelUpdate {
     }
 
     private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, Function<MapBlock, Mesh> meshSupplier,
-            NormalsPredicate faceSkipTest, int w, int h, int d, MapCursor cursor, FloatBuffer cpos, ShortBuffer cindex,
-            FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+            NormalsPredicate faceSkipTest, int w, int h, int d, GameBlockPos cursor, FloatBuffer cpos,
+            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -308,7 +308,7 @@ public class BlockModelUpdate {
      * color of the tile.
      */
     private void copyPosColor(MapBlock mb, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w, float h, float d,
-            MapCursor cursor) {
+            GameBlockPos cursor) {
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
         float c = mb.pos.isEqual(cursor.x, cursor.y, cursor.z) ? 2f : 1f;

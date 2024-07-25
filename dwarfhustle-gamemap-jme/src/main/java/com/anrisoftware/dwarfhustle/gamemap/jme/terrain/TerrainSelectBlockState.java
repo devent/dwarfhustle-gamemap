@@ -185,7 +185,6 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
             float extentz = 1f;
             if (block.pos.z == z
                     && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                System.out.println(block); // TODO
                 return block;
             }
         }
@@ -204,7 +203,6 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         topc.y = centery + extenty;
         topc.z = centerz + extentz;
         camera.getScreenCoordinates(topc, topc);
-        // System.out.printf("%s - %s - %s\n", mouse, topc, bottomc); // TODO
         if (mouse.x >= bottomc.x && mouse.y >= bottomc.y && mouse.x <= topc.x && mouse.y <= topc.y) {
             return true;
         } else {
