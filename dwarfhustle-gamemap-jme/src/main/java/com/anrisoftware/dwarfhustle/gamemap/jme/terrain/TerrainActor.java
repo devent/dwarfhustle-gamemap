@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askObjectTypeId;
 import static java.time.Duration.ofSeconds;
@@ -49,13 +50,13 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.map.ObjectType;
+import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -161,7 +162,7 @@ public class TerrainActor {
             knowledges.put(BLOCK_MATERIAL_MAGMA,
                     askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.TYPE, "magma"));
             knowledges.put(OBJECT_BLOCK_CEILING,
-                    askObjectTypeId(ko, ofSeconds(15), system.scheduler(), ObjectType.TYPE, "block-ceiling"));
+                    askObjectTypeId(ko, ofSeconds(15), system.scheduler(), BlockObject.TYPE, "block-ceiling"));
             return injector.getInstance(TerrainActorFactory.class)
                     .create(context, stash, timer, ma, mo, knowledges.toImmutable()).start(injector);
         })));
@@ -377,7 +378,7 @@ public class TerrainActor {
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
         this.materialBlocks.put(mb.getMaterialId(), mb);
         if (mb.pos.z <= CursorZ && !mb.isHaveNaturalLight()) {
-            this.materialCeilings.put(mb.getNeighborUp(chunk, retriever).getMaterialId(), mb);
+            this.materialCeilings.put(getNeighborUp(mb, chunk, retriever).getMaterialId(), mb);
         }
     }
 

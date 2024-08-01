@@ -17,10 +17,12 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBlocks;
+
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
+import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
@@ -174,7 +176,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     }
 
     private MapBlock findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int z, float w, float h) {
-        for (var block : chunk.getBlocks()) {
+        for (var block : getBlocks(chunk)) {
             float tx = -w + 2f * block.pos.x + 1f;
             float ty = h - 2f * block.pos.y - 1f;
             float centerx = tx;

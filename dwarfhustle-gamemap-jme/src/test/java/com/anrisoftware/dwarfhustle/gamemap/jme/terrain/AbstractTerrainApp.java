@@ -17,18 +17,13 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static akka.actor.typed.javadsl.AskPattern.ask;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneOffset;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import org.apache.commons.io.IOUtils;
 import org.eclipse.collections.api.map.primitive.LongObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.impl.factory.primitive.LongObjectMaps;
@@ -54,21 +49,20 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapArea;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbMockCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.MockStoredObjectsJcsCacheActor;
-import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
+import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
-import com.anrisoftware.dwarfhustle.model.terrainimage.TerrainImage;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -86,10 +80,8 @@ import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
 
 import akka.actor.typed.ActorRef;
-import akka.actor.typed.javadsl.AskPattern;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -98,7 +90,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
-public class AbstractTerrainApp extends SimpleApplication {
+public abstract class AbstractTerrainApp extends SimpleApplication {
 
     private static final Duration CREATE_ACTOR_TIMEOUT = Duration.ofSeconds(30);
 
@@ -107,15 +99,15 @@ public class AbstractTerrainApp extends SimpleApplication {
 
     @Inject
     @IdsObjects
-    private IDGenerator ids;
+    protected IDGenerator ids;
 
     private Injector injector;
 
     private Engine engine;
 
-    private GameMap gm;
+    protected GameMap gm;
 
-    private MapChunk mcRoot;
+    protected MapChunk mcRoot;
 
     private ObjectsGetter og;
 
@@ -129,17 +121,19 @@ public class AbstractTerrainApp extends SimpleApplication {
 
     private final ResetCameraState resetCameraState;
 
-    private WorldMap wm;
+    protected WorldMap wm;
 
-    private TerrainImage terrainImage;
-
-    private MapChunksStore store;
+    protected MapChunksStore mapStore;
 
     private Node sceneNode;
 
     private ObjectsSetter os;
 
     private TerrainTestKeysState terrainTestKeysState;
+
+    protected GameObjectsLmbdStorage gameObjectsStorage;
+
+    protected MapObjectsLmbdStorage mapObjectsStorage;
 
     public AbstractTerrainApp() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
@@ -235,9 +229,17 @@ public class AbstractTerrainApp extends SimpleApplication {
             }
 
         });
-        createMockTerrain();
+        loadTerrain();
+        setupGameSettings();
         setupApp();
         start();
+    }
+
+    private void setupGameSettings() {
+        var gs = injector.getInstance(GameSettingsProvider.class).get();
+        gs.visibleDepthLayers.set(4);
+        gs.currentMap.set(gm);
+        gs.currentWorld.set(wm);
     }
 
     @Override
@@ -248,21 +250,21 @@ public class AbstractTerrainApp extends SimpleApplication {
         this.simpleUpdateCall = tpl -> {
             if (texturesLoaded && modelsLoaded) {
                 actor.tell(new SetGameMapMessage(gm));
-                actor.tell(new StartTerrainForGameMapMessage(gm, store));
+                actor.tell(new StartTerrainForGameMapMessage(gm, mapStore));
                 resetCameraState.updateCamera(gm);
                 simpleUpdateCall = tpl1 -> {
                 };
             }
         };
         this.terrainTestKeysState = injector.getInstance(TerrainTestKeysState.class);
-        terrainTestKeysState.setRetriever(store);
+        terrainTestKeysState.setMapStore(mapStore);
         terrainTestKeysState.setGameMap(gm);
         getStateManager().attach(terrainTestKeysState);
         createMaterialAssets();
         createModelsAssets();
         createTerrain();
         createSun();
-        createPowerLoom();
+        createKnowledgeCache();
         createObjectsCache();
         createGameTick();
     }
@@ -283,57 +285,7 @@ public class AbstractTerrainApp extends SimpleApplication {
         }
     }
 
-    private void createMockTerrain() {
-        this.terrainImage = TerrainImage.terrain_32_32_32_8;
-        createGameMap();
-        createMapStorage();
-        // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
-        // block.setMined(true);
-        // block.setMaterialRid(898);
-    }
-
-    @SneakyThrows
-    private void createMapStorage() {
-        var fileName = String.format("terrain_%d_%d_%d_%d_%d.map", terrainImage.w, terrainImage.h, terrainImage.d,
-                terrainImage.chunkSize, terrainImage.chunksCount);
-        var file = Files.createTempDirectory("TerrainTest").resolve(fileName);
-        var res = new File("/home/devent/Projects/dwarf-hustle/docu/terrain-maps/" + fileName).toURI().toURL();
-        assert res != null;
-        IOUtils.copy(res, file.toFile());
-        this.store = new MapChunksStore(file, gm.width, gm.height, terrainImage.chunkSize, terrainImage.chunksCount);
-        this.mcRoot = store.getChunk(0);
-    }
-
-    @SneakyThrows
-    private void createGameMap() {
-        gm = new GameMap(ids.generate());
-        wm = new WorldMap(ids.generate());
-        wm.currentMap = gm.id;
-        wm.time = LocalDateTime.of(2023, Month.APRIL, 15, 12, 0);
-        wm.distanceLat = 100f;
-        wm.distanceLon = 100f;
-        gm.world = wm.id;
-        gm.chunkSize = terrainImage.chunkSize;
-        gm.width = terrainImage.w;
-        gm.height = terrainImage.h;
-        gm.depth = terrainImage.d;
-        gm.area = MapArea.create(50.99819f, 10.98348f, 50.96610f, 11.05610f);
-        gm.timeZone = ZoneOffset.ofHours(1);
-
-//        Camera Position: (-6.882555, 0.09426513, 34.164684)
-//        Camera Rotation: (0.0, 1.0, 0.0, 0.0)
-//        Camera Direction: (0.0, 0.0, -1.0)
-//        cam.setLocation(new Vector3f(-6.882555f, 0.09426513f, 34.164684f));
-//        cam.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
-
-        gm.setCameraPos(0.0f, 0.0f, 34f);
-        gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
-        gm.setCursorZ(8);
-        var gs = injector.getInstance(GameSettingsProvider.class).get();
-        gs.visibleDepthLayers.set(4);
-        gs.currentMap.set(gm);
-        gs.currentWorld.set(wm);
-    }
+    protected abstract void loadTerrain();
 
     private void setupApp() {
         getStateManager().attach(injector.getInstance(DebugCoordinateAxesState.class));
@@ -383,29 +335,26 @@ public class AbstractTerrainApp extends SimpleApplication {
         });
     }
 
-    private void createPowerLoom() {
-        PowerLoomKnowledgeActor
-                .create(injector, CREATE_ACTOR_TIMEOUT, actor.getActorAsync(StoredObjectsJcsCacheActor.ID))
+    private void createKnowledgeCache() {
+        KnowledgeJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("KnowledgeJcsCacheActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                createPowerLoom(ret);
+                log.debug("KnowledgeJcsCacheActor created");
+            }
+        });
+    }
+
+    private void createPowerLoom(ActorRef<Message> cache) {
+        PowerLoomKnowledgeActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getActorAsync(KnowledgeJcsCacheActor.ID))
                 .whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("PowerLoomKnowledgeActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
                     } else {
                         log.debug("PowerLoomKnowledgeActor created");
-                        createKnowledgeCache(ret);
-                    }
-                });
-    }
-
-    private void createKnowledgeCache(ActorRef<Message> powerLoom) {
-        KnowledgeJcsCacheActor
-                .create(injector, CREATE_ACTOR_TIMEOUT, actor.getObjectGetterAsync(PowerLoomKnowledgeActor.ID))
-                .whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("KnowledgeJcsCacheActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("KnowledgeJcsCacheActor created");
                     }
                 });
     }
@@ -447,7 +396,7 @@ public class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void loadTextures() {
-        CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadTexturesMessage::new,
+        CompletionStage<AssetsResponseMessage<?>> result = ask(actor.get(), LoadTexturesMessage::new,
                 CREATE_ACTOR_TIMEOUT, actor.getScheduler());
         result.whenComplete((ret, ex) -> {
             if (ex != null) {
@@ -461,7 +410,7 @@ public class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void loadModels() {
-        CompletionStage<AssetsResponseMessage<?>> result = AskPattern.ask(actor.get(), LoadModelsMessage::new,
+        CompletionStage<AssetsResponseMessage<?>> result = ask(actor.get(), LoadModelsMessage::new,
                 CREATE_ACTOR_TIMEOUT, actor.getScheduler());
         result.whenComplete((ret, ex) -> {
             if (ex != null) {

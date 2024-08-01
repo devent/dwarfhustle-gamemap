@@ -25,45 +25,51 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMap
 
 rid = [:]
 
-// ObjectType
-rid["BLOCK-RAMP-TWO-SE"] = 989
-rid["BLOCK-RAMP-TWO-NE"] = 988
-rid["BLOCK-RAMP-TRI-S"] = 987
-rid["BLOCK-RAMP-TRI-W"] = 986
-rid["BLOCK-RAMP-TRI-E"] = 985
-rid["BLOCK-RAMP-TRI-N"] = 984
-rid["BLOCK-RAMP-SINGLE"] = 983
-rid["BLOCK-RAMP-PERP-W"] = 982
-rid["BLOCK-RAMP-PERP-S"] = 981
-rid["BLOCK-RAMP-PERP-E"] = 980
-rid["BLOCK-RAMP-PERP-N"] = 979
-rid["BLOCK-RAMP-EDGE-OUT-SW"] = 978
-rid["BLOCK-RAMP-EDGE-OUT-SE"] = 977
-rid["BLOCK-RAMP-EDGE-OUT-NW"] = 976
-rid["BLOCK-RAMP-EDGE-OUT-NE"] = 975
-rid["BLOCK-RAMP-EDGE-IN-SW"] = 974
-rid["BLOCK-RAMP-EDGE-IN-SE"] = 973
-rid["BLOCK-RAMP-EDGE-IN-NW"] = 972
-rid["BLOCK-RAMP-EDGE-IN-NE"] = 971
-rid["BLOCK-RAMP-CORNER-SW"] = 970
-rid["BLOCK-RAMP-CORNER-SE"] = 969
-rid["BLOCK-RAMP-CORNER-NW"] = 968
-rid["BLOCK-RAMP-CORNER-NE"] = 967
-rid["BLOCK-CEILING"] = 966
-rid["BLOCK-WATER"] = 965
-rid["BLOCK-NORMAL"] = 964
-rid["RED-POPPY"] = 1014
-rid["DAISY"] = 1013
-rid["CARROT"] = 1012
-rid["WHEAT"] = 1010
-rid["BLUEBERRIES"] = 1016
-rid["PINE"] = 1018
-rid["PINE-SAMPLING"] = 1019
-rid["PINE-ROOT"] = 1020
-rid["PINE-TRUNK"] = 1021
-rid["PINE-BRANCH"] = 1022
-rid["PINE-TWIG"] = 1023
-rid["PINE-LEAF"] = 1024
+// BlockObject
+rid["BLOCK-RAMP-TWO-SE"] = 990
+rid["BLOCK-RAMP-TWO-NE"] = 989
+rid["BLOCK-RAMP-TRI-S"] = 988
+rid["BLOCK-RAMP-TRI-W"] = 987
+rid["BLOCK-RAMP-TRI-E"] = 986
+rid["BLOCK-RAMP-TRI-N"] = 985
+rid["BLOCK-RAMP-SINGLE"] = 984
+rid["BLOCK-RAMP-PERP-W"] = 983
+rid["BLOCK-RAMP-PERP-S"] = 982
+rid["BLOCK-RAMP-PERP-E"] = 981
+rid["BLOCK-RAMP-PERP-N"] = 980
+rid["BLOCK-RAMP-EDGE-OUT-SW"] = 979
+rid["BLOCK-RAMP-EDGE-OUT-SE"] = 978
+rid["BLOCK-RAMP-EDGE-OUT-NW"] = 977
+rid["BLOCK-RAMP-EDGE-OUT-NE"] = 976
+rid["BLOCK-RAMP-EDGE-IN-SW"] = 975
+rid["BLOCK-RAMP-EDGE-IN-SE"] = 974
+rid["BLOCK-RAMP-EDGE-IN-NW"] = 973
+rid["BLOCK-RAMP-EDGE-IN-NE"] = 972
+rid["BLOCK-RAMP-CORNER-SW"] = 971
+rid["BLOCK-RAMP-CORNER-SE"] = 970
+rid["BLOCK-RAMP-CORNER-NW"] = 969
+rid["BLOCK-RAMP-CORNER-NE"] = 968
+rid["BLOCK-CEILING"] = 967
+rid["BLOCK-WATER"] = 966
+rid["BLOCK-NORMAL"] = 965
+
+// Tree
+rid["PINE"] = 1019
+rid["PINE-SAMPLING"] = 1020
+rid["PINE-ROOT"] = 1021
+rid["PINE-TRUNK"] = 1022
+rid["PINE-BRANCH"] = 1023
+rid["PINE-TWIG"] = 1024
+rid["PINE-LEAF"] = 1025
+
+// Shrub
+rid["BLUEBERRIES"] = 1017
+
+// Grass
+rid["RED-POPPY"] = 1015
+rid["DAISY"] = 1014
+rid["CARROT"] = 1013
+rid["WHEAT"] = 1011
 
 m = new ModelMap()
 

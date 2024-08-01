@@ -1,5 +1,12 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborEast;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborNorth;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborSouth;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborWest;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBlocks;
+
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.function.BiConsumer;
@@ -31,6 +38,10 @@ import com.jme3.util.BufferUtils;
 
 import jakarta.inject.Inject;
 
+/**
+ * 
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ */
 public class BlockModelUpdate {
 
     /**
@@ -54,7 +65,7 @@ public class BlockModelUpdate {
 
     public void collectChunks(MapChunk root, int z, int currentZ, int visible, int d,
             Function<Integer, MapChunk> retriever, BiConsumer<MapChunk, MapBlock> consumer) {
-        var firstchunk = root.findChunk(0, 0, z, retriever);
+        var firstchunk = findChunk(root, 0, 0, z, retriever);
         putChunkSortBlocks(firstchunk, currentZ, visible, retriever, consumer);
         int chunkid = 0;
         var nextchunk = firstchunk;
@@ -65,7 +76,7 @@ public class BlockModelUpdate {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
                     if (nextchunk.pos.ep.z < d && currentZ + visible - nextchunk.pos.ep.z > 0) {
-                        nextchunk = root.findChunk(0, 0, nextchunk.pos.ep.z, retriever);
+                        nextchunk = findChunk(root, 0, 0, nextchunk.pos.ep.z, retriever);
                         collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, d, retriever, consumer);
                     }
                     break;
@@ -86,7 +97,7 @@ public class BlockModelUpdate {
         if (contains == FrustumIntersect.Outside) {
             return;
         }
-        for (var mb : chunk.getBlocks()) {
+        for (var mb : getBlocks(chunk)) {
             if (mb.pos.z < currentZ + visible && isBlockVisible(mb, currentZ, chunk, retriever)) {
                 consumer.accept(chunk, mb);
             }
@@ -251,22 +262,22 @@ public class BlockModelUpdate {
     }
 
     private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = mb.getNeighborNorth(chunk, retriever);
+        var nmb = getNeighborNorth(mb, chunk, retriever);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = mb.getNeighborSouth(chunk, retriever);
+        var nmb = getNeighborSouth(mb, chunk, retriever);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = mb.getNeighborEast(chunk, retriever);
+        var nmb = getNeighborEast(mb, chunk, retriever);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = mb.getNeighborWest(chunk, retriever);
+        var nmb = getNeighborWest(mb, chunk, retriever);
         return isSkipCheckNeighborEdge(nmb);
     }
 

@@ -18,7 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -32,5 +32,5 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class MapCursorUpdateMessage extends Message {
 
-    public final MapCursor cursor;
+    public final GameBlockPos cursor;
 }
