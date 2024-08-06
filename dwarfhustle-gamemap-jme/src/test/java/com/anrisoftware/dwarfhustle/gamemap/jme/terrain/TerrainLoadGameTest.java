@@ -17,28 +17,22 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneOffset;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
-import org.apache.commons.io.IOUtils;
+import java.nio.file.Path;
 
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapArea;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
-import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
-import com.anrisoftware.dwarfhustle.model.db.lmbd.ObjectTypesProvider;
-import com.anrisoftware.dwarfhustle.model.db.lmbd.TypeReadBuffers;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.DwarfhustleModelDbLmbdModule;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObjectsLmbdStorageFactory;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
-import com.anrisoftware.dwarfhustle.model.terrainimage.TerrainImage;
 import com.google.inject.Guice;
 
+import jakarta.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,12 +45,17 @@ import lombok.extern.slf4j.Slf4j;
 public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     public static void main(String[] args) {
-        var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule());
+        var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule(),
+                new DwarfhustleModelDbLmbdModule());
         var app = injector.getInstance(TerrainLoadGameTest.class);
         app.start(injector);
     }
 
-    private TerrainImage terrainImage;
+    @Inject
+    private GameObjectsLmbdStorageFactory gameObjectsFactory;
+
+    @Inject
+    private MapObjectsLmbdStorageFactory mapObjectsFactory;
 
     public TerrainLoadGameTest() {
     }
@@ -70,71 +69,52 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     @Override
     @SneakyThrows
     protected void loadTerrain() {
-        this.terrainImage = TerrainImage.terrain_32_32_32_8;
-        var file = Files.createTempDirectory("TerrainTest");
+        var root = Path.of("/home/devent/Projects/dwarf-hustle/docu/terrain-maps/");
+        root = root.resolve("game");
+        // root = root.resolve("terrain_4_4_4_2");
+        root = root.resolve("terrain_32_32_32_8");
+        // root = root.resolve("terrain_512_512_128_16");
+        initGameObjectsStorage(root);
         loadGameMap();
-        createMapStorage(file);
-        initStorage(file, gm);
+        initMapStorage(root);
+        initMapObjectsStorage(root, gm);
+        gm.cursor.z = 8;
+        // gm.cursor.z = 16;
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
         // block.setMined(true);
         // block.setMaterialRid(898);
     }
 
-    /**
-     * Init storages.
-     */
-    private void initStorage(Path root, GameMap gm) {
-        var gameObjectsPath = root.resolve("objects");
-        if (!gameObjectsPath.toFile().isDirectory()) {
-            gameObjectsPath.toFile().mkdir();
+    private void initMapObjectsStorage(Path root, GameMap gm) {
+        var path = root.resolve("map-" + gm.id);
+        if (!path.toFile().isDirectory()) {
+            path.toFile().mkdir();
         }
-        this.gameObjectsStorage = new GameObjectsLmbdStorage(gameObjectsPath, ObjectTypesProvider.OBJECT_TYPES,
-                TypeReadBuffers.TYPE_READ_BUFFERS);
-        var mapObjectsPath = root.resolve("map-" + gm.id);
-        if (!mapObjectsPath.toFile().isDirectory()) {
-            mapObjectsPath.toFile().mkdir();
+        this.mapObjectsStorage = mapObjectsFactory.create(path, gm);
+    }
+
+    private void initGameObjectsStorage(Path root) {
+        var path = root.resolve("objects");
+        if (!path.toFile().isDirectory()) {
+            path.toFile().mkdir();
         }
-        this.mapObjectsStorage = new MapObjectsLmbdStorage(mapObjectsPath, gm);
+        this.gameObjectsStorage = gameObjectsFactory.create(path);
     }
 
     @SneakyThrows
-    private void createMapStorage(Path root) {
-        var fileName = String.format("terrain_%d_%d_%d_%d_%d.map", terrainImage.w, terrainImage.h, terrainImage.d,
-                terrainImage.chunkSize, terrainImage.chunksCount);
-        var res = new File("/home/devent/Projects/dwarf-hustle/docu/terrain-maps/" + fileName).toURI().toURL();
-        assert res != null;
-        var file = root.resolve(fileName + ".map");
-        IOUtils.copy(res, file.toFile());
-        this.mapStore = new MapChunksStore(file, gm.width, gm.height, terrainImage.chunkSize, terrainImage.chunksCount);
+    private void initMapStorage(Path root) {
+        var path = root.resolve(String.format("%d-%d.map", wm.id, gm.id));
+        this.mapStore = new MapChunksStore(path, gm.width, gm.height, gm.chunkSize, gm.chunksCount);
         this.mcRoot = mapStore.getChunk(0);
     }
 
-    @Override
     @SneakyThrows
-    protected void loadGameMap() {
-        gm = new GameMap(ids.generate());
-        wm = new WorldMap(ids.generate());
-        wm.currentMap = gm.id;
-        wm.time = LocalDateTime.of(2023, Month.APRIL, 15, 12, 0);
-        wm.distanceLat = 100f;
-        wm.distanceLon = 100f;
-        gm.world = wm.id;
-        gm.chunkSize = terrainImage.chunkSize;
-        gm.width = terrainImage.w;
-        gm.height = terrainImage.h;
-        gm.depth = terrainImage.d;
-        gm.area = MapArea.create(50.99819f, 10.98348f, 50.96610f, 11.05610f);
-        gm.timeZone = ZoneOffset.ofHours(1);
-
-//        Camera Position: (-6.882555, 0.09426513, 34.164684)
-//        Camera Rotation: (0.0, 1.0, 0.0, 0.0)
-//        Camera Direction: (0.0, 0.0, -1.0)
-//        cam.setLocation(new Vector3f(-6.882555f, 0.09426513f, 34.164684f));
-//        cam.setRotation(new Quaternion(0.0f, 1.0f, 0.0f, 0.0f));
-
-        gm.setCameraPos(0.0f, 0.0f, 34f);
-        gm.setCameraRot(0.0f, 1.0f, 0.0f, 0.0f);
-        gm.setCursorZ(8);
+    private void loadGameMap() {
+        try (var it = gameObjectsStorage.getObjects(WorldMap.OBJECT_TYPE)) {
+            assertThat(it.hasNext(), is(true));
+            this.wm = (WorldMap) it.next();
+        }
+        this.gm = gameObjectsStorage.getObject(GameMap.OBJECT_TYPE, wm.currentMap);
     }
 
 }
