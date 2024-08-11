@@ -213,6 +213,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     @SneakyThrows
     private void insertShrub(MapBlock mb, KnowledgeObject ko) {
+        System.out.println(ko); // TODO
         var o = (GameMapObject) ko.createObject(ids.generate());
         o.setMap(gm.id);
         o.setPos(mb.getPos());
