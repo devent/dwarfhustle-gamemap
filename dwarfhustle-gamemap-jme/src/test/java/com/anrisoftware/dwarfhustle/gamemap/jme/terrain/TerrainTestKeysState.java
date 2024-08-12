@@ -20,6 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
 
 import java.time.Duration;
+import java.util.function.Function;
 
 import org.lable.oss.uniqueid.IDGenerator;
 
@@ -28,10 +29,13 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSampling;
 import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
@@ -55,9 +59,14 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String SHOW_SELECTED_BLOCK_MAPPING = "SHOW_SELECTED_BLOCK_MAPPING";
 
+    private static final String SHOW_OBJECTS_BLOCK_MAPPING = "SHOW_OBJECTS_BLOCK_MAPPING";
+
     private static final String ADD_SHRUB_MAPPING = "ADD_SHRUB_MAPPING";
 
-    private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, ADD_SHRUB_MAPPING };
+    private static final String ADD_SAMPLING_MAPPING = "ADD_SAMPLING_MAPPING";
+
+    private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
+            ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -71,6 +80,12 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     @Inject
     @IdsObjects
     private IDGenerator ids;
+
+    @Inject
+    private GameObjectsStorage goStorage;
+
+    @Inject
+    private MapObjectsStorage moStorage;
 
     private GameMap gm;
 
@@ -138,10 +153,14 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private void initKeys() {
         inputManager.addMapping(SHOW_SELECTED_BLOCK_MAPPING, new KeyTrigger(KeyInput.KEY_I));
-        inputManager.addMapping(ADD_SHRUB_MAPPING, new KeyTrigger(KeyInput.KEY_O));
+        inputManager.addMapping(SHOW_OBJECTS_BLOCK_MAPPING, new KeyTrigger(KeyInput.KEY_O));
+        inputManager.addMapping(ADD_SHRUB_MAPPING, new KeyTrigger(KeyInput.KEY_S));
+        inputManager.addMapping(ADD_SAMPLING_MAPPING, new KeyTrigger(KeyInput.KEY_T));
         inputManager.addListener(this, MAPPINGS);
         System.out.println("I - " + SHOW_SELECTED_BLOCK_MAPPING);
-        System.out.println("O - " + ADD_SHRUB_MAPPING);
+        System.out.println("O - " + SHOW_OBJECTS_BLOCK_MAPPING);
+        System.out.println("S - " + ADD_SHRUB_MAPPING);
+        System.out.println("T - " + ADD_SAMPLING_MAPPING);
         this.keyInit = true;
     }
 
@@ -161,8 +180,16 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
                 this.showSelectedBlock = !showSelectedBlock;
                 break;
             }
+            case SHOW_OBJECTS_BLOCK_MAPPING: {
+                this.nextAction = this::showObjects;
+                break;
+            }
             case ADD_SHRUB_MAPPING: {
                 this.nextAction = this::addShrub;
+                break;
+            }
+            case ADD_SAMPLING_MAPPING: {
+                this.nextAction = this::addSampling;
                 break;
             }
             default:
@@ -177,6 +204,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         if (this.time > 0.333f) {
             this.time = 0;
             nextAction.run();
+            this.nextAction = EMPTY_ACTION;
             if (showSelectedBlock) {
                 if (!oldCursor.equals(gm.getCursor())) {
                     this.oldCursor = gm.getCursor();
@@ -187,36 +215,55 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         }
     }
 
+    private void showObjects() {
+        var omb = mapStore.findBlock(gm.getCursor());
+        if (!omb.isEmpty()) {
+            var mb = omb.get().getTwo();
+            moStorage.getObjects(mb.getPos().getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id) -> {
+                var go = goStorage.get(type, id);
+                System.out.println(go); // TODO
+            });
+        }
+    }
+
     private void addShrub() {
+        addObject(KnowledgeShrub.TYPE, (mb) -> mb.isFilled() && mb.isDiscovered());
+    }
+
+    private void addSampling() {
+        addObject(KnowledgeTreeSampling.TYPE, (mb) -> mb.isFilled() && mb.isDiscovered());
+    }
+
+    private void addObject(String type, Function<MapBlock, Boolean> validBlock) {
         this.oldCursor = gm.getCursor();
         var omb = mapStore.findBlock(gm.getCursor());
         if (!omb.isEmpty()) {
             var mb = omb.get().getTwo();
-            if (mb.isFilled() && mb.isDiscovered()) {
-                insertShrub(mb);
+            if (validBlock.apply(mb)) {
+                insertObject(type, mb);
             } else {
                 System.out.printf("%f is not a valid block\n", mb); // TODO
             }
         }
-        this.nextAction = EMPTY_ACTION;
     }
 
-    private void insertShrub(MapBlock mb) {
-        askKnowledgeObjects(knowledgeActor, Duration.ofSeconds(1), actor.getScheduler(), KnowledgeShrub.TYPE)
+    private void insertObject(String type, MapBlock mb) {
+        askKnowledgeObjects(knowledgeActor, Duration.ofSeconds(1), actor.getScheduler(), type)
                 .whenComplete((res, ex) -> {
-                    if (ex != null) {
+                    if (ex == null) {
                         var first = res.getFirst();
-                        insertShrub(mb, first);
+                        insertObject(mb, first);
                     }
                 });
     }
 
     @SneakyThrows
-    private void insertShrub(MapBlock mb, KnowledgeObject ko) {
+    private void insertObject(MapBlock mb, KnowledgeObject ko) {
         System.out.println(ko); // TODO
         var o = (GameMapObject) ko.createObject(ids.generate());
         o.setMap(gm.id);
         o.setPos(mb.getPos());
-
+        goStorage.set(o.getObjectType(), o);
+        moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
     }
 }

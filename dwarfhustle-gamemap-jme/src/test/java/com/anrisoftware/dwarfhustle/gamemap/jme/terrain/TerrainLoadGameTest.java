@@ -90,7 +90,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         if (!path.toFile().isDirectory()) {
             path.toFile().mkdir();
         }
-        this.mapObjectsStorage = mapObjectsFactory.create(path, gm);
+        this.moStorage = mapObjectsFactory.create(path, gm);
     }
 
     private void initGameObjectsStorage(Path root) {
@@ -98,7 +98,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         if (!path.toFile().isDirectory()) {
             path.toFile().mkdir();
         }
-        this.gameObjectsStorage = gameObjectsFactory.create(path);
+        this.goStorage = gameObjectsFactory.create(path);
     }
 
     @SneakyThrows
@@ -110,11 +110,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @SneakyThrows
     private void loadGameMap() {
-        try (var it = gameObjectsStorage.getObjects(WorldMap.OBJECT_TYPE)) {
+        try (var it = goStorage.getObjects(WorldMap.OBJECT_TYPE)) {
             assertThat(it.hasNext(), is(true));
             this.wm = (WorldMap) it.next();
         }
-        this.gm = gameObjectsStorage.getObject(GameMap.OBJECT_TYPE, wm.currentMap);
+        this.gm = goStorage.getObject(GameMap.OBJECT_TYPE, wm.currentMap);
     }
 
 }

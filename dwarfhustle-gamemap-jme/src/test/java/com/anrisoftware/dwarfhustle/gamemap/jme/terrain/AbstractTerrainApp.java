@@ -48,8 +48,10 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
@@ -131,9 +133,9 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     private TerrainTestKeysState terrainTestKeysState;
 
-    protected GameObjectsLmbdStorage gameObjectsStorage;
+    protected GameObjectsLmbdStorage goStorage;
 
-    protected MapObjectsLmbdStorage mapObjectsStorage;
+    protected MapObjectsLmbdStorage moStorage;
 
     public AbstractTerrainApp() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
@@ -228,6 +230,15 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 return AbstractTerrainApp.this.viewPort;
             }
 
+            @Provides
+            public GameObjectsStorage getGameObjectsStorage() {
+                return goStorage;
+            }
+
+            @Provides
+            public MapObjectsStorage getMapObjectsStorage() {
+                return moStorage;
+            }
         });
         loadTerrain();
         setupGameSettings();
@@ -354,6 +365,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                         log.error("PowerLoomKnowledgeActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
                     } else {
+                        terrainTestKeysState.setKnowledge(ret);
                         log.debug("PowerLoomKnowledgeActor created");
                     }
                 });
