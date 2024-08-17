@@ -35,6 +35,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainTestKeysActor.TerrainTestKeysActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
@@ -58,6 +59,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbMockCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.MockStoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
@@ -69,6 +71,7 @@ import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.jme3.app.Application;
 import com.jme3.app.DebugKeysAppState;
 import com.jme3.app.SimpleApplication;
@@ -94,7 +97,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractTerrainApp extends SimpleApplication {
 
-    private static final Duration CREATE_ACTOR_TIMEOUT = Duration.ofSeconds(30);
+    protected static final Duration CREATE_ACTOR_TIMEOUT = Duration.ofSeconds(30);
 
     @Inject
     private ActorSystemProvider actor;
@@ -103,7 +106,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     @IdsObjects
     protected IDGenerator ids;
 
-    private Injector injector;
+    protected Injector injector;
 
     private Engine engine;
 
@@ -111,7 +114,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     protected MapChunk mcRoot;
 
-    private ObjectsGetter og;
+    protected ObjectsGetter og;
 
     private MutableLongObjectMap<GameObject> backendIdsObjects;
 
@@ -129,13 +132,13 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     private Node sceneNode;
 
-    private ObjectsSetter os;
-
-    private TerrainTestKeysState terrainTestKeysState;
+    protected ObjectsSetter os;
 
     protected GameObjectsLmbdStorage goStorage;
 
     protected MapObjectsLmbdStorage moStorage;
+
+    protected ActorRef<Message> cacheActor;
 
     public AbstractTerrainApp() {
         super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
@@ -148,28 +151,6 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     public void start(Injector parent) {
         this.backendIdsObjects = LongObjectMaps.mutable.empty();
         this.engine = new Engine();
-        this.og = new ObjectsGetter() {
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <T extends GameObject> T get(int type, Object key) throws ObjectsGetterException {
-                return (T) backendIdsObjects.get((long) key);
-            }
-        };
-        this.os = new ObjectsSetter() {
-
-            @Override
-            public void set(int type, GameObject go) throws ObjectsSetterException {
-                backendIdsObjects.put(go.getId(), go);
-            }
-
-            @Override
-            public void set(int type, Iterable<GameObject> values) throws ObjectsSetterException {
-                for (var go : values) {
-                    backendIdsObjects.put(go.getId(), go);
-                }
-            }
-        };
         this.injector = parent.createChildInjector(new AbstractModule() {
             @Override
             protected void configure() {
@@ -181,6 +162,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 install(new DwarfhustleGamemapJmeLightsModule());
                 install(new DwarfhustleModelDbMockCacheModule());
                 bind(GameSettingsProvider.class).asEagerSingleton();
+                install(new FactoryModuleBuilder().implement(TerrainTestKeysActor.class, TerrainTestKeysActor.class)
+                        .build(TerrainTestKeysActorFactory.class));
             }
 
             @Provides
@@ -241,9 +224,39 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
             }
         });
         loadTerrain();
+        this.og = createObjectsGettter();
+        this.os = createObjectsSetter();
         setupGameSettings();
         setupApp();
         start();
+    }
+
+    protected ObjectsSetter createObjectsSetter() {
+        return new ObjectsSetter() {
+
+            @Override
+            public void set(int type, GameObject go) throws ObjectsSetterException {
+                backendIdsObjects.put(go.getId(), go);
+            }
+
+            @Override
+            public void set(int type, Iterable<GameObject> values) throws ObjectsSetterException {
+                for (var go : values) {
+                    backendIdsObjects.put(go.getId(), go);
+                }
+            }
+        };
+    }
+
+    protected ObjectsGetter createObjectsGettter() {
+        return new ObjectsGetter() {
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public <T extends GameObject> T get(int type, Object key) throws ObjectsGetterException {
+                return (T) backendIdsObjects.get((long) key);
+            }
+        };
     }
 
     private void setupGameSettings() {
@@ -267,10 +280,6 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 };
             }
         };
-        this.terrainTestKeysState = injector.getInstance(TerrainTestKeysState.class);
-        terrainTestKeysState.setMapStore(mapStore);
-        terrainTestKeysState.setGameMap(gm);
-        getStateManager().attach(terrainTestKeysState);
         createMaterialAssets();
         createModelsAssets();
         createTerrain();
@@ -278,6 +287,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createKnowledgeCache();
         createObjectsCache();
         createGameTick();
+        createTerrainTestKeys();
     }
 
     @Override
@@ -309,6 +319,19 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         s.setOpenCLSupport(false);
         setPauseOnLostFocus(true);
         setSettings(s);
+    }
+
+    private void createTerrainTestKeys() {
+        TerrainTestKeysActor.create(injector, CREATE_ACTOR_TIMEOUT, supplyAsync(() -> mapStore),
+                actor.getActorAsync(StoredObjectsJcsCacheActor.ID), actor.getActorAsync(PowerLoomKnowledgeActor.ID))
+                .whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("TerrainTestKeysActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("TerrainTestKeysActor created");
+                    }
+                });
     }
 
     private void createTerrain() {
@@ -365,19 +388,19 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                         log.error("PowerLoomKnowledgeActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
                     } else {
-                        terrainTestKeysState.setKnowledge(ret);
                         log.debug("PowerLoomKnowledgeActor created");
                     }
                 });
     }
 
-    private void createObjectsCache() {
+    protected void createObjectsCache() {
         var task = MockStoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, supplyAsync(() -> og),
                 supplyAsync(() -> os));
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
             } else {
+                this.cacheActor = ret;
                 log.debug("ObjectsJcsCacheActor created");
             }
         });

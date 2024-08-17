@@ -17,26 +17,12 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
-
-import java.time.Duration;
-import java.util.function.Function;
-
-import org.lable.oss.uniqueid.IDGenerator;
-
-import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObjectsStorage;
-import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSampling;
-import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
+import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
@@ -46,7 +32,8 @@ import com.jme3.input.controls.KeyTrigger;
 
 import akka.actor.typed.ActorRef;
 import jakarta.inject.Inject;
-import lombok.SneakyThrows;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -71,25 +58,16 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private static final Runnable EMPTY_ACTION = () -> {
     };
 
+    @RequiredArgsConstructor
+    @ToString
+    private static class WrappedCacheResponse extends Message {
+        private final CacheResponseMessage<?> response;
+    }
+
     @Inject
     private InputManager inputManager;
 
-    @Inject
-    private ActorSystemProvider actor;
-
-    @Inject
-    @IdsObjects
-    private IDGenerator ids;
-
-    @Inject
-    private GameObjectsStorage goStorage;
-
-    @Inject
-    private MapObjectsStorage moStorage;
-
     private GameMap gm;
-
-    private MapChunksStore mapStore;
 
     private boolean keyInit = false;
 
@@ -101,23 +79,15 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private Runnable nextAction = EMPTY_ACTION;
 
-    private ActorRef<Message> knowledgeActor;
+    private ActorRef<Message> actor;
 
     @Inject
     public TerrainTestKeysState() {
         super(TerrainTestKeysState.class.getSimpleName());
     }
 
-    public void setKnowledge(ActorRef<Message> knowledgeActor) {
-        this.knowledgeActor = knowledgeActor;
-    }
-
-    public void setMapStore(MapChunksStore store) {
-        this.mapStore = store;
-    }
-
-    public void setObjectsStore(MapChunksStore store) {
-        this.mapStore = store;
+    public void setActor(ActorRef<Message> actor) {
+        this.actor = actor;
     }
 
     public void setGameMap(GameMap gm) {
@@ -207,63 +177,27 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             this.nextAction = EMPTY_ACTION;
             if (showSelectedBlock) {
                 if (!oldCursor.equals(gm.getCursor())) {
+                    actor.tell(new ShowSelectedBlockMessage(gm.getCursor()));
                     this.oldCursor = gm.getCursor();
-                    var mb = mapStore.findBlock(gm.getCursor());
-                    System.out.println(mb);
                 }
             }
         }
     }
 
     private void showObjects() {
-        var omb = mapStore.findBlock(gm.getCursor());
-        if (!omb.isEmpty()) {
-            var mb = omb.get().getTwo();
-            moStorage.getObjects(mb.getPos().getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id) -> {
-                var go = goStorage.get(type, id);
-                System.out.println(go); // TODO
-            });
-        }
+        actor.tell(new ShowObjectsOnBlockMessage(gm.getCursor()));
     }
 
     private void addShrub() {
-        addObject(KnowledgeShrub.TYPE, (mb) -> mb.isFilled() && mb.isDiscovered());
+        this.oldCursor = gm.getCursor();
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeShrub.TYPE,
+                (mb) -> mb.isFilled() && mb.isDiscovered()));
     }
 
     private void addSampling() {
-        addObject(KnowledgeTreeSampling.TYPE, (mb) -> mb.isFilled() && mb.isDiscovered());
-    }
-
-    private void addObject(String type, Function<MapBlock, Boolean> validBlock) {
         this.oldCursor = gm.getCursor();
-        var omb = mapStore.findBlock(gm.getCursor());
-        if (!omb.isEmpty()) {
-            var mb = omb.get().getTwo();
-            if (validBlock.apply(mb)) {
-                insertObject(type, mb);
-            } else {
-                System.out.printf("%f is not a valid block\n", mb); // TODO
-            }
-        }
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSampling.TYPE,
+                (mb) -> mb.isFilled() && mb.isDiscovered()));
     }
 
-    private void insertObject(String type, MapBlock mb) {
-        askKnowledgeObjects(knowledgeActor, Duration.ofSeconds(1), actor.getScheduler(), type)
-                .whenComplete((res, ex) -> {
-                    if (ex == null) {
-                        var first = res.getFirst();
-                        insertObject(mb, first);
-                    }
-                });
-    }
-
-    @SneakyThrows
-    private void insertObject(MapBlock mb, KnowledgeObject ko) {
-        System.out.println(ko); // TODO
-        var o = (GameMapObject) ko.createObject(ids.generate());
-        o.setMap(gm.id);
-        o.setPos(mb.getPos());
-        goStorage.set(o.getObjectType(), o);
-        moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
-    }
 }

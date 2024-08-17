@@ -17,6 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -25,7 +26,10 @@ import java.nio.file.Path;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.DwarfhustleModelDbLmbdModule;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObjectsLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
@@ -64,6 +68,30 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     public void simpleInitApp() {
         log.debug("simpleInitApp");
         super.simpleInitApp();
+    }
+
+    @Override
+    protected ObjectsGetter createObjectsGettter() {
+        return goStorage;
+    }
+
+    @Override
+    protected ObjectsSetter createObjectsSetter() {
+        return goStorage;
+    }
+
+    @Override
+    protected void createObjectsCache() {
+        var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, supplyAsync(() -> og),
+                supplyAsync(() -> os));
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ObjectsJcsCacheActor.create", ex);
+            } else {
+                this.cacheActor = ret;
+                log.debug("ObjectsJcsCacheActor created");
+            }
+        });
     }
 
     @Override

@@ -129,7 +129,7 @@ public class TerrainActor {
     }
 
     /**
-     * Factory to create {@link TerrainActor}.
+     * Factory to create {@link TerrainTestKeysActor}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
@@ -140,7 +140,7 @@ public class TerrainActor {
     }
 
     /**
-     * Creates the {@link TerrainActor}.
+     * Creates the {@link TerrainTestKeysActor}.
      */
     public static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> materials,
             CompletionStage<ObjectsGetter> models, CompletionStage<ActorRef<Message>> knowledge) {
@@ -169,7 +169,7 @@ public class TerrainActor {
     }
 
     /**
-     * Creates the {@link TerrainActor}.
+     * Creates the {@link TerrainTestKeysActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
             CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models,

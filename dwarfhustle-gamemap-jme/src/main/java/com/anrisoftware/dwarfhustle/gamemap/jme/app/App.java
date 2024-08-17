@@ -78,19 +78,19 @@ public class App extends SimpleApplication {
         private File gamedir;
 
         @Option(names = { "-skip" }, paramLabel = "SKIP-LOAD", description = "skip loading of the world")
-        private boolean skipLoad = false;
+        private final boolean skipLoad = false;
 
         @Option(names = { "-db-server" }, paramLabel = "DB-SERVER", description = "the database server host")
-        private String dbServer = "";
+        private final String dbServer = "";
 
         @Option(names = { "-db-user" }, paramLabel = "DB-USER", description = "the database user")
-        private String dbUser = "root";
+        private final String dbUser = "root";
 
         @Option(names = { "-db-password" }, paramLabel = "DB-PASSWORD", description = "the database password")
-        private String dbPassword = "admin";
+        private final String dbPassword = "admin";
 
         @Option(names = { "-db-name" }, paramLabel = "DB-NAME", description = "the database name")
-        private String dbName = "terrain_32_32_32";
+        private final String dbName = "terrain_32_32_32";
 
         @Override
         public void run() {
