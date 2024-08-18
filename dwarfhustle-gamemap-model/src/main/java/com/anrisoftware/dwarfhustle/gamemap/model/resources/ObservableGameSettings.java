@@ -86,6 +86,8 @@ public class ObservableGameSettings {
         public int visibleDepthLayers = 1;
 
         public float timeUpdateInterval = 1 / 30f;
+
+        public boolean hideUndiscovered = true;
     }
 
     /**
@@ -142,6 +144,8 @@ public class ObservableGameSettings {
 
     public final FloatProperty timeUpdateInterval;
 
+    public final BooleanProperty hideUndiscovered;
+
     @SuppressWarnings("unchecked")
     @SneakyThrows
     public ObservableGameSettings(GameSettings p) {
@@ -160,6 +164,7 @@ public class ObservableGameSettings {
         this.lastCommand = JavaBeanObjectPropertyBuilder.create().bean(p).name("lastCommand").build();
         this.visibleDepthLayers = JavaBeanIntegerPropertyBuilder.create().bean(p).name("visibleDepthLayers").build();
         this.timeUpdateInterval = JavaBeanFloatPropertyBuilder.create().bean(p).name("timeUpdateInterval").build();
+        this.hideUndiscovered = JavaBeanBooleanPropertyBuilder.create().bean(p).name("hideUndiscovered").build();
         this.currentWorld = new SimpleObjectProperty<>();
         this.currentMap = new SimpleObjectProperty<>();
     }
@@ -178,5 +183,6 @@ public class ObservableGameSettings {
         lastCommand.set(other.lastCommand);
         visibleDepthLayers.set(other.visibleDepthLayers);
         timeUpdateInterval.set(other.timeUpdateInterval);
+        hideUndiscovered.set(other.hideUndiscovered);
     }
 }

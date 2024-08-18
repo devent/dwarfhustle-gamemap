@@ -43,8 +43,8 @@ class GameSettingsProviderTest {
                     return gs
                 }, """---
 locale: "en_US"
-tickLength: 0.033333335
-tickLongLength: 0.06666667
+gameTickDuration: 0.100000000
+terrainUpdateDuration: 0.050000000
 windowFullscreen: false
 windowWidth: 1024
 windowHeight: 768
@@ -54,6 +54,7 @@ commandsSplitPosition: 0.71
 lastCommand: ""
 visibleDepthLayers: 1
 timeUpdateInterval: 0.033333335
+hideUndiscovered: true
 """), //
                 )
     }

@@ -77,6 +77,8 @@ import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
@@ -280,6 +282,8 @@ public class TerrainActor {
 
     private long undiscoveredMaterialId;
 
+    private boolean hideUndiscovered;
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -292,6 +296,14 @@ public class TerrainActor {
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
         this.undiscoveredMaterialId = kid2Id(knowledges.get(UNDISCOVERED_MATERIAL));
+        this.hideUndiscovered = gs.get().hideUndiscovered.get();
+        gs.get().hideUndiscovered.addListener(new ChangeListener<>() {
+
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                hideUndiscovered = newValue;
+            }
+        });
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -387,7 +399,7 @@ public class TerrainActor {
 
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
         long mid = mb.getMaterialId();
-        if (!mb.isDiscovered()) {
+        if (hideUndiscovered && !mb.isDiscovered()) {
             mid = undiscoveredMaterialId;
         }
         this.materialBlocks.put(mid, mb);

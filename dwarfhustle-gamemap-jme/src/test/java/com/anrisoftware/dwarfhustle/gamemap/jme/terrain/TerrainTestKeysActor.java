@@ -27,6 +27,7 @@ import java.util.function.Function;
 import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
@@ -188,6 +189,9 @@ public class TerrainTestKeysActor {
     @Inject
     private MapObjectsStorage moStorage;
 
+    @Inject
+    private GameSettingsProvider gs;
+
     private InitialStateMessage is;
 
     @SuppressWarnings("rawtypes")
@@ -298,6 +302,15 @@ public class TerrainTestKeysActor {
     }
 
     /**
+     * Reacts to the {@link ToggleUndiscoveredMessage} message.
+     */
+    private Behavior<Message> onToggleUndiscovered(ToggleUndiscoveredMessage m) {
+        log.debug("onToggleUndiscovered {}", m);
+        gs.get().hideUndiscovered.set(!gs.get().hideUndiscovered.get());
+        return Behaviors.same();
+    }
+
+    /**
      * Reacts to the {@link WrappedCacheResponse} message.
      */
     private Behavior<Message> onWrappedCache(WrappedCacheResponse m) {
@@ -336,6 +349,7 @@ public class TerrainTestKeysActor {
                 .onMessage(AddObjectOnBlockMessage.class, this::onAddObjectOnBlock)//
                 .onMessage(ShowObjectsOnBlockMessage.class, this::onShowObjectsOnBlock)//
                 .onMessage(ShowSelectedBlockMessage.class, this::onShowSelectedBlock)//
+                .onMessage(ToggleUndiscoveredMessage.class, this::onToggleUndiscovered)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
         ;
     }

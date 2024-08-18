@@ -52,8 +52,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String ADD_SAMPLING_MAPPING = "ADD_SAMPLING_MAPPING";
 
+    private static final String TOGGLE_UNDISCOVERED_MAPPING = "TOGGLE_UNDISCOVERED_MAPPING";
+
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
-            ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING };
+            ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -126,11 +128,13 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addMapping(SHOW_OBJECTS_BLOCK_MAPPING, new KeyTrigger(KeyInput.KEY_O));
         inputManager.addMapping(ADD_SHRUB_MAPPING, new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping(ADD_SAMPLING_MAPPING, new KeyTrigger(KeyInput.KEY_T));
+        inputManager.addMapping(TOGGLE_UNDISCOVERED_MAPPING, new KeyTrigger(KeyInput.KEY_F11));
         inputManager.addListener(this, MAPPINGS);
-        System.out.println("I - " + SHOW_SELECTED_BLOCK_MAPPING);
-        System.out.println("O - " + SHOW_OBJECTS_BLOCK_MAPPING);
-        System.out.println("S - " + ADD_SHRUB_MAPPING);
-        System.out.println("T - " + ADD_SAMPLING_MAPPING);
+        System.out.println("I   - " + SHOW_SELECTED_BLOCK_MAPPING);
+        System.out.println("O   - " + SHOW_OBJECTS_BLOCK_MAPPING);
+        System.out.println("S   - " + ADD_SHRUB_MAPPING);
+        System.out.println("T   - " + ADD_SAMPLING_MAPPING);
+        System.out.println("F11 - " + TOGGLE_UNDISCOVERED_MAPPING);
         this.keyInit = true;
     }
 
@@ -162,6 +166,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
                 this.nextAction = this::addSampling;
                 break;
             }
+            case TOGGLE_UNDISCOVERED_MAPPING: {
+                this.nextAction = this::toggleUndiscovered;
+                break;
+            }
             default:
                 throw new IllegalArgumentException("Unexpected value: " + name);
             }
@@ -182,6 +190,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
                 }
             }
         }
+    }
+
+    private void toggleUndiscovered() {
+        actor.tell(new ToggleUndiscoveredMessage());
     }
 
     private void showObjects() {
