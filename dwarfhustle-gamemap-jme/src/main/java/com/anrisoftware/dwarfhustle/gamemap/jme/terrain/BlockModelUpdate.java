@@ -27,7 +27,6 @@ import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState.BlendMode;
-import com.jme3.material.RenderState.FaceCullMode;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.Camera.FrustumIntersect;
 import com.jme3.scene.Geometry;
@@ -159,7 +158,8 @@ public class BlockModelUpdate {
             final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
             final var ctex = BufferUtils.createFloatBuffer(2 * spos);
             final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-            fillBuffers(blocks, meshSupplier, faceSkipTest, w, h, d, cursor, cpos, cindex, cnormal, ctex, ccolor);
+            final TextureCacheObject tex = getTexture(material);
+            fillBuffers(blocks, meshSupplier, faceSkipTest, w, h, d, tex, cursor, cpos, cindex, cnormal, ctex, ccolor);
             final var mesh = new Mesh();
             mesh.setBuffer(Type.Position, 3, cpos);
             mesh.setBuffer(Type.Index, 1, cindex);
@@ -170,13 +170,17 @@ public class BlockModelUpdate {
             mesh.updateBound();
             final var geo = new Geometry("block-mesh", mesh);
             // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-            final TextureCacheObject tex = materials.get(TextureCacheObject.OBJECT_TYPE, material);
             setupPBRLighting(geo, tex);
-            geo.getMaterial().getAdditionalRenderState().setWireframe(false);
-            geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
+            // geo.getMaterial().getAdditionalRenderState().setWireframe(false);
+            // geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
             consumer.accept(blocks.getOne(), geo);
         }
         return bnum;
+    }
+
+    private TextureCacheObject getTexture(long material) {
+        final TextureCacheObject tex = materials.get(TextureCacheObject.OBJECT_TYPE, material);
+        return tex;
     }
 
     private void setupPBRLighting(Geometry geo, TextureCacheObject tex) {
@@ -199,8 +203,8 @@ public class BlockModelUpdate {
     }
 
     private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, Function<MapBlock, Mesh> meshSupplier,
-            NormalsPredicate faceSkipTest, int w, int h, int d, GameBlockPos cursor, FloatBuffer cpos,
-            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+            NormalsPredicate faceSkipTest, int w, int h, int d, TextureCacheObject tex, GameBlockPos cursor,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -251,7 +255,7 @@ public class BlockModelUpdate {
                 cindex.put((short) (in2 + delta));
             }
             copyNormal(mb, mesh, cnormal);
-            copyTex(mb, mesh, ctex);
+            copyTex(mb, mesh, tex, ctex);
             copyPosColor(mb, mesh, cpos, ccolor, w, h, d, cursor);
         }
         cpos.flip();
@@ -301,9 +305,8 @@ public class BlockModelUpdate {
         cnormal.put(normal);
     }
 
-    private void copyTex(MapBlock mb, Mesh mesh, FloatBuffer ctex) {
+    private void copyTex(MapBlock mb, Mesh mesh, TextureCacheObject tex, FloatBuffer ctex) {
         var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
-        TextureCacheObject tex = materials.get(TextureCacheObject.OBJECT_TYPE, mb.getMaterialId());
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
             float ty = btex.get();
@@ -336,7 +339,7 @@ public class BlockModelUpdate {
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
-            if (mb.pos.z - cursor.z > 0) {
+            if (mb.pos.z - cursor.z > 1) {
                 ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
                 ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
                 ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));

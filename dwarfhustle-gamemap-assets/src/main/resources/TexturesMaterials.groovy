@@ -92,6 +92,7 @@ rid["PEAT"] = 859
 rid["LOAMY-SAND"] = 858
 rid["LOAM"] = 857
 
+rid["UNDISCOVERED"] = 0xfffe
 rid["UNKNOWN"] = 0xffff
 
 int w = 128, h = 128
@@ -163,7 +164,6 @@ m["Sedimentary"].frames rid: rid["CHALK"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, h
 m["Liquid"].image = "Textures/Tiles/liquid-map.png"
 m["Liquid"].frames rid: rid["MAGMA"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: [1f, 1f, 1f, 0.5f], transparent: false, glossiness: 1f, metallic: 0f, roughness: 0f
 m["Liquid"].frames rid: rid["WATER"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: [1f, 1f, 1f, 0.5f], transparent: false, glossiness: 1f, metallic: 0f, roughness: 0f
-m["Liquid"].frames rid: rid["UNKNOWN"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m["Topsoil"].image = "Textures/Tiles/topsoil-map.png"
 m["Topsoil"].frames rid: rid["SILT-LOAM"], x: 3*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
@@ -174,5 +174,9 @@ m["Topsoil"].frames rid: rid["SANDY-CLAY-LOAM"], x: 0*w, y: 3*h, w: w, h: h, ww:
 m["Topsoil"].frames rid: rid["PEAT"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 m["Topsoil"].frames rid: rid["LOAMY-SAND"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 m["Topsoil"].frames rid: rid["LOAM"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+
+m.Other.image = "Textures/Tiles/other-map.png"
+m.Other.frames rid: rid["UNDISCOVERED"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["UNKNOWN"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m

@@ -116,7 +116,7 @@ public class AssetsLoadMaterialTextures {
     public TextureCacheObject loadTextureObject(long key) {
         var d = texturesMapFramesDataMap.get(id2Kid(key));
         if (d == null) {
-            d = texturesMapFramesDataMap.get(0xffff);
+            d = texturesMapFramesDataMap.get(id2Kid(0xffff));
             log.error("No texture object with kid {}", id2Kid(key));
         }
         var to = loadTextureData(d);

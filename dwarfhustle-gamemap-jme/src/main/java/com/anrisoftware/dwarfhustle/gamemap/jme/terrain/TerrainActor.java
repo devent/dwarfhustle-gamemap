@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askObjectTypeId;
@@ -105,6 +106,10 @@ public class TerrainActor {
 
     static final int OBJECT_BLOCK_CEILING = "OBJECT_BLOCK_CEILING".hashCode();
 
+    static final int UNDISCOVERED_MATERIAL = "UNDISCOVERED_MATERIAL".hashCode();
+
+    static final int UNKNOWN_MATERIAL = "UNKNOWN_MATERIAL".hashCode();
+
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
@@ -163,6 +168,8 @@ public class TerrainActor {
                     askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.TYPE, "magma"));
             knowledges.put(OBJECT_BLOCK_CEILING,
                     askObjectTypeId(ko, ofSeconds(15), system.scheduler(), BlockObject.TYPE, "block-ceiling"));
+            knowledges.put(UNDISCOVERED_MATERIAL, 0xfffe);
+            knowledges.put(UNKNOWN_MATERIAL, 0xffff);
             return injector.getInstance(TerrainActorFactory.class)
                     .create(context, stash, timer, ma, mo, knowledges.toImmutable()).start(injector);
         })));
@@ -271,6 +278,8 @@ public class TerrainActor {
 
     private int CursorZ;
 
+    private long undiscoveredMaterialId;
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -282,6 +291,7 @@ public class TerrainActor {
      */
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
+        this.undiscoveredMaterialId = kid2Id(knowledges.get(UNDISCOVERED_MATERIAL));
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -376,7 +386,11 @@ public class TerrainActor {
     }
 
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
-        this.materialBlocks.put(mb.getMaterialId(), mb);
+        long mid = mb.getMaterialId();
+        if (!mb.isDiscovered()) {
+            mid = undiscoveredMaterialId;
+        }
+        this.materialBlocks.put(mid, mb);
         if (mb.pos.z <= CursorZ && !mb.isHaveNaturalLight()) {
             this.materialCeilings.put(getNeighborUp(mb, chunk, retriever).getMaterialId(), mb);
         }
