@@ -1,0 +1,73 @@
+package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
+
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
+import com.jme3.asset.AssetManager;
+import com.jme3.material.Material;
+import com.jme3.material.RenderState.BlendMode;
+
+public class MaterialKey {
+
+    public final int hash;
+
+    public final TextureCacheObject tex;
+
+    public final TextureCacheObject emissive;
+
+    public final Material m;
+
+    public MaterialKey(AssetManager assets, TextureCacheObject tex) {
+        this(assets, tex, null);
+    }
+
+    public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject emissive) {
+        this.hash = calcHash(tex.rid, emissive != null ? emissive.rid : null);
+        this.tex = tex;
+        this.emissive = emissive;
+        this.m = new Material(assets, "Common/MatDefs/Light/PBRLighting.j3md");
+        m.setTexture("BaseColorMap", tex.tex);
+        m.setColor("BaseColor", tex.baseColor);
+        m.setFloat("Metallic", tex.metallic);
+        m.setFloat("Roughness", tex.roughness);
+        m.setBoolean("UseVertexColor", true);
+        m.getAdditionalRenderState().setBlendMode(tex.transparent ? BlendMode.Alpha : BlendMode.Off);
+        if (emissive != null) {
+            m.setTexture("EmissiveMap", emissive.tex);
+        }
+    }
+
+    public static int calcHash(long texrid, Long emissive) {
+        final int PRIME = 59;
+        int result = 1;
+        final long temp1 = Long.hashCode(texrid);
+        result = (result * PRIME) + (int) (temp1 ^ (temp1 >>> 32));
+        if (emissive != null) {
+            final long temp2 = Long.hashCode(emissive);
+            result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
+        }
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof MaterialKey other)) {
+            return false;
+        }
+        if (other.hash != this.hash) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return hash;
+    }
+
+    public boolean isMaterial(long id) {
+        return tex.id == id;
+    }
+
+}

@@ -97,7 +97,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     @Override
     @SneakyThrows
     protected void loadTerrain() {
-        var root = Path.of("/home/devent/Projects/dwarf-hustle/docu/terrain-maps/");
+        var root = Path.of("/home/devent/Projects/dwarf-hustle/terrain-maps/");
         root = root.resolve("game");
         // root = root.resolve("terrain_4_4_4_2");
         root = root.resolve("terrain_32_32_32_8");

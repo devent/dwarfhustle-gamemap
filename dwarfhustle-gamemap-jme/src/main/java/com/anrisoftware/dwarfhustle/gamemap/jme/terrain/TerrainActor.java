@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.id2Kid;
 import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
@@ -36,10 +37,12 @@ import java.util.function.Function;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.primitive.IntLongMaps;
+import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
+import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
 
@@ -48,6 +51,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
@@ -61,6 +65,7 @@ import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
+import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
@@ -248,6 +253,9 @@ public class TerrainActor {
     @Inject
     private GameSettingsProvider gs;
 
+    @Inject
+    private AssetManager assets;
+
     private InitialStateMessage is;
 
     private MutableList<Geometry> blockNodes;
@@ -270,9 +278,11 @@ public class TerrainActor {
 
     private GameMap gm;
 
-    private MutableMultimap<Long, MapBlock> materialBlocks;
+    private MutableIntObjectMap<MaterialKey> materialKeys;
 
-    private MutableMultimap<Long, MapBlock> materialCeilings;
+    private MutableMultimap<MaterialKey, MapBlock> materialBlocks;
+
+    private MutableMultimap<MaterialKey, MapBlock> materialCeilings;
 
     private Function<Integer, MapChunk> retriever;
 
@@ -295,6 +305,7 @@ public class TerrainActor {
      */
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
+        this.materialKeys = IntObjectMaps.mutable.empty();
         this.undiscoveredMaterialId = kid2Id(knowledges.get(UNDISCOVERED_MATERIAL));
         this.hideUndiscovered = gs.get().hideUndiscovered.get();
         gs.get().hideUndiscovered.addListener(new ChangeListener<>() {
@@ -402,10 +413,33 @@ public class TerrainActor {
         if (hideUndiscovered && !mb.isDiscovered()) {
             mid = undiscoveredMaterialId;
         }
-        this.materialBlocks.put(mid, mb);
+        var key = lazyCreateKey(mid);
+        this.materialBlocks.put(key, mb);
         if (mb.pos.z <= CursorZ && !mb.isHaveNaturalLight()) {
-            this.materialCeilings.put(getNeighborUp(mb, chunk, retriever).getMaterialId(), mb);
+            var neighborUp = getNeighborUp(mb, chunk, retriever);
+            long ceilingmid = 0;
+            if (hideUndiscovered && !mb.isDiscovered()) {
+                ceilingmid = undiscoveredMaterialId;
+            } else {
+                ceilingmid = neighborUp.getMaterialId();
+            }
+            this.materialCeilings.put(lazyCreateKey(ceilingmid), mb);
         }
+    }
+
+    private MaterialKey lazyCreateKey(long mid) {
+        int hash = MaterialKey.calcHash(id2Kid(mid), null);
+        MaterialKey key = materialKeys.get(hash);
+        if (key == null) {
+            var tex = getTexture(mid);
+            key = new MaterialKey(assets, tex);
+            materialKeys.put(hash, key);
+        }
+        return key;
+    }
+
+    private TextureCacheObject getTexture(long id) {
+        return materials.get(TextureCacheObject.OBJECT_TYPE, id);
     }
 
     private Mesh retrieveBlockMesh(MapBlock mb) {
@@ -418,18 +452,18 @@ public class TerrainActor {
         return ((Geometry) (model.model)).getMesh();
     }
 
-    private void putBlockNodes(Long material, Geometry geo) {
+    private void putBlockNodes(MaterialKey material, Geometry geo) {
         geo.setShadowMode(ShadowMode.Receive);
-        if (material.equals(knowledges.get(BLOCK_MATERIAL_WATER))) {
+        if (material.isMaterial(knowledges.get(BLOCK_MATERIAL_WATER))) {
             waterNodes.add(geo);
-        } else if (material.equals(knowledges.get(BLOCK_MATERIAL_MAGMA))) {
+        } else if (material.isMaterial(knowledges.get(BLOCK_MATERIAL_MAGMA))) {
             magmaNodes.add(geo);
         } else {
             blockNodes.add(geo);
         }
     }
 
-    private void putCeilingNodes(Long material, Geometry geo) {
+    private void putCeilingNodes(MaterialKey material, Geometry geo) {
         geo.setShadowMode(ShadowMode.Off);
         ceilingNodes.add(geo);
     }

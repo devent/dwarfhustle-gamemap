@@ -23,10 +23,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.google.inject.assistedinject.Assisted;
-import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
-import com.jme3.material.Material;
-import com.jme3.material.RenderState.BlendMode;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.Camera.FrustumIntersect;
 import com.jme3.scene.Geometry;
@@ -51,13 +48,6 @@ public class BlockModelUpdate {
     public interface BlockModelUpdateFactory {
         BlockModelUpdate create(@Assisted("materials") ObjectsGetter materials);
     }
-
-    @Inject
-    @Assisted("materials")
-    private ObjectsGetter materials;
-
-    @Inject
-    private AssetManager assets;
 
     @Inject
     private Camera camera;
@@ -138,28 +128,30 @@ public class BlockModelUpdate {
         return true;
     }
 
-    public int updateModelBlocks(MutableMultimap<Long, MapBlock> materialBlocks, GameMap gm,
-            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest, BiConsumer<Long, Geometry> consumer) {
+    public int updateModelBlocks(MutableMultimap<MaterialKey, MapBlock> mbs, GameMap gm,
+            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest,
+            BiConsumer<MaterialKey, Geometry> consumer) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
         var cursor = gm.cursor;
         int bnum = 0;
         int spos = 0;
         int sindex = 0;
-        for (Pair<Long, RichIterable<MapBlock>> blocks : materialBlocks.keyMultiValuePairsView()) {
-            for (MapBlock mb : blocks.getTwo()) {
+        for (Pair<MaterialKey, RichIterable<MapBlock>> pblocks : mbs.keyMultiValuePairsView()) {
+            final RichIterable<MapBlock> bs = pblocks.getTwo();
+            for (MapBlock mb : bs) {
                 var mesh = meshSupplier.apply(mb);
                 spos += mesh.getBuffer(Type.Position).getNumElements();
                 sindex += mesh.getBuffer(Type.Index).getNumElements();
                 bnum++;
             }
-            final long material = blocks.getOne();
+            final var m = pblocks.getOne();
             final var cpos = BufferUtils.createFloatBuffer(3 * spos);
             final var cindex = BufferUtils.createShortBuffer(3 * sindex);
             final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
             final var ctex = BufferUtils.createFloatBuffer(2 * spos);
             final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-            final TextureCacheObject tex = getTexture(material);
-            fillBuffers(blocks, meshSupplier, faceSkipTest, w, h, d, tex, cursor, cpos, cindex, cnormal, ctex, ccolor);
+            final TextureCacheObject tex = m.tex;
+            fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, tex, cursor, cpos, cindex, cnormal, ctex, ccolor);
             final var mesh = new Mesh();
             mesh.setBuffer(Type.Position, 3, cpos);
             mesh.setBuffer(Type.Index, 1, cindex);
@@ -169,40 +161,16 @@ public class BlockModelUpdate {
             mesh.setMode(Mode.Triangles);
             mesh.updateBound();
             final var geo = new Geometry("block-mesh", mesh);
+            geo.setMaterial(m.m);
             // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-            setupPBRLighting(geo, tex);
             // geo.getMaterial().getAdditionalRenderState().setWireframe(false);
             // geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
-            consumer.accept(blocks.getOne(), geo);
+            consumer.accept(m, geo);
         }
         return bnum;
     }
 
-    private TextureCacheObject getTexture(long material) {
-        final TextureCacheObject tex = materials.get(TextureCacheObject.OBJECT_TYPE, material);
-        return tex;
-    }
-
-    private void setupPBRLighting(Geometry geo, TextureCacheObject tex) {
-        var m = new Material(assets, "Common/MatDefs/Light/PBRLighting.j3md");
-        m.setTexture("BaseColorMap", tex.tex);
-        m.setColor("BaseColor", tex.baseColor);
-        m.setFloat("Metallic", tex.metallic);
-        m.setFloat("Roughness", tex.roughness);
-        m.setBoolean("UseVertexColor", true);
-        m.getAdditionalRenderState().setBlendMode(tex.transparent ? BlendMode.Alpha : BlendMode.Off);
-        geo.setMaterial(m);
-    }
-
-    @SuppressWarnings("unused")
-    private void setupLighting(Geometry geo, TextureCacheObject tex) {
-        geo.setMaterial(new Material(assets, "Common/MatDefs/Light/Lighting.j3md"));
-        geo.getMaterial().setTexture("DiffuseMap", tex.tex);
-        geo.getMaterial().setColor("Diffuse", tex.baseColor);
-        geo.getMaterial().setBoolean("UseVertexColor", true);
-    }
-
-    private void fillBuffers(Pair<Long, RichIterable<MapBlock>> blocks, Function<MapBlock, Mesh> meshSupplier,
+    private void fillBuffers(RichIterable<MapBlock> blocks, Function<MapBlock, Mesh> meshSupplier,
             NormalsPredicate faceSkipTest, int w, int h, int d, TextureCacheObject tex, GameBlockPos cursor,
             FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
@@ -211,7 +179,7 @@ public class BlockModelUpdate {
         Mesh mesh;
         ShortBuffer bindex;
         FloatBuffer bnormal;
-        for (MapBlock mb : blocks.getTwo()) {
+        for (MapBlock mb : blocks) {
             mesh = meshSupplier.apply(mb);
             bindex = mesh.getShortBuffer(Type.Index).rewind();
             bnormal = mesh.getFloatBuffer(Type.Normal).rewind();

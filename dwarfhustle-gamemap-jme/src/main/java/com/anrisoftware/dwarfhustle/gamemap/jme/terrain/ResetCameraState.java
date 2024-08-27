@@ -20,8 +20,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jakarta.inject.Inject;
-
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
@@ -33,6 +31,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -51,7 +50,7 @@ public class ResetCameraState extends BaseAppState implements ActionListener {
 
     private Camera camera;
 
-    private Optional<Consumer<GameMap>> saveCamera = Optional.empty();
+    private final Optional<Consumer<GameMap>> saveCamera = Optional.empty();
 
     private GameMap gm;
 
@@ -117,12 +116,13 @@ public class ResetCameraState extends BaseAppState implements ActionListener {
     private void initKeys() {
         inputManager.addListener(this, MAPPINGS);
         inputManager.addMapping(RESET_CAMERA_MAPPING, new KeyTrigger(KeyInput.KEY_F11));
+        System.out.println("F11  - " + RESET_CAMERA_MAPPING);
     }
 
     private void deleteKeys() {
         inputManager.removeListener(this);
-        for (var i = 0; i < MAPPINGS.length; i++) {
-            inputManager.deleteMapping(MAPPINGS[i]);
+        for (String element : MAPPINGS) {
+            inputManager.deleteMapping(element);
         }
     }
 

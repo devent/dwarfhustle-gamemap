@@ -307,6 +307,7 @@ public class TerrainTestKeysActor {
     private Behavior<Message> onToggleUndiscovered(ToggleUndiscoveredMessage m) {
         log.debug("onToggleUndiscovered {}", m);
         gs.get().hideUndiscovered.set(!gs.get().hideUndiscovered.get());
+        System.out.println(gs.get().hideUndiscovered.get()); // TODO
         return Behaviors.same();
     }
 
