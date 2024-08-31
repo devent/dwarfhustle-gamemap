@@ -1,9 +1,8 @@
-#import "Common/ShaderLib/GLSLCompat.glsllib"
 #import "Common/ShaderLib/Instancing.glsllib"
 #import "Common/ShaderLib/Skinning.glsllib"
-#import "Common/ShaderLib/MorphAnim.glsllib"
 
 uniform vec4 m_BaseColor;
+
 uniform vec4 g_AmbientLightColor;
 varying vec2 texCoord;
 
@@ -37,19 +36,11 @@ void main(){
          vec3 modelSpaceTan  = inTangent.xyz;
     #endif
 
-    #ifdef NUM_MORPH_TARGETS
-         #if defined(NORMALMAP) && !defined(VERTEX_LIGHTING)
-            Morph_Compute(modelSpacePos, modelSpaceNorm, modelSpaceTan);
-         #else
-            Morph_Compute(modelSpacePos, modelSpaceNorm);
-         #endif
-    #endif
-
     #ifdef NUM_BONES
          #if defined(NORMALMAP) && !defined(VERTEX_LIGHTING)
-            Skinning_Compute(modelSpacePos, modelSpaceNorm, modelSpaceTan);
+         Skinning_Compute(modelSpacePos, modelSpaceNorm, modelSpaceTan);
          #else
-            Skinning_Compute(modelSpacePos, modelSpaceNorm);
+         Skinning_Compute(modelSpacePos, modelSpaceNorm);
          #endif
     #endif
 
@@ -67,8 +58,8 @@ void main(){
     #endif
 
     Color = m_BaseColor;
-
-    #ifdef VERTEX_COLOR
+    
+    #ifdef VERTEX_COLOR                    
         Color *= inColor;
     #endif
 }
