@@ -23,15 +23,18 @@ public class MaterialKey {
         this.hash = calcHash(tex.rid, emissive != null ? emissive.rid : null);
         this.tex = tex;
         this.emissive = emissive;
-        this.m = new Material(assets, "Common/MatDefs/Light/PBRLighting.j3md");
+        this.m = new Material(assets, "MatDefs/PBRLightingBlock.j3md");
         m.setTexture("BaseColorMap", tex.tex);
         m.setColor("BaseColor", tex.baseColor);
         m.setFloat("Metallic", tex.metallic);
         m.setFloat("Roughness", tex.roughness);
-        m.setBoolean("UseVertexColor", true);
+        m.setBoolean("UseVertexColor", false);
         m.getAdditionalRenderState().setBlendMode(tex.transparent ? BlendMode.Alpha : BlendMode.Off);
         if (emissive != null) {
-            m.setTexture("EmissiveMap", emissive.tex);
+            m.setFloat("SelectedPower", 3.0f);
+            m.setFloat("SelectedIntensity", 2.0f);
+            // m.setColor("Selected", ColorRGBA.Green);
+            m.setTexture("SelectedMap", emissive.tex);
         }
     }
 

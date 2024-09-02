@@ -92,7 +92,14 @@ rid["PEAT"] = 859
 rid["LOAMY-SAND"] = 858
 rid["LOAM"] = 857
 
-rid["SELECTED"] = 0xfffd
+rid["SELECTED-BLOCK-RAMP-TWO"] = 0xfff6
+rid["SELECTED-BLOCK-RAMP-TRI"] = 0xfff7
+rid["SELECTED-BLOCK-RAMP-SINGLE"] = 0xfff8
+rid["SELECTED-BLOCK-RAMP-PERP"] = 0xfff9
+rid["SELECTED-BLOCK-RAMP-EDGE-OUT"] = 0xfffa
+rid["SELECTED-BLOCK-RAMP-EDGE-IN"] = 0xfffb
+rid["SELECTED-BLOCK-RAMP-CORNER"] = 0xfffc
+rid["SELECTED-BLOCK-NORMAL"] = 0xfffd
 rid["UNDISCOVERED"] = 0xfffe
 rid["UNKNOWN"] = 0xffff
 
@@ -111,11 +118,11 @@ m.Clay.frames rid: rid["CLAY-LOAM"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh,
 m.Clay.frames rid: rid["CLAY"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m.Gas.image = "Textures/Tiles/gas-map.png"
-m.Gas.frames rid: rid["SULFUR-DIOXIDE"], x: 0*w, y: 3*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 0f
-m.Gas.frames rid: rid["CARBON-DIOXIDE"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 0f
-m.Gas.frames rid: rid["POLLUTED-OXYGEN"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 0f
-m.Gas.frames rid: rid["OXYGEN"], ww: ww, hh: hh, transparent: true
-m.Gas.frames rid: rid["VACUUM"], ww: ww, hh: hh, transparent: true
+m.Gas.frames rid: rid["SULFUR-DIOXIDE"] , x: 0*w, y: 3*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
+m.Gas.frames rid: rid["CARBON-DIOXIDE"] , x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
+m.Gas.frames rid: rid["POLLUTED-OXYGEN"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
+m.Gas.frames rid: rid["OXYGEN"]         , x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, transparent: true
+m.Gas.frames rid: rid["VACUUM"]         , x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, transparent: true
 
 m["Igneous-Extrusive"].image = "Textures/Tiles/igneousextrusive-map.png"
 m["Igneous-Extrusive"].frames rid: rid["RHYOLITE"], x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
@@ -177,8 +184,15 @@ m["Topsoil"].frames rid: rid["LOAMY-SAND"],      x: 0*w, y: 1*h, w: w, h: h, ww:
 m["Topsoil"].frames rid: rid["LOAM"],            x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m.Other.image = "Textures/Tiles/other-map.png"
-m.Other.frames rid: rid["UNDISCOVERED"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
-m.Other.frames rid: rid["UNKNOWN"],      x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
-m.Other.frames rid: rid["SELECTED"],     x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["UNDISCOVERED"],                 x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["UNKNOWN"],                      x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-TWO"],      x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-TRI"],      x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-SINGLE"],   x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-PERP"],     x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-EDGE-OUT"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-EDGE-IN"],  x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-CORNER"],   x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["SELECTED-BLOCK-NORMAL"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
 
 m

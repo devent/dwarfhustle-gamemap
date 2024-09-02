@@ -44,15 +44,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainTestKeysState extends BaseAppState implements ActionListener {
 
-    private static final String SHOW_SELECTED_BLOCK_MAPPING = "SHOW_SELECTED_BLOCK_MAPPING";
+    private static final String SHOW_SELECTED_BLOCK_MAPPING = "TerrainTestKeysState_SHOW_SELECTED_BLOCK_MAPPING";
 
-    private static final String SHOW_OBJECTS_BLOCK_MAPPING = "SHOW_OBJECTS_BLOCK_MAPPING";
+    private static final String SHOW_OBJECTS_BLOCK_MAPPING = "TerrainTestKeysState_SHOW_OBJECTS_BLOCK_MAPPING";
 
-    private static final String ADD_SHRUB_MAPPING = "ADD_SHRUB_MAPPING";
+    private static final String ADD_SHRUB_MAPPING = "TerrainTestKeysState_ADD_SHRUB_MAPPING";
 
-    private static final String ADD_SAMPLING_MAPPING = "ADD_SAMPLING_MAPPING";
+    private static final String ADD_SAMPLING_MAPPING = "TerrainTestKeysState_ADD_SAMPLING_MAPPING";
 
-    private static final String TOGGLE_UNDISCOVERED_MAPPING = "TOGGLE_UNDISCOVERED_MAPPING";
+    private static final String TOGGLE_UNDISCOVERED_MAPPING = "TerrainTestKeysState_TOGGLE_UNDISCOVERED_MAPPING";
 
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
             ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING };
@@ -128,13 +128,13 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addMapping(SHOW_OBJECTS_BLOCK_MAPPING, new KeyTrigger(KeyInput.KEY_O));
         inputManager.addMapping(ADD_SHRUB_MAPPING, new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping(ADD_SAMPLING_MAPPING, new KeyTrigger(KeyInput.KEY_T));
-        inputManager.addMapping(TOGGLE_UNDISCOVERED_MAPPING, new KeyTrigger(KeyInput.KEY_F10));
+        inputManager.addMapping(TOGGLE_UNDISCOVERED_MAPPING, new KeyTrigger(KeyInput.KEY_F9));
         inputManager.addListener(this, MAPPINGS);
         System.out.println("I   - " + SHOW_SELECTED_BLOCK_MAPPING);
         System.out.println("O   - " + SHOW_OBJECTS_BLOCK_MAPPING);
         System.out.println("S   - " + ADD_SHRUB_MAPPING);
         System.out.println("T   - " + ADD_SAMPLING_MAPPING);
-        System.out.println("F10 - " + TOGGLE_UNDISCOVERED_MAPPING);
+        System.out.println("F9  - " + TOGGLE_UNDISCOVERED_MAPPING);
         this.keyInit = true;
     }
 

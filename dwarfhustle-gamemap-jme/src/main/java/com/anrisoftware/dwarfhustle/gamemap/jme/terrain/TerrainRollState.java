@@ -139,6 +139,8 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
                 new KeyTrigger(KeyInput.KEY_RSHIFT));
         inputManager.addMapping(RESET_MAPPING, new KeyTrigger(KeyInput.KEY_F10));
         inputManager.addMapping(RIGHT_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_RIGHT));
+        System.out.println("Shift+BR - Tilt Map");
+        System.out.println("F10      - Reset Map Tilt");
     }
 
     private void deleteKeys() {

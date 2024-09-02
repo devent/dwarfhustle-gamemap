@@ -53,9 +53,10 @@ public class BlockModelUpdate {
     private Camera camera;
 
     public void collectChunks(MapChunk root, int z, int currentZ, int visible, int d,
-            Function<Integer, MapChunk> retriever, BiConsumer<MapChunk, MapBlock> consumer) {
+            Function<MapBlock, Boolean> isVisible, Function<Integer, MapChunk> retriever,
+            BiConsumer<MapChunk, MapBlock> consumer) {
         var firstchunk = findChunk(root, 0, 0, z, retriever);
-        putChunkSortBlocks(firstchunk, currentZ, visible, retriever, consumer);
+        putChunkSortBlocks(firstchunk, currentZ, visible, isVisible, retriever, consumer);
         int chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
@@ -66,28 +67,28 @@ public class BlockModelUpdate {
                 if (chunkid == 0) {
                     if (nextchunk.pos.ep.z < d && currentZ + visible - nextchunk.pos.ep.z > 0) {
                         nextchunk = findChunk(root, 0, 0, nextchunk.pos.ep.z, retriever);
-                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, d, retriever, consumer);
+                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, d, isVisible, retriever, consumer);
                     }
                     break;
                 }
                 firstchunk = retriever.apply(chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(nextchunk, currentZ, visible, retriever, consumer);
+                putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, retriever, consumer);
             } else {
                 nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(nextchunk, currentZ, visible, retriever, consumer);
+                putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, retriever, consumer);
             }
         }
     }
 
-    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visible, Function<Integer, MapChunk> retriever,
-            BiConsumer<MapChunk, MapBlock> consumer) {
+    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visible, Function<MapBlock, Boolean> isVisible,
+            Function<Integer, MapChunk> retriever, BiConsumer<MapChunk, MapBlock> consumer) {
         var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
         for (var mb : getBlocks(chunk)) {
-            if (mb.pos.z < currentZ + visible && isBlockVisible(mb, currentZ, chunk, retriever)) {
+            if (mb.pos.z < currentZ + visible && !(mb.pos.z < currentZ) && isVisible.apply(mb)) {
                 consumer.accept(chunk, mb);
             }
         }
@@ -115,19 +116,6 @@ public class BlockModelUpdate {
         return bb;
     }
 
-    private boolean isBlockVisible(MapBlock mb, int z, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        if (mb.pos.z < z) {
-            return false;
-        }
-        if (mb.isEmpty()) {
-            return false;
-        }
-        if (mb.pos.z > z) {
-            return mb.isVisible();
-        }
-        return true;
-    }
-
     public int updateModelBlocks(MutableMultimap<MaterialKey, MapBlock> mbs, GameMap gm,
             Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest,
             BiConsumer<MaterialKey, Geometry> consumer) {
@@ -149,14 +137,15 @@ public class BlockModelUpdate {
             final var cindex = BufferUtils.createShortBuffer(3 * sindex);
             final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
             final var ctex = BufferUtils.createFloatBuffer(2 * spos);
+            final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
             final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-            final TextureCacheObject tex = m.tex;
-            fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, tex, cursor, cpos, cindex, cnormal, ctex, ccolor);
+            fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, cpos, cindex, cnormal, ctex, ctex3, ccolor);
             final var mesh = new Mesh();
             mesh.setBuffer(Type.Position, 3, cpos);
             mesh.setBuffer(Type.Index, 1, cindex);
             mesh.setBuffer(Type.Normal, 3, cnormal);
             mesh.setBuffer(Type.TexCoord, 2, ctex);
+            mesh.setBuffer(Type.TexCoord3, 2, ctex3);
             mesh.setBuffer(Type.Color, 4, ccolor);
             mesh.setMode(Mode.Triangles);
             mesh.updateBound();
@@ -171,8 +160,8 @@ public class BlockModelUpdate {
     }
 
     private void fillBuffers(RichIterable<MapBlock> blocks, Function<MapBlock, Mesh> meshSupplier,
-            NormalsPredicate faceSkipTest, int w, int h, int d, TextureCacheObject tex, GameBlockPos cursor,
-            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ccolor) {
+            NormalsPredicate faceSkipTest, int w, int h, int d, MaterialKey m, GameBlockPos cursor, FloatBuffer cpos,
+            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ctex3, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -223,8 +212,11 @@ public class BlockModelUpdate {
                 cindex.put((short) (in2 + delta));
             }
             copyNormal(mb, mesh, cnormal);
-            copyTex(mb, mesh, tex, ctex);
+            copyTex(mb, mesh, m.tex, ctex, Type.TexCoord);
             copyPosColor(mb, mesh, cpos, ccolor, w, h, d, cursor);
+            if (m.emissive != null) {
+                copyTex(mb, mesh, m.emissive, ctex3, Type.TexCoord3);
+            }
         }
         cpos.flip();
         cindex.flip();
@@ -273,13 +265,13 @@ public class BlockModelUpdate {
         cnormal.put(normal);
     }
 
-    private void copyTex(MapBlock mb, Mesh mesh, TextureCacheObject tex, FloatBuffer ctex) {
-        var btex = mesh.getFloatBuffer(Type.TexCoord).rewind();
+    private void copyTex(MapBlock mb, Mesh mesh, TextureCacheObject t, FloatBuffer ctex, Type type) {
+        var btex = mesh.getFloatBuffer(type).rewind();
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
             float ty = btex.get();
-            float x = tex.x + tx * tex.w;
-            float y = tex.y + ty * tex.h;
+            float x = t.x + tx * t.w;
+            float y = t.y + ty * t.h;
             ctex.put(x);
             ctex.put(y);
         }
@@ -293,7 +285,6 @@ public class BlockModelUpdate {
             GameBlockPos cursor) {
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
-        float c = mb.pos.isEqual(cursor.x, cursor.y, cursor.z) ? 2f : 1f;
         float tx = -w + 2f * x + 1f;
         float ty = h - 2f * y - 1;
         float tz = (cursor.z - z) * 2f;
@@ -312,11 +303,6 @@ public class BlockModelUpdate {
                 ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
                 ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
                 ccolor.put(1f);
-            } else {
-                ccolor.put(c);
-                ccolor.put(c);
-                ccolor.put(c);
-                ccolor.put(c);
             }
         }
     }

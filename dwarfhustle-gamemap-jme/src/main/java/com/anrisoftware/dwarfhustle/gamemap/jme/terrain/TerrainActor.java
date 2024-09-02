@@ -18,7 +18,6 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.id2Kid;
 import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
@@ -26,7 +25,9 @@ import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.Knowledg
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.net.URL;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -38,14 +39,18 @@ import java.util.function.Function;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.primitive.IntLongMaps;
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
+import org.eclipse.collections.api.factory.primitive.LongLongMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
+import org.eclipse.collections.api.map.primitive.LongLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableLongLongMap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
 
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadMaterialTextures;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
@@ -81,6 +86,8 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
+import groovy.lang.Binding;
+import groovy.util.GroovyScriptEngine;
 import jakarta.inject.Inject;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -116,6 +123,15 @@ public class TerrainActor {
     static final int UNDISCOVERED_MATERIAL = "UNDISCOVERED_MATERIAL".hashCode();
 
     static final int UNKNOWN_MATERIAL = "UNKNOWN_MATERIAL".hashCode();
+
+    static final long SELECTED_BLOCK_RAMP_TWO = 0xfff6;
+    static final long SELECTED_BLOCK_RAMP_TRI = 0xfff7;
+    static final long SELECTED_BLOCK_RAMP_SINGLE = 0xfff8;
+    static final long SELECTED_BLOCK_RAMP_PERP = 0xfff9;
+    static final long SELECTED_BLOCK_RAMP_EDGE_OUT = 0xfffa;
+    static final long SELECTED_BLOCK_RAMP_EDGE_IN = 0xfffb;
+    static final long SELECTED_BLOCK_RAMP_CORNER = 0xfffc;
+    static final long SELECTED_BLOCK_NORMAL = 0xfffd;
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
@@ -294,6 +310,10 @@ public class TerrainActor {
 
     private boolean hideUndiscovered;
 
+    private LongLongMap selectedMaterials;
+
+    private long terrainUpdateDuration;
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -308,6 +328,7 @@ public class TerrainActor {
         this.materialKeys = IntObjectMaps.mutable.empty();
         this.undiscoveredMaterialId = kid2Id(knowledges.get(UNDISCOVERED_MATERIAL));
         this.hideUndiscovered = gs.get().hideUndiscovered.get();
+        this.terrainUpdateDuration = gs.get().terrainUpdateDuration.get().toMillis();
         gs.get().hideUndiscovered.addListener(new ChangeListener<>() {
 
             @Override
@@ -315,11 +336,28 @@ public class TerrainActor {
                 hideUndiscovered = newValue;
             }
         });
+        loadSelectedMaterials();
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
                 .onMessage(Message.class, this::stashOtherCommand)//
                 .build();
+    }
+
+    @SneakyThrows
+    private void loadSelectedMaterials() {
+        MutableLongLongMap selectedMaterials = LongLongMaps.mutable.empty();
+        var engine = new GroovyScriptEngine(
+                new URL[] { AssetsLoadMaterialTextures.class.getResource("/BlockSelectedMaterials.groovy") });
+        var binding = new Binding();
+        @SuppressWarnings("unchecked")
+        var map = (Map<Integer, Integer>) engine.run("BlockSelectedMaterials.groovy", binding);
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            Long key = kid2Id(entry.getKey());
+            Long val = kid2Id(entry.getValue());
+            selectedMaterials.put(key, val);
+        }
+        this.selectedMaterials = selectedMaterials;
     }
 
     private Behavior<Message> stashOtherCommand(Message m) {
@@ -394,26 +432,46 @@ public class TerrainActor {
         magmaNodes.clear();
         materialBlocks.clear();
         materialCeilings.clear();
+        this.gm = m.gm;
         this.CursorZ = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        blockModelUpdate.collectChunks(root, CursorZ, CursorZ, depthLayers, m.gm.depth, retriever, this::putMapBlock);
+        blockModelUpdate.collectChunks(root, CursorZ, CursorZ, depthLayers, m.gm.depth, this::isBlockVisible, retriever,
+                this::putMapBlock);
         int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
                 (mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
                     return FastMath.approximateEquals(n0z, -1.0f);
                 }, this::putBlockNodes);
         blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
                 this::putCeilingNodes);
-        renderMeshs(m.gm);
+        renderMeshs();
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
     }
 
+    private boolean isBlockVisible(MapBlock mb) {
+        if (mb.isEmpty()) {
+            if (gm.isCursor(mb.pos.x, mb.pos.y, mb.pos.z)) {
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
         long mid = mb.getMaterialId();
+        Long emission = null;
+        boolean cursor = gm.isCursor(mb.pos.x, mb.pos.y, mb.pos.z);
+        if (cursor) {
+            emission = selectedMaterials.get(mb.getObjectId());
+        }
         if (hideUndiscovered && !mb.isDiscovered()) {
             mid = undiscoveredMaterialId;
+            if (cursor) {
+                mid = emission;
+            }
         }
-        var key = lazyCreateKey(mid);
+        var key = lazyCreateKey(mid, emission);
         this.materialBlocks.put(key, mb);
         if (mb.pos.z <= CursorZ && !mb.isHaveNaturalLight()) {
             var neighborUp = getNeighborUp(mb, chunk, retriever);
@@ -423,16 +481,20 @@ public class TerrainActor {
             } else {
                 ceilingmid = neighborUp.getMaterialId();
             }
-            this.materialCeilings.put(lazyCreateKey(ceilingmid), mb);
+            // this.materialCeilings.put(lazyCreateKey(ceilingmid, emission), mb);
         }
     }
 
-    private MaterialKey lazyCreateKey(long mid) {
-        int hash = MaterialKey.calcHash(id2Kid(mid), null);
+    private MaterialKey lazyCreateKey(long mid, Long emission) {
+        int hash = MaterialKey.calcHash(mid, emission);
         MaterialKey key = materialKeys.get(hash);
         if (key == null) {
-            var tex = getTexture(mid);
-            key = new MaterialKey(assets, tex);
+            TextureCacheObject tex = getTexture(mid);
+            TextureCacheObject emissionTex = null;
+            if (emission != null) {
+                emissionTex = getTexture(emission);
+            }
+            key = new MaterialKey(assets, tex, emissionTex);
             materialKeys.put(hash, key);
         }
         return key;
@@ -469,15 +531,14 @@ public class TerrainActor {
     }
 
     @SneakyThrows
-    private void renderMeshs(GameMap gm) {
-        this.gm = gm;
+    private void renderMeshs() {
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
         copyCeilingNodes = Lists.immutable.ofAll(ceilingNodes);
         copyWaterNodes = Lists.immutable.ofAll(waterNodes);
         copyMagmaNodes = Lists.immutable.ofAll(magmaNodes);
         var task = app.enqueue(this::renderMeshsOnRenderingThread);
         try {
-            task.get(gs.get().terrainUpdateDuration.get().toMillis(), TimeUnit.MILLISECONDS);
+            task.get(terrainUpdateDuration, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             // log.warn("renderMeshs timeout");
             return;

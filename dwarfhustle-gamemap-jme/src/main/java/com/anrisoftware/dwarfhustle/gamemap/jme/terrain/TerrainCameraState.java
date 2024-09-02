@@ -195,8 +195,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private void deleteKeys() {
         inputManager.removeListener(this);
         inputManager.removeRawInputListener(this);
-        for (var i = 0; i < MAPPINGS.length; i++) {
-            inputManager.deleteMapping(MAPPINGS[i]);
+        for (String element : MAPPINGS) {
+            inputManager.deleteMapping(element);
         }
         this.keyInit = false;
     }

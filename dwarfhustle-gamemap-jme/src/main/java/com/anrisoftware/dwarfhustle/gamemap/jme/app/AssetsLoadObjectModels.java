@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
+import static com.jme3.math.FastMath.approximateEquals;
+
 import java.net.URL;
 
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
@@ -76,13 +78,25 @@ public class AssetsLoadObjectModels {
     }
 
     private Geometry rotateMesh(ModelMapData data, Spatial model) {
-        var mesh = ((Geometry) ((Node) model).getChild(0)).getMesh().deepClone();
+        var oldgeo = (Geometry) ((Node) model).getChild(0);
+        var mesh = oldgeo.getMesh().deepClone();
+        var tex = mesh.getBuffer(Type.TexCoord);
+        if (tex == null) {
+            log.warn("{} does not have textures coordinates", data.model);
+        } else {
+            mesh.setBuffer(tex.clone(Type.TexCoord3));
+        }
         rotateMechGeo(mesh, data.rotation);
         var geo = new Geometry(data.model, mesh);
+        geo.setMaterial(oldgeo.getMaterial());
         return geo;
     }
 
     public static Mesh rotateMechGeo(Mesh mesh, float[] rotation) {
+        if (approximateEquals(rotation[0], 0) && approximateEquals(rotation[1], 0)
+                && approximateEquals(rotation[2], 0)) {
+            return mesh;
+        }
         mesh.getFloatBuffer(Type.Position);
         var q = new Quaternion(rotation);
         var normal = mesh.getFloatBuffer(Type.Normal).rewind();
