@@ -121,8 +121,8 @@ m.Gas.image = "Textures/Tiles/gas-map.png"
 m.Gas.frames rid: rid["SULFUR-DIOXIDE"] , x: 0*w, y: 3*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
 m.Gas.frames rid: rid["CARBON-DIOXIDE"] , x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
 m.Gas.frames rid: rid["POLLUTED-OXYGEN"], x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
-m.Gas.frames rid: rid["OXYGEN"]         , x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, transparent: true
-m.Gas.frames rid: rid["VACUUM"]         , x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, transparent: true
+m.Gas.frames rid: rid["OXYGEN"]         , x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: trans, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
+m.Gas.frames rid: rid["VACUUM"]         , x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: trans, transparent: true, glossiness: 0f, metallic: 0f, roughness: 0f
 
 m["Igneous-Extrusive"].image = "Textures/Tiles/igneousextrusive-map.png"
 m["Igneous-Extrusive"].frames rid: rid["RHYOLITE"], x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f

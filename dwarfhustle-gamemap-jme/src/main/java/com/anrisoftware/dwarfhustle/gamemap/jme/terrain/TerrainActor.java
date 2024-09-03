@@ -74,6 +74,7 @@ import com.jme3.asset.AssetManager;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
+import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
@@ -304,7 +305,7 @@ public class TerrainActor {
 
     private BlockModelUpdate blockModelUpdate;
 
-    private int CursorZ;
+    private int cursorZ;
 
     private long undiscoveredMaterialId;
 
@@ -433,9 +434,9 @@ public class TerrainActor {
         materialBlocks.clear();
         materialCeilings.clear();
         this.gm = m.gm;
-        this.CursorZ = m.gm.getCursorZ();
+        this.cursorZ = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        blockModelUpdate.collectChunks(root, CursorZ, CursorZ, depthLayers, m.gm.depth, this::isBlockVisible, retriever,
+        blockModelUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, retriever,
                 this::putMapBlock);
         int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
                 (mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
@@ -465,15 +466,16 @@ public class TerrainActor {
         if (cursor) {
             emission = selectedMaterials.get(mb.getObjectId());
         }
+        boolean transparent = false;
+        if (mb.isEmpty()) {
+            transparent = true;
+        }
         if (hideUndiscovered && !mb.isDiscovered()) {
             mid = undiscoveredMaterialId;
-            if (cursor) {
-                mid = emission;
-            }
         }
-        var key = lazyCreateKey(mid, emission);
+        var key = lazyCreateKey(mid, emission, transparent);
         this.materialBlocks.put(key, mb);
-        if (mb.pos.z <= CursorZ && !mb.isHaveNaturalLight()) {
+        if (mb.pos.z <= cursorZ && !mb.isHaveNaturalLight()) {
             var neighborUp = getNeighborUp(mb, chunk, retriever);
             long ceilingmid = 0;
             if (hideUndiscovered && !mb.isDiscovered()) {
@@ -481,12 +483,12 @@ public class TerrainActor {
             } else {
                 ceilingmid = neighborUp.getMaterialId();
             }
-            // this.materialCeilings.put(lazyCreateKey(ceilingmid, emission), mb);
+            this.materialCeilings.put(lazyCreateKey(ceilingmid, emission, false), mb);
         }
     }
 
-    private MaterialKey lazyCreateKey(long mid, Long emission) {
-        int hash = MaterialKey.calcHash(mid, emission);
+    private MaterialKey lazyCreateKey(long mid, Long emission, boolean transparent) {
+        int hash = MaterialKey.calcHash(mid, emission, transparent);
         MaterialKey key = materialKeys.get(hash);
         if (key == null) {
             TextureCacheObject tex = getTexture(mid);
@@ -494,7 +496,7 @@ public class TerrainActor {
             if (emission != null) {
                 emissionTex = getTexture(emission);
             }
-            key = new MaterialKey(assets, tex, emissionTex);
+            key = new MaterialKey(assets, tex, emissionTex, transparent);
             materialKeys.put(hash, key);
         }
         return key;
@@ -514,11 +516,16 @@ public class TerrainActor {
         return ((Geometry) (model.model)).getMesh();
     }
 
-    private void putBlockNodes(MaterialKey material, Geometry geo) {
-        geo.setShadowMode(ShadowMode.Receive);
-        if (material.isMaterial(knowledges.get(BLOCK_MATERIAL_WATER))) {
+    private void putBlockNodes(MaterialKey m, Geometry geo) {
+        if (m.transparent) {
+            geo.setShadowMode(ShadowMode.Off);
+            geo.setQueueBucket(Bucket.Translucent);
+        } else {
+            geo.setShadowMode(ShadowMode.Receive);
+        }
+        if (m.isMaterial(knowledges.get(BLOCK_MATERIAL_WATER))) {
             waterNodes.add(geo);
-        } else if (material.isMaterial(knowledges.get(BLOCK_MATERIAL_MAGMA))) {
+        } else if (m.isMaterial(knowledges.get(BLOCK_MATERIAL_MAGMA))) {
             magmaNodes.add(geo);
         } else {
             blockNodes.add(geo);
