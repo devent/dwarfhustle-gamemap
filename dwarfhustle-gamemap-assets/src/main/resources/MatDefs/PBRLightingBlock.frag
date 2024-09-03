@@ -350,6 +350,6 @@ void main(){
         gl_FragColor += selected * pow(selected.a, m_SelectedPower) * m_SelectedIntensity;
     #endif
     
-    gl_FragColor.a = alpha;
+    //gl_FragColor.a = alpha;
    
 }
