@@ -54,8 +54,17 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String TOGGLE_UNDISCOVERED_MAPPING = "TerrainTestKeysState_TOGGLE_UNDISCOVERED_MAPPING";
 
+    private static final String CURSOR_NORTH_MAPPING = "TerrainTestKeysState_CURSOR_NORTH_MAPPING";
+
+    private static final String CURSOR_SOUTH_MAPPING = "TerrainTestKeysState_CURSOR_SOUTH_MAPPING";
+
+    private static final String CURSOR_EAST_MAPPING = "TerrainTestKeysState_CURSOR_EAST_MAPPING";
+
+    private static final String CURSOR_WEST_MAPPING = "TerrainTestKeysState_CURSOR_WEST_MAPPING";
+
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
-            ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING };
+            ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING, CURSOR_NORTH_MAPPING,
+            CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -129,12 +138,20 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addMapping(ADD_SHRUB_MAPPING, new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping(ADD_SAMPLING_MAPPING, new KeyTrigger(KeyInput.KEY_T));
         inputManager.addMapping(TOGGLE_UNDISCOVERED_MAPPING, new KeyTrigger(KeyInput.KEY_F9));
+        inputManager.addMapping(CURSOR_NORTH_MAPPING, new KeyTrigger(KeyInput.KEY_UP));
+        inputManager.addMapping(CURSOR_SOUTH_MAPPING, new KeyTrigger(KeyInput.KEY_DOWN));
+        inputManager.addMapping(CURSOR_EAST_MAPPING, new KeyTrigger(KeyInput.KEY_RIGHT));
+        inputManager.addMapping(CURSOR_WEST_MAPPING, new KeyTrigger(KeyInput.KEY_LEFT));
         inputManager.addListener(this, MAPPINGS);
-        System.out.println("I   - " + SHOW_SELECTED_BLOCK_MAPPING);
-        System.out.println("O   - " + SHOW_OBJECTS_BLOCK_MAPPING);
-        System.out.println("S   - " + ADD_SHRUB_MAPPING);
-        System.out.println("T   - " + ADD_SAMPLING_MAPPING);
-        System.out.println("F9  - " + TOGGLE_UNDISCOVERED_MAPPING);
+        System.out.println("I     - " + SHOW_SELECTED_BLOCK_MAPPING);
+        System.out.println("O     - " + SHOW_OBJECTS_BLOCK_MAPPING);
+        System.out.println("S     - " + ADD_SHRUB_MAPPING);
+        System.out.println("T     - " + ADD_SAMPLING_MAPPING);
+        System.out.println("F9    - " + TOGGLE_UNDISCOVERED_MAPPING);
+        System.out.println("UP    - " + CURSOR_NORTH_MAPPING);
+        System.out.println("DOWN  - " + CURSOR_SOUTH_MAPPING);
+        System.out.println("RIGHT - " + CURSOR_EAST_MAPPING);
+        System.out.println("LEFT  - " + CURSOR_WEST_MAPPING);
         this.keyInit = true;
     }
 
@@ -168,6 +185,30 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             }
             case TOGGLE_UNDISCOVERED_MAPPING: {
                 this.nextAction = this::toggleUndiscovered;
+                break;
+            }
+            case CURSOR_NORTH_MAPPING: {
+                if (gm.cursor.canAddY(-1, gm.height)) {
+                    gm.setCursor(gm.cursor.addY(-1));
+                }
+                break;
+            }
+            case CURSOR_SOUTH_MAPPING: {
+                if (gm.cursor.canAddY(1, gm.height)) {
+                    gm.setCursor(gm.cursor.addY(1));
+                }
+                break;
+            }
+            case CURSOR_EAST_MAPPING: {
+                if (gm.cursor.canAddX(1, gm.width)) {
+                    gm.setCursor(gm.cursor.addX(1));
+                }
+                break;
+            }
+            case CURSOR_WEST_MAPPING: {
+                if (gm.cursor.canAddX(-1, gm.width)) {
+                    gm.setCursor(gm.cursor.addX(-1));
+                }
                 break;
             }
             default:
