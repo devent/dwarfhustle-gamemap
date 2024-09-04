@@ -71,6 +71,7 @@ m[rid["BLOCK-RAMP-CORNER-SW"]] = 0xfffc
 m[rid["BLOCK-RAMP-CORNER-SE"]] = 0xfffc
 m[rid["BLOCK-RAMP-CORNER-NW"]] = 0xfffc
 m[rid["BLOCK-RAMP-CORNER-NE"]] = 0xfffc
+m[rid["BLOCK-WATER"]] = 0xfffd
 m[rid["BLOCK-NORMAL"]] = 0xfffd
 
 m
