@@ -40,6 +40,7 @@ import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.primitive.IntLongMaps;
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.factory.primitive.LongLongMaps;
+import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
@@ -47,6 +48,8 @@ import org.eclipse.collections.api.map.primitive.LongLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongLongMap;
+import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
+import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
 
@@ -106,6 +109,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TerrainActor {
+
+    private static final Duration KNOWLEDGE_GET_TIMEOUT = ofSeconds(60);
 
     private static final String UPDATE_TERRAIN_MESSAGE_TIMER_KEY = "UpdateModelMessage-Timer";
 
@@ -187,11 +192,11 @@ public class TerrainActor {
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap knowledges = IntLongMaps.mutable.ofInitialCapacity(100);
             knowledges.put(BLOCK_MATERIAL_WATER,
-                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.TYPE, "water"));
+                    askBlockMaterialId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), Liquid.TYPE, "water"));
             knowledges.put(BLOCK_MATERIAL_MAGMA,
-                    askBlockMaterialId(ko, ofSeconds(15), system.scheduler(), Liquid.TYPE, "magma"));
+                    askBlockMaterialId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), Liquid.TYPE, "magma"));
             knowledges.put(OBJECT_BLOCK_CEILING,
-                    askObjectTypeId(ko, ofSeconds(15), system.scheduler(), BlockObject.TYPE, "block-ceiling"));
+                    askObjectTypeId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), BlockObject.TYPE, "block-ceiling"));
             knowledges.put(UNDISCOVERED_MATERIAL, 0xfffe);
             knowledges.put(UNKNOWN_MATERIAL, 0xffff);
             return injector.getInstance(TerrainActorFactory.class)
@@ -297,9 +302,9 @@ public class TerrainActor {
 
     private MutableIntObjectMap<MaterialKey> materialKeys;
 
-    private MutableMultimap<MaterialKey, MapBlock> materialBlocks;
+    private MutableLongObjectMap<Multimap<MaterialKey, MapBlock>> materialBlocks;
 
-    private MutableMultimap<MaterialKey, MapBlock> materialCeilings;
+    private MutableLongObjectMap<Multimap<MaterialKey, MapBlock>> materialCeilings;
 
     private Function<Integer, MapChunk> retriever;
 
@@ -392,8 +397,8 @@ public class TerrainActor {
         this.waterNodes = Lists.mutable.empty();
         this.magmaNodes = Lists.mutable.empty();
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
-        this.materialBlocks = Multimaps.mutable.list.empty();
-        this.materialCeilings = Multimaps.mutable.list.empty();
+        this.materialBlocks = LongObjectMaps.mutable.empty();
+        this.materialCeilings = LongObjectMaps.mutable.empty();
         this.retriever = m.store::getChunk;
         this.blockModelUpdate = blockModelUpdateFactory.create(materials);
         app.enqueue(() -> {
@@ -431,8 +436,14 @@ public class TerrainActor {
         ceilingNodes.clear();
         waterNodes.clear();
         magmaNodes.clear();
-        materialBlocks.clear();
-        materialCeilings.clear();
+        for (var pair : this.materialBlocks.keyValuesView()) {
+            MutableMultimap<MaterialKey, MapBlock> map = (MutableMultimap<MaterialKey, MapBlock>) pair.getTwo();
+            map.clear();
+        }
+        for (var pair : this.materialCeilings.keyValuesView()) {
+            MutableMultimap<MaterialKey, MapBlock> map = (MutableMultimap<MaterialKey, MapBlock>) pair.getTwo();
+            map.clear();
+        }
         this.gm = m.gm;
         this.cursorZ = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
@@ -441,9 +452,9 @@ public class TerrainActor {
         int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
                 (mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
                     return FastMath.approximateEquals(n0z, -1.0f);
-                }, this::putBlockNodes);
+                }, m.store::getChunk, this::putBlockNodes);
         blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
-                this::putCeilingNodes);
+                m.store::getChunk, this::putCeilingNodes);
         renderMeshs();
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
@@ -460,6 +471,19 @@ public class TerrainActor {
     }
 
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
+        final long cid = chunk.getId();
+        MutableMultimap<MaterialKey, MapBlock> blocks = (MutableMultimap<MaterialKey, MapBlock>) materialBlocks
+                .get(cid);
+        if (blocks == null) {
+            blocks = Multimaps.mutable.list.empty();
+            materialBlocks.put(cid, blocks);
+        }
+        MutableMultimap<MaterialKey, MapBlock> ceilings = (MutableMultimap<MaterialKey, MapBlock>) materialCeilings
+                .get(cid);
+        if (ceilings == null) {
+            ceilings = Multimaps.mutable.list.empty();
+            materialCeilings.put(cid, ceilings);
+        }
         long mid = mb.getMaterialId();
         Long emission = null;
         boolean cursor = gm.isCursor(mb.pos.x, mb.pos.y, mb.pos.z);
@@ -474,7 +498,7 @@ public class TerrainActor {
             mid = undiscoveredMaterialId;
         }
         var key = lazyCreateKey(mid, emission, transparent);
-        this.materialBlocks.put(key, mb);
+        blocks.put(key, mb);
         if (mb.pos.z <= cursorZ && !mb.isHaveNaturalLight()) {
             var neighborUp = getNeighborUp(mb, chunk, retriever);
             long ceilingmid = 0;
@@ -483,7 +507,7 @@ public class TerrainActor {
             } else {
                 ceilingmid = neighborUp.getMaterialId();
             }
-            this.materialCeilings.put(lazyCreateKey(ceilingmid, emission, false), mb);
+            ceilings.put(lazyCreateKey(ceilingmid, emission, false), mb);
         }
     }
 

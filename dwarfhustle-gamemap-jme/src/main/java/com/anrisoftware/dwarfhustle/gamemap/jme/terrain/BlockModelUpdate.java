@@ -12,8 +12,10 @@ import java.nio.ShortBuffer;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import org.apache.commons.math3.util.FastMath;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.multimap.MutableMultimap;
+import org.eclipse.collections.api.map.primitive.LongObjectMap;
+import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.tuple.Pair;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
@@ -116,52 +118,56 @@ public class BlockModelUpdate {
         return bb;
     }
 
-    public int updateModelBlocks(MutableMultimap<MaterialKey, MapBlock> mbs, GameMap gm,
-            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest,
+    public int updateModelBlocks(LongObjectMap<Multimap<MaterialKey, MapBlock>> mbs, GameMap gm,
+            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest, Function<Integer, MapChunk> retriever,
             BiConsumer<MaterialKey, Geometry> consumer) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
         var cursor = gm.cursor;
         int bnum = 0;
-        int spos = 0;
-        int sindex = 0;
-        for (Pair<MaterialKey, RichIterable<MapBlock>> pblocks : mbs.keyMultiValuePairsView()) {
-            final RichIterable<MapBlock> bs = pblocks.getTwo();
-            for (MapBlock mb : bs) {
-                var mesh = meshSupplier.apply(mb);
-                spos += mesh.getBuffer(Type.Position).getNumElements();
-                sindex += mesh.getBuffer(Type.Index).getNumElements();
-                bnum++;
+        for (var cidMatBlocks : mbs.keyValuesView()) {
+            Long cid = cidMatBlocks.getOne();
+            var chunk = retriever.apply(cid.intValue());
+            var matBlocks = cidMatBlocks.getTwo();
+            for (Pair<MaterialKey, RichIterable<MapBlock>> pblocks : matBlocks.keyMultiValuePairsView()) {
+                final RichIterable<MapBlock> bs = pblocks.getTwo();
+                int spos = 0;
+                int sindex = 0;
+                for (MapBlock mb : bs) {
+                    var mesh = meshSupplier.apply(mb);
+                    spos += mesh.getBuffer(Type.Position).getNumElements();
+                    sindex += mesh.getBuffer(Type.Index).getNumElements();
+                    bnum++;
+                }
+                final var m = pblocks.getOne();
+                final var cpos = BufferUtils.createFloatBuffer(3 * spos);
+                final var cindex = BufferUtils.createShortBuffer(3 * sindex);
+                final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
+                final var ctex = BufferUtils.createFloatBuffer(2 * spos);
+                final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
+                final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
+                fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, retriever, cpos, cindex, cnormal,
+                        ctex, ctex3, ccolor);
+                final var mesh = new Mesh();
+                mesh.setBuffer(Type.Position, 3, cpos);
+                mesh.setBuffer(Type.Index, 1, cindex);
+                mesh.setBuffer(Type.Normal, 3, cnormal);
+                mesh.setBuffer(Type.TexCoord, 2, ctex);
+                mesh.setBuffer(Type.TexCoord3, 2, ctex3);
+                mesh.setBuffer(Type.Color, 4, ccolor);
+                mesh.setMode(Mode.Triangles);
+                mesh.updateBound();
+                final var geo = new Geometry("block-mesh", mesh);
+                geo.setMaterial(m.m);
+                consumer.accept(m, geo);
             }
-            final var m = pblocks.getOne();
-            final var cpos = BufferUtils.createFloatBuffer(3 * spos);
-            final var cindex = BufferUtils.createShortBuffer(3 * sindex);
-            final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
-            final var ctex = BufferUtils.createFloatBuffer(2 * spos);
-            final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
-            final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-            fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, cpos, cindex, cnormal, ctex, ctex3, ccolor);
-            final var mesh = new Mesh();
-            mesh.setBuffer(Type.Position, 3, cpos);
-            mesh.setBuffer(Type.Index, 1, cindex);
-            mesh.setBuffer(Type.Normal, 3, cnormal);
-            mesh.setBuffer(Type.TexCoord, 2, ctex);
-            mesh.setBuffer(Type.TexCoord3, 2, ctex3);
-            mesh.setBuffer(Type.Color, 4, ccolor);
-            mesh.setMode(Mode.Triangles);
-            mesh.updateBound();
-            final var geo = new Geometry("block-mesh", mesh);
-            geo.setMaterial(m.m);
-            // geo.setMaterial(new Material(assets, "Common/MatDefs/Misc/Unshaded.j3md"));
-            // geo.getMaterial().getAdditionalRenderState().setWireframe(false);
-            // geo.getMaterial().getAdditionalRenderState().setFaceCullMode(FaceCullMode.Back);
-            consumer.accept(m, geo);
         }
         return bnum;
     }
 
     private void fillBuffers(RichIterable<MapBlock> blocks, Function<MapBlock, Mesh> meshSupplier,
-            NormalsPredicate faceSkipTest, int w, int h, int d, MaterialKey m, GameBlockPos cursor, FloatBuffer cpos,
-            ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ctex3, FloatBuffer ccolor) {
+            NormalsPredicate faceSkipTest, int w, int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk,
+            Function<Integer, MapChunk> retriever, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal,
+            FloatBuffer ctex, FloatBuffer ctex3, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -189,24 +195,24 @@ public class BlockModelUpdate {
                 n2x = bnormal.get(i2);
                 n2y = bnormal.get(i2 + 1);
                 n2z = bnormal.get(i2 + 2);
-                n0x = (n0x + n1x + n2x) / 3f;
-                n0y = (n0y + n1y + n2y) / 3f;
-                n0z = (n0z + n1z + n2z) / 3f;
+                n0x = FastMath.round((n0x + n1x + n2x) / 3f);
+                n0y = FastMath.round((n0y + n1y + n2y) / 3f);
+                n0z = FastMath.round((n0z + n1z + n2z) / 3f);
                 if (faceSkipTest.test(mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z)) {
                     continue;
                 }
-//                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
-//                    continue;
-//                }
-//                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, retriever)) {
-//                    continue;
-//                }
-//                if (n0y < 0.0f && isSkipCheckNeighborNorth(mb, chunk, retriever)) {
-//                    continue;
-//                }
-//                if (n0y > 0.0f && isSkipCheckNeighborSouth(mb, chunk, retriever)) {
-//                    continue;
-//                }
+                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
+                    continue;
+                }
+                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, retriever)) {
+                    continue;
+                }
+                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, retriever)) {
+                    continue;
+                }
+                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, retriever)) {
+                    continue;
+                }
                 cindex.put((short) (in0 + delta));
                 cindex.put((short) (in1 + delta));
                 cindex.put((short) (in2 + delta));
