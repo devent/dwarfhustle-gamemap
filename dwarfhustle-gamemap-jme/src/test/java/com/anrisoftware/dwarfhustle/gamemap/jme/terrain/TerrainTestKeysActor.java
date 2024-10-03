@@ -37,11 +37,12 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -97,58 +98,50 @@ public class TerrainTestKeysActor {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface TerrainTestKeysActorFactory {
-        TerrainTestKeysActor create(ActorContext<Message> context, StashBuffer<Message> stash, MapChunksStore mapStore,
-                @Assisted("cacheActor") ActorRef<Message> cacheActor,
-                @Assisted("knowledgeActor") ActorRef<Message> knowledgeActor);
+        TerrainTestKeysActor create(ActorContext<Message> context, StashBuffer<Message> stash,
+                @Assisted("knowledgeActor") ActorRef<Message> knowledgeActor,
+                @Assisted("objects-getter") ObjectsGetter og, @Assisted("objects-setter") ObjectsSetter os,
+                @Assisted("chunks-getter") ObjectsGetter chunks, MapObjectsStorage mos);
     }
 
     /**
      * Creates the {@link TerrainTestKeysActor}.
-     * 
-     * @param mapStore
-     * @param cacheActor
-     * @param knowledgeActor
      */
-    public static Behavior<Message> create(Injector injector, CompletableFuture<MapChunksStore> mapStore,
-            CompletionStage<ActorRef<Message>> cacheActor, CompletionStage<ActorRef<Message>> knowledgeActor) {
+    private static Behavior<Message> create(Injector injector, CompletionStage<ActorRef<Message>> knowledgeActor,
+            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> chunks,
+            MapObjectsStorage mos) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            var mapStore0 = mapStore.toCompletableFuture().get();
-            var cacheActor0 = cacheActor.toCompletableFuture().get();
             var knowledgeActor0 = knowledgeActor.toCompletableFuture().get();
-            context.pipeToSelf(createState(injector, context, mapStore0, cacheActor0, knowledgeActor0),
-                    (result, cause) -> {
-                        if (cause == null) {
-                            return result;
-                        } else {
-                            return new SetupErrorMessage(cause);
-                        }
-                    });
+            var og0 = og.toCompletableFuture().get();
+            var os0 = os.toCompletableFuture().get();
+            var chunks0 = chunks.toCompletableFuture().get();
+            context.pipeToSelf(createState(injector), (result, cause) -> {
+                if (cause == null) {
+                    return result;
+                } else {
+                    return new SetupErrorMessage(cause);
+                }
+            });
             return injector.getInstance(TerrainTestKeysActorFactory.class)
-                    .create(context, stash, mapStore0, cacheActor0, knowledgeActor0).start(injector);
+                    .create(context, stash, knowledgeActor0, og0, os0, chunks0, mos).start(injector);
         }));
     }
 
     /**
      * Creates the {@link TerrainTestKeysActor}.
-     * 
-     * @param knowledgeActor
-     * @param cacheActor
-     * @param mapStore
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletableFuture<MapChunksStore> mapStore, CompletionStage<ActorRef<Message>> cacheActor,
-            CompletionStage<ActorRef<Message>> knowledgeActor) {
+            CompletionStage<ActorRef<Message>> knowledgeActor, CompletionStage<ObjectsGetter> og,
+            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> chunks, MapObjectsStorage mos) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, mapStore, cacheActor, knowledgeActor));
+        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, knowledgeActor, og, os, chunks, mos));
     }
 
-    private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context,
-            MapChunksStore mapStore, ActorRef<Message> cacheActor, ActorRef<Message> knowledgeActor) {
-        return CompletableFuture.supplyAsync(() -> attachState(injector, mapStore, cacheActor, knowledgeActor));
+    private static CompletionStage<Message> createState(Injector injector) {
+        return CompletableFuture.supplyAsync(() -> attachState(injector));
     }
 
-    private static Message attachState(Injector injector, MapChunksStore mapStore, ActorRef<Message> cacheActor,
-            ActorRef<Message> knowledgeActor) {
+    private static Message attachState(Injector injector) {
         var app = injector.getInstance(Application.class);
         try {
             var f = app.enqueue(() -> {
@@ -171,22 +164,27 @@ public class TerrainTestKeysActor {
     private StashBuffer<Message> buffer;
 
     @Inject
-    @Assisted("cacheActor")
-    private ActorRef<Message> cacheActor;
+    @Assisted("chunks-getter")
+    private ObjectsGetter chunks;
+
+    @Inject
+    @Assisted("objects-getter")
+    private ObjectsGetter og;
+
+    @Inject
+    @Assisted("objects-setter")
+    private ObjectsSetter os;
 
     @Inject
     @Assisted("knowledgeActor")
     private ActorRef<Message> knowledgeActor;
 
     @Inject
-    @Assisted
-    private MapChunksStore mapStore;
-
-    @Inject
     @IdsObjects
     private IDGenerator ids;
 
     @Inject
+    @Assisted
     private MapObjectsStorage moStorage;
 
     @Inject
@@ -194,10 +192,10 @@ public class TerrainTestKeysActor {
 
     private InitialStateMessage is;
 
+    private GameMap gm;
+
     @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheAdapter;
-
-    private GameMap gm;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -276,13 +274,13 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowObjectsOnBlock(ShowObjectsOnBlockMessage m) {
         log.debug("onShowObjectsOnBlock {}", m);
-        var omb = mapStore.findBlock(gm.getCursor());
-        if (!omb.isEmpty()) {
-            var mb = omb.get().getTwo();
-            moStorage.getObjects(mb.getPos().getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id) -> {
-                cacheActor.tell(new CacheGetMessage<>(cacheAdapter, type, id, (go) -> {
-                    System.out.println(go); // TODO
-                }));
+        MapChunk root = chunks.get(MapChunk.OBJECT_TYPE, 0);
+        var mb = MapChunkBuffer.findBlock(root, m.cursor, chunks);
+        if (mb != null) {
+            final var pos = mb.getPos();
+            moStorage.getObjects(pos.getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id) -> {
+                var go = og.get(type, id);
+                System.out.println(go); // TODO
             });
         }
         return Behaviors.same();
@@ -293,9 +291,9 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowSelectedBlock(ShowSelectedBlockMessage m) {
         log.debug("onShowSelectedBlock {}", m);
-        var omb = mapStore.findBlock(gm.getCursor());
-        if (!omb.isEmpty()) {
-            var mb = omb.get().getTwo();
+        MapChunk root = chunks.get(MapChunk.OBJECT_TYPE, 0);
+        var mb = MapChunkBuffer.findBlock(root, m.cursor, chunks);
+        if (mb != null) {
             System.out.println(mb); // TODO
         }
         return Behaviors.same();
@@ -321,9 +319,9 @@ public class TerrainTestKeysActor {
 
     @SneakyThrows
     private void insertObject(GameBlockPos pos, KnowledgeObject ko, Function<MapBlock, Boolean> validBlock) {
-        var omb = mapStore.findBlock(gm.getCursor());
-        if (!omb.isEmpty()) {
-            var mb = omb.get().getTwo();
+        MapChunk root = chunks.get(MapChunk.OBJECT_TYPE, 0);
+        var mb = MapChunkBuffer.findBlock(root, pos, chunks);
+        if (mb != null) {
             if (!validBlock.apply(mb)) {
                 System.out.printf("Block at %s is not valid for %s\n", pos, ko); // TODO
                 return;
@@ -331,7 +329,7 @@ public class TerrainTestKeysActor {
             var o = (GameMapObject) ko.createObject(ids.generate());
             o.setMap(gm.getId());
             o.setPos(mb.getPos());
-            cacheActor.tell(new CachePutMessage<>(cacheAdapter, o));
+            os.set(o.getObjectType(), o);
             moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
         }
     }
@@ -354,4 +352,5 @@ public class TerrainTestKeysActor {
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
         ;
     }
+
 }

@@ -22,7 +22,7 @@ import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBl
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
@@ -62,9 +62,9 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private GameMap gm;
 
-    private MapChunksStore store;
-
     private boolean keyInit = false;
+
+    private ObjectsGetter chunks;
 
     @Inject
     public TerrainSelectBlockState() {
@@ -72,8 +72,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         this.mouse = new Vector2f();
     }
 
-    public void setRetriever(MapChunksStore store) {
-        this.store = store;
+    public void setStorage(ObjectsGetter chunks) {
+        this.chunks = chunks;
     }
 
     public void setGameMap(GameMap gm) {
@@ -162,7 +162,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     private void updateSelectedObject(TempVars temp, Vector2f mouse) {
         int z = gm.cursor.z;
         int depthz = gm.chunkSize - gm.cursor.z;
-        store.forEachValue((chunk) -> {
+        for (int i = 0; i < gm.chunksCount; i++) {
+            MapChunk chunk = chunks.get(MapChunk.OBJECT_TYPE, i);
             if (chunk.isLeaf() && chunk.pos.z <= z && chunk.pos.ep.z >= depthz) {
                 var c = chunk.getCenterExtent();
                 if (checkCenterExtent(temp, mouse, c.centerx, c.centery, c.centerz, c.extentx, c.extenty, c.extentz)) {
@@ -172,7 +173,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
                     }
                 }
             }
-        });
+        }
     }
 
     private MapBlock findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int z, float w, float h) {

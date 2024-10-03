@@ -120,7 +120,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
     @SuppressWarnings("unchecked")
     private Behavior<Message> onCacheGet(@SuppressWarnings("rawtypes") CacheGetMessage m) {
         log.debug("onCacheGet {}", m);
-        var v = cache.get((long) m.key);
+        var v = cache.get(m.key);
         if (v == null) {
             m.onMiss.run();
             handleCacheMiss(m);
@@ -134,7 +134,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
     @SuppressWarnings("unchecked")
     protected void handleCacheMiss(@SuppressWarnings("rawtypes") CacheGetMessage m) {
         context.getSelf().tell(new CacheRetrieveFromBackendMessage(m, go -> {
-            cache.put((long) m.key, (AssetCacheObject) go);
+            cache.put(m.key, (AssetCacheObject) go);
             m.replyTo.tell(new CacheGetSuccessMessage<>(m, go));
         }));
     }
@@ -216,8 +216,8 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends GameObject> T get(int type, Object key) {
-        return (T) cache.getIfAbsentPut((long) key, () -> supplyValue(type, key));
+    public <T extends GameObject> T get(int type, long key) {
+        return (T) cache.getIfAbsentPut(key, () -> supplyValue(type, key));
     }
 
     private AssetCacheObject supplyValue(int type, Object key) {

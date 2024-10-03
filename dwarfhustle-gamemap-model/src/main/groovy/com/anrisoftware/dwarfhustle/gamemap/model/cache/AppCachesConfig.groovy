@@ -39,7 +39,8 @@ class AppCachesConfig {
     def create(File parentDir) {
         assertThat(parentDir, notNullValue())
         def config = new Properties()
-        def params = [objects: [:], knowledge: [:]]
+        def params = [:]
+        params.objects = [:]
         params.objects.cache_name = "objects"
         params.objects.max_objects = 10000
         params.objects.is_eternal = false
@@ -49,6 +50,7 @@ class AppCachesConfig {
         params.objects.have_file_aux = true
         params.objects.parent_dir = parentDir
         //
+        params.knowledge = [:]
         params.knowledge.cache_name = "knowledge"
         params.knowledge.max_objects = 1000
         params.knowledge.is_eternal = false
@@ -57,6 +59,16 @@ class AppCachesConfig {
         params.knowledge.max_key_size = 1000
         params.knowledge.have_file_aux = true
         params.knowledge.parent_dir = parentDir
+        //
+        params.chunks = [:]
+        params.chunks.cache_name = "chunks"
+        params.chunks.max_objects = 10000
+        params.chunks.is_eternal = false
+        params.chunks.max_idle = Duration.ofHours(24).seconds
+        params.chunks.max_life = Duration.ofHours(24).seconds
+        params.chunks.max_key_size = 10000
+        params.chunks.have_file_aux = true
+        params.chunks.parent_dir = parentDir
         //
         JcsCacheConfig.createCaches(config, params)
         JCS.setConfigProperties(config);

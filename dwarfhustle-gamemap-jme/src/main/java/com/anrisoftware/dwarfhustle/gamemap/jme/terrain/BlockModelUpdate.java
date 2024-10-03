@@ -1,11 +1,12 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborEast;
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborNorth;
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborSouth;
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getNeighborWest;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBlocks;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborEast;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborNorth;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborSouth;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborWest;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
@@ -55,11 +56,10 @@ public class BlockModelUpdate {
     private Camera camera;
 
     public void collectChunks(MapChunk root, int z, int currentZ, int visible, int d,
-            Function<MapBlock, Boolean> isVisible, Function<Integer, MapChunk> retriever,
-            BiConsumer<MapChunk, MapBlock> consumer) {
-        var firstchunk = findChunk(root, 0, 0, z, retriever);
-        putChunkSortBlocks(firstchunk, currentZ, visible, isVisible, retriever, consumer);
-        int chunkid = 0;
+            Function<MapBlock, Boolean> isVisible, ObjectsGetter chunks, BiConsumer<MapChunk, MapBlock> consumer) {
+        var firstchunk = findChunk(root, 0, 0, z, chunks);
+        putChunkSortBlocks(firstchunk, currentZ, visible, isVisible, chunks, consumer);
+        long chunkid = 0;
         var nextchunk = firstchunk;
         // nextchunk = firstchunk;
         while (true) {
@@ -68,23 +68,23 @@ public class BlockModelUpdate {
                 chunkid = firstchunk.getNeighborSouth();
                 if (chunkid == 0) {
                     if (nextchunk.pos.ep.z < d && currentZ + visible - nextchunk.pos.ep.z > 0) {
-                        nextchunk = findChunk(root, 0, 0, nextchunk.pos.ep.z, retriever);
-                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, d, isVisible, retriever, consumer);
+                        nextchunk = findChunk(root, 0, 0, nextchunk.pos.ep.z, chunks);
+                        collectChunks(nextchunk, nextchunk.pos.z, currentZ, visible, d, isVisible, chunks, consumer);
                     }
                     break;
                 }
-                firstchunk = retriever.apply(chunkid);
+                firstchunk = getChunk(chunks, chunkid);
                 nextchunk = firstchunk;
-                putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, retriever, consumer);
+                putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, chunks, consumer);
             } else {
-                nextchunk = retriever.apply(chunkid);
-                putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, retriever, consumer);
+                nextchunk = getChunk(chunks, chunkid);
+                putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, chunks, consumer);
             }
         }
     }
 
     private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visible, Function<MapBlock, Boolean> isVisible,
-            Function<Integer, MapChunk> retriever, BiConsumer<MapChunk, MapBlock> consumer) {
+            ObjectsGetter chunks, BiConsumer<MapChunk, MapBlock> consumer) {
         var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
@@ -119,14 +119,14 @@ public class BlockModelUpdate {
     }
 
     public int updateModelBlocks(LongObjectMap<Multimap<MaterialKey, MapBlock>> mbs, GameMap gm,
-            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest, Function<Integer, MapChunk> retriever,
+            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest, ObjectsGetter chunks,
             BiConsumer<MaterialKey, Geometry> consumer) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
         var cursor = gm.cursor;
         int bnum = 0;
         for (var cidMatBlocks : mbs.keyValuesView()) {
-            Long cid = cidMatBlocks.getOne();
-            var chunk = retriever.apply(cid.intValue());
+            long cid = cidMatBlocks.getOne();
+            var chunk = getChunk(chunks, cid);
             var matBlocks = cidMatBlocks.getTwo();
             for (Pair<MaterialKey, RichIterable<MapBlock>> pblocks : matBlocks.keyMultiValuePairsView()) {
                 final RichIterable<MapBlock> bs = pblocks.getTwo();
@@ -145,7 +145,7 @@ public class BlockModelUpdate {
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
                 final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
                 final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-                fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, retriever, cpos, cindex, cnormal,
+                fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, chunks, cpos, cindex, cnormal,
                         ctex, ctex3, ccolor);
                 final var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
@@ -166,8 +166,8 @@ public class BlockModelUpdate {
 
     private void fillBuffers(RichIterable<MapBlock> blocks, Function<MapBlock, Mesh> meshSupplier,
             NormalsPredicate faceSkipTest, int w, int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk,
-            Function<Integer, MapChunk> retriever, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal,
-            FloatBuffer ctex, FloatBuffer ctex3, FloatBuffer ccolor) {
+            ObjectsGetter chunks, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex,
+            FloatBuffer ctex3, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -201,16 +201,16 @@ public class BlockModelUpdate {
                 if (faceSkipTest.test(mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z)) {
                     continue;
                 }
-                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, retriever)) {
+                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, chunks)) {
                     continue;
                 }
-                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, retriever)) {
+                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, chunks)) {
                     continue;
                 }
-                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, retriever)) {
+                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, chunks)) {
                     continue;
                 }
-                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, retriever)) {
+                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, chunks)) {
                     continue;
                 }
                 cindex.put((short) (in0 + delta));
@@ -231,23 +231,23 @@ public class BlockModelUpdate {
         ccolor.flip();
     }
 
-    private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = getNeighborNorth(mb, chunk, retriever);
+    private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
+        var nmb = getNeighborNorth(mb, chunk, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = getNeighborSouth(mb, chunk, retriever);
+    private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
+        var nmb = getNeighborSouth(mb, chunk, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = getNeighborEast(mb, chunk, retriever);
+    private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
+        var nmb = getNeighborEast(mb, chunk, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, Function<Integer, MapChunk> retriever) {
-        var nmb = getNeighborWest(mb, chunk, retriever);
+    private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
+        var nmb = getNeighborWest(mb, chunk, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 

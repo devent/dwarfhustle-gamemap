@@ -17,23 +17,24 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.DwarfhustleModelDbLmbdModule;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObjectsLmbdStorageFactory;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage.MapChunksLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
-import com.anrisoftware.dwarfhustle.model.db.store.MapChunksStore;
 import com.google.inject.Guice;
 
 import jakarta.inject.Inject;
@@ -61,6 +62,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     @Inject
     private MapObjectsLmbdStorageFactory mapObjectsFactory;
 
+    @Inject
+    private MapChunksLmbdStorageFactory storageFactory;
+
+    private MapChunksLmbdStorage chunksStorage;
+
     public TerrainLoadGameTest() {
     }
 
@@ -71,25 +77,25 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     @Override
-    protected ObjectsGetter createObjectsGettter() {
-        return goStorage;
-    }
-
-    @Override
-    protected ObjectsSetter createObjectsSetter() {
-        return goStorage;
-    }
-
-    @Override
     protected void createObjectsCache() {
-        var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, supplyAsync(() -> og),
-                supplyAsync(() -> os));
+        var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("ObjectsJcsCacheActor.create", ex);
             } else {
-                this.cacheActor = ret;
                 log.debug("ObjectsJcsCacheActor created");
+            }
+        });
+    }
+
+    @Override
+    protected void createChunksCache() {
+        var task = MapChunksJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, chunksStorage, chunksStorage);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("MapChunksJcsCacheActor.create", ex);
+            } else {
+                log.debug("MapChunksJcsCacheActor created");
             }
         });
     }
@@ -102,9 +108,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         // root = root.resolve("terrain_4_4_4_2");
         root = root.resolve("terrain_32_32_32_8");
         // root = root.resolve("terrain_512_512_128_16");
+        var tmp = Files.createTempDirectory("terrain_32_32_32_8");
+        injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
         initGameObjectsStorage(root);
         loadGameMap();
-        initMapStorage(root);
+        this.chunksStorage = initMapStorage(root);
         initMapObjectsStorage(root, gm);
         gm.cursor.z = 8;
         // gm.cursor.z = 16;
@@ -130,10 +138,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     @SneakyThrows
-    private void initMapStorage(Path root) {
-        var path = root.resolve(String.format("%d-%d.map", wm.id, gm.id));
-        this.mapStore = new MapChunksStore(path, gm.width, gm.height, gm.chunkSize, gm.chunksCount);
-        this.mcRoot = mapStore.getChunk(0);
+    private MapChunksLmbdStorage initMapStorage(Path root) {
+        var path = root.resolve(String.format("%d-%d", wm.id, gm.id));
+        var storage = storageFactory.create(path, gm.chunkSize);
+        this.mcRoot = storage.getChunk(0);
+        return storage;
     }
 
     @SneakyThrows
