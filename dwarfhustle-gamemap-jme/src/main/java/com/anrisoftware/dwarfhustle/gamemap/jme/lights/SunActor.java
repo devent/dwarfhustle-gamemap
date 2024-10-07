@@ -170,7 +170,7 @@ public class SunActor {
     }
 
     private Behavior<Message> stashOtherCommand(Message m) {
-        log.debug("stashOtherCommand: {}", m);
+        log.trace("stashOtherCommand: {}", m);
         try {
             buffer.stash(m);
         } catch (StashOverflowException e) {

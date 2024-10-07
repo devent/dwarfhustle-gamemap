@@ -62,12 +62,12 @@ class AppCachesConfig {
         //
         params.chunks = [:]
         params.chunks.cache_name = "chunks"
-        params.chunks.max_objects = 10000
-        params.chunks.is_eternal = false
+        params.chunks.max_objects = 108250
+        params.chunks.is_eternal = true
         params.chunks.max_idle = Duration.ofHours(24).seconds
         params.chunks.max_life = Duration.ofHours(24).seconds
         params.chunks.max_key_size = 10000
-        params.chunks.have_file_aux = true
+        params.chunks.have_file_aux = false
         params.chunks.parent_dir = parentDir
         //
         JcsCacheConfig.createCaches(config, params)

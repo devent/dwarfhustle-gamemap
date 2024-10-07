@@ -1,5 +1,6 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBlocks;
@@ -73,11 +74,11 @@ public class BlockModelUpdate {
                     }
                     break;
                 }
-                firstchunk = getChunk(chunks, chunkid);
+                firstchunk = getChunk(chunks, cid2Id(chunkid));
                 nextchunk = firstchunk;
                 putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, chunks, consumer);
             } else {
-                nextchunk = getChunk(chunks, chunkid);
+                nextchunk = getChunk(chunks, cid2Id(chunkid));
                 putChunkSortBlocks(nextchunk, currentZ, visible, isVisible, chunks, consumer);
             }
         }
@@ -145,8 +146,8 @@ public class BlockModelUpdate {
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
                 final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
                 final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
-                fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, chunks, cpos, cindex, cnormal,
-                        ctex, ctex3, ccolor);
+                fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, gm, chunks, cpos, cindex,
+                        cnormal, ctex, ctex3, ccolor);
                 final var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
@@ -166,8 +167,8 @@ public class BlockModelUpdate {
 
     private void fillBuffers(RichIterable<MapBlock> blocks, Function<MapBlock, Mesh> meshSupplier,
             NormalsPredicate faceSkipTest, int w, int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk,
-            ObjectsGetter chunks, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex,
-            FloatBuffer ctex3, FloatBuffer ccolor) {
+            GameMap gm, ObjectsGetter chunks, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal,
+            FloatBuffer ctex, FloatBuffer ctex3, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -201,16 +202,16 @@ public class BlockModelUpdate {
                 if (faceSkipTest.test(mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z)) {
                     continue;
                 }
-                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, chunks)) {
+                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, gm, chunks)) {
                     continue;
                 }
-                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, chunks)) {
+                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, gm, chunks)) {
                     continue;
                 }
-                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, chunks)) {
+                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, gm, chunks)) {
                     continue;
                 }
-                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, chunks)) {
+                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, gm, chunks)) {
                     continue;
                 }
                 cindex.put((short) (in0 + delta));
@@ -231,23 +232,23 @@ public class BlockModelUpdate {
         ccolor.flip();
     }
 
-    private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
-        var nmb = getNeighborNorth(mb, chunk, chunks);
+    private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborNorth(mb, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
-        var nmb = getNeighborSouth(mb, chunk, chunks);
+    private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborSouth(mb, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
-        var nmb = getNeighborEast(mb, chunk, chunks);
+    private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborEast(mb, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, ObjectsGetter chunks) {
-        var nmb = getNeighborWest(mb, chunk, chunks);
+    private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborWest(mb, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 

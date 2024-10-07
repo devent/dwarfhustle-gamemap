@@ -178,8 +178,7 @@ public class TerrainActor {
      */
     private static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> materials,
             CompletionStage<ObjectsGetter> models, CompletionStage<ActorRef<Message>> knowledge,
-            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os,
-            CompletionStage<ObjectsGetter> chunks) {
+            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
@@ -193,7 +192,7 @@ public class TerrainActor {
             var ko = knowledge.toCompletableFuture().get(15, SECONDS);
             var og0 = og.toCompletableFuture().get(15, SECONDS);
             var os0 = os.toCompletableFuture().get(15, SECONDS);
-            var chunks0 = chunks.toCompletableFuture().get(15, SECONDS);
+            var cg0 = cg.toCompletableFuture().get(15, SECONDS);
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap k = IntLongMaps.mutable.ofInitialCapacity(100);
             k.put(BLOCK_MATERIAL_WATER,
@@ -205,7 +204,7 @@ public class TerrainActor {
             k.put(UNDISCOVERED_MATERIAL, 0xfffe);
             k.put(UNKNOWN_MATERIAL, 0xffff);
             return injector.getInstance(TerrainActorFactory.class)
-                    .create(context, stash, timer, ma, mo, k.toImmutable(), og0, os0, chunks0).start(injector);
+                    .create(context, stash, timer, ma, mo, k.toImmutable(), og0, os0, cg0).start(injector);
         })));
     }
 
@@ -215,10 +214,10 @@ public class TerrainActor {
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
             CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models,
             CompletionStage<ActorRef<Message>> knowledge, CompletionStage<ObjectsGetter> og,
-            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> chunks) {
+            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         return createNamedActor(system, timeout, ID, KEY, NAME,
-                create(injector, materials, models, knowledge, og, os, chunks));
+                create(injector, materials, models, knowledge, og, os, cg));
     }
 
     private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
@@ -488,14 +487,12 @@ public class TerrainActor {
 
     private void putMapBlock(MapChunk chunk, MapBlock mb) {
         final long cid = chunk.getId();
-        MutableMultimap<MaterialKey, MapBlock> blocks = (MutableMultimap<MaterialKey, MapBlock>) materialBlocks
-                .get(cid);
+        var blocks = (MutableMultimap<MaterialKey, MapBlock>) materialBlocks.get(cid);
         if (blocks == null) {
             blocks = Multimaps.mutable.list.empty();
             materialBlocks.put(cid, blocks);
         }
-        MutableMultimap<MaterialKey, MapBlock> ceilings = (MutableMultimap<MaterialKey, MapBlock>) materialCeilings
-                .get(cid);
+        var ceilings = (MutableMultimap<MaterialKey, MapBlock>) materialCeilings.get(cid);
         if (ceilings == null) {
             ceilings = Multimaps.mutable.list.empty();
             materialCeilings.put(cid, ceilings);
@@ -516,7 +513,7 @@ public class TerrainActor {
         var key = lazyCreateKey(mid, emission, transparent);
         blocks.put(key, mb);
         if (mb.pos.z <= cursorZ && !mb.isHaveNaturalLight()) {
-            var neighborUp = getNeighborUp(mb, chunk, chunks);
+            var neighborUp = getNeighborUp(mb, chunk, gm.width, gm.height, gm.depth, chunks);
             long ceilingmid = 0;
             if (hideUndiscovered && !mb.isDiscovered()) {
                 ceilingmid = undiscoveredMaterialId;

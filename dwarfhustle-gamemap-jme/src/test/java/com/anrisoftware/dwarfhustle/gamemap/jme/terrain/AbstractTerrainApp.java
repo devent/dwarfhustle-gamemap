@@ -223,6 +223,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     }
 
     @Override
+    @SneakyThrows
     public void simpleInitApp() {
         log.debug("simpleInitApp");
         this.sceneNode = new Node("Scene-Node");
@@ -234,9 +235,9 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createMaterialAssets();
         createModelsAssets();
         createTerrain();
-//        createSun();
-//        createGameTick();
-//        createTerrainTestKeys();
+        createSun();
+        createGameTick();
+        createTerrainTestKeys();
     }
 
     private void nextSetGameMap() {
