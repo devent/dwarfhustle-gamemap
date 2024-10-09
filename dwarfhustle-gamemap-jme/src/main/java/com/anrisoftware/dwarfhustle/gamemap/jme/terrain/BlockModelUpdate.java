@@ -1,9 +1,12 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcY;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBlocks;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborEast;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborNorth;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborSouth;
@@ -12,7 +15,6 @@ import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNe
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import org.apache.commons.math3.util.FastMath;
 import org.eclipse.collections.api.RichIterable;
@@ -22,10 +24,13 @@ import org.eclipse.collections.api.tuple.Pair;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameChunkPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
+import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.MapBlockResult;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.renderer.Camera;
@@ -56,8 +61,8 @@ public class BlockModelUpdate {
     @Inject
     private Camera camera;
 
-    public void collectChunks(MapChunk root, int z, int currentZ, int visible, int d,
-            Function<MapBlock, Boolean> isVisible, ObjectsGetter chunks, BiConsumer<MapChunk, MapBlock> consumer) {
+    public void collectChunks(MapChunk root, int z, int currentZ, int visible, int d, MapBlockVisible isVisible,
+            ObjectsGetter chunks, BiConsumer<MapChunk, Integer> consumer) {
         var firstchunk = findChunk(root, 0, 0, z, chunks);
         putChunkSortBlocks(firstchunk, currentZ, visible, isVisible, chunks, consumer);
         long chunkid = 0;
@@ -84,15 +89,26 @@ public class BlockModelUpdate {
         }
     }
 
-    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visible, Function<MapBlock, Boolean> isVisible,
-            ObjectsGetter chunks, BiConsumer<MapChunk, MapBlock> consumer) {
+    private void putChunkSortBlocks(MapChunk chunk, int currentZ, int visible, MapBlockVisible isVisible,
+            ObjectsGetter chunks, BiConsumer<MapChunk, Integer> consumer) {
         var contains = getIntersectBb(chunk);
         if (contains == FrustumIntersect.Outside) {
             return;
         }
-        for (var mb : getBlocks(chunk)) {
-            if (mb.pos.z < currentZ + visible && !(mb.pos.z < currentZ) && isVisible.apply(mb)) {
-                consumer.accept(chunk, mb);
+        final int cw = chunk.pos.getSizeX();
+        final int ch = chunk.pos.getSizeY();
+        final int cd = chunk.pos.getSizeZ();
+        final int sx = chunk.pos.x;
+        final int sy = chunk.pos.y;
+        final int sz = chunk.pos.z;
+        for (int x = chunk.getPos().getX(); x < chunk.getPos().getEp().getX(); x++) {
+            for (int y = chunk.getPos().getY(); y < chunk.getPos().getEp().getY(); y++) {
+                for (int z = chunk.getPos().getZ(); z < chunk.getPos().getEp().getZ(); z++) {
+                    if (z < currentZ + visible && !(z < currentZ) && isVisible.isVisible(chunk, 0, x, y, z)) {
+                        final int i = GameChunkPos.calcIndex(cw, ch, cd, sx, sy, sz, x, y, z);
+                        consumer.accept(chunk, i);
+                    }
+                }
             }
         }
     }
@@ -119,22 +135,22 @@ public class BlockModelUpdate {
         return bb;
     }
 
-    public int updateModelBlocks(LongObjectMap<Multimap<MaterialKey, MapBlock>> mbs, GameMap gm,
-            Function<MapBlock, Mesh> meshSupplier, NormalsPredicate faceSkipTest, ObjectsGetter chunks,
+    public int updateModelBlocks(LongObjectMap<Multimap<MaterialKey, Integer>> materialBlocks, GameMap gm,
+            MeshSupplier meshSupplier, NormalsPredicate faceSkipTest, ObjectsGetter chunks,
             BiConsumer<MaterialKey, Geometry> consumer) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
         var cursor = gm.cursor;
         int bnum = 0;
-        for (var cidMatBlocks : mbs.keyValuesView()) {
+        for (var cidMatBlocks : materialBlocks.keyValuesView()) {
             long cid = cidMatBlocks.getOne();
             var chunk = getChunk(chunks, cid);
             var matBlocks = cidMatBlocks.getTwo();
-            for (Pair<MaterialKey, RichIterable<MapBlock>> pblocks : matBlocks.keyMultiValuePairsView()) {
-                final RichIterable<MapBlock> bs = pblocks.getTwo();
+            for (Pair<MaterialKey, RichIterable<Integer>> pblocks : matBlocks.keyMultiValuePairsView()) {
+                final RichIterable<Integer> bs = pblocks.getTwo();
                 int spos = 0;
                 int sindex = 0;
-                for (MapBlock mb : bs) {
-                    var mesh = meshSupplier.apply(mb);
+                for (int mb : bs) {
+                    var mesh = meshSupplier.getMesh(chunk, mb);
                     spos += mesh.getBuffer(Type.Position).getNumElements();
                     sindex += mesh.getBuffer(Type.Index).getNumElements();
                     bnum++;
@@ -165,18 +181,18 @@ public class BlockModelUpdate {
         return bnum;
     }
 
-    private void fillBuffers(RichIterable<MapBlock> blocks, Function<MapBlock, Mesh> meshSupplier,
-            NormalsPredicate faceSkipTest, int w, int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk,
-            GameMap gm, ObjectsGetter chunks, FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal,
-            FloatBuffer ctex, FloatBuffer ctex3, FloatBuffer ccolor) {
+    private void fillBuffers(RichIterable<Integer> bs, MeshSupplier meshSupplier, NormalsPredicate faceSkipTest, int w,
+            int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk, GameMap gm, ObjectsGetter chunks,
+            FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ctex3,
+            FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
         Mesh mesh;
         ShortBuffer bindex;
         FloatBuffer bnormal;
-        for (MapBlock mb : blocks) {
-            mesh = meshSupplier.apply(mb);
+        for (int index : bs) {
+            mesh = meshSupplier.getMesh(chunk, index);
             bindex = mesh.getShortBuffer(Type.Index).rewind();
             bnormal = mesh.getFloatBuffer(Type.Normal).rewind();
             delta = cpos.position() / 3;
@@ -199,30 +215,30 @@ public class BlockModelUpdate {
                 n0x = FastMath.round((n0x + n1x + n2x) / 3f);
                 n0y = FastMath.round((n0y + n1y + n2y) / 3f);
                 n0z = FastMath.round((n0z + n1z + n2z) / 3f);
-                if (faceSkipTest.test(mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z)) {
+                if (faceSkipTest.test(chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z)) {
                     continue;
                 }
-                if (n0x < 0.0f && isSkipCheckNeighborWest(mb, chunk, gm, chunks)) {
+                if (n0x < 0.0f && isSkipCheckNeighborWest(index, chunk, gm, chunks)) {
                     continue;
                 }
-                if (n0x > 0.0f && isSkipCheckNeighborEast(mb, chunk, gm, chunks)) {
+                if (n0x > 0.0f && isSkipCheckNeighborEast(index, chunk, gm, chunks)) {
                     continue;
                 }
-                if (n0y > 0.0f && isSkipCheckNeighborNorth(mb, chunk, gm, chunks)) {
+                if (n0y > 0.0f && isSkipCheckNeighborNorth(index, chunk, gm, chunks)) {
                     continue;
                 }
-                if (n0y < 0.0f && isSkipCheckNeighborSouth(mb, chunk, gm, chunks)) {
+                if (n0y < 0.0f && isSkipCheckNeighborSouth(index, chunk, gm, chunks)) {
                     continue;
                 }
                 cindex.put((short) (in0 + delta));
                 cindex.put((short) (in1 + delta));
                 cindex.put((short) (in2 + delta));
             }
-            copyNormal(mb, mesh, cnormal);
-            copyTex(mb, mesh, m.tex, ctex, Type.TexCoord);
-            copyPosColor(mb, mesh, cpos, ccolor, w, h, d, cursor);
+            copyNormal(index, mesh, cnormal);
+            copyTex(index, mesh, m.tex, ctex, Type.TexCoord);
+            copyPosColor(index, chunk, mesh, cpos, ccolor, w, h, d, cursor);
             if (m.emissive != null) {
-                copyTex(mb, mesh, m.emissive, ctex3, Type.TexCoord3);
+                copyTex(index, mesh, m.emissive, ctex3, Type.TexCoord3);
             }
         }
         cpos.flip();
@@ -232,47 +248,50 @@ public class BlockModelUpdate {
         ccolor.flip();
     }
 
-    private boolean isSkipCheckNeighborNorth(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborNorth(mb, chunk, gm.width, gm.height, gm.depth, chunks);
+    private boolean isSkipCheckNeighborNorth(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborNorth(index, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborSouth(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborSouth(mb, chunk, gm.width, gm.height, gm.depth, chunks);
+    private boolean isSkipCheckNeighborSouth(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborSouth(index, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborEast(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborEast(mb, chunk, gm.width, gm.height, gm.depth, chunks);
+    private boolean isSkipCheckNeighborEast(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborEast(index, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborWest(MapBlock mb, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborWest(mb, chunk, gm.width, gm.height, gm.depth, chunks);
+    private boolean isSkipCheckNeighborWest(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var nmb = getNeighborWest(index, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
-    private boolean isSkipCheckNeighborEdge(MapBlock nmb) {
-        if (nmb != null) {
-            if (nmb.isFilled()) {
+    private boolean isSkipCheckNeighborEdge(MapBlockResult res) {
+        if (res.isValid()) {
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.FILLED_POS)) {
                 return true;
-            } else if (nmb.isRamp()) {
+            }
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.RAMP_POS)) {
                 return true;
-            } else if (nmb.isLiquid()) {
+            }
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.LIQUID_POS)) {
                 return true;
-            } else if (nmb.isEmpty()) {
+            }
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.EMPTY_POS)) {
                 return false;
             }
         }
         return false;
     }
 
-    private void copyNormal(MapBlock mb, Mesh mesh, FloatBuffer cnormal) {
+    private void copyNormal(int index, Mesh mesh, FloatBuffer cnormal) {
         var normal = mesh.getFloatBuffer(Type.Normal).rewind();
         cnormal.put(normal);
     }
 
-    private void copyTex(MapBlock mb, Mesh mesh, TextureCacheObject t, FloatBuffer ctex, Type type) {
+    private void copyTex(int index, Mesh mesh, TextureCacheObject t, FloatBuffer ctex, Type type) {
         var btex = mesh.getFloatBuffer(type).rewind();
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
@@ -288,10 +307,10 @@ public class BlockModelUpdate {
      * Transforms the position values based on the block position. Sets the diffuse
      * color of the tile.
      */
-    private void copyPosColor(MapBlock mb, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w, float h, float d,
-            GameBlockPos cursor) {
+    private void copyPosColor(int index, MapChunk chunk, Mesh mesh, FloatBuffer cpos, FloatBuffer ccolor, float w,
+            float h, float d, GameBlockPos cursor) {
         var pos = mesh.getFloatBuffer(Type.Position).rewind();
-        float x = mb.pos.x, y = mb.pos.y, z = mb.pos.z, vx, vy, vz;
+        float x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk), vx, vy, vz;
         float tx = -w + 2f * x + 1f;
         float ty = h - 2f * y - 1;
         float tz = (cursor.z - z) * 2f;
@@ -305,10 +324,10 @@ public class BlockModelUpdate {
             cpos.put(vx);
             cpos.put(vy);
             cpos.put(vz);
-            if (mb.pos.z - cursor.z > 1) {
-                ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
-                ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
-                ccolor.put(1f / ((mb.pos.z - cursor.z) * 2f));
+            if (z - cursor.z > 1) {
+                ccolor.put(1f / ((z - cursor.z) * 2f));
+                ccolor.put(1f / ((z - cursor.z) * 2f));
+                ccolor.put(1f / ((z - cursor.z) * 2f));
                 ccolor.put(1f);
             }
         }

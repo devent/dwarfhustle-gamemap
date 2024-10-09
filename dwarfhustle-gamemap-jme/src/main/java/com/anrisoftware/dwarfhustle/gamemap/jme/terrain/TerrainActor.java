@@ -18,8 +18,17 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcY;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
 import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.DISCOVERED_POS;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.EMPTY_POS;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.HAVE_NATURAL_LIGHT_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getMaterial;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getObject;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.haveProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askObjectTypeId;
@@ -65,11 +74,14 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
+import com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -320,9 +332,9 @@ public class TerrainActor {
 
     private MutableIntObjectMap<MaterialKey> materialKeys;
 
-    private MutableLongObjectMap<Multimap<MaterialKey, MapBlock>> materialBlocks;
+    private MutableLongObjectMap<Multimap<MaterialKey, Integer>> materialBlocks;
 
-    private MutableLongObjectMap<Multimap<MaterialKey, MapBlock>> materialCeilings;
+    private MutableLongObjectMap<Multimap<MaterialKey, Integer>> materialCeilings;
 
     private BlockModelUpdate blockModelUpdate;
 
@@ -452,11 +464,11 @@ public class TerrainActor {
         waterNodes.clear();
         magmaNodes.clear();
         for (var pair : this.materialBlocks.keyValuesView()) {
-            MutableMultimap<MaterialKey, MapBlock> map = (MutableMultimap<MaterialKey, MapBlock>) pair.getTwo();
+            var map = (MutableMultimap<MaterialKey, Integer>) pair.getTwo();
             map.clear();
         }
         for (var pair : this.materialCeilings.keyValuesView()) {
-            MutableMultimap<MaterialKey, MapBlock> map = (MutableMultimap<MaterialKey, MapBlock>) pair.getTwo();
+            var map = (MutableMultimap<MaterialKey, Integer>) pair.getTwo();
             map.clear();
         }
         this.gm = m.gm;
@@ -465,7 +477,7 @@ public class TerrainActor {
         blockModelUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
                 this::putMapBlock);
         int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
-                (mb, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
+                (chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
                     return FastMath.approximateEquals(n0z, -1.0f);
                 }, chunks, this::putBlockNodes);
         blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
@@ -475,9 +487,11 @@ public class TerrainActor {
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
     }
 
-    private boolean isBlockVisible(MapBlock mb) {
-        if (mb.isEmpty()) {
-            if (gm.isCursor(mb.pos.x, mb.pos.y, mb.pos.z)) {
+    private boolean isBlockVisible(MapChunk chunk, int i, int x, int y, int z) {
+        int off = GameBlockPos.calcIndex(chunk, x, y, z) * MapBlockBuffer.SIZE;
+        int p = MapBlockBuffer.getProp(chunk.getBlocks(), off);
+        if (PropertiesSet.get(p, MapBlock.EMPTY_POS)) {
+            if (gm.isCursor(x, y, z)) {
                 return true;
             }
             return false;
@@ -485,42 +499,44 @@ public class TerrainActor {
         return true;
     }
 
-    private void putMapBlock(MapChunk chunk, MapBlock mb) {
+    private void putMapBlock(MapChunk chunk, int index) {
         final long cid = chunk.getId();
-        var blocks = (MutableMultimap<MaterialKey, MapBlock>) materialBlocks.get(cid);
+        var blocks = (MutableMultimap<MaterialKey, Integer>) materialBlocks.get(cid);
         if (blocks == null) {
             blocks = Multimaps.mutable.list.empty();
             materialBlocks.put(cid, blocks);
         }
-        var ceilings = (MutableMultimap<MaterialKey, MapBlock>) materialCeilings.get(cid);
+        var ceilings = (MutableMultimap<MaterialKey, Integer>) materialCeilings.get(cid);
         if (ceilings == null) {
             ceilings = Multimaps.mutable.list.empty();
             materialCeilings.put(cid, ceilings);
         }
-        long mid = mb.getMaterialId();
+        long mid = kid2Id(getMaterial(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
         Long emission = null;
-        boolean cursor = gm.isCursor(mb.pos.x, mb.pos.y, mb.pos.z);
+        int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
+        boolean cursor = gm.isCursor(x, y, z);
         if (cursor) {
-            emission = selectedMaterials.get(mb.getObjectId());
+            long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
+            emission = selectedMaterials.get(oid);
         }
         boolean transparent = false;
-        if (mb.isEmpty()) {
+        if (haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, EMPTY_POS)) {
             transparent = true;
         }
-        if (hideUndiscovered && !mb.isDiscovered()) {
+        if (hideUndiscovered && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, DISCOVERED_POS))) {
             mid = undiscoveredMaterialId;
         }
         var key = lazyCreateKey(mid, emission, transparent);
-        blocks.put(key, mb);
-        if (mb.pos.z <= cursorZ && !mb.isHaveNaturalLight()) {
-            var neighborUp = getNeighborUp(mb, chunk, gm.width, gm.height, gm.depth, chunks);
+        blocks.put(key, index);
+        if (z <= cursorZ && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, HAVE_NATURAL_LIGHT_POS))) {
+            var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, chunks);
             long ceilingmid = 0;
-            if (hideUndiscovered && !mb.isDiscovered()) {
+            if (hideUndiscovered && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, DISCOVERED_POS))) {
                 ceilingmid = undiscoveredMaterialId;
             } else {
-                ceilingmid = neighborUp.getMaterialId();
+                ceilingmid = getMaterial(neighborUp.c.getBlocks(), neighborUp.getOff());
             }
-            ceilings.put(lazyCreateKey(ceilingmid, emission, false), mb);
+            ceilings.put(lazyCreateKey(ceilingmid, emission, false), index);
         }
     }
 
@@ -543,13 +559,15 @@ public class TerrainActor {
         return materials.get(TextureCacheObject.OBJECT_TYPE, id);
     }
 
-    private Mesh retrieveBlockMesh(MapBlock mb) {
-        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, mb.getObjectId());
+    private Mesh retrieveBlockMesh(MapChunk chunk, int index) {
+        long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
+        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
         return ((Geometry) (model.model)).getMesh();
     }
 
-    private Mesh retrieveCeilingMesh(MapBlock mb) {
-        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, knowledges.get(OBJECT_BLOCK_CEILING));
+    private Mesh retrieveCeilingMesh(MapChunk chunk, int index) {
+        long oid = kid2Id(knowledges.get(OBJECT_BLOCK_CEILING));
+        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
         return ((Geometry) (model.model)).getMesh();
     }
 
