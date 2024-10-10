@@ -10,6 +10,7 @@ import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findC
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborEast;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborNorth;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborSouth;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborWest;
 
 import java.nio.FloatBuffer;
@@ -230,6 +231,9 @@ public class BlockModelUpdate {
                 if (n0y < 0.0f && isSkipCheckNeighborSouth(index, chunk, gm, chunks)) {
                     continue;
                 }
+                if (n0z > 0.0f && isSkipCheckNeighborUp(index, chunk, gm, chunks)) {
+                    continue;
+                }
                 cindex.put((short) (in0 + delta));
                 cindex.put((short) (in1 + delta));
                 cindex.put((short) (in2 + delta));
@@ -266,6 +270,25 @@ public class BlockModelUpdate {
     private boolean isSkipCheckNeighborWest(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
         var nmb = getNeighborWest(index, chunk, gm.width, gm.height, gm.depth, chunks);
         return isSkipCheckNeighborEdge(nmb);
+    }
+
+    private boolean isSkipCheckNeighborUp(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
+        var res = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, chunks);
+        if (res.isValid()) {
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.FILLED_POS)) {
+                return true;
+            }
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.RAMP_POS)) {
+                return true;
+            }
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.LIQUID_POS)) {
+                return false;
+            }
+            if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.EMPTY_POS)) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private boolean isSkipCheckNeighborEdge(MapBlockResult res) {
