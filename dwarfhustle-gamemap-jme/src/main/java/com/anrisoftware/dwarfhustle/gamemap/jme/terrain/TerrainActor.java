@@ -566,7 +566,7 @@ public class TerrainActor {
     }
 
     private Mesh retrieveCeilingMesh(MapChunk chunk, int index) {
-        long oid = kid2Id(knowledges.get(OBJECT_BLOCK_CEILING));
+        long oid = knowledges.get(OBJECT_BLOCK_CEILING);
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
         return ((Geometry) (model.model)).getMesh();
     }
