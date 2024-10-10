@@ -17,10 +17,11 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getBlocks;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
+
+import java.util.concurrent.ForkJoinPool;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.jme3.app.Application;
@@ -40,6 +41,7 @@ import com.jme3.renderer.Camera;
 import com.jme3.util.TempVars;
 
 import jakarta.inject.Inject;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -65,6 +67,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     private boolean keyInit = false;
 
     private ObjectsGetter chunks;
+
+    private boolean searchingSelected;
 
     @Inject
     public TerrainSelectBlockState() {
@@ -159,39 +163,66 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         }
     }
 
+    @RequiredArgsConstructor
+    private class UpdateSelectedObjectAction implements Runnable {
+
+        private final Vector2f mouse;
+
+        private final int cursorZ;
+
+        private final int chunksCount;
+
+        @Override
+        public void run() {
+            var temp = TempVars.get();
+            for (int i = 0; i < chunksCount; i++) {
+                MapChunk chunk = chunks.get(MapChunk.OBJECT_TYPE, cid2Id(i));
+                if (chunk.isLeaf() && chunk.pos.z <= cursorZ && chunk.pos.ep.z > cursorZ) {
+                    var c = chunk.getCenterExtent();
+                    if (checkCenterExtent(temp, mouse, c.centerx, c.centery, c.centerz, c.extentx, c.extenty,
+                            c.extentz)) {
+                        if (findBlockUnderCursor(temp, mouse, chunk, gm.cursor.z, gm.width, gm.height)) {
+                            break;
+                        }
+                    }
+                }
+            }
+            temp.release();
+            searchingSelected = false;
+        }
+
+    }
+
     private void updateSelectedObject(TempVars temp, Vector2f mouse) {
-        int z = gm.cursor.z;
-        int depthz = gm.chunkSize - gm.cursor.z;
-        for (int i = 0; i < gm.chunksCount; i++) {
-            MapChunk chunk = chunks.get(MapChunk.OBJECT_TYPE, i);
-            if (chunk.isLeaf() && chunk.pos.z <= z && chunk.pos.ep.z >= depthz) {
-                var c = chunk.getCenterExtent();
-                if (checkCenterExtent(temp, mouse, c.centerx, c.centery, c.centerz, c.extentx, c.extenty, c.extentz)) {
-                    MapBlock mb;
-                    if ((mb = findBlockUnderCursor(temp, mouse, chunk, gm.cursor.z, gm.width, gm.height)) != null) {
-                        gm.setCursor(mb.pos.x, mb.pos.y, mb.pos.z);
+        if (this.searchingSelected) {
+            return;
+        }
+        this.searchingSelected = true;
+        var pool = ForkJoinPool.commonPool();
+        pool.execute(new UpdateSelectedObjectAction(mouse, gm.cursor.z, gm.chunksCount));
+    }
+
+    private boolean findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int cursorZ, float w, float h) {
+        for (int x = chunk.getPos().getX(); x < chunk.getPos().getEp().getX(); x++) {
+            for (int y = chunk.getPos().getY(); y < chunk.getPos().getEp().getY(); y++) {
+                for (int z = chunk.getPos().getZ(); z < chunk.getPos().getEp().getZ(); z++) {
+                    float tx = -w + 2f * x + 1f;
+                    float ty = h - 2f * y - 1f;
+                    float centerx = tx;
+                    float centery = ty;
+                    float centerz = 0;
+                    float extentx = 1f;
+                    float extenty = 1f;
+                    float extentz = 1f;
+                    if (z == cursorZ
+                            && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
+                        gm.setCursor(x, y, z);
+                        return true;
                     }
                 }
             }
         }
-    }
-
-    private MapBlock findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int z, float w, float h) {
-        for (var block : getBlocks(chunk)) {
-            float tx = -w + 2f * block.pos.x + 1f;
-            float ty = h - 2f * block.pos.y - 1f;
-            float centerx = tx;
-            float centery = ty;
-            float centerz = 0;
-            float extentx = 1f;
-            float extenty = 1f;
-            float extentz = 1f;
-            if (block.pos.z == z
-                    && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                return block;
-            }
-        }
-        return null;
+        return false;
     }
 
     private boolean checkCenterExtent(TempVars temp, Vector2f mouse, float centerx, float centery, float centerz,
