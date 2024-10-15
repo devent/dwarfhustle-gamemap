@@ -17,9 +17,17 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findBlock;
+
+import org.eclipse.collections.api.factory.Sets;
+
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSampling;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
@@ -48,6 +56,8 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String SHOW_OBJECTS_BLOCK_MAPPING = "TerrainTestKeysState_SHOW_OBJECTS_BLOCK_MAPPING";
 
+    private static final String DELETE_VEGETATION_MAPPING = "TerrainTestKeysState_DELETE_VEGETATION_MAPPING";
+
     private static final String ADD_SHRUB_MAPPING = "TerrainTestKeysState_ADD_SHRUB_MAPPING";
 
     private static final String ADD_SAMPLING_MAPPING = "TerrainTestKeysState_ADD_SAMPLING_MAPPING";
@@ -64,7 +74,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
             ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING, CURSOR_NORTH_MAPPING,
-            CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING };
+            CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING, DELETE_VEGETATION_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -84,6 +94,8 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private boolean showSelectedBlock = false;
 
+    private boolean showObjectsBlock = false;
+
     private float time = 0;
 
     private GameBlockPos oldCursor = new GameBlockPos();
@@ -91,6 +103,8 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private Runnable nextAction = EMPTY_ACTION;
 
     private ActorRef<Message> actor;
+
+    private ObjectsGetter chunks;
 
     @Inject
     public TerrainTestKeysState() {
@@ -107,6 +121,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         if (!keyInit) {
             initKeys();
         }
+    }
+
+    public void setChunks(ObjectsGetter chunks) {
+        this.chunks = chunks;
     }
 
     @Override
@@ -135,6 +153,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private void initKeys() {
         inputManager.addMapping(SHOW_SELECTED_BLOCK_MAPPING, new KeyTrigger(KeyInput.KEY_I));
         inputManager.addMapping(SHOW_OBJECTS_BLOCK_MAPPING, new KeyTrigger(KeyInput.KEY_O));
+        inputManager.addMapping(DELETE_VEGETATION_MAPPING, new KeyTrigger(KeyInput.KEY_D));
         inputManager.addMapping(ADD_SHRUB_MAPPING, new KeyTrigger(KeyInput.KEY_S));
         inputManager.addMapping(ADD_SAMPLING_MAPPING, new KeyTrigger(KeyInput.KEY_T));
         inputManager.addMapping(TOGGLE_UNDISCOVERED_MAPPING, new KeyTrigger(KeyInput.KEY_F9));
@@ -145,6 +164,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addListener(this, MAPPINGS);
         System.out.println("I     - " + SHOW_SELECTED_BLOCK_MAPPING);
         System.out.println("O     - " + SHOW_OBJECTS_BLOCK_MAPPING);
+        System.out.println("D     - " + DELETE_VEGETATION_MAPPING);
         System.out.println("S     - " + ADD_SHRUB_MAPPING);
         System.out.println("T     - " + ADD_SAMPLING_MAPPING);
         System.out.println("F9    - " + TOGGLE_UNDISCOVERED_MAPPING);
@@ -169,10 +189,16 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             switch (name) {
             case SHOW_SELECTED_BLOCK_MAPPING: {
                 this.showSelectedBlock = !showSelectedBlock;
+                System.out.println("Toggle show selected block: " + showSelectedBlock);
                 break;
             }
             case SHOW_OBJECTS_BLOCK_MAPPING: {
-                this.nextAction = this::showObjects;
+                this.showObjectsBlock = !showObjectsBlock;
+                System.out.println("Toggle show objects block: " + showObjectsBlock);
+                break;
+            }
+            case DELETE_VEGETATION_MAPPING: {
+                this.nextAction = this::deleteVegetation;
                 break;
             }
             case ADD_SHRUB_MAPPING: {
@@ -227,8 +253,15 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             if (showSelectedBlock) {
                 if (!oldCursor.equals(gm.getCursor())) {
                     actor.tell(new ShowSelectedBlockMessage(gm.getCursor()));
-                    this.oldCursor = gm.getCursor();
                 }
+            }
+            if (showSelectedBlock) {
+                if (!oldCursor.equals(gm.getCursor())) {
+                    actor.tell(new ShowObjectsOnBlockMessage(gm.getCursor()));
+                }
+            }
+            if (gm != null) {
+                this.oldCursor = gm.getCursor();
             }
         }
     }
@@ -237,20 +270,34 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         actor.tell(new ToggleUndiscoveredMessage());
     }
 
-    private void showObjects() {
-        actor.tell(new ShowObjectsOnBlockMessage(gm.getCursor()));
-    }
-
     private void addShrub() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeShrub.TYPE,
-                (mb) -> mb.isFilled() && mb.isDiscovered()));
+                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+    }
+
+    private boolean isDownDirt(MapBlock mb) {
+        var down = mb.pos.addZ(1);
+        var c = getChunk(chunks, cid2Id(mb.parent));
+        var downBlock = findBlock(c, down, chunks);
+        if (downBlock == null) {
+            return false;
+        }
+        return downBlock.getMaterial() == 864 || downBlock.getMaterial() == 863 || downBlock.getMaterial() == 862
+                || downBlock.getMaterial() == 861 || downBlock.getMaterial() == 860 || downBlock.getMaterial() == 859
+                || downBlock.getMaterial() == 858 || downBlock.getMaterial() == 857;
     }
 
     private void addSampling() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSampling.TYPE,
                 (mb) -> mb.isFilled() && mb.isDiscovered()));
+    }
+
+    private void deleteVegetation() {
+        this.oldCursor = gm.getCursor();
+        actor.tell(new DeleteVegetationOnBlockMessage(oldCursor,
+                Sets.immutable.of(KnowledgeShrub.TYPE, KnowledgeTreeSampling.TYPE)));
     }
 
 }

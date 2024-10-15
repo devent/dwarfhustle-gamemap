@@ -115,7 +115,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         loadGameMap();
         this.chunksStorage = initMapStorage(root);
         initMapObjectsStorage(root, gm);
-        gm.cursor.z = 8;
+        gm.cursor.z = 9;
         // gm.cursor.z = 16;
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
         // block.setMined(true);

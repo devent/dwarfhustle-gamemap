@@ -63,6 +63,7 @@ import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadMaterialTextures;
+import com.anrisoftware.dwarfhustle.gamemap.jme.objects.UpdateObjectsBlocksMessage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
@@ -174,23 +175,25 @@ public class TerrainActor {
     }
 
     /**
-     * Factory to create {@link TerrainTestKeysActor}.
+     * Factory to create {@link TerrainActor}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface TerrainActorFactory {
         TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
                 @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
-                @Assisted("knowledges") ImmutableIntLongMap knowledges, @Assisted("objects-getter") ObjectsGetter og,
-                @Assisted("objects-setter") ObjectsSetter os, @Assisted("chunks-getter") ObjectsGetter chunks);
+                @Assisted("knowledges") ImmutableIntLongMap knowledges, @Assisted("objects") ActorRef<Message> objects,
+                @Assisted("objects-getter") ObjectsGetter og, @Assisted("objects-setter") ObjectsSetter os,
+                @Assisted("chunks-getter") ObjectsGetter chunks);
     }
 
     /**
-     * Creates the {@link TerrainTestKeysActor}.
+     * Creates the {@link TerrainActor}.
      */
     private static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> materials,
             CompletionStage<ObjectsGetter> models, CompletionStage<ActorRef<Message>> knowledge,
-            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
+            CompletionStage<ActorRef<Message>> objects, CompletionStage<ObjectsGetter> og,
+            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             context.pipeToSelf(createState(injector, context), (result, cause) -> {
                 if (cause == null) {
@@ -205,6 +208,7 @@ public class TerrainActor {
             var og0 = og.toCompletableFuture().get(15, SECONDS);
             var os0 = os.toCompletableFuture().get(15, SECONDS);
             var cg0 = cg.toCompletableFuture().get(15, SECONDS);
+            var objects0 = objects.toCompletableFuture().get(15, SECONDS);
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap k = IntLongMaps.mutable.ofInitialCapacity(100);
             k.put(BLOCK_MATERIAL_WATER,
@@ -216,20 +220,20 @@ public class TerrainActor {
             k.put(UNDISCOVERED_MATERIAL, 0xfffe);
             k.put(UNKNOWN_MATERIAL, 0xffff);
             return injector.getInstance(TerrainActorFactory.class)
-                    .create(context, stash, timer, ma, mo, k.toImmutable(), og0, os0, cg0).start(injector);
+                    .create(context, stash, timer, ma, mo, k.toImmutable(), objects0, og0, os0, cg0).start(injector);
         })));
     }
 
     /**
-     * Creates the {@link TerrainTestKeysActor}.
+     * Creates the {@link TerrainActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
             CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models,
-            CompletionStage<ActorRef<Message>> knowledge, CompletionStage<ObjectsGetter> og,
-            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
+            CompletionStage<ActorRef<Message>> knowledge, CompletionStage<ActorRef<Message>> objects,
+            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         return createNamedActor(system, timeout, ID, KEY, NAME,
-                create(injector, materials, models, knowledge, og, os, cg));
+                create(injector, materials, models, knowledge, objects, og, os, cg));
     }
 
     private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
@@ -295,6 +299,10 @@ public class TerrainActor {
     @Inject
     @Assisted("objects-setter")
     private ObjectsSetter os;
+
+    @Inject
+    @Assisted("objects")
+    private ActorRef<Message> objects;
 
     @Inject
     private BlockModelUpdateFactory blockModelUpdateFactory;
@@ -459,6 +467,25 @@ public class TerrainActor {
         // log.debug("onUpdateModel {}", m);
         long oldtime = System.currentTimeMillis();
         var root = getChunk(chunks, 0);
+        clearMaps();
+        this.gm = m.gm;
+        this.cursorZ = m.gm.getCursorZ();
+        int depthLayers = gs.get().visibleDepthLayers.get();
+        blockModelUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
+                this::putMapBlock);
+        sendUpdateObjectsBlocksMessage();
+        int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
+                (chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
+                    return FastMath.approximateEquals(n0z, -1.0f);
+                }, chunks, this::putBlockNodes);
+        blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
+                chunks, this::putCeilingNodes);
+        renderMeshs();
+        long finishtime = System.currentTimeMillis();
+        log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
+    }
+
+    private void clearMaps() {
         blockNodes.clear();
         ceilingNodes.clear();
         waterNodes.clear();
@@ -471,20 +498,17 @@ public class TerrainActor {
             var map = (MutableMultimap<MaterialKey, Integer>) pair.getTwo();
             map.clear();
         }
-        this.gm = m.gm;
-        this.cursorZ = m.gm.getCursorZ();
-        int depthLayers = gs.get().visibleDepthLayers.get();
-        blockModelUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
-                this::putMapBlock);
-        int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
-                (chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
-                    return FastMath.approximateEquals(n0z, -1.0f);
-                }, chunks, this::putBlockNodes);
-        blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
-                chunks, this::putCeilingNodes);
-        renderMeshs();
-        long finishtime = System.currentTimeMillis();
-        log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
+    }
+
+    private void sendUpdateObjectsBlocksMessage() {
+        MutableMultimap<Long, Integer> materialBlocksCopy = Multimaps.mutable.bag.empty();
+        for (var pair : this.materialBlocks.keyValuesView()) {
+            var map = (MutableMultimap<MaterialKey, Integer>) pair.getTwo();
+            for (int index : map.valuesView()) {
+                materialBlocksCopy.put(pair.getOne(), index);
+            }
+        }
+        objects.tell(new UpdateObjectsBlocksMessage(gm, materialBlocksCopy));
     }
 
     private boolean isBlockVisible(MapChunk chunk, int i, int x, int y, int z) {

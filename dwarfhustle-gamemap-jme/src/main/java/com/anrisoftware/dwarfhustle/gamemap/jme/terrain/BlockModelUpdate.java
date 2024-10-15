@@ -232,7 +232,7 @@ public class BlockModelUpdate {
                     continue;
                 }
                 if (n0z > 0.0f && isSkipCheckNeighborUp(index, chunk, gm, chunks)) {
-                    continue;
+                    // continue;
                 }
                 cindex.put((short) (in0 + delta));
                 cindex.put((short) (in1 + delta));

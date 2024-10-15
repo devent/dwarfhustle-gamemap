@@ -234,6 +234,7 @@ public class TerrainTestKeysActor {
         log.debug("onInitialState");
         this.is = m;
         is.state.setActor(context.getSelf());
+        is.state.setChunks(chunks);
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -270,6 +271,19 @@ public class TerrainTestKeysActor {
     }
 
     /**
+     * Reacts to the {@link DeleteVegetationOnBlockMessage} message.
+     */
+    private Behavior<Message> onDeleteVegetationOnBlock(DeleteVegetationOnBlockMessage m) {
+        log.debug("onDeleteVegetationOnBlock {}", m);
+        for (String type : m.types) {
+            knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, type, (ko) -> {
+                deleteObject(m.cursor, ko.objects.getFirst());
+            }));
+        }
+        return Behaviors.same();
+    }
+
+    /**
      * Reacts to the {@link ShowObjectsOnBlockMessage} message.
      */
     private Behavior<Message> onShowObjectsOnBlock(ShowObjectsOnBlockMessage m) {
@@ -278,7 +292,7 @@ public class TerrainTestKeysActor {
         var mb = MapChunkBuffer.findBlock(root, m.cursor, chunks);
         if (mb != null) {
             final var pos = mb.getPos();
-            moStorage.getObjects(pos.getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id) -> {
+            moStorage.getObjects(pos.getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id, x, z, y) -> {
                 var go = og.get(type, id);
                 System.out.println(go); // TODO
             });
@@ -319,7 +333,7 @@ public class TerrainTestKeysActor {
 
     @SneakyThrows
     private void insertObject(GameBlockPos pos, KnowledgeObject ko, Function<MapBlock, Boolean> validBlock) {
-        MapChunk root = chunks.get(MapChunk.OBJECT_TYPE, 0);
+        var root = MapChunk.getChunk(chunks, 0);
         var mb = MapChunkBuffer.findBlock(root, pos, chunks);
         if (mb != null) {
             if (!validBlock.apply(mb)) {
@@ -331,6 +345,17 @@ public class TerrainTestKeysActor {
             o.setPos(mb.getPos());
             os.set(o.getObjectType(), o);
             moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
+        }
+    }
+
+    @SneakyThrows
+    private void deleteObject(GameBlockPos pos, KnowledgeObject ko) {
+        var root = MapChunk.getChunk(chunks, 0);
+        var mb = MapChunkBuffer.findBlock(root, pos, chunks);
+        if (mb != null) {
+            moStorage.getObjects(pos.getX(), pos.getY(), pos.getZ(), (type, id, x, y, z) -> {
+                moStorage.removeObject(x, y, z, type, id);
+            });
         }
     }
 
@@ -349,6 +374,7 @@ public class TerrainTestKeysActor {
                 .onMessage(ShowObjectsOnBlockMessage.class, this::onShowObjectsOnBlock)//
                 .onMessage(ShowSelectedBlockMessage.class, this::onShowSelectedBlock)//
                 .onMessage(ToggleUndiscoveredMessage.class, this::onToggleUndiscovered)//
+                .onMessage(DeleteVegetationOnBlockMessage.class, this::onDeleteVegetationOnBlock)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
         ;
     }
