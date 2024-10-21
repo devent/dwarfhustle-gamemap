@@ -72,31 +72,41 @@ public class AssetsLoadObjectModels {
     public void loadModelMap(MutableLongObjectMap<AssetCacheObject> cache, ModelMapData data) {
         var mo = loadModelData(data);
         var model = loadModel(data.model);
-        var geo = rotateMesh(data, model);
-        mo.model = geo;
+        var node = setupMesh(data, model);
+        mo.model = node;
         cache.put(mo.id, mo);
     }
 
-    private Geometry rotateMesh(ModelMapData data, Spatial model) {
-        var oldgeo = (Geometry) ((Node) model).getChild(0);
-        var mesh = oldgeo.getMesh().deepClone();
-        var tex = mesh.getBuffer(Type.TexCoord);
-        if (tex == null) {
-            log.warn("{} does not have textures coordinates", data.model);
-        } else {
-            mesh.setBuffer(tex.clone(Type.TexCoord3));
+    private Spatial setupMesh(ModelMapData data, Spatial model) {
+        var node = setupTexCoord3(data, model);
+        if (approximateEquals(data.rotation[0], 0) && approximateEquals(data.rotation[1], 0)
+                && approximateEquals(data.rotation[2], 0)) {
+            return node;
         }
+        var geo = (Geometry) ((Node) model).getChild(0);
+        var mesh = geo.getMesh();
         rotateMechGeo(mesh, data.rotation);
-        var geo = new Geometry(data.model, mesh);
-        geo.setMaterial(oldgeo.getMaterial());
-        return geo;
+        return node;
+    }
+
+    private Node setupTexCoord3(ModelMapData data, Spatial model) {
+        var oldnode = (Node) model;
+        var node = new Node("model-" + data.rid);
+        for (var geo : oldnode.getChildren()) {
+            var newgeo = (Geometry) geo.deepClone();
+            var mesh = newgeo.getMesh();
+            var tex = mesh.getBuffer(Type.TexCoord);
+            if (tex == null) {
+                log.warn("{} does not have textures coordinates", data.model);
+            } else {
+                mesh.setBuffer(tex.clone(Type.TexCoord3));
+            }
+            node.attachChild(newgeo);
+        }
+        return node;
     }
 
     public static Mesh rotateMechGeo(Mesh mesh, float[] rotation) {
-        if (approximateEquals(rotation[0], 0) && approximateEquals(rotation[1], 0)
-                && approximateEquals(rotation[2], 0)) {
-            return mesh;
-        }
         mesh.getFloatBuffer(Type.Position);
         var q = new Quaternion(rotation);
         var normal = mesh.getFloatBuffer(Type.Normal).rewind();
@@ -178,7 +188,7 @@ public class AssetsLoadObjectModels {
         }
         var to = loadModelData(d);
         var model = loadModel(d.model);
-        to.model = rotateMesh(d, model);
+        to.model = setupMesh(d, model);
         return to;
     }
 

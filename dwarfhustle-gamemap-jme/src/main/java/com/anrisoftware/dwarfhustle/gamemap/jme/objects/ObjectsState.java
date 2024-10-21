@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.objects;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.objects.ObjectsRenderSystem.ObjectsRenderSystemFactory;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.badlogic.ashley.core.Engine;
 import com.jme3.app.Application;
@@ -52,6 +53,7 @@ public class ObjectsState extends BaseAppState {
 
     public void setup(ObjectsGetter materials, ObjectsGetter models) {
         this.objectsRenderSystem = objectsRenderSystemFactory.create(materials, models);
+        objectsRenderSystem.setSceneNode(sceneNode);
         engine.addSystem(objectsRenderSystem);
     }
 
@@ -72,6 +74,10 @@ public class ObjectsState extends BaseAppState {
 
     @Override
     protected void onDisable() {
+    }
+
+    public void setGameMap(GameMap gm) {
+        objectsRenderSystem.setGameMap(gm);
     }
 
 }

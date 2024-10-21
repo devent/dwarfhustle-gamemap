@@ -91,7 +91,7 @@ public class ModelsAssetsCacheActor extends AbstractAssetsCacheActor {
 
     @Override
     protected void retrieveValueFromBackend(CacheGetMessage<?> m, Consumer<GameObject> consumer) {
-        var to = models.loadModelObject((long) m.key);
+        var to = models.loadModelObject(m.key);
         consumer.accept(to);
     }
 

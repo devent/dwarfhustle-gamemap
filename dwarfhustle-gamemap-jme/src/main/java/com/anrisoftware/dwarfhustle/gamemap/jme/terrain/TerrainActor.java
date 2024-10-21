@@ -94,6 +94,7 @@ import com.jme3.renderer.queue.RenderQueue.Bucket;
 import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
+import com.jme3.scene.Node;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -586,13 +587,15 @@ public class TerrainActor {
     private Mesh retrieveBlockMesh(MapChunk chunk, int index) {
         long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
-        return ((Geometry) (model.model)).getMesh();
+        var geo = ((Node) model.model).getChild(0);
+        return ((Geometry) (geo)).getMesh();
     }
 
     private Mesh retrieveCeilingMesh(MapChunk chunk, int index) {
         long oid = knowledges.get(OBJECT_BLOCK_CEILING);
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
-        return ((Geometry) (model.model)).getMesh();
+        var node = (Node) model.model;
+        return ((Geometry) (node.getChild(0))).getMesh();
     }
 
     private void putBlockNodes(MaterialKey m, Geometry geo) {

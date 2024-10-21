@@ -343,6 +343,7 @@ public class TerrainTestKeysActor {
             var o = (GameMapObject) ko.createObject(ids.generate());
             o.setMap(gm.getId());
             o.setPos(mb.getPos());
+            o.setKid(ko.getId());
             os.set(o.getObjectType(), o);
             moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
         }

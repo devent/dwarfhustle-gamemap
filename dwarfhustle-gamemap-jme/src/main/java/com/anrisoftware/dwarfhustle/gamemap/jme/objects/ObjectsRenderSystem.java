@@ -20,6 +20,9 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.objects;
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
@@ -56,16 +59,22 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     @Assisted("models")
     private ObjectsGetter models;
 
-    private Node node;
+    private Node sceneNode;
+
+    private GameMap gm;
 
     @Inject
     public ObjectsRenderSystem() {
         super(ObjectMeshComponent.f, 1);
-        this.objectNodes = IntObjectMaps.mutable.empty();
+        this.objectNodes = IntObjectMaps.mutable.withInitialCapacity(100);
     }
 
-    public void setNode(Node node) {
-        this.node = node;
+    public void setSceneNode(Node node) {
+        this.sceneNode = node;
+    }
+
+    public void setGameMap(GameMap gm) {
+        this.gm = gm;
     }
 
     @Override
@@ -86,9 +95,13 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void addObject(Entity entity) {
-        System.out.println("ObjectsRenderSystem.addObject()"); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
-        System.out.println(c.object); // TODO
+        var node = new Node("" + c.object.getId());
+        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, c.object.getKid());
+        node.attachChild(model.getModel());
+        updateLocation(c.object, node);
+        objectNodes.put(entity.hashCode(), node);
+        this.sceneNode.attachChild(node);
         // var model = models.get(ModelCacheObject.OBJECT_TYPE,
         // c.object.getObjectType());
         // int x = c.object.getPos().getX(), y = c.object.getPos().getY(), z =
@@ -98,16 +111,22 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void removeObject(Entity entity) {
-        System.out.println("ObjectsRenderSystem.removeObject()"); // TODO
-        var c = entity.getComponent(ObjectMeshComponent.class);
-        System.out.println(c.object); // TODO
-        // var n = objectNodes.remove(entity.hashCode());
-        // node.detachChild(n);
+        var node = objectNodes.remove(entity.hashCode());
+        sceneNode.detachChild(node);
     }
 
     @Override
     protected void processEntity(Entity entity) {
-        // var cc = ChunksBoundingBoxComponent.m.get(entity);
-        // var n = objectNodes.get(entity.hashCode());
+        var c = entity.getComponent(ObjectMeshComponent.class);
+        var node = objectNodes.get(entity.hashCode());
+        updateLocation(c.object, node);
     }
+
+    private void updateLocation(GameMapObject o, Node node) {
+        float tx = -gm.getWidth() + 2f * o.getPos().getX();
+        float ty = gm.getHeight() - 2f * o.getPos().getY();
+        System.out.printf("%f/%f pos %s cursor %s\n", tx, ty, o.getPos(), gm.cursor); // TODO
+        node.setLocalTranslation(tx, ty, 0);
+    }
+
 }

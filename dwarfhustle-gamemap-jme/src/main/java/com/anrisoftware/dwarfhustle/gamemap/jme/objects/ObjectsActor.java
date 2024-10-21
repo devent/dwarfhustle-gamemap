@@ -281,6 +281,7 @@ public class ObjectsActor {
          * 
          * if new object, create entity, put in (x,y,z)->entity map
          */
+        is.objectsState.setGameMap(m.gm);
         long oldtime = System.currentTimeMillis();
         final int w = m.gm.width, h = m.gm.height, d = m.gm.depth;
         MutableListMultimap<Integer, Long> chunkdbids = Multimaps.mutable.list.empty();

@@ -102,6 +102,6 @@ m[rid["BLOCK-NORMAL"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
 
 m[rid["PINE-SAMPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-1.j3o"]
 
-m[rid["BLUEBERRIES"]] = [model: "Models/shrubs/blueberry/blueberry-1.j3o"]
+m[rid["BLUEBERRIES"]] = [model: "Models/shrubs/blueberry/blueberry-shrub-2-leafs.j3o"]
 
 m

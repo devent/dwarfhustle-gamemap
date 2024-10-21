@@ -315,7 +315,12 @@ public class BlockModelUpdate {
     }
 
     private void copyTex(int index, Mesh mesh, TextureCacheObject t, FloatBuffer ctex, Type type) {
-        var btex = mesh.getFloatBuffer(type).rewind();
+        var buffer = mesh.getFloatBuffer(type);
+        if (buffer == null) {
+            System.out.println(); // TODO
+            return;
+        }
+        var btex = buffer.rewind();
         for (int i = 0; i < btex.limit(); i += 2) {
             float tx = btex.get();
             float ty = btex.get();
