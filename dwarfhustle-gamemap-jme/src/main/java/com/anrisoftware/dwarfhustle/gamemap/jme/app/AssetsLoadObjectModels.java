@@ -83,24 +83,28 @@ public class AssetsLoadObjectModels {
                 && approximateEquals(data.rotation[2], 0)) {
             return node;
         }
-        var geo = (Geometry) ((Node) model).getChild(0);
-        var mesh = geo.getMesh();
-        rotateMechGeo(mesh, data.rotation);
+        for (var child : node.getChildren()) {
+            var geo = (Geometry) child;
+            var mesh = geo.getMesh();
+            rotateMechGeo(mesh, data.rotation);
+        }
         return node;
     }
 
     private Node setupTexCoord3(ModelMapData data, Spatial model) {
         var oldnode = (Node) model;
         var node = new Node("model-" + data.rid);
-        for (var geo : oldnode.getChildren()) {
-            var newgeo = (Geometry) geo.deepClone();
-            var mesh = newgeo.getMesh();
+        for (var child : oldnode.getChildren()) {
+            var geo = (Geometry) child;
+            var mesh = geo.getMesh().deepClone();
             var tex = mesh.getBuffer(Type.TexCoord);
             if (tex == null) {
                 log.warn("{} does not have textures coordinates", data.model);
             } else {
                 mesh.setBuffer(tex.clone(Type.TexCoord3));
             }
+            var newgeo = new Geometry("mesh", mesh);
+            newgeo.setMaterial(geo.getMaterial());
             node.attachChild(newgeo);
         }
         return node;

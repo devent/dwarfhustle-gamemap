@@ -29,6 +29,7 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.systems.IntervalIteratingSystem;
 import com.google.inject.assistedinject.Assisted;
+import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Node;
 
 import jakarta.inject.Inject;
@@ -95,10 +96,12 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void addObject(Entity entity) {
+        // System.out.println("addObject" + entity); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = new Node("" + c.object.getId());
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, c.object.getKid());
-        node.attachChild(model.getModel());
+        node.attachChild(model.getModel().clone());
+        node.setShadowMode(ShadowMode.Cast);
         updateLocation(c.object, node);
         objectNodes.put(entity.hashCode(), node);
         this.sceneNode.attachChild(node);
@@ -111,22 +114,26 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void removeObject(Entity entity) {
+        // System.out.println("removeObject" + entity); // TODO
         var node = objectNodes.remove(entity.hashCode());
         sceneNode.detachChild(node);
     }
 
     @Override
     protected void processEntity(Entity entity) {
+        // System.out.println("ObjectsRenderSystem.processEntity() " + entity); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = objectNodes.get(entity.hashCode());
         updateLocation(c.object, node);
     }
 
     private void updateLocation(GameMapObject o, Node node) {
-        float tx = -gm.getWidth() + 2f * o.getPos().getX();
-        float ty = gm.getHeight() - 2f * o.getPos().getY();
-        System.out.printf("%f/%f pos %s cursor %s\n", tx, ty, o.getPos(), gm.cursor); // TODO
+        float tx = -gm.getWidth() + 2f * o.getPos().getX() + 1f;
+        float ty = gm.getHeight() - 2f * o.getPos().getY() - 1f;
+        // System.out.printf("%f/%f pos %s cursor %s\n", tx, ty, o.getPos(), gm.cursor);
+        // // TODO
         node.setLocalTranslation(tx, ty, 0);
+        // node.setLocalScale(0.25f);
     }
 
 }
