@@ -33,7 +33,6 @@ import org.eclipse.collections.api.factory.primitive.LongSets;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
-import org.eclipse.collections.api.set.primitive.LongSet;
 import org.eclipse.collections.api.set.primitive.MutableLongSet;
 import org.eclipse.collections.impl.factory.Multimaps;
 
@@ -228,6 +227,9 @@ public class ObjectsActor {
 
     private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
 
+    /**
+     * Chunk-ID := [Block-Index := [Object-ID := Entity]]
+     */
     private MutableLongObjectMap<MutableIntObjectMap<MutableLongObjectMap<Entity>>> objectEntities;
 
     /**
@@ -241,7 +243,7 @@ public class ObjectsActor {
      */
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
-        this.objectEntities = LongObjectMaps.mutable.empty();
+        this.objectEntities = LongObjectMaps.mutable.ofInitialCapacity(100);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -281,62 +283,80 @@ public class ObjectsActor {
          * 
          * if new object, create entity, put in (x,y,z)->entity map
          */
+        System.out.println("ObjectsActor.onUpdateObjectsBlocks()"); // TODO
+        System.out.println(m.blocks); // TODO
         is.objectsState.setGameMap(m.gm);
         long oldtime = System.currentTimeMillis();
         final int w = m.gm.width, h = m.gm.height, d = m.gm.depth;
-        MutableListMultimap<Integer, Long> chunkdbids = Multimaps.mutable.list.empty();
-        MutableLongSet visibleids = LongSets.mutable.withInitialCapacity(100);
-        MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);
-        for (var pairBlocks : m.blocks.keyMultiValuePairsView()) {
-            visibleids.clear();
-            long cid = pairBlocks.getOne();
-            var chunkEntities = lazyCreateChunksEntities(cid);
-            chunkdbids.clear();
-            var chunk = getChunk(chunks, cid);
-            var pos = chunk.getPos();
+        MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunkidsTypeOids = LongObjectMaps.mutable
+                .ofInitialCapacity(100);
+        for (final var pairBlocks : m.blocks.keyMultiValuePairsView()) {
+            final long cid = pairBlocks.getOne();
+            final var chunkdbids = lazyCreateChunkidsTypeOidsEntry(chunkidsTypeOids, cid);
+            final var chunk = getChunk(chunks, cid);
+            final var pos = chunk.getPos();
             mapObjects.getObjectsRange(pos.getX(), pos.getY(), pos.getZ(), pos.getEp().getX(), pos.getEp().getY(),
                     pos.getEp().getZ(), (type, id, x, y, z) -> {
                         chunkdbids.put(type, id);
-                        visibleids.add(id);
                     });
-            checkOldEntries(chunkEntities, w, h, visibleids, removeids);
-            chunkdbids.forEachKeyValue((type, id) -> {
-                GameMapObject object = og.get(type, id);
-                updateObjectEntity(chunkEntities, object, w, h, d);
-            });
+        }
+        MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);
+        for (var chunkidTypeOids : chunkidsTypeOids.keyValuesView()) {
+            removeids.clear();
+            long cid = chunkidTypeOids.getOne();
+            var typeOids = chunkidTypeOids.getTwo();
+            var indexOidsEntity = lazyCreateChunkEntities(cid);
+            checkOldEntries(indexOidsEntity, typeOids, removeids, w, h);
+            for (var typeOid : typeOids.keyMultiValuePairsView()) {
+                final int type = typeOid.getOne();
+                for (long oid : typeOid.getTwo()) {
+                    GameMapObject object = og.get(type, oid);
+                    updateObjectEntity(indexOidsEntity, object, w, h, d);
+                }
+            }
         }
         long finishtime = System.currentTimeMillis();
         log.trace("onUpdateObjectsBlocks done in {} showing {} objects", finishtime - oldtime, objectEntities.size());
         return Behaviors.same();
     }
 
-    private MutableIntObjectMap<MutableLongObjectMap<Entity>> lazyCreateChunksEntities(long cid) {
+    private MutableListMultimap<Integer, Long> lazyCreateChunkidsTypeOidsEntry(
+            MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunksids, long cid) {
+        MutableListMultimap<Integer, Long> chunkids = chunksids.get(cid);
+        if (chunkids == null) {
+            chunkids = Multimaps.mutable.list.empty();
+            chunksids.put(cid, chunkids);
+        }
+        return chunkids;
+    }
+
+    private MutableIntObjectMap<MutableLongObjectMap<Entity>> lazyCreateChunkEntities(long cid) {
         MutableIntObjectMap<MutableLongObjectMap<Entity>> chunkEntities;
         chunkEntities = objectEntities.get(cid);
         if (chunkEntities == null) {
-            chunkEntities = IntObjectMaps.mutable.empty();
+            chunkEntities = IntObjectMaps.mutable.ofInitialCapacity(100);
             objectEntities.put(cid, chunkEntities);
         }
         return chunkEntities;
     }
 
-    private void checkOldEntries(MutableIntObjectMap<MutableLongObjectMap<Entity>> chunkEntities, final int w,
-            final int h, LongSet visibleids, MutableLongSet removeids) {
-        for (var pair : chunkEntities.keyValuesView()) {
-            MutableLongObjectMap<Entity> idEntitiesMap = pair.getTwo();
-            for (var chunkIdEntities : idEntitiesMap.keyValuesView()) {
-                final long id = chunkIdEntities.getOne();
-                if (!visibleids.contains(id)) {
+    private void checkOldEntries(MutableIntObjectMap<MutableLongObjectMap<Entity>> indexOidsEntity,
+            MutableListMultimap<Integer, Long> dbTypeOids, MutableLongSet removeids, int w, int h) {
+        for (var pair : indexOidsEntity.keyValuesView()) {
+            MutableLongObjectMap<Entity> oidsEntityMap = pair.getTwo();
+            for (var oidsEntity : oidsEntityMap.keyValuesView()) {
+                final long id = oidsEntity.getOne();
+                if (!dbTypeOids.containsValue(id)) {
                     removeids.add(id);
                 } else {
-                    var e = chunkIdEntities.getTwo();
+                    var e = oidsEntity.getTwo();
                     app.enqueue(() -> {
                         e.add(new ObjectMeshVisibleComponent(id, false));
                     });
                 }
             }
             removeids.forEach((id) -> {
-                var e = idEntitiesMap.remove(id);
+                var e = oidsEntityMap.remove(id);
                 if (e != null) {
                     app.enqueue(() -> {
                         engine.removeEntity(e);

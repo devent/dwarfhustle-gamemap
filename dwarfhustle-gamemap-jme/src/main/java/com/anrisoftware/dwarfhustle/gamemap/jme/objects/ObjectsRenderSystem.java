@@ -96,7 +96,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void addObject(Entity entity) {
-        // System.out.println("addObject" + entity); // TODO
+        System.out.println("addObject" + entity); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = new Node("" + c.object.getId());
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, c.object.getKid());
@@ -114,7 +114,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void removeObject(Entity entity) {
-        // System.out.println("removeObject" + entity); // TODO
+        System.out.println("removeObject" + entity); // TODO
         var node = objectNodes.remove(entity.hashCode());
         sceneNode.detachChild(node);
     }
