@@ -283,8 +283,8 @@ public class ObjectsActor {
          * 
          * if new object, create entity, put in (x,y,z)->entity map
          */
-        System.out.println("ObjectsActor.onUpdateObjectsBlocks()"); // TODO
-        System.out.println(m.blocks); // TODO
+        // System.out.println("ObjectsActor.onUpdateObjectsBlocks()"); // TODO
+        // System.out.println(m.blocks); // TODO
         is.objectsState.setGameMap(m.gm);
         long oldtime = System.currentTimeMillis();
         final int w = m.gm.width, h = m.gm.height, d = m.gm.depth;
