@@ -63,7 +63,8 @@ import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadMaterialTextures;
-import com.anrisoftware.dwarfhustle.gamemap.jme.objects.UpdateObjectsBlocksMessage;
+import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate;
+import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate.CollectChunksUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
@@ -75,7 +76,6 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
@@ -317,6 +317,9 @@ public class TerrainActor {
     @Inject
     private AssetManager assets;
 
+    @Inject
+    private CollectChunksUpdateFactory collectChunksUpdateFactory;
+
     private InitialStateMessage is;
 
     private MutableList<Geometry> blockNodes;
@@ -356,6 +359,8 @@ public class TerrainActor {
     private LongLongMap selectedMaterials;
 
     private long terrainUpdateDuration;
+
+    private CollectChunksUpdate collectChunksUpdate;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -437,6 +442,7 @@ public class TerrainActor {
         this.materialBlocks = LongObjectMaps.mutable.empty();
         this.materialCeilings = LongObjectMaps.mutable.empty();
         this.blockModelUpdate = blockModelUpdateFactory.create(materials);
+        this.collectChunksUpdate = collectChunksUpdateFactory.create();
         app.enqueue(() -> {
             is.selectBlockState.setStorage(m.chunks);
             is.selectBlockState.setGameMap(m.gm);
@@ -472,9 +478,8 @@ public class TerrainActor {
         this.gm = m.gm;
         this.cursorZ = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        blockModelUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
+        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
                 this::putMapBlock);
-        sendUpdateObjectsBlocksMessage();
         int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
                 (chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
                     return FastMath.approximateEquals(n0z, -1.0f);
@@ -501,19 +506,8 @@ public class TerrainActor {
         }
     }
 
-    private void sendUpdateObjectsBlocksMessage() {
-        MutableMultimap<Long, Integer> materialBlocksCopy = Multimaps.mutable.bag.empty();
-        for (var pair : this.materialBlocks.keyValuesView()) {
-            var map = (MutableMultimap<MaterialKey, Integer>) pair.getTwo();
-            for (int index : map.valuesView()) {
-                materialBlocksCopy.put(pair.getOne(), index);
-            }
-        }
-        objects.tell(new UpdateObjectsBlocksMessage(gm, materialBlocksCopy));
-    }
-
     private boolean isBlockVisible(MapChunk chunk, int i, int x, int y, int z) {
-        int off = GameBlockPos.calcIndex(chunk, x, y, z) * MapBlockBuffer.SIZE;
+        int off = MapBlockBuffer.calcOff(chunk, x, y, z);
         int p = MapBlockBuffer.getProp(chunk.getBlocks(), off);
         if (PropertiesSet.get(p, MapBlock.EMPTY_POS)) {
             if (gm.isCursor(x, y, z)) {

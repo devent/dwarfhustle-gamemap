@@ -1,4 +1,4 @@
-package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
+package com.anrisoftware.dwarfhustle.gamemap.jme.model;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 

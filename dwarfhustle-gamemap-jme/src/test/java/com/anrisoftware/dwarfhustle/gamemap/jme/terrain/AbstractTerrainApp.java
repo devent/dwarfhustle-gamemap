@@ -32,6 +32,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.model.DwarfhustleGamemapJmeModelModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.objects.DwarfhustleGamemapJmeObjectsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainTestKeysActor.TerrainTestKeysActorFactory;
@@ -146,6 +147,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 install(new DwarfhustleModelDbCacheModule());
                 install(new DwarfhustleGamemapJmeAppModule());
                 install(new DwarfhustleGamemapJmeLightsModule());
+                install(new DwarfhustleGamemapJmeModelModule());
                 bind(GameSettingsProvider.class).asEagerSingleton();
                 install(new FactoryModuleBuilder().implement(TerrainTestKeysActor.class, TerrainTestKeysActor.class)
                         .build(TerrainTestKeysActorFactory.class));
