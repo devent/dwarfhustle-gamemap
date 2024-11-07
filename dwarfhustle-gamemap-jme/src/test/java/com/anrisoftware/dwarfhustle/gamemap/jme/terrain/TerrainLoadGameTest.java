@@ -105,18 +105,19 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     protected void loadTerrain() {
         var root = Path.of("/home/devent/Projects/dwarf-hustle/terrain-maps/");
         root = root.resolve("game");
-        root = root.resolve("terrain_4_4_4_2");
-        // root = root.resolve("terrain_32_32_32_8");
+        // root = root.resolve("terrain_4_4_4_2");
+        root = root.resolve("terrain_32_32_32_8");
         // root = root.resolve("terrain_512_512_128_16");
-        var tmp = Files.createTempDirectory("terrain_4_4_4_2");
-        // var tmp = Files.createTempDirectory("terrain_32_32_32_8");
+        // var tmp = Files.createTempDirectory("terrain_4_4_4_2");
+        var tmp = Files.createTempDirectory("terrain_32_32_32_8");
         // var tmp = Files.createTempDirectory("terrain_512_512_128_16");
         injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
         initGameObjectsStorage(root);
         loadGameMap();
         this.chunksStorage = initMapStorage(root);
         initMapObjectsStorage(root, gm);
-        gm.cursor.z = 1;
+        // gm.cursor.z = 1;
+        gm.cursor.z = 9;
         // gm.cursor.z = 16;
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
         // block.setMined(true);

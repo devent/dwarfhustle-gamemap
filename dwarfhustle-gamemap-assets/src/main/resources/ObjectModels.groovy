@@ -53,23 +53,38 @@ rid["BLOCK-CEILING"] = 967
 rid["BLOCK-WATER"] = 966
 rid["BLOCK-NORMAL"] = 965
 
-// Tree
-rid["PINE"] = 1019
-rid["PINE-SAMPLING"] = 1020
-rid["PINE-ROOT"] = 1021
-rid["PINE-TRUNK"] = 1022
-rid["PINE-BRANCH"] = 1023
-rid["PINE-TWIG"] = 1024
-rid["PINE-LEAF"] = 1025
+// Grass
+rid["RED-POPPY"] = 1021
+rid["DAISY"] = 1020
+rid["CARROT"] = 1019
+rid["WHEAT"] = 1017
 
 // Shrub
-rid["BLUEBERRIES"] = 1017
+rid["BLUEBERRIES"] = 1023
 
-// Grass
-rid["RED-POPPY"] = 1015
-rid["DAISY"] = 1014
-rid["CARROT"] = 1013
-rid["WHEAT"] = 1011
+// Tree-Branch
+rid["BIRCH-BRANCH"] = 1037
+rid["PINE-BRANCH"] = 1029
+
+// Tree-Leaf
+rid["BIRCH-LEAF"] = 1039
+rid["PINE-LEAF"] = 1031
+
+// Tree-Root
+rid["BIRCH-ROOT"] = 1035
+rid["PINE-ROOT"] = 1027
+
+// Tree-Sampling
+rid["BIRCH-SAMPLING"] = 1034
+rid["PINE-SAMPLING"] = 1026
+
+// Tree-Trunk
+rid["BIRCH-TRUNK"] = 1036
+rid["PINE-TRUNK"] = 1028
+
+// Tree-Twig
+rid["BIRCH-TWIG"] = 1038
+rid["PINE-TWIG"] = 1030
 
 m = new ModelMap()
 
@@ -100,7 +115,8 @@ m[rid["BLOCK-CEILING"]] = [model: "Models/blocks/block-ceiling/block-ceiling.j3o
 m[rid["BLOCK-WATER"]] = [model: "Models/blocks/block-water/block-water.j3o"]
 m[rid["BLOCK-NORMAL"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
 
-m[rid["PINE-SAMPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-1.j3o"]
+m[rid["PINE-TRUNK"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
+m[rid["PINE-SAMPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-3.j3o"]
 
 m[rid["BLUEBERRIES"]] = [model: "Models/shrubs/blueberry/blueberry-shrub-2-leafs.j3o"]
 

@@ -272,7 +272,13 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private void addShrub() {
         this.oldCursor = gm.getCursor();
-        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeShrub.TYPE,
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeShrub.TYPE, "BLUEBERRIES",
+                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+    }
+
+    private void addSampling() {
+        this.oldCursor = gm.getCursor();
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSampling.TYPE, "PINE-SAMPLING",
                 (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
@@ -286,12 +292,6 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         return downBlock.getMaterial() == 864 || downBlock.getMaterial() == 863 || downBlock.getMaterial() == 862
                 || downBlock.getMaterial() == 861 || downBlock.getMaterial() == 860 || downBlock.getMaterial() == 859
                 || downBlock.getMaterial() == 858 || downBlock.getMaterial() == 857;
-    }
-
-    private void addSampling() {
-        this.oldCursor = gm.getCursor();
-        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSampling.TYPE,
-                (mb) -> mb.isFilled() && mb.isDiscovered()));
     }
 
     private void deleteVegetation() {

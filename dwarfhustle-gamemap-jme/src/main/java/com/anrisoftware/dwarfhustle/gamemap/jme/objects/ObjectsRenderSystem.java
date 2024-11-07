@@ -99,6 +99,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
         System.out.println("addObject" + entity); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = new Node("" + c.object.getId());
+        System.out.println(c.object.getKid()); // TODO
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, c.object.getKid());
         node.attachChild(model.getModel().clone());
         node.setShadowMode(ShadowMode.Cast);

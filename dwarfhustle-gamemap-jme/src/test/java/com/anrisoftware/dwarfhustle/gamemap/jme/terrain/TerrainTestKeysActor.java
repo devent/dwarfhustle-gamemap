@@ -41,6 +41,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeVegetation;
 import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
@@ -265,7 +266,9 @@ public class TerrainTestKeysActor {
     private Behavior<Message> onAddObjectOnBlock(AddObjectOnBlockMessage m) {
         log.debug("onAddObjectOnBlock {}", m);
         knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, m.type, (ko) -> {
-            insertObject(m.cursor, ko.objects.getFirst(), m.validBlock);
+            insertObject(m.cursor, ko.objects
+                    .detectOptional((it) -> ((KnowledgeVegetation) it).getName().equalsIgnoreCase(m.name)).get(),
+                    m.validBlock);
         }));
         return Behaviors.same();
     }

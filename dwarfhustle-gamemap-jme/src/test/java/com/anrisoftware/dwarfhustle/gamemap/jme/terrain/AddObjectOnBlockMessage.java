@@ -20,5 +20,7 @@ public class AddObjectOnBlockMessage extends Message {
 
     public final String type;
 
+    public final String name;
+
     public final Function<MapBlock, Boolean> validBlock;
 }
