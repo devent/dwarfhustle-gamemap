@@ -66,7 +66,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
 
     @Inject
     public ObjectsRenderSystem() {
-        super(ObjectMeshComponent.f, 1);
+        super(ObjectMeshComponent.f, 0.05f);
         this.objectNodes = IntObjectMaps.mutable.withInitialCapacity(100);
     }
 
@@ -131,10 +131,8 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     private void updateLocation(GameMapObject o, Node node) {
         float tx = -gm.getWidth() + 2f * o.getPos().getX() + 1f;
         float ty = gm.getHeight() - 2f * o.getPos().getY() - 1f;
-        // System.out.printf("%f/%f pos %s cursor %s\n", tx, ty, o.getPos(), gm.cursor);
-        // // TODO
-        node.setLocalTranslation(tx, ty, 0);
-        // node.setLocalScale(0.25f);
+        float tz = -1f + 2f * (gm.cursor.z - o.getPos().getZ());
+        node.setLocalTranslation(tx, ty, tz);
     }
 
 }

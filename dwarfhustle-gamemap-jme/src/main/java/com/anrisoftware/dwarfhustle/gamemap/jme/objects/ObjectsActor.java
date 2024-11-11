@@ -247,6 +247,8 @@ public class ObjectsActor {
 
     private CollectChunksUpdate collectChunksUpdate;
 
+    private int visibleLayers;
+
     /**
      * Stash behavior. Returns a behavior for the messages:
      *
@@ -284,6 +286,10 @@ public class ObjectsActor {
         log.debug("onInitialState");
         this.is = m;
         this.collectChunksUpdate = collectChunksUpdateFactory.create();
+        this.visibleLayers = gs.get().visibleDepthLayers.get();
+        gs.get().visibleDepthLayers.addListener((observable, oldValue, newValue) -> {
+            visibleLayers = newValue.intValue();
+        });
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -340,7 +346,7 @@ public class ObjectsActor {
          * if new object, create entity, put in (x,y,z)->entity map
          */
         long oldtime = System.currentTimeMillis();
-        final int w = gm.width, h = gm.height, d = gm.depth;
+        final int w = gm.width, h = gm.height, d = gm.depth, cursorZ = gm.cursor.z;
         MutableLongSet alldbids = LongSets.mutable.withInitialCapacity(100);
         MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunkidsTypeOids = LongObjectMaps.mutable
                 .ofInitialCapacity(100);
@@ -351,8 +357,10 @@ public class ObjectsActor {
             final var pos = chunk.getPos();
             mapObjects.getObjectsRange(pos.getX(), pos.getY(), pos.getZ(), pos.getEp().getX(), pos.getEp().getY(),
                     pos.getEp().getZ(), (type, id, x, y, z) -> {
-                        chunkdbids.put(type, id);
-                        alldbids.add(id);
+                        if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
+                            chunkdbids.put(type, id);
+                            alldbids.add(id);
+                        }
                     });
         }
         MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);

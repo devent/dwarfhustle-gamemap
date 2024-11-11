@@ -39,6 +39,7 @@ import com.jme3.math.Vector2f;
 import com.jme3.scene.Node;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -70,6 +71,10 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
     @Inject
     private InputManager inputManager;
 
+    @Inject
+    @Named("sceneNode")
+    private Node sceneNode;
+
     private boolean rightMouseDown;
 
     private Node terrainNode;
@@ -95,9 +100,7 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
     public void resetTerrain() {
         this.roll = 0f;
         this.pitch = 0f;
-        terrainNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
-        waterNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
-        boundingNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
+        sceneNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
     }
 
     public void setTerrainNode(Node node) {
@@ -211,9 +214,7 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
         if (pitch < -MAX_ANGLE) {
             pitch = -MAX_ANGLE;
         }
-        terrainNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
-        waterNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
-        boundingNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
+        sceneNode.setLocalRotation(new Quaternion().fromAngles(DEG_TO_RAD * roll, DEG_TO_RAD * pitch, 0f));
     }
 
     @Override

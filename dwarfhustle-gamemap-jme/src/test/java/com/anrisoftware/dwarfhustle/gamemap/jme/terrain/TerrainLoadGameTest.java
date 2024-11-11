@@ -20,6 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -105,23 +106,23 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     protected void loadTerrain() {
         var root = Path.of("/home/devent/Projects/dwarf-hustle/terrain-maps/");
         root = root.resolve("game");
-        // root = root.resolve("terrain_4_4_4_2");
-        root = root.resolve("terrain_32_32_32_8");
-        // root = root.resolve("terrain_512_512_128_16");
-        // var tmp = Files.createTempDirectory("terrain_4_4_4_2");
-        var tmp = Files.createTempDirectory("terrain_32_32_32_8");
-        // var tmp = Files.createTempDirectory("terrain_512_512_128_16");
+        // loadTerrain(root, "terrain_4_4_4_2", 1);
+        loadTerrain(root, "terrain_32_32_32_8", 9);
+        // loadTerrain(root, "terrain_512_512_128_16", 16);
+        // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
+        // block.setMined(true);
+        // block.setMaterialRid(898);
+    }
+
+    private void loadTerrain(Path root, String name, int initialZ) throws IOException {
+        root = root.resolve(name);
+        var tmp = Files.createTempDirectory(name);
         injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
         initGameObjectsStorage(root);
         loadGameMap();
         this.chunksStorage = initMapStorage(root);
         initMapObjectsStorage(root, gm);
-        // gm.cursor.z = 1;
-        gm.cursor.z = 9;
-        // gm.cursor.z = 16;
-        // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
-        // block.setMined(true);
-        // block.setMaterialRid(898);
+        gm.cursor.z = initialZ;
     }
 
     private void initMapObjectsStorage(Path root, GameMap gm) {
