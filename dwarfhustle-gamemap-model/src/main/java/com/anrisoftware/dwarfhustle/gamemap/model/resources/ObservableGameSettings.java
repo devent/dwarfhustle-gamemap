@@ -65,9 +65,9 @@ public class ObservableGameSettings {
         @JsonIgnore
         public DateTimeFormatter gameTimeFormat = DateTimeFormatter.ISO_TIME;
 
-        public Duration gameTickDuration = Duration.ofMillis(100);
+        public Duration gameTickDuration = Duration.ofMillis(25);
 
-        public Duration terrainUpdateDuration = Duration.ofMillis(50);
+        public Duration terrainUpdateDuration = Duration.ofMillis(100);
 
         public boolean windowFullscreen = false;
 

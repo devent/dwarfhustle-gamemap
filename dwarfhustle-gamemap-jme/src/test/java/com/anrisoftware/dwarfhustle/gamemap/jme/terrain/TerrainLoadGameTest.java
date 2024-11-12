@@ -107,14 +107,16 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         var root = Path.of("/home/devent/Projects/dwarf-hustle/terrain-maps/");
         root = root.resolve("game");
         // loadTerrain(root, "terrain_4_4_4_2", 1);
-        loadTerrain(root, "terrain_32_32_32_8", 9);
-        // loadTerrain(root, "terrain_512_512_128_16", 16);
+        // loadTerrain(root, "terrain_32_32_32_8", 9);
+        loadTerrain(root, "terrain_512_512_128_16", 171, 189, 18, new float[] { -180.88005f, 114.93917f, 55.877968f },
+                new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
         // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
         // block.setMined(true);
         // block.setMaterialRid(898);
     }
 
-    private void loadTerrain(Path root, String name, int initialZ) throws IOException {
+    private void loadTerrain(Path root, String name, int x, int y, int z, float[] cameraPos, float[] cameraRot)
+            throws IOException {
         root = root.resolve(name);
         var tmp = Files.createTempDirectory(name);
         injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
@@ -122,7 +124,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         loadGameMap();
         this.chunksStorage = initMapStorage(root);
         initMapObjectsStorage(root, gm);
-        gm.cursor.z = initialZ;
+        gm.cursor.x = x;
+        gm.cursor.y = y;
+        gm.cursor.z = z;
+        gm.cameraPos = cameraPos;
+        gm.cameraRot = cameraRot;
     }
 
     private void initMapObjectsStorage(Path root, GameMap gm) {
