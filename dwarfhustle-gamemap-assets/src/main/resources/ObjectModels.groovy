@@ -116,8 +116,8 @@ m[rid["BLOCK-WATER"]] = [model: "Models/blocks/block-water/block-water.j3o"]
 m[rid["BLOCK-NORMAL"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
 
 m[rid["PINE-TRUNK"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
-m[rid["PINE-SAMPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-3.j3o"]
+m[rid["PINE-SAMPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-4.j3o"]
 
-m[rid["BLUEBERRIES"]] = [model: "Models/shrubs/blueberry/blueberry-shrub-2-leafs.j3o"]
+m[rid["BLUEBERRIES"]] = [model: "Models/shrubs/blueberry/blueberry-shrub-3-leafs.j3o"]
 
 m

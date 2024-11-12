@@ -102,7 +102,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
         System.out.println(c.object.getKid()); // TODO
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, c.object.getKid());
         node.attachChild(model.getModel().clone());
-        node.setShadowMode(ShadowMode.Cast);
+        node.setShadowMode(ShadowMode.Off);
         updateLocation(c.object, node);
         objectNodes.put(entity.hashCode(), node);
         this.sceneNode.attachChild(node);
