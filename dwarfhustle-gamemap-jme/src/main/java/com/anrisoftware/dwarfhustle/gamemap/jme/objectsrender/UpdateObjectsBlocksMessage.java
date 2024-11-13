@@ -1,4 +1,4 @@
-package com.anrisoftware.dwarfhustle.gamemap.jme.objects;
+package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
 import org.eclipse.collections.api.multimap.Multimap;
 

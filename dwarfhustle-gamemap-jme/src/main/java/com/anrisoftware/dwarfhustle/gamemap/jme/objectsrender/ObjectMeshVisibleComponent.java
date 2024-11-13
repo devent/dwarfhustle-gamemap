@@ -15,25 +15,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.objects;
+package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.objects.ObjectsActor.ObjectsActorFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.objects.ObjectsRenderSystem.ObjectsRenderSystemFactory;
-import com.google.inject.AbstractModule;
-import com.google.inject.assistedinject.FactoryModuleBuilder;
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.Family;
+
+import lombok.Data;
 
 /**
  *
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class DwarfhustleGamemapJmeObjectsModule extends AbstractModule {
+@Data
+public class ObjectMeshVisibleComponent implements Component {
 
-    @Override
-    protected void configure() {
-        install(new FactoryModuleBuilder().implement(ObjectsActor.class, ObjectsActor.class)
-                .build(ObjectsActorFactory.class));
-        install(new FactoryModuleBuilder().implement(ObjectsRenderSystem.class, ObjectsRenderSystem.class)
-                .build(ObjectsRenderSystemFactory.class));
-    }
+    public static final Family f = Family.all(ObjectMeshVisibleComponent.class).get();
+
+    public final long id;
+
+    public final boolean visible;
+
 }

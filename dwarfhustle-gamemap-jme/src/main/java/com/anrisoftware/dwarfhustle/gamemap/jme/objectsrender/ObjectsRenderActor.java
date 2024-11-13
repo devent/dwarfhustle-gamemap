@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.objects;
+package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
@@ -59,7 +59,6 @@ import com.badlogic.ashley.core.Entity;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
-import com.jme3.asset.AssetManager;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -82,13 +81,14 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
-public class ObjectsActor {
+public class ObjectsRenderActor {
 
     private static final String UPDATE_OBJECTS_MESSAGE_TIMER_KEY = "UpdateObjectsMessage-Timer";
 
-    public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, ObjectsActor.class.getSimpleName());
+    public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
+            ObjectsRenderActor.class.getSimpleName());
 
-    public static final String NAME = ObjectsActor.class.getSimpleName();
+    public static final String NAME = ObjectsRenderActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
 
@@ -111,19 +111,20 @@ public class ObjectsActor {
     }
 
     /**
-     * Factory to create {@link ObjectsActor}.
+     * Factory to create {@link ObjectsRenderActor}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
-    public interface ObjectsActorFactory {
-        ObjectsActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
-                MapObjectsStorage mapObjects, @Assisted("materials") ObjectsGetter materials,
-                @Assisted("models") ObjectsGetter models, @Assisted("objects-getter") ObjectsGetter og,
-                @Assisted("objects-setter") ObjectsSetter os, @Assisted("chunks-getter") ObjectsGetter chunks);
+    public interface ObjectsActorRenderFactory {
+        ObjectsRenderActor create(ActorContext<Message> context, StashBuffer<Message> stash,
+                TimerScheduler<Message> timer, MapObjectsStorage mapObjects,
+                @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
+                @Assisted("objects-getter") ObjectsGetter og, @Assisted("objects-setter") ObjectsSetter os,
+                @Assisted("chunks-getter") ObjectsGetter chunks);
     }
 
     /**
-     * Creates the {@link ObjectsActor}.
+     * Creates the {@link ObjectsRenderActor}.
      * 
      * @param mapObjects
      */
@@ -143,13 +144,13 @@ public class ObjectsActor {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return injector.getInstance(ObjectsActorFactory.class)
+            return injector.getInstance(ObjectsActorRenderFactory.class)
                     .create(context, stash, timer, mapObjects, ma, mo, og0, os0, cg0).start(injector);
         })));
     }
 
     /**
-     * Creates the {@link ObjectsActor}.
+     * Creates the {@link ObjectsRenderActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
             MapObjectsStorage mapObjects, CompletionStage<ObjectsGetter> materials,
@@ -221,9 +222,6 @@ public class ObjectsActor {
 
     @Inject
     private GameSettingsProvider gs;
-
-    @Inject
-    private AssetManager assets;
 
     @Inject
     private Engine engine;

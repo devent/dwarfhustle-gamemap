@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.objects;
+package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.objects.ObjectsRenderSystem.ObjectsRenderSystemFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderSystem.ObjectsRenderSystemFactory;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.badlogic.ashley.core.Engine;
