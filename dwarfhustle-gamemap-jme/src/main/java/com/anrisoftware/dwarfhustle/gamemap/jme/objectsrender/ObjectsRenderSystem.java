@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
+
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
@@ -96,33 +98,23 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void addObject(Entity entity) {
-        System.out.println("addObject" + entity); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = new Node("" + c.object.getId());
-        System.out.println(c.object.getKid()); // TODO
-        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, c.object.getKid());
+        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, kid2Id(c.object.getKid()));
         node.attachChild(model.getModel().clone());
         node.setShadowMode(ShadowMode.Off);
         updateLocation(c.object, node);
         objectNodes.put(entity.hashCode(), node);
         this.sceneNode.attachChild(node);
-        // var model = models.get(ModelCacheObject.OBJECT_TYPE,
-        // c.object.getObjectType());
-        // int x = c.object.getPos().getX(), y = c.object.getPos().getY(), z =
-        // c.object.getPos().getZ();
-        // node.attachChild(n);
-        // objectNodes.put(entity.hashCode(), n);
     }
 
     private void removeObject(Entity entity) {
-        System.out.println("removeObject" + entity); // TODO
         var node = objectNodes.remove(entity.hashCode());
         sceneNode.detachChild(node);
     }
 
     @Override
     protected void processEntity(Entity entity) {
-        // System.out.println("ObjectsRenderSystem.processEntity() " + entity); // TODO
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = objectNodes.get(entity.hashCode());
         updateLocation(c.object, node);

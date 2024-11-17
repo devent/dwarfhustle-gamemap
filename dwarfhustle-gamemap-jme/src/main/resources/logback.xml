@@ -52,9 +52,10 @@
     <logger name="com.jme3.app.state" level="FINEST" />
 	<logger name="com.anrisoftware" level="ALL" />
 	<logger name="com.anrisoftware.dwarfhustle.model" level="ERROR" />
+	<logger name="com.anrisoftware.dwarfhustle.model.actor" level="DEBUG" />
     <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.app.AppActor" level="DEBUG" />
     <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor" level="INFO" />
-    <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.objects.ObjectsActor" level="INFO" />
+    <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderActor" level="INFO" />
     <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainTestKeysActor" level="INFO" />
 
 </configuration>

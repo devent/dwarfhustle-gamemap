@@ -33,8 +33,8 @@ import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapCursor;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
@@ -157,7 +157,7 @@ public class MainPaneController {
         gameTimeLabel.setText(gs.get().gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));
     }
 
-    public void updateMapCursor(MapCursor cursor) {
+    public void updateMapCursor(GameBlockPos cursor) {
         levelBar.setValue(cursor.z + 1);
         levelLabel.setText(Integer.toString(cursor.z + 1));
     }

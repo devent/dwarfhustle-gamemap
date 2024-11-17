@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -113,9 +114,9 @@ public class TerrainTestKeysActor {
             MapObjectsStorage mos) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             var knowledgeActor0 = knowledgeActor.toCompletableFuture().get();
-            var og0 = og.toCompletableFuture().get();
-            var os0 = os.toCompletableFuture().get();
-            var chunks0 = chunks.toCompletableFuture().get();
+            var og0 = og.toCompletableFuture().get(15, SECONDS);
+            var os0 = os.toCompletableFuture().get(15, SECONDS);
+            var chunks0 = chunks.toCompletableFuture().get(15, SECONDS);
             context.pipeToSelf(createState(injector), (result, cause) -> {
                 if (cause == null) {
                     return result;
@@ -346,7 +347,8 @@ public class TerrainTestKeysActor {
             var o = (GameMapObject) ko.createObject(ids.generate());
             o.setMap(gm.getId());
             o.setPos(mb.getPos());
-            o.setKid(ko.getId());
+            o.setKid(ko.getKid());
+            o.setOid(ko.getKnowledgeType().hashCode());
             os.set(o.getObjectType(), o);
             moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
         }

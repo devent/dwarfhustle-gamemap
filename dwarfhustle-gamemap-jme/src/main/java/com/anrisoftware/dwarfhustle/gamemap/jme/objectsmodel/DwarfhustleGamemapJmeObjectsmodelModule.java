@@ -15,25 +15,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
+package com.anrisoftware.dwarfhustle.gamemap.jme.objectsmodel;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderActor.ObjectsRenderActorFactory;
-import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderSystem.ObjectsRenderSystemFactory;
+import com.anrisoftware.dwarfhustle.gamemap.jme.objectsmodel.ObjectsModelActor.ObjectsModelActorFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 
 /**
  *
- *
+ * @see ObjectsModelActorFactory
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class DwarfhustleGamemapJmeObjectsrenderModule extends AbstractModule {
+public class DwarfhustleGamemapJmeObjectsmodelModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new FactoryModuleBuilder().implement(ObjectsRenderActor.class, ObjectsRenderActor.class)
-                .build(ObjectsRenderActorFactory.class));
-        install(new FactoryModuleBuilder().implement(ObjectsRenderSystem.class, ObjectsRenderSystem.class)
-                .build(ObjectsRenderSystemFactory.class));
+        install(new FactoryModuleBuilder().implement(ObjectsModelActor.class, ObjectsModelActor.class)
+                .build(ObjectsModelActorFactory.class));
     }
 }

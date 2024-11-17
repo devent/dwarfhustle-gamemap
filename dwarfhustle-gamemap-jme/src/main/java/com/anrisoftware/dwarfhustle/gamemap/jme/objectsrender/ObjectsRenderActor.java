@@ -83,7 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ObjectsRenderActor {
 
-    private static final String UPDATE_OBJECTS_MESSAGE_TIMER_KEY = "UpdateObjectsMessage-Timer";
+    private static final String UPDATE_OBJECTS_MESSAGE_TIMER_KEY = "ObjectsRenderActor-UpdateObjectsMessage-Timer";
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
             ObjectsRenderActor.class.getSimpleName());
@@ -115,7 +115,7 @@ public class ObjectsRenderActor {
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
-    public interface ObjectsActorRenderFactory {
+    public interface ObjectsRenderActorFactory {
         ObjectsRenderActor create(ActorContext<Message> context, StashBuffer<Message> stash,
                 TimerScheduler<Message> timer, MapObjectsStorage mapObjects,
                 @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
@@ -144,7 +144,7 @@ public class ObjectsRenderActor {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return injector.getInstance(ObjectsActorRenderFactory.class)
+            return injector.getInstance(ObjectsRenderActorFactory.class)
                     .create(context, stash, timer, mapObjects, ma, mo, og0, os0, cg0).start(injector);
         })));
     }
@@ -273,7 +273,7 @@ public class ObjectsRenderActor {
     }
 
     private Behavior<Message> onSetupError(SetupErrorMessage m) {
-        log.debug("onSetupError: {}", m);
+        log.error("onSetupError: {}", m);
         return Behaviors.stopped();
     }
 

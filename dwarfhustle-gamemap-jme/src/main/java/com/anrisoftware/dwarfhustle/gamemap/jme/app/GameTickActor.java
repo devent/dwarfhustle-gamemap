@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -110,10 +111,19 @@ public class GameTickActor {
      * @return {@link Behavior} from {@link #getInitialBehavior()}
      */
     public Behavior<? extends Message> start(Injector injector) {
-        timer.startTimerAtFixedRate(GAME_TICK_MESSAGE_TIMER_KEY, new UpdateGameTickMessage(tick++),
-                gs.get().gameTickDuration.get());
         return getInitialBehavior() //
                 .build();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
+    private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
+        timer.startTimerAtFixedRate(GAME_TICK_MESSAGE_TIMER_KEY, new UpdateGameTickMessage(tick++),
+                gs.get().gameTickDuration.get());
+        return Behaviors.same();
     }
 
     /**
@@ -145,6 +155,7 @@ public class GameTickActor {
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
+                .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
                 .onMessage(UpdateGameTickMessage.class, this::onUpdateGameTick)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
         ;

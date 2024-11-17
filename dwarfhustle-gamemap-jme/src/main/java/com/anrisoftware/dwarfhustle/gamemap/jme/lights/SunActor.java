@@ -165,8 +165,13 @@ public class SunActor {
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
+                .onMessage(GameTickMessage.class, this::ignoreMessage)//
                 .onMessage(Message.class, this::stashOtherCommand)//
                 .build();
+    }
+
+    private Behavior<Message> ignoreMessage(Message m) {
+        return Behaviors.same();
     }
 
     private Behavior<Message> stashOtherCommand(Message m) {

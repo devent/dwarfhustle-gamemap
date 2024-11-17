@@ -24,7 +24,7 @@ import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbOrientdbModule;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustleModelKnowledgePowerloomPlModule;
 import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
@@ -50,7 +50,7 @@ public class AppModule extends AbstractModule {
 		install(new GamemapModelResourcesModule());
 		// Model Modules
 		install(new DwarfhustleModelActorsModule());
-		install(new DwarfhustlePowerloomModule());
+		install(new DwarfhustleModelKnowledgePowerloomPlModule());
 		install(new DwarfhustleModelDbOrientdbModule());
 		install(new DwarfhustleModelApiObjectsModule());
 		install(new DwarfhustleModelDbCacheModule());

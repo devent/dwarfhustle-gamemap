@@ -162,7 +162,7 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
     }
 
     private void saveGameMap(GameMap gm) {
-        objectsActor.tell(new CachePutMessage<>(cacheResponseAdapter, gm.getId(), gm));
+        objectsActor.tell(new CachePutMessage<>(cacheResponseAdapter, gm));
     }
 
     /**
@@ -229,7 +229,7 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
             var controller = initial.controller;
-            var wm = og.get(WorldMap.class, WorldMap.OBJECT_TYPE, m.gm.world);
+            var wm = (WorldMap) og.get(WorldMap.OBJECT_TYPE, m.gm.world);
             controller.setMap(wm, m.gm);
         });
         return Behaviors.same();

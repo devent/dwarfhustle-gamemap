@@ -33,6 +33,8 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.DwarfhustleGamemapJmeModelModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.objectsmodel.DwarfhustleGamemapJmeObjectsmodelModule;
+import com.anrisoftware.dwarfhustle.gamemap.jme.objectsmodel.ObjectsModelActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.DwarfhustleGamemapJmeObjectsrenderModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainTestKeysActor.TerrainTestKeysActorFactory;
@@ -57,7 +59,7 @@ import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustlePowerloomModule;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustleModelKnowledgePowerloomPlModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.badlogic.ashley.core.Engine;
@@ -142,12 +144,13 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
             protected void configure() {
                 install(new DwarfhustleGamemapJmeObjectsrenderModule());
                 install(new DwarfhustleGamemapJmeTerrainModule());
-                install(new DwarfhustlePowerloomModule());
+                install(new DwarfhustleModelKnowledgePowerloomPlModule());
                 install(new DwarfhustleModelDbStoragesSchemasModule());
                 install(new DwarfhustleModelDbCacheModule());
                 install(new DwarfhustleGamemapJmeAppModule());
                 install(new DwarfhustleGamemapJmeLightsModule());
                 install(new DwarfhustleGamemapJmeModelModule());
+                install(new DwarfhustleGamemapJmeObjectsmodelModule());
                 bind(GameSettingsProvider.class).asEagerSingleton();
                 install(new FactoryModuleBuilder().implement(TerrainTestKeysActor.class, TerrainTestKeysActor.class)
                         .build(TerrainTestKeysActorFactory.class));
@@ -239,7 +242,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createObjectsCache();
         createMaterialAssets();
         createModelsAssets();
-        createObjects();
+        createObjectsRender();
+        createObjectsModel();
         createTerrain();
         createSun();
         createGameTick();
@@ -295,7 +299,25 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 });
     }
 
-    private void createObjects() {
+    private void createObjectsModel() {
+        ObjectsModelActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage,
+                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
+                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID),
+                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
+                actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID),
+                actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID),
+                actor.getObjectSetterAsync(MapChunksJcsCacheActor.ID),
+                actor.getKnowledgeGetterAsync(PowerLoomKnowledgeActor.ID)).whenComplete((ret, ex) -> {
+                    if (ex != null) {
+                        log.error("ObjectsModelActor.create", ex);
+                        actor.tell(new AppErrorMessage(ex));
+                    } else {
+                        log.debug("ObjectsModelActor created");
+                    }
+                });
+    }
+
+    private void createObjectsRender() {
         ObjectsRenderActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage,
                 actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
                 actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID),
@@ -303,10 +325,10 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID),
                 actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
-                        log.error("ObjectsActor.create", ex);
+                        log.error("ObjectsRenderActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
                     } else {
-                        log.debug("ObjectsActor created");
+                        log.debug("ObjectsRenderActor created");
                     }
                 });
     }
@@ -361,8 +383,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     }
 
     private void createPowerLoom(ActorRef<Message> cache) {
-        PowerLoomKnowledgeActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getActorAsync(KnowledgeJcsCacheActor.ID))
-                .whenComplete((ret, ex) -> {
+        PowerLoomKnowledgeActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getActorAsync(KnowledgeJcsCacheActor.ID),
+                actor.getObjectGetterAsync(KnowledgeJcsCacheActor.ID)).whenComplete((ret, ex) -> {
                     if (ex != null) {
                         log.error("PowerLoomKnowledgeActor.create", ex);
                         actor.tell(new AppErrorMessage(ex));
