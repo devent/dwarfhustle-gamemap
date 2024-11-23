@@ -26,65 +26,65 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.assets.ModelMap
 rid = [:]
 
 // BlockObject
-rid["BLOCK-RAMP-TWO-SE"] = 990
-rid["BLOCK-RAMP-TWO-NE"] = 989
-rid["BLOCK-RAMP-TRI-S"] = 988
-rid["BLOCK-RAMP-TRI-W"] = 987
-rid["BLOCK-RAMP-TRI-E"] = 986
-rid["BLOCK-RAMP-TRI-N"] = 985
-rid["BLOCK-RAMP-SINGLE"] = 984
-rid["BLOCK-RAMP-PERP-W"] = 983
-rid["BLOCK-RAMP-PERP-S"] = 982
-rid["BLOCK-RAMP-PERP-E"] = 981
-rid["BLOCK-RAMP-PERP-N"] = 980
-rid["BLOCK-RAMP-EDGE-OUT-SW"] = 979
-rid["BLOCK-RAMP-EDGE-OUT-SE"] = 978
-rid["BLOCK-RAMP-EDGE-OUT-NW"] = 977
-rid["BLOCK-RAMP-EDGE-OUT-NE"] = 976
-rid["BLOCK-RAMP-EDGE-IN-SW"] = 975
-rid["BLOCK-RAMP-EDGE-IN-SE"] = 974
-rid["BLOCK-RAMP-EDGE-IN-NW"] = 973
-rid["BLOCK-RAMP-EDGE-IN-NE"] = 972
-rid["BLOCK-RAMP-CORNER-SW"] = 971
-rid["BLOCK-RAMP-CORNER-SE"] = 970
-rid["BLOCK-RAMP-CORNER-NW"] = 969
-rid["BLOCK-RAMP-CORNER-NE"] = 968
-rid["BLOCK-CEILING"] = 967
-rid["BLOCK-WATER"] = 966
-rid["BLOCK-NORMAL"] = 965
+rid["BLOCK-RAMP-TWO-SE"] = 991
+rid["BLOCK-RAMP-TWO-NE"] = 990
+rid["BLOCK-RAMP-TRI-S"] = 989
+rid["BLOCK-RAMP-TRI-W"] = 988
+rid["BLOCK-RAMP-TRI-E"] = 987
+rid["BLOCK-RAMP-TRI-N"] = 986
+rid["BLOCK-RAMP-SINGLE"] = 985
+rid["BLOCK-RAMP-PERP-W"] = 984
+rid["BLOCK-RAMP-PERP-S"] = 983
+rid["BLOCK-RAMP-PERP-E"] = 982
+rid["BLOCK-RAMP-PERP-N"] = 981
+rid["BLOCK-RAMP-EDGE-OUT-SW"] = 980
+rid["BLOCK-RAMP-EDGE-OUT-SE"] = 979
+rid["BLOCK-RAMP-EDGE-OUT-NW"] = 978
+rid["BLOCK-RAMP-EDGE-OUT-NE"] = 977
+rid["BLOCK-RAMP-EDGE-IN-SW"] = 976
+rid["BLOCK-RAMP-EDGE-IN-SE"] = 975
+rid["BLOCK-RAMP-EDGE-IN-NW"] = 974
+rid["BLOCK-RAMP-EDGE-IN-NE"] = 973
+rid["BLOCK-RAMP-CORNER-SW"] = 972
+rid["BLOCK-RAMP-CORNER-SE"] = 971
+rid["BLOCK-RAMP-CORNER-NW"] = 970
+rid["BLOCK-RAMP-CORNER-NE"] = 969
+rid["BLOCK-CEILING"] = 968
+rid["BLOCK-WATER"] = 967
+rid["BLOCK-NORMAL"] = 966
 
 // Grass
-rid["RED-POPPY"] = 1021
-rid["DAISY"] = 1020
-rid["CARROT"] = 1019
-rid["WHEAT"] = 1017
+rid["RED-POPPY"] = 1023
+rid["DAISY"] = 1022
+rid["CARROT"] = 1021
+rid["WHEAT"] = 1019
 
 // Shrub
-rid["BLUEBERRIES"] = 1023
+rid["BLUEBERRIES"] = 1025
 
 // Tree-Branch
-rid["BIRCH-BRANCH"] = 1037
-rid["PINE-BRANCH"] = 1029
+rid["BIRCH-BRANCH"] = 1039
+rid["PINE-BRANCH"] = 1031
 
 // Tree-Leaf
-rid["BIRCH-LEAF"] = 1039
-rid["PINE-LEAF"] = 1031
+rid["BIRCH-LEAF"] = 1041
+rid["PINE-LEAF"] = 1033
 
 // Tree-Root
-rid["BIRCH-ROOT"] = 1035
-rid["PINE-ROOT"] = 1027
+rid["BIRCH-ROOT"] = 1037
+rid["PINE-ROOT"] = 1029
 
-// Tree-Sampling
-rid["BIRCH-SAMPLING"] = 1034
-rid["PINE-SAMPLING"] = 1026
+// Tree-Sapling
+rid["BIRCH-SAPLING"] = 1036
+rid["PINE-SAPLING"] = 1028
 
 // Tree-Trunk
-rid["BIRCH-TRUNK"] = 1036
-rid["PINE-TRUNK"] = 1028
+rid["BIRCH-TRUNK"] = 1038
+rid["PINE-TRUNK"] = 1030
 
 // Tree-Twig
-rid["BIRCH-TWIG"] = 1038
-rid["PINE-TWIG"] = 1030
+rid["BIRCH-TWIG"] = 1040
+rid["PINE-TWIG"] = 1032
 
 m = new ModelMap()
 
@@ -115,8 +115,12 @@ m[rid["BLOCK-CEILING"]] = [model: "Models/blocks/block-ceiling/block-ceiling.j3o
 m[rid["BLOCK-WATER"]] = [model: "Models/blocks/block-water/block-water.j3o"]
 m[rid["BLOCK-NORMAL"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
 
+m[rid["PINE-BRANCH"]] = [model: "Models/trees/tree-branch/tree-branch.j3o"]
+m[rid["PINE-LEAF"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
+m[rid["PINE-ROOT"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
+m[rid["PINE-SAPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-4.j3o"]
 m[rid["PINE-TRUNK"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
-m[rid["PINE-SAMPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-4.j3o"]
+m[rid["PINE-TWIG"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
 
 m[rid["BLUEBERRIES"]] = [model: "Models/shrubs/blueberry/blueberry-shrub-3-leafs.j3o"]
 

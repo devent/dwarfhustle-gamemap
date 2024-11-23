@@ -46,6 +46,26 @@ rid["BLOCK-CEILING"] = 967
 rid["BLOCK-WATER"] = 966
 rid["BLOCK-NORMAL"] = 965
 
+// Tree-Branch
+rid["BIRCH-BRANCH"] = 1039
+rid["PINE-BRANCH"] = 1031
+
+// Tree-Leaf
+rid["BIRCH-LEAF"] = 1041
+rid["PINE-LEAF"] = 1033
+
+// Tree-Root
+rid["BIRCH-ROOT"] = 1037
+rid["PINE-ROOT"] = 1029
+
+// Tree-Trunk
+rid["BIRCH-TRUNK"] = 1038
+rid["PINE-TRUNK"] = 1030
+
+// Tree-Twig
+rid["BIRCH-TWIG"] = 1040
+rid["PINE-TWIG"] = 1032
+
 m = [:]
 
 m[rid["BLOCK-RAMP-TWO-SE"]] = 0xfff6
@@ -73,5 +93,25 @@ m[rid["BLOCK-RAMP-CORNER-NW"]] = 0xfffc
 m[rid["BLOCK-RAMP-CORNER-NE"]] = 0xfffc
 m[rid["BLOCK-WATER"]] = 0xfffd
 m[rid["BLOCK-NORMAL"]] = 0xfffd
+
+// Tree-Branch
+m[rid["BIRCH-BRANCH"]] = 0xfff5
+m[rid["PINE-BRANCH"]] = 0xfff5
+
+// Tree-Leaf
+m[rid["BIRCH-LEAF"]] = 0xfff4
+m[rid["PINE-LEAF"]] = 0xfff4
+
+// Tree-Root
+m[rid["BIRCH-ROOT"]] = 0xfff3
+m[rid["PINE-ROOT"]] = 0xfff3
+
+// Tree-Trunk
+m[rid["BIRCH-TRUNK"]] = 0xfff2
+m[rid["PINE-TRUNK"]] = 0xfff2
+
+// Tree-Twig
+m[rid["BIRCH-TWIG"]] = 0xfff1
+m[rid["PINE-TWIG"]] = 0xfff1
 
 m

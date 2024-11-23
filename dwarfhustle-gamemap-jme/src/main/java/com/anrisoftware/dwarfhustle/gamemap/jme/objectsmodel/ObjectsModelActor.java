@@ -14,6 +14,9 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+
 import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
@@ -28,6 +31,8 @@ import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTree;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeVegetation;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
 import com.anrisoftware.dwarfhustle.model.knowledge.evrete.AskKnowledge;
@@ -168,6 +173,8 @@ public class ObjectsModelActor {
 
     private AskKnowledge askKnowledge;
 
+    private boolean pauseOnFocusLost;
+
     /**
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
      */
@@ -188,6 +195,7 @@ public class ObjectsModelActor {
         Duration interval = gs.get().gameTickDuration.get();
         interval = Duration.ofMillis(1000);
         timer.startTimerAtFixedRate(UPDATE_OBJECTS_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm), interval);
+        this.pauseOnFocusLost = false;
         return Behaviors.same();
     }
 
@@ -201,7 +209,7 @@ public class ObjectsModelActor {
         } catch (Exception e) {
             log.error("", e);
         }
-        log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
+        // log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
         return Behaviors.same();
     }
 
@@ -226,10 +234,15 @@ public class ObjectsModelActor {
 
         private final int ez;
 
+        private final List<GameMapObject> removeObjects;
+
         @Override
         protected void compute() {
             if (ex - sx > maxSize || ey - sy > maxSize || ez - sz > maxSize) {
-                ForkJoinTask.invokeAll(createSubtasks());
+                var tasks = ForkJoinTask.invokeAll(createSubtasks());
+                for (var action : tasks) {
+                    action.join();
+                }
             } else {
                 processing();
             }
@@ -246,7 +259,7 @@ public class ObjectsModelActor {
         }
 
         private RecursiveAction create(int sx, int sy, int sz, int ex, int ey, int ez) {
-            return new ObjectsUpdateAction(gm, sx, sy, sz, ex, ey, ez);
+            return new ObjectsUpdateAction(gm, sx, sy, sz, ex, ey, ez, removeObjects);
         }
 
         protected void processing() {
@@ -257,7 +270,6 @@ public class ObjectsModelActor {
             var object = (GameMapObject) og.get(type, id);
             var oid = object.getOid();
             var k = kg.get(oid);
-            System.out.printf("%d/%d/%d %s %s\n", x, y, z, k, object); // TODO
             for (var kv : k.objects) {
                 if (kv.kid == object.kid) {
                     runVegetationKnowledges(kv, (Vegetation) object);
@@ -267,11 +279,14 @@ public class ObjectsModelActor {
         }
 
         private void runVegetationKnowledges(KnowledgeObject kv, Vegetation v) {
-            v.setGrowth(v.getGrowth() + 0.01f);
+            v.setGrowth(v.getGrowth() + 0.5f);
             os.set(v.getObjectType(), v);
             if (v.getGrowth() > 1.0f) {
-                v.setGrowth(0.0f);
-                var loaded = new VegetationLoadKnowledges((KnowledgeVegetation) kv);
+                var kvv = (KnowledgeTreeSapling) kv;
+                final String growsInto = kvv.getGrowsInto();
+                final var kgrowv = kg.get(KnowledgeTree.TYPE.hashCode()).objects
+                        .detect((it) -> it.name.equalsIgnoreCase(growsInto));
+                var loaded = new VegetationLoadKnowledges((KnowledgeVegetation) kgrowv);
                 loaded.loadKnowledges(askKnowledge);
                 var vkn = new VegetationKnowledge();
                 var k = vkn.createKnowledgeService();
@@ -279,13 +294,22 @@ public class ObjectsModelActor {
                 var knowledge = vkn.createRulesKnowledgeFromSource(k, "PineRules.java");
                 vkn.run(askKnowledge, knowledge, v, (KnowledgeVegetation) kv, cg, cs, gm);
                 os.set(v.getObjectType(), v);
+                removeObjects.add(v);
             }
             System.out.println(v); // TODO
         }
     }
 
+    private final MutableList<GameMapObject> removeObjects = Lists.mutable.withInitialCapacity(100);
+
     private void onUpdateModel0(UpdateTerrainMessage m) {
-        pool.invoke(new ObjectsUpdateAction(m.gm, 0, 0, 0, m.gm.width, m.gm.height, m.gm.depth));
+        removeObjects.clear();
+        var removeObjectsList = removeObjects.asSynchronized();
+        pool.invoke(new ObjectsUpdateAction(m.gm, 0, 0, 0, m.gm.width, m.gm.height, m.gm.depth, removeObjectsList));
+        for (GameMapObject o : removeObjects) {
+            mapObjects.removeObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(),
+                    o.getId());
+        }
     }
 
     /**
@@ -295,10 +319,12 @@ public class ObjectsModelActor {
      */
     private Behavior<Message> onAppPaused(AppPausedMessage m) {
         log.debug("onAppPaused {}", m);
-        if (m.paused) {
-            timer.cancel(UPDATE_OBJECTS_MESSAGE_TIMER_KEY);
-        } else {
-            previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
+        if (pauseOnFocusLost) {
+            if (m.paused) {
+                timer.cancel(UPDATE_OBJECTS_MESSAGE_TIMER_KEY);
+            } else {
+                previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
+            }
         }
         return Behaviors.same();
     }

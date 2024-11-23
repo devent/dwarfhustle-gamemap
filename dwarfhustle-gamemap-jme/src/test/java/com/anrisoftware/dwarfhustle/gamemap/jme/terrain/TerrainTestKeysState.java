@@ -29,7 +29,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSampling;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
@@ -278,7 +278,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private void addSampling() {
         this.oldCursor = gm.getCursor();
-        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSampling.TYPE, "PINE-SAMPLING",
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSapling.TYPE, "PINE-SAPLING",
                 (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
@@ -297,7 +297,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private void deleteVegetation() {
         this.oldCursor = gm.getCursor();
         actor.tell(new DeleteVegetationOnBlockMessage(oldCursor,
-                Sets.immutable.of(KnowledgeShrub.TYPE, KnowledgeTreeSampling.TYPE)));
+                Sets.immutable.of(KnowledgeShrub.TYPE, KnowledgeTreeSapling.TYPE)));
     }
 
 }
