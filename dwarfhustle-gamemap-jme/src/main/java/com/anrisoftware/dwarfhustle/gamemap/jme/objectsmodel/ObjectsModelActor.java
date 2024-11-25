@@ -14,8 +14,11 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
+import org.eclipse.collections.api.factory.primitive.LongLists;
+import org.eclipse.collections.api.list.primitive.MutableLongList;
+import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
+import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
@@ -24,8 +27,10 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
@@ -34,10 +39,12 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTree;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeVegetation;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.Tree;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.TreeSapling;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
 import com.anrisoftware.dwarfhustle.model.knowledge.evrete.AskKnowledge;
 import com.anrisoftware.dwarfhustle.model.knowledge.evrete.VegetationKnowledge;
-import com.anrisoftware.dwarfhustle.model.trees.VegetationLoadKnowledges;
+import com.anrisoftware.dwarfhustle.model.knowledge.evrete.VegetationLoadKnowledges;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 
@@ -50,6 +57,7 @@ import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -167,6 +175,10 @@ public class ObjectsModelActor {
     @Inject
     private ActorSystemProvider actor;
 
+    @Inject
+    @IdsObjects
+    private IDGenerator ids;
+
     private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
 
     private ForkJoinPool pool;
@@ -209,7 +221,7 @@ public class ObjectsModelActor {
         } catch (Exception e) {
             log.error("", e);
         }
-        // log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
+        log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
         return Behaviors.same();
     }
 
@@ -218,7 +230,7 @@ public class ObjectsModelActor {
 
         private static final long serialVersionUID = 1L;
 
-        private final int maxSize = 32;
+        private final int maxSize = 8;
 
         private final GameMap gm;
 
@@ -234,7 +246,7 @@ public class ObjectsModelActor {
 
         private final int ez;
 
-        private final List<GameMapObject> removeObjects;
+        private final MutableIntObjectMap<MutableLongList> objects = IntObjectMaps.mutable.withInitialCapacity(100);
 
         @Override
         protected void compute() {
@@ -259,57 +271,87 @@ public class ObjectsModelActor {
         }
 
         private RecursiveAction create(int sx, int sy, int sz, int ex, int ey, int ez) {
-            return new ObjectsUpdateAction(gm, sx, sy, sz, ex, ey, ez, removeObjects);
+            return new ObjectsUpdateAction(gm, sx, sy, sz, ex, ey, ez);
         }
 
         protected void processing() {
-            mapObjects.getObjectsRange(sx, sy, sz, ex, ey, ez, this::updateModels);
+            // System.out.printf("processing %d/%d/%d-%d/%d/%d\n", sx, sy, sz, ex, ey, ez);
+            // // TODO
+            mapObjects.getObjectsRange(sx, sy, sz, ex, ey, ez, this::addObject);
+            updateObjects();
         }
 
-        private void updateModels(int type, long id, int x, int y, int z) {
-            var object = (GameMapObject) og.get(type, id);
-            var oid = object.getOid();
-            var k = kg.get(oid);
-            for (var kv : k.objects) {
-                if (kv.kid == object.kid) {
-                    runVegetationKnowledges(kv, (Vegetation) object);
-                    return;
+        private void addObject(int type, long id, int x, int y, int z) {
+            var ids = objects.get(type);
+            if (ids == null) {
+                ids = LongLists.mutable.withInitialCapacity(100);
+                objects.put(type, ids);
+            }
+            ids.add(id);
+        }
+
+        private void updateObjects() {
+            for (var ids : objects.keyValuesView()) {
+                for (var idsit = ids.getTwo().longIterator(); idsit.hasNext();) {
+                    GameMapObject object = og.get(ids.getOne(), idsit.next());
+                    var oid = object.getOid();
+                    var k = kg.get(oid);
+                    for (var kv : k.objects) {
+                        if (kv.kid == object.kid) {
+                            if (object.getObjectType() == TreeSapling.OBJECT_TYPE) {
+                                runTreeSapling(kv, (Vegetation) object);
+                            } else if (object.getObjectType() == Tree.OBJECT_TYPE) {
+                                runTree(kv, (Vegetation) object);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        private void runVegetationKnowledges(KnowledgeObject kv, Vegetation v) {
-            v.setGrowth(v.getGrowth() + 0.5f);
+        @SneakyThrows
+        private void runTreeSapling(KnowledgeObject kv, Vegetation v) {
+            v.setGrowth(v.getGrowth() + 0.001f);
             os.set(v.getObjectType(), v);
             if (v.getGrowth() > 1.0f) {
-                var kvv = (KnowledgeTreeSapling) kv;
+                final var kvv = (KnowledgeTreeSapling) kv.getAsType();
                 final String growsInto = kvv.getGrowsInto();
                 final var kgrowv = kg.get(KnowledgeTree.TYPE.hashCode()).objects
                         .detect((it) -> it.name.equalsIgnoreCase(growsInto));
-                var loaded = new VegetationLoadKnowledges((KnowledgeVegetation) kgrowv);
+                final Tree growv = kgrowv.createObject(ids.generate()).getAsType();
+                growv.setMap(v.getMap());
+                growv.setPos(new GameBlockPos(v.getPos().getX(), v.getPos().getY(), v.getPos().getZ()));
+                growv.setKid(kgrowv.getKid());
+                growv.setOid(kgrowv.getKnowledgeType().hashCode());
+                growv.setHidden(true);
+                growv.setGrowth(2.0f);
+                mapObjects.removeObject(v);
+                os.remove(v.getObjectType(), v);
+                mapObjects.putObject(growv);
+                os.set(growv.getObjectType(), growv);
+            }
+        }
+
+        @SneakyThrows
+        private void runTree(KnowledgeObject kv, Vegetation v) {
+            v.setGrowth(v.getGrowth() + 0.001f);
+            os.set(v.getObjectType(), v);
+            if (v.getGrowth() > 1.0f) {
+                v.setGrowth(0.0f);
+                final var loaded = new VegetationLoadKnowledges((KnowledgeVegetation) kv);
                 loaded.loadKnowledges(askKnowledge);
-                var vkn = new VegetationKnowledge();
-                var k = vkn.createKnowledgeService();
+                final var vkn = new VegetationKnowledge();
+                final var k = vkn.createKnowledgeService();
                 vkn.setLoadedKnowledges(loaded);
-                var knowledge = vkn.createRulesKnowledgeFromSource(k, "PineRules.java");
+                final var knowledge = vkn.createRulesKnowledgeFromSource(k, "PineRules.java");
                 vkn.run(askKnowledge, knowledge, v, (KnowledgeVegetation) kv, cg, cs, gm);
                 os.set(v.getObjectType(), v);
-                removeObjects.add(v);
             }
-            System.out.println(v); // TODO
         }
     }
 
-    private final MutableList<GameMapObject> removeObjects = Lists.mutable.withInitialCapacity(100);
-
     private void onUpdateModel0(UpdateTerrainMessage m) {
-        removeObjects.clear();
-        var removeObjectsList = removeObjects.asSynchronized();
-        pool.invoke(new ObjectsUpdateAction(m.gm, 0, 0, 0, m.gm.width, m.gm.height, m.gm.depth, removeObjectsList));
-        for (GameMapObject o : removeObjects) {
-            mapObjects.removeObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(),
-                    o.getId());
-        }
+        pool.invoke(new ObjectsUpdateAction(m.gm, 0, 0, 0, m.gm.width, m.gm.height, m.gm.depth));
     }
 
     /**

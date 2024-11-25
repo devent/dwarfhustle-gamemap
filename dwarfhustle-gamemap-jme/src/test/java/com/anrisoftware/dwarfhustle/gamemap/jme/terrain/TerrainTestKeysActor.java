@@ -43,6 +43,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeVegetation;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
 import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
@@ -328,6 +329,26 @@ public class TerrainTestKeysActor {
     }
 
     /**
+     * Reacts to the {@link VegetationAddGrowMessage} message.
+     */
+    private Behavior<Message> onVegetationAddGrow(VegetationAddGrowMessage m) {
+        log.debug("onVegetationAddGrow {}", m);
+        moStorage.getObjects(m.cursor.getX(), m.cursor.getY(), m.cursor.getZ(), (type, id, x, y, z) -> {
+            var o = og.get(type, id);
+            if (o instanceof Vegetation) {
+                addVegetationGrow(o.getAsType());
+            }
+        });
+        return Behaviors.same();
+    }
+
+    private void addVegetationGrow(Vegetation o) {
+        o.setGrowth(2.0f);
+        os.set(o.getObjectType(), o);
+        System.out.printf("Set vegetation grow %s\n", o); // TODO
+    }
+
+    /**
      * Reacts to the {@link WrappedCacheResponse} message.
      */
     private Behavior<Message> onWrappedCache(WrappedCacheResponse m) {
@@ -349,8 +370,9 @@ public class TerrainTestKeysActor {
             o.setPos(mb.getPos());
             o.setKid(ko.getKid());
             o.setOid(ko.getKnowledgeType().hashCode());
+            o.setVisible(true);
             os.set(o.getObjectType(), o);
-            moStorage.putObject(o.getPos().getX(), o.getPos().getY(), o.getPos().getZ(), o.getObjectType(), o.getId());
+            moStorage.putObject(o);
         }
     }
 
@@ -381,6 +403,7 @@ public class TerrainTestKeysActor {
                 .onMessage(ShowSelectedBlockMessage.class, this::onShowSelectedBlock)//
                 .onMessage(ToggleUndiscoveredMessage.class, this::onToggleUndiscovered)//
                 .onMessage(DeleteVegetationOnBlockMessage.class, this::onDeleteVegetationOnBlock)//
+                .onMessage(VegetationAddGrowMessage.class, this::onVegetationAddGrow)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
         ;
     }

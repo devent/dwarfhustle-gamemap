@@ -92,6 +92,10 @@ rid["PEAT"] = 859
 rid["LOAMY-SAND"] = 858
 rid["LOAM"] = 857
 
+// Wood
+rid["BIRCH-WOOD"] = 1042
+rid["PINE-WOOD"] = 1034
+
 rid["SELECTED-BLOCK-RAMP-TWO"] = 0xfff6
 rid["SELECTED-BLOCK-RAMP-TRI"] = 0xfff7
 rid["SELECTED-BLOCK-RAMP-SINGLE"] = 0xfff8
@@ -197,6 +201,10 @@ m["Topsoil"].frames rid: rid["SANDY-CLAY-LOAM"], x: 0*w, y: 3*h, w: w, h: h, ww:
 m["Topsoil"].frames rid: rid["PEAT"],            x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 m["Topsoil"].frames rid: rid["LOAMY-SAND"],      x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 m["Topsoil"].frames rid: rid["LOAM"],            x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+
+m["Wood"].image = "Textures/Tiles/tree-map.dds"
+m["Wood"].frames rid: rid["BIRCH-WOOD"], x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m["Wood"].frames rid: rid["PINE-WOOD"],  x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m.Other.image = "Textures/Tiles/other-map.png"
 m.Other.frames rid: rid["UNDISCOVERED"],                 x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f

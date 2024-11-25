@@ -356,7 +356,10 @@ public class ObjectsRenderActor {
             mapObjects.getObjectsRange(pos.getX(), pos.getY(), pos.getZ(), pos.getEp().getX(), pos.getEp().getY(),
                     pos.getEp().getZ(), (type, id, x, y, z) -> {
                         if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
-                            chunkdbids.put(type, id);
+                            GameMapObject o = og.get(type, id);
+                            if (o.isVisible()) {
+                                chunkdbids.put(type, id);
+                            }
                             alldbids.add(id);
                         }
                     });

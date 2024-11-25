@@ -72,9 +72,12 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String CURSOR_WEST_MAPPING = "TerrainTestKeysState_CURSOR_WEST_MAPPING";
 
+    private static final String VEGETATION_ADD_GROW_MAPPING = "TerrainTestKeysState_VEGETATION_ADD_GROW";
+
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
             ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING, CURSOR_NORTH_MAPPING,
-            CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING, DELETE_VEGETATION_MAPPING };
+            CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING, DELETE_VEGETATION_MAPPING,
+            VEGETATION_ADD_GROW_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -161,12 +164,14 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addMapping(CURSOR_SOUTH_MAPPING, new KeyTrigger(KeyInput.KEY_DOWN));
         inputManager.addMapping(CURSOR_EAST_MAPPING, new KeyTrigger(KeyInput.KEY_RIGHT));
         inputManager.addMapping(CURSOR_WEST_MAPPING, new KeyTrigger(KeyInput.KEY_LEFT));
+        inputManager.addMapping(VEGETATION_ADD_GROW_MAPPING, new KeyTrigger(KeyInput.KEY_G));
         inputManager.addListener(this, MAPPINGS);
         System.out.println("I     - " + SHOW_SELECTED_BLOCK_MAPPING);
         System.out.println("O     - " + SHOW_OBJECTS_BLOCK_MAPPING);
         System.out.println("D     - " + DELETE_VEGETATION_MAPPING);
         System.out.println("S     - " + ADD_SHRUB_MAPPING);
         System.out.println("T     - " + ADD_SAMPLING_MAPPING);
+        System.out.println("G     - " + VEGETATION_ADD_GROW_MAPPING);
         System.out.println("F9    - " + TOGGLE_UNDISCOVERED_MAPPING);
         System.out.println("UP    - " + CURSOR_NORTH_MAPPING);
         System.out.println("DOWN  - " + CURSOR_SOUTH_MAPPING);
@@ -207,6 +212,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             }
             case ADD_SAMPLING_MAPPING: {
                 this.nextAction = this::addSampling;
+                break;
+            }
+            case VEGETATION_ADD_GROW_MAPPING: {
+                this.nextAction = this::addVegetationGrow;
                 break;
             }
             case TOGGLE_UNDISCOVERED_MAPPING: {
@@ -280,6 +289,11 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSapling.TYPE, "PINE-SAPLING",
                 (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+    }
+
+    private void addVegetationGrow() {
+        this.oldCursor = gm.getCursor();
+        actor.tell(new VegetationAddGrowMessage(oldCursor));
     }
 
     private boolean isDownDirt(MapBlock mb) {

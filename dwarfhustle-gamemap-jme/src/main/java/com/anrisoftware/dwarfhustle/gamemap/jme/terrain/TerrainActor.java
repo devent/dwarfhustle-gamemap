@@ -532,7 +532,7 @@ public class TerrainActor {
         }
         int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
         if (x == 12 && y == 14 & z == 9 && gm.isCursor(x, y, z)) {
-            System.out.println(); // TODO
+            // System.out.println(); // TODO
         }
         long mid = kid2Id(getMaterial(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
         Long emission = null;
