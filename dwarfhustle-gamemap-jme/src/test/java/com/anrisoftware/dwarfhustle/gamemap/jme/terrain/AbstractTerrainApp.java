@@ -45,6 +45,8 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.objects.DwarfhustleGamemapModelObjectsModule;
+import com.anrisoftware.dwarfhustle.gamemap.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -99,7 +101,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     };
 
     @Inject
-    private ActorSystemProvider actor;
+    protected ActorSystemProvider actor;
 
     @Inject
     @IdsObjects
@@ -142,15 +144,16 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         this.injector = parent.createChildInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                install(new DwarfhustleGamemapJmeObjectsrenderModule());
-                install(new DwarfhustleGamemapJmeTerrainModule());
                 install(new DwarfhustleModelKnowledgePowerloomPlModule());
                 install(new DwarfhustleModelDbStoragesSchemasModule());
                 install(new DwarfhustleModelDbCacheModule());
+                install(new DwarfhustleGamemapModelObjectsModule());
                 install(new DwarfhustleGamemapJmeAppModule());
                 install(new DwarfhustleGamemapJmeLightsModule());
                 install(new DwarfhustleGamemapJmeModelModule());
                 install(new DwarfhustleGamemapJmeObjectsmodelModule());
+                install(new DwarfhustleGamemapJmeObjectsrenderModule());
+                install(new DwarfhustleGamemapJmeTerrainModule());
                 bind(GameSettingsProvider.class).asEagerSingleton();
                 install(new FactoryModuleBuilder().implement(TerrainTestKeysActor.class, TerrainTestKeysActor.class)
                         .build(TerrainTestKeysActorFactory.class));
@@ -200,9 +203,6 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
         });
         loadTerrain();
-//        this.og = actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID);
-//        this.os = actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID);
-//        this.chunks = actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID);
         setupGameSettings();
         setupApp();
         start();
@@ -239,7 +239,9 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         this.simpleUpdateCall = tpl -> nextSetGameMap();
         createKnowledgeCache();
         createChunksCache();
-        createObjectsCache();
+        createMapObjectsCache();
+        createStoredObjectsCache();
+        createModelObjects();
         createMaterialAssets();
         createModelsAssets();
         createObjectsRender();
@@ -248,7 +250,17 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createSun();
         createGameTick();
         createTerrainTestKeys();
+        loadMapObjects();
+        storeGameMap();
     }
+
+    @SneakyThrows
+    protected void storeGameMap() {
+        var gs = actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, SECONDS);
+        gs.set(GameMap.OBJECT_TYPE, gm);
+    }
+
+    protected abstract void loadMapObjects();
 
     private void nextSetGameMap() {
         if (texturesLoaded && modelsLoaded) {
@@ -281,71 +293,54 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         }
     }
 
-    protected abstract void createObjectsCache();
+    protected abstract void createMapObjectsCache();
+
+    protected abstract void createStoredObjectsCache();
 
     protected abstract void createChunksCache();
 
     private void createTerrainTestKeys() {
-        TerrainTestKeysActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getActorAsync(PowerLoomKnowledgeActor.ID),
-                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID), moStorage).whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("TerrainTestKeysActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("TerrainTestKeysActor created");
-                    }
-                });
+        TerrainTestKeysActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("TerrainTestKeysActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("TerrainTestKeysActor created");
+            }
+        });
     }
 
     private void createObjectsModel() {
-        ObjectsModelActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage,
-                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID),
-                actor.getObjectSetterAsync(MapChunksJcsCacheActor.ID),
-                actor.getKnowledgeGetterAsync(PowerLoomKnowledgeActor.ID)).whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("ObjectsModelActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("ObjectsModelActor created");
-                    }
-                });
+        ObjectsModelActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ObjectsModelActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("ObjectsModelActor created");
+            }
+        });
     }
 
     private void createObjectsRender() {
-        ObjectsRenderActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage,
-                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID)).whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("ObjectsRenderActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("ObjectsRenderActor created");
-                    }
-                });
+        ObjectsRenderActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ObjectsRenderActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("ObjectsRenderActor created");
+            }
+        });
     }
 
     private void createTerrain() {
-        TerrainActor.create(injector, CREATE_ACTOR_TIMEOUT, actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID),
-                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID), actor.getActorAsync(PowerLoomKnowledgeActor.ID),
-                actor.getActorAsync(ObjectsRenderActor.ID), actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID),
-                actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID)).whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("TerrainActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("TerrainActor created");
-                    }
-                });
+        TerrainActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("TerrainActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("TerrainActor created");
+            }
+        });
     }
 
     private void createSun() {
@@ -366,6 +361,18 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 actor.tell(new AppErrorMessage(ex));
             } else {
                 log.debug("GameTickActor created");
+            }
+        });
+    }
+
+    private void createModelObjects() {
+        ObjectsActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("ObjectsActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                createPowerLoom(ret);
+                log.debug("ObjectsActor created");
             }
         });
     }

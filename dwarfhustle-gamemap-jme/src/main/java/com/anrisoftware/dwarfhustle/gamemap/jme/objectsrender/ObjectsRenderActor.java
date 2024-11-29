@@ -19,8 +19,9 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -37,6 +38,8 @@ import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.primitive.MutableLongSet;
 import org.eclipse.collections.impl.factory.Multimaps;
 
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate.CollectChunksUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
@@ -49,11 +52,13 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.google.inject.Injector;
@@ -95,7 +100,20 @@ public class ObjectsRenderActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
+
         public final ObjectsState objectsState;
+
+        public final ObjectsGetter ma;
+
+        public final ObjectsGetter mo;
+
+        public final ObjectsGetter og;
+
+        public final ObjectsSetter os;
+
+        public final ObjectsGetter chunks;
+
+        public final ObjectsGetter mg;
     }
 
     @RequiredArgsConstructor
@@ -117,65 +135,53 @@ public class ObjectsRenderActor {
      */
     public interface ObjectsRenderActorFactory {
         ObjectsRenderActor create(ActorContext<Message> context, StashBuffer<Message> stash,
-                TimerScheduler<Message> timer, MapObjectsStorage mapObjects,
-                @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
-                @Assisted("objects-getter") ObjectsGetter og, @Assisted("objects-setter") ObjectsSetter os,
-                @Assisted("chunks-getter") ObjectsGetter chunks);
+                TimerScheduler<Message> timer);
     }
 
     /**
      * Creates the {@link ObjectsRenderActor}.
      * 
+     * @param actor
+     * 
      * @param mapObjects
      */
-    private static Behavior<Message> create(Injector injector, MapObjectsStorage mapObjects,
-            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models,
-            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
+    private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            var ma = materials.toCompletableFuture().get(15, SECONDS);
-            var mo = models.toCompletableFuture().get(15, SECONDS);
-            var og0 = og.toCompletableFuture().get(15, SECONDS);
-            var os0 = os.toCompletableFuture().get(15, SECONDS);
-            var cg0 = cg.toCompletableFuture().get(15, SECONDS);
-            context.pipeToSelf(createState(injector, context, ma, mo), (result, cause) -> {
-                if (cause == null) {
-                    return result;
-                } else {
-                    return new SetupErrorMessage(cause);
-                }
-            });
-            return injector.getInstance(ObjectsRenderActorFactory.class)
-                    .create(context, stash, timer, mapObjects, ma, mo, og0, os0, cg0).start(injector);
+            context.pipeToSelf(CompletableFuture.supplyAsync(() -> returnInitialState(injector, actor)),
+                    (result, cause) -> {
+                        if (cause == null) {
+                            return result;
+                        } else {
+                            return new SetupErrorMessage(cause);
+                        }
+                    });
+            return injector.getInstance(ObjectsRenderActorFactory.class).create(context, stash, timer).start(injector);
         })));
     }
 
     /**
      * Creates the {@link ObjectsRenderActor}.
      */
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            MapObjectsStorage mapObjects, CompletionStage<ObjectsGetter> materials,
-            CompletionStage<ObjectsGetter> models, CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os,
-            CompletionStage<ObjectsGetter> cg) {
-        var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME,
-                create(injector, mapObjects, materials, models, og, os, cg));
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        var actor = injector.getInstance(ActorSystemProvider.class);
+        return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
     }
 
-    private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context,
-            ObjectsGetter ma, ObjectsGetter mo) {
-        return CompletableFuture.supplyAsync(() -> attachState(injector, ma, mo));
-    }
-
-    private static Message attachState(Injector injector, ObjectsGetter ma, ObjectsGetter mo) {
+    private static Message returnInitialState(Injector injector, ActorSystemProvider actor) {
         var app = injector.getInstance(Application.class);
         try {
-            var f = app.enqueue(() -> {
-                var terrainState = injector.getInstance(ObjectsState.class);
+            var ma = actor.getObjectGetterAsyncNow(MaterialAssetsCacheActor.ID);
+            var mo = actor.getObjectGetterAsyncNow(ModelsAssetsCacheActor.ID);
+            var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+            var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            var terrainState = injector.getInstance(ObjectsState.class);
+            app.enqueue(() -> {
                 terrainState.setup(ma, mo);
                 app.getStateManager().attach(terrainState);
-                return new InitialStateMessage(terrainState);
             });
-            return f.get();
+            return new InitialStateMessage(terrainState, ma, mo, og, os, cg, mg);
         } catch (Exception ex) {
             return new SetupErrorMessage(ex);
         }
@@ -192,30 +198,6 @@ public class ObjectsRenderActor {
     @Inject
     @Assisted
     private TimerScheduler<Message> timer;
-
-    @Inject
-    @Assisted
-    private MapObjectsStorage mapObjects;
-
-    @Inject
-    @Assisted("materials")
-    private ObjectsGetter materials;
-
-    @Inject
-    @Assisted("models")
-    private ObjectsGetter models;
-
-    @Inject
-    @Assisted("chunks-getter")
-    private ObjectsGetter chunks;
-
-    @Inject
-    @Assisted("objects-getter")
-    private ObjectsGetter og;
-
-    @Inject
-    @Assisted("objects-setter")
-    private ObjectsSetter os;
 
     @Inject
     private Application app;
@@ -307,12 +289,12 @@ public class ObjectsRenderActor {
     private void onUpdateModel0(UpdateTerrainMessage m) {
         // long oldtime = System.currentTimeMillis();
         is.objectsState.setGameMap(m.gm);
-        var root = getChunk(chunks, 0);
+        var root = getChunk(is.chunks, 0);
         var cursorZ = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
         chunkBlocks.clear();
-        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
-                this::putMapBlock);
+        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible,
+                is.chunks, this::putMapBlock);
         updateObjectsBlocks(m.gm);
         // long finishtime = System.currentTimeMillis();
         // log.trace("updateModel done in {}", finishtime - oldtime);
@@ -351,18 +333,24 @@ public class ObjectsRenderActor {
         for (final var pairBlocks : this.chunkBlocks.keyMultiValuePairsView()) {
             final long cid = pairBlocks.getOne();
             final var chunkdbids = lazyCreateChunkidsTypeOidsEntry(chunkidsTypeOids, cid);
-            final var chunk = getChunk(chunks, cid);
-            final var pos = chunk.getPos();
-            mapObjects.getObjectsRange(pos.getX(), pos.getY(), pos.getZ(), pos.getEp().getX(), pos.getEp().getY(),
-                    pos.getEp().getZ(), (type, id, x, y, z) -> {
+            gm.getFilledBlocks().forEachKeyValue((index, count) -> {
+                count.getAndUpdate(c -> {
+                    if (c > 0) {
+                        final int z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
                         if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
-                            GameMapObject o = og.get(type, id);
-                            if (o.isVisible()) {
-                                chunkdbids.put(type, id);
-                            }
-                            alldbids.add(id);
+                            final var mo = getMapObject(is.mg, index);
+                            mo.getOids().forEachKeyValue((id, type) -> {
+                                final GameMapObject go = is.og.get(type, id);
+                                if (go.isVisible()) {
+                                    chunkdbids.put(go.getObjectType(), go.getId());
+                                }
+                                alldbids.add(go.getId());
+                            });
                         }
-                    });
+                    }
+                    return c;
+                });
+            });
         }
         MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);
         for (var indexOidsEntity : this.objectEntities.values()) {
@@ -379,7 +367,7 @@ public class ObjectsRenderActor {
             for (var typeOid : typeOids.keyMultiValuePairsView()) {
                 final int type = typeOid.getOne();
                 for (long oid : typeOid.getTwo()) {
-                    GameMapObject object = og.get(type, oid);
+                    GameMapObject object = is.og.get(type, oid);
                     updateObjectEntity(indexOidsEntity, object, w, h, d);
                 }
             }

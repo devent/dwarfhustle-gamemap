@@ -17,12 +17,15 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.concurrent.ForkJoinPool;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
@@ -30,6 +33,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjects
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.DwarfhustleModelDbLmbdModule;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObjectsLmbdStorageFactory;
@@ -49,6 +53,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TerrainLoadGameTest extends AbstractTerrainApp {
+
+    private static final Duration LOAD_MAP_OBJECTS_TIMEOUT = Duration.ofSeconds(30);
 
     public static void main(String[] args) {
         var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule(),
@@ -78,13 +84,25 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     @Override
-    protected void createObjectsCache() {
+    protected void createMapObjectsCache() {
+        var task = MapObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage, moStorage);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("MapObjectsJcsCacheActor.create", ex);
+            } else {
+                log.debug("MapObjectsJcsCacheActor created");
+            }
+        });
+    }
+
+    @Override
+    protected void createStoredObjectsCache() {
         var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
-                log.error("ObjectsJcsCacheActor.create", ex);
+                log.error("StoredObjectsJcsCacheActor.create", ex);
             } else {
-                log.debug("ObjectsJcsCacheActor created");
+                log.debug("StoredObjectsJcsCacheActor created");
             }
         });
     }
@@ -134,6 +152,16 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         gm.cursor.z = z;
         gm.cameraPos = cameraPos;
         gm.cameraRot = cameraRot;
+    }
+
+    @SneakyThrows
+    @Override
+    protected void loadMapObjects() {
+        var pool = new ForkJoinPool(4);
+        pool.invoke(new LoadMapObjectsAction(actor.getActorSystem(),
+                actor.getActorAsync(MapObjectsJcsCacheActor.ID).toCompletableFuture().get(10, SECONDS), moStorage,
+                LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth()));
+        pool.shutdownNow();
     }
 
     private void initMapObjectsStorage(Path root, GameMap gm) {

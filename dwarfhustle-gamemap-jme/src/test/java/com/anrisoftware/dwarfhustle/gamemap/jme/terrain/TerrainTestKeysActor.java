@@ -18,7 +18,9 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findBlock;
+import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +29,12 @@ import java.util.function.Function;
 
 import org.lable.oss.uniqueid.IDGenerator;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.DeleteObjectMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.DeleteObjectMessage.DeleteObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -39,14 +46,16 @@ import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObje
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeVegetation;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
-import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -81,6 +90,13 @@ public class TerrainTestKeysActor {
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
         public final TerrainTestKeysState state;
+        public final ActorRef<Message> knowledgeActor;
+        public final ObjectsGetter og;
+        public final ObjectsSetter os;
+        public final ObjectsGetter chunks;
+        public final ObjectsGetter mg;
+        public final ObjectsSetter ms;
+        public final ActorRef<Message> oa;
     }
 
     @RequiredArgsConstructor
@@ -95,64 +111,67 @@ public class TerrainTestKeysActor {
         public final CacheResponseMessage<?> res;
     }
 
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    private static class WrappedInsertObjectResponse extends Message {
+        public final InsertObjectMessage.InsertObjectSuccessMessage res;
+    }
+
+    @RequiredArgsConstructor
+    @ToString(callSuper = true)
+    private static class WrappedDeleteObjectResponse extends Message {
+        public final DeleteObjectMessage.DeleteObjectSuccessMessage res;
+    }
+
     /**
      * Factory to create {@link TerrainTestKeysActor}.
      *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface TerrainTestKeysActorFactory {
-        TerrainTestKeysActor create(ActorContext<Message> context, StashBuffer<Message> stash,
-                @Assisted("knowledgeActor") ActorRef<Message> knowledgeActor,
-                @Assisted("objects-getter") ObjectsGetter og, @Assisted("objects-setter") ObjectsSetter os,
-                @Assisted("chunks-getter") ObjectsGetter chunks, MapObjectsStorage mos);
+        TerrainTestKeysActor create(ActorContext<Message> context, StashBuffer<Message> stash);
     }
 
     /**
      * Creates the {@link TerrainTestKeysActor}.
      */
-    private static Behavior<Message> create(Injector injector, CompletionStage<ActorRef<Message>> knowledgeActor,
-            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> chunks,
-            MapObjectsStorage mos) {
+    private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            var knowledgeActor0 = knowledgeActor.toCompletableFuture().get();
-            var og0 = og.toCompletableFuture().get(15, SECONDS);
-            var os0 = os.toCompletableFuture().get(15, SECONDS);
-            var chunks0 = chunks.toCompletableFuture().get(15, SECONDS);
-            context.pipeToSelf(createState(injector), (result, cause) -> {
-                if (cause == null) {
-                    return result;
-                } else {
-                    return new SetupErrorMessage(cause);
-                }
-            });
-            return injector.getInstance(TerrainTestKeysActorFactory.class)
-                    .create(context, stash, knowledgeActor0, og0, os0, chunks0, mos).start(injector);
+            context.pipeToSelf(CompletableFuture.supplyAsync(() -> returnInitialState(injector, actor)),
+                    (result, cause) -> {
+                        if (cause == null) {
+                            return result;
+                        } else {
+                            return new SetupErrorMessage(cause);
+                        }
+                    });
+            return injector.getInstance(TerrainTestKeysActorFactory.class).create(context, stash).start(injector);
         }));
     }
 
     /**
      * Creates the {@link TerrainTestKeysActor}.
      */
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ActorRef<Message>> knowledgeActor, CompletionStage<ObjectsGetter> og,
-            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> chunks, MapObjectsStorage mos) {
-        var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, knowledgeActor, og, os, chunks, mos));
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        var actor = injector.getInstance(ActorSystemProvider.class);
+        return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
     }
 
-    private static CompletionStage<Message> createState(Injector injector) {
-        return CompletableFuture.supplyAsync(() -> attachState(injector));
-    }
-
-    private static Message attachState(Injector injector) {
+    private static Message returnInitialState(Injector injector, ActorSystemProvider actor) {
         var app = injector.getInstance(Application.class);
         try {
-            var f = app.enqueue(() -> {
-                var state = injector.getInstance(TerrainTestKeysState.class);
+            var state = injector.getInstance(TerrainTestKeysState.class);
+            app.enqueue(() -> {
                 app.getStateManager().attach(state);
-                return new InitialStateMessage(state);
             });
-            return f.get();
+            var knowledgeActor = actor.getActorAsyncNow(PowerLoomKnowledgeActor.ID);
+            var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            var chunks = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+            var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            var ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            var oa = actor.getActorAsyncNow(ObjectsActor.ID);
+            return new InitialStateMessage(state, knowledgeActor, og, os, chunks, mg, ms, oa);
         } catch (Exception ex) {
             return new SetupErrorMessage(ex);
         }
@@ -167,28 +186,8 @@ public class TerrainTestKeysActor {
     private StashBuffer<Message> buffer;
 
     @Inject
-    @Assisted("chunks-getter")
-    private ObjectsGetter chunks;
-
-    @Inject
-    @Assisted("objects-getter")
-    private ObjectsGetter og;
-
-    @Inject
-    @Assisted("objects-setter")
-    private ObjectsSetter os;
-
-    @Inject
-    @Assisted("knowledgeActor")
-    private ActorRef<Message> knowledgeActor;
-
-    @Inject
     @IdsObjects
     private IDGenerator ids;
-
-    @Inject
-    @Assisted
-    private MapObjectsStorage moStorage;
 
     @Inject
     private GameSettingsProvider gs;
@@ -199,6 +198,10 @@ public class TerrainTestKeysActor {
 
     @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheAdapter;
+
+    private ActorRef<InsertObjectSuccessMessage> objectsInsertAdapter;
+
+    private ActorRef<DeleteObjectSuccessMessage> objectsDeleteAdapter;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -212,6 +215,10 @@ public class TerrainTestKeysActor {
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
         this.cacheAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
+        this.objectsInsertAdapter = context.messageAdapter(InsertObjectMessage.InsertObjectSuccessMessage.class,
+                WrappedInsertObjectResponse::new);
+        this.objectsDeleteAdapter = context.messageAdapter(DeleteObjectMessage.DeleteObjectSuccessMessage.class,
+                WrappedDeleteObjectResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -237,7 +244,7 @@ public class TerrainTestKeysActor {
         log.debug("onInitialState");
         this.is = m;
         is.state.setActor(context.getSelf());
-        is.state.setChunks(chunks);
+        is.state.setChunks(is.chunks);
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -267,7 +274,7 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onAddObjectOnBlock(AddObjectOnBlockMessage m) {
         log.debug("onAddObjectOnBlock {}", m);
-        knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, m.type, (ko) -> {
+        is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, m.type, (ko) -> {
             insertObject(m.cursor, ko.objects
                     .detectOptional((it) -> ((KnowledgeVegetation) it).getName().equalsIgnoreCase(m.name)).get(),
                     m.validBlock);
@@ -281,7 +288,7 @@ public class TerrainTestKeysActor {
     private Behavior<Message> onDeleteVegetationOnBlock(DeleteVegetationOnBlockMessage m) {
         log.debug("onDeleteVegetationOnBlock {}", m);
         for (String type : m.types) {
-            knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, type, (ko) -> {
+            is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, type, (ko) -> {
                 deleteObject(m.cursor, ko.objects.getFirst());
             }));
         }
@@ -293,15 +300,11 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowObjectsOnBlock(ShowObjectsOnBlockMessage m) {
         log.debug("onShowObjectsOnBlock {}", m);
-        MapChunk root = chunks.get(MapChunk.OBJECT_TYPE, 0);
-        var mb = MapChunkBuffer.findBlock(root, m.cursor, chunks);
-        if (mb != null) {
-            final var pos = mb.getPos();
-            moStorage.getObjects(pos.getX(), mb.getPos().getY(), mb.getPos().getZ(), (type, id, x, z, y) -> {
-                var go = og.get(type, id);
-                System.out.println(go); // TODO
-            });
-        }
+        final var mo = getMapObject(is.mg, gm, m.cursor.getX(), m.cursor.getY(), m.cursor.getZ());
+        mo.getOids().forEachKeyValue((id, type) -> {
+            final GameMapObject go = is.og.get(type, id);
+            System.out.println(go); // TODO
+        });
         return Behaviors.same();
     }
 
@@ -310,11 +313,9 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowSelectedBlock(ShowSelectedBlockMessage m) {
         log.debug("onShowSelectedBlock {}", m);
-        MapChunk root = chunks.get(MapChunk.OBJECT_TYPE, 0);
-        var mb = MapChunkBuffer.findBlock(root, m.cursor, chunks);
-        if (mb != null) {
-            System.out.println(mb); // TODO
-        }
+        MapChunk root = is.chunks.get(MapChunk.OBJECT_TYPE, 0);
+        var mb = findBlock(root, m.cursor, is.chunks);
+        System.out.println(mb); // TODO
         return Behaviors.same();
     }
 
@@ -333,10 +334,11 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onVegetationAddGrow(VegetationAddGrowMessage m) {
         log.debug("onVegetationAddGrow {}", m);
-        moStorage.getObjects(m.cursor.getX(), m.cursor.getY(), m.cursor.getZ(), (type, id, x, y, z) -> {
-            var o = og.get(type, id);
-            if (o instanceof Vegetation) {
-                addVegetationGrow(o.getAsType());
+        final var mo = getMapObject(is.mg, gm, m.cursor.getX(), m.cursor.getY(), m.cursor.getZ());
+        mo.getOids().forEachKeyValue((id, type) -> {
+            final GameMapObject go = is.og.get(type, id);
+            if (go instanceof Vegetation) {
+                addVegetationGrow(go.getAsType());
             }
         });
         return Behaviors.same();
@@ -344,7 +346,7 @@ public class TerrainTestKeysActor {
 
     private void addVegetationGrow(Vegetation o) {
         o.setGrowth(2.0f);
-        os.set(o.getObjectType(), o);
+        is.os.set(o.getObjectType(), o);
         System.out.printf("Set vegetation grow %s\n", o); // TODO
     }
 
@@ -358,33 +360,18 @@ public class TerrainTestKeysActor {
 
     @SneakyThrows
     private void insertObject(GameBlockPos pos, KnowledgeObject ko, Function<MapBlock, Boolean> validBlock) {
-        var root = MapChunk.getChunk(chunks, 0);
-        var mb = MapChunkBuffer.findBlock(root, pos, chunks);
-        if (mb != null) {
-            if (!validBlock.apply(mb)) {
-                System.out.printf("Block at %s is not valid for %s\n", pos, ko); // TODO
-                return;
-            }
-            var o = (GameMapObject) ko.createObject(ids.generate());
-            o.setMap(gm.getId());
-            o.setPos(mb.getPos());
-            o.setKid(ko.getKid());
-            o.setOid(ko.getKnowledgeType().hashCode());
-            o.setVisible(true);
-            os.set(o.getObjectType(), o);
-            moStorage.putObject(o);
+        var root = getChunk(is.chunks, 0);
+        var mb = findBlock(root, pos, is.chunks);
+        if (!validBlock.apply(mb)) {
+            System.out.printf("Block at %s is not valid for %s\n", pos, ko); // TODO
+            return;
         }
+        is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, ko, pos));
     }
 
     @SneakyThrows
     private void deleteObject(GameBlockPos pos, KnowledgeObject ko) {
-        var root = MapChunk.getChunk(chunks, 0);
-        var mb = MapChunkBuffer.findBlock(root, pos, chunks);
-        if (mb != null) {
-            moStorage.getObjects(pos.getX(), pos.getY(), pos.getZ(), (type, id, x, y, z) -> {
-                moStorage.removeObject(x, y, z, type, id);
-            });
-        }
+        is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, pos, (id, type) -> true));
     }
 
     /**
@@ -405,6 +392,12 @@ public class TerrainTestKeysActor {
                 .onMessage(DeleteVegetationOnBlockMessage.class, this::onDeleteVegetationOnBlock)//
                 .onMessage(VegetationAddGrowMessage.class, this::onVegetationAddGrow)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
+                .onMessage(WrappedInsertObjectResponse.class, (m) -> {
+                    return Behaviors.same();
+                })//
+                .onMessage(WrappedDeleteObjectResponse.class, (m) -> {
+                    return Behaviors.same();
+                })//
         ;
     }
 

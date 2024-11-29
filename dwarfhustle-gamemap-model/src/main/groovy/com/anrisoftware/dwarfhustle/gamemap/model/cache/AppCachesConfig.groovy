@@ -40,15 +40,25 @@ class AppCachesConfig {
         assertThat(parentDir, notNullValue())
         def config = new Properties()
         def params = [:]
-        params.objects = [:]
-        params.objects.cache_name = "objects"
-        params.objects.max_objects = 10000
-        params.objects.is_eternal = false
-        params.objects.max_idle = Duration.ofHours(24).seconds
-        params.objects.max_life = Duration.ofHours(24).seconds
-        params.objects.max_key_size = 10000
-        params.objects.have_file_aux = true
-        params.objects.parent_dir = parentDir
+        params.stored_objects = [:]
+        params.stored_objects.cache_name = "stored_objects"
+        params.stored_objects.max_objects = 10000
+        params.stored_objects.is_eternal = false
+        params.stored_objects.max_idle = Duration.ofHours(24).seconds
+        params.stored_objects.max_life = Duration.ofHours(24).seconds
+        params.stored_objects.max_key_size = 10000
+        params.stored_objects.have_file_aux = true
+        params.stored_objects.parent_dir = parentDir
+        //
+        params.map_objects = [:]
+        params.map_objects.cache_name = "map_objects"
+        params.map_objects.max_objects = 10000
+        params.map_objects.is_eternal = false
+        params.map_objects.max_idle = Duration.ofHours(24).seconds
+        params.map_objects.max_life = Duration.ofHours(24).seconds
+        params.map_objects.max_key_size = 10000
+        params.map_objects.have_file_aux = true
+        params.map_objects.parent_dir = parentDir
         //
         params.knowledge = [:]
         params.knowledge.cache_name = "knowledge"

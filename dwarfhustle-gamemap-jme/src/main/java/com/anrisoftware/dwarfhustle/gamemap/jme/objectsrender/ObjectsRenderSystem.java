@@ -101,7 +101,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
         var c = entity.getComponent(ObjectMeshComponent.class);
         var node = new Node("" + c.object.getId());
         if (c.object.getKid() == 1027) {
-            System.out.println("aaaaa" + c.object); // TODO
+            System.out.println("Tree should be hidden " + c.object); // TODO
         }
         ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, kid2Id(c.object.getKid()));
         node.attachChild(model.getModel().clone());

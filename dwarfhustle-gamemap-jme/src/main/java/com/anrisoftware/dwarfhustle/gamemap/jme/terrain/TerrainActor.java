@@ -33,7 +33,6 @@ import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNe
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askBlockMaterialId;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askObjectTypeId;
 import static java.time.Duration.ofSeconds;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.net.URL;
 import java.time.Duration;
@@ -52,7 +51,7 @@ import org.eclipse.collections.api.factory.primitive.LongLongMaps;
 import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.primitive.ImmutableIntLongMap;
+import org.eclipse.collections.api.map.primitive.IntLongMap;
 import org.eclipse.collections.api.map.primitive.LongLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
@@ -63,6 +62,8 @@ import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadMaterialTextures;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate.CollectChunksUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
@@ -83,6 +84,9 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -108,7 +112,6 @@ import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
 import jakarta.inject.Inject;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
@@ -161,6 +164,13 @@ public class TerrainActor {
         public final TerrainSelectBlockState selectBlockState;
         public final ChunksBoundingBoxState chunksBoundingBoxState;
         public final TerrainRollState terrainRollState;
+        public final ObjectsGetter materials;
+        public final ObjectsGetter models;
+        public final IntLongMap knowledges;
+        public final ObjectsGetter chunks;
+        public final ObjectsGetter og;
+        public final ObjectsSetter os;
+        public final LongLongMap selectedMaterials;
     }
 
     @RequiredArgsConstructor
@@ -181,35 +191,57 @@ public class TerrainActor {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface TerrainActorFactory {
-        TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer,
-                @Assisted("materials") ObjectsGetter materials, @Assisted("models") ObjectsGetter models,
-                @Assisted("knowledges") ImmutableIntLongMap knowledges, @Assisted("objects") ActorRef<Message> objects,
-                @Assisted("objects-getter") ObjectsGetter og, @Assisted("objects-setter") ObjectsSetter os,
-                @Assisted("chunks-getter") ObjectsGetter chunks);
+        TerrainActor create(ActorContext<Message> context, StashBuffer<Message> stash, TimerScheduler<Message> timer);
     }
 
     /**
      * Creates the {@link TerrainActor}.
+     * 
+     * @param actor
      */
-    private static Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> materials,
-            CompletionStage<ObjectsGetter> models, CompletionStage<ActorRef<Message>> knowledge,
-            CompletionStage<ActorRef<Message>> objects, CompletionStage<ObjectsGetter> og,
-            CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
+    private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            context.pipeToSelf(createState(injector, context), (result, cause) -> {
+            context.pipeToSelf(CompletableFuture.supplyAsync(() -> attachState(injector, actor)), (result, cause) -> {
                 if (cause == null) {
                     return result;
                 } else {
                     return new SetupErrorMessage(cause);
                 }
             });
-            var ma = materials.toCompletableFuture().get(15, SECONDS);
-            var mo = models.toCompletableFuture().get(15, SECONDS);
-            var ko = knowledge.toCompletableFuture().get(15, SECONDS);
-            var og0 = og.toCompletableFuture().get(15, SECONDS);
-            var os0 = os.toCompletableFuture().get(15, SECONDS);
-            var cg0 = cg.toCompletableFuture().get(15, SECONDS);
-            var objects0 = objects.toCompletableFuture().get(15, SECONDS);
+            return injector.getInstance(TerrainActorFactory.class).create(context, stash, timer).start(injector);
+        })));
+    }
+
+    /**
+     * Creates the {@link TerrainActor}.
+     */
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        var actor = injector.getInstance(ActorSystemProvider.class);
+        return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
+    }
+
+    private static Message attachState(Injector injector, ActorSystemProvider actor) {
+        var app = injector.getInstance(Application.class);
+        try {
+            var terrainState = injector.getInstance(TerrainState.class);
+            var cameraState = injector.getInstance(TerrainCameraState.class);
+            var chunksBoundingBoxState = injector.getInstance(ChunksBoundingBoxState.class);
+            var terrainRollState = injector.getInstance(TerrainRollState.class);
+            var selectBlockState = injector.getInstance(TerrainSelectBlockState.class);
+            app.enqueue(() -> {
+                app.getStateManager().attach(terrainState);
+                app.getStateManager().attach(cameraState);
+                app.getStateManager().attach(chunksBoundingBoxState);
+                app.getStateManager().attach(terrainRollState);
+                app.getStateManager().attach(selectBlockState);
+                chunksBoundingBoxState.setEnabled(false);
+            });
+            var ma = actor.getObjectGetterAsyncNow(MaterialAssetsCacheActor.ID);
+            var mo = actor.getObjectGetterAsyncNow(ModelsAssetsCacheActor.ID);
+            var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+            var ko = actor.getActorAsyncNow(PowerLoomKnowledgeActor.ID);
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap k = IntLongMaps.mutable.ofInitialCapacity(100);
             k.put(BLOCK_MATERIAL_WATER,
@@ -220,49 +252,28 @@ public class TerrainActor {
                     askObjectTypeId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), BlockObject.TYPE, "block-ceiling"));
             k.put(UNDISCOVERED_MATERIAL, 0xfffe);
             k.put(UNKNOWN_MATERIAL, 0xffff);
-            return injector.getInstance(TerrainActorFactory.class)
-                    .create(context, stash, timer, ma, mo, k.toImmutable(), objects0, og0, os0, cg0).start(injector);
-        })));
-    }
-
-    /**
-     * Creates the {@link TerrainActor}.
-     */
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> materials, CompletionStage<ObjectsGetter> models,
-            CompletionStage<ActorRef<Message>> knowledge, CompletionStage<ActorRef<Message>> objects,
-            CompletionStage<ObjectsGetter> og, CompletionStage<ObjectsSetter> os, CompletionStage<ObjectsGetter> cg) {
-        var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME,
-                create(injector, materials, models, knowledge, objects, og, os, cg));
-    }
-
-    private static CompletionStage<Message> createState(Injector injector, ActorContext<Message> context) {
-        return CompletableFuture.supplyAsync(() -> attachState(injector));
-    }
-
-    private static Message attachState(Injector injector) {
-        var app = injector.getInstance(Application.class);
-        try {
-            var f = app.enqueue(() -> {
-                var terrainState = injector.getInstance(TerrainState.class);
-                var cameraState = injector.getInstance(TerrainCameraState.class);
-                var chunksBoundingBoxState = injector.getInstance(ChunksBoundingBoxState.class);
-                var terrainRollState = injector.getInstance(TerrainRollState.class);
-                var selectBlockState = injector.getInstance(TerrainSelectBlockState.class);
-                app.getStateManager().attach(terrainState);
-                app.getStateManager().attach(cameraState);
-                app.getStateManager().attach(chunksBoundingBoxState);
-                app.getStateManager().attach(terrainRollState);
-                app.getStateManager().attach(selectBlockState);
-                chunksBoundingBoxState.setEnabled(false);
-                return new InitialStateMessage(terrainState, cameraState, selectBlockState, chunksBoundingBoxState,
-                        terrainRollState);
-            });
-            return f.get();
+            var selectedMaterials = loadSelectedMaterials();
+            return new InitialStateMessage(terrainState, cameraState, selectBlockState, chunksBoundingBoxState,
+                    terrainRollState, ma, mo, k.toImmutable(), cg, og, os, selectedMaterials);
         } catch (Exception ex) {
             return new SetupErrorMessage(ex);
         }
+    }
+
+    @SneakyThrows
+    private static LongLongMap loadSelectedMaterials() {
+        MutableLongLongMap selectedMaterials = LongLongMaps.mutable.empty();
+        var engine = new GroovyScriptEngine(
+                new URL[] { AssetsLoadMaterialTextures.class.getResource("/BlockSelectedMaterials.groovy") });
+        var binding = new Binding();
+        @SuppressWarnings("unchecked")
+        var map = (Map<Integer, Integer>) engine.run("BlockSelectedMaterials.groovy", binding);
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            Long key = kid2Id(entry.getKey());
+            Long val = kid2Id(entry.getValue());
+            selectedMaterials.put(key, val);
+        }
+        return selectedMaterials.toImmutable();
     }
 
     @Inject
@@ -276,34 +287,6 @@ public class TerrainActor {
     @Inject
     @Assisted
     private TimerScheduler<Message> timer;
-
-    @Inject
-    @Assisted("materials")
-    private ObjectsGetter materials;
-
-    @Inject
-    @Assisted("models")
-    private ObjectsGetter models;
-
-    @Inject
-    @Assisted("knowledges")
-    private ImmutableIntLongMap knowledges;
-
-    @Inject
-    @Assisted("chunks-getter")
-    private ObjectsGetter chunks;
-
-    @Inject
-    @Assisted("objects-getter")
-    private ObjectsGetter og;
-
-    @Inject
-    @Assisted("objects-setter")
-    private ObjectsSetter os;
-
-    @Inject
-    @Assisted("objects")
-    private ActorRef<Message> objects;
 
     @Inject
     private BlockModelUpdateFactory blockModelUpdateFactory;
@@ -356,8 +339,6 @@ public class TerrainActor {
 
     private boolean hideUndiscovered;
 
-    private LongLongMap selectedMaterials;
-
     private long terrainUpdateDuration;
 
     private CollectChunksUpdate collectChunksUpdate;
@@ -374,38 +355,15 @@ public class TerrainActor {
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
         this.materialKeys = IntObjectMaps.mutable.empty();
-        this.undiscoveredMaterialId = kid2Id(knowledges.get(UNDISCOVERED_MATERIAL));
         this.hideUndiscovered = gs.get().hideUndiscovered.get();
         this.terrainUpdateDuration = gs.get().terrainUpdateDuration.get().toMillis();
-        gs.get().hideUndiscovered.addListener(new ChangeListener<>() {
-
-            @Override
-            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                hideUndiscovered = newValue;
-            }
-        });
-        loadSelectedMaterials();
+        gs.get().hideUndiscovered
+                .addListener((ChangeListener<Boolean>) (observable, oldValue, newValue) -> hideUndiscovered = newValue);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
                 .onMessage(Message.class, this::stashOtherCommand)//
                 .build();
-    }
-
-    @SneakyThrows
-    private void loadSelectedMaterials() {
-        MutableLongLongMap selectedMaterials = LongLongMaps.mutable.empty();
-        var engine = new GroovyScriptEngine(
-                new URL[] { AssetsLoadMaterialTextures.class.getResource("/BlockSelectedMaterials.groovy") });
-        var binding = new Binding();
-        @SuppressWarnings("unchecked")
-        var map = (Map<Integer, Integer>) engine.run("BlockSelectedMaterials.groovy", binding);
-        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-            Long key = kid2Id(entry.getKey());
-            Long val = kid2Id(entry.getValue());
-            selectedMaterials.put(key, val);
-        }
-        this.selectedMaterials = selectedMaterials;
     }
 
     private Behavior<Message> stashOtherCommand(Message m) {
@@ -425,6 +383,7 @@ public class TerrainActor {
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
         this.is = m;
+        this.undiscoveredMaterialId = kid2Id(is.knowledges.get(UNDISCOVERED_MATERIAL));
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -441,7 +400,7 @@ public class TerrainActor {
         this.previousStartTerrainForGameMapMessage = Optional.of(m);
         this.materialBlocks = LongObjectMaps.mutable.empty();
         this.materialCeilings = LongObjectMaps.mutable.empty();
-        this.blockModelUpdate = blockModelUpdateFactory.create(materials);
+        this.blockModelUpdate = blockModelUpdateFactory.create(is.materials);
         this.collectChunksUpdate = collectChunksUpdateFactory.create();
         app.enqueue(() -> {
             is.selectBlockState.setStorage(m.chunks);
@@ -473,19 +432,19 @@ public class TerrainActor {
     private void onUpdateModel0(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
         long oldtime = System.currentTimeMillis();
-        var root = getChunk(chunks, 0);
+        var root = getChunk(is.chunks, 0);
         clearMaps();
         this.gm = m.gm;
         this.cursorZ = m.gm.getCursorZ();
         int depthLayers = gs.get().visibleDepthLayers.get();
-        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible, chunks,
-                this::putMapBlock);
+        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible,
+                is.chunks, this::putMapBlock);
         int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
                 (chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
                     return FastMath.approximateEquals(n0z, -1.0f);
-                }, chunks, this::putBlockNodes);
+                }, is.chunks, this::putBlockNodes);
         blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
-                chunks, this::putCeilingNodes);
+                is.chunks, this::putCeilingNodes);
         renderMeshs();
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
@@ -531,15 +490,12 @@ public class TerrainActor {
             materialCeilings.put(cid, ceilings);
         }
         int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
-        if (x == 12 && y == 14 & z == 9 && gm.isCursor(x, y, z)) {
-            // System.out.println(); // TODO
-        }
         long mid = kid2Id(getMaterial(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
         Long emission = null;
         boolean cursor = gm.isCursor(x, y, z);
         if (cursor) {
             long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
-            emission = selectedMaterials.get(oid);
+            emission = is.selectedMaterials.get(oid);
         }
         boolean transparent = false;
         if (haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, EMPTY_POS)) {
@@ -548,10 +504,15 @@ public class TerrainActor {
         if (hideUndiscovered && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, DISCOVERED_POS))) {
             mid = undiscoveredMaterialId;
         }
-        var key = lazyCreateKey(mid, emission, transparent);
-        blocks.put(key, index);
+        try {
+            var key = lazyCreateKey(mid, emission, transparent);
+            blocks.put(key, index);
+        } catch (NullPointerException e) {
+            long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
+            System.out.printf("%d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
+        }
         if (z <= cursorZ && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, HAVE_NATURAL_LIGHT_POS))) {
-            var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, chunks);
+            var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, is.chunks);
             long ceilingmid = 0;
             if (hideUndiscovered && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, DISCOVERED_POS))) {
                 ceilingmid = undiscoveredMaterialId;
@@ -578,19 +539,19 @@ public class TerrainActor {
     }
 
     private TextureCacheObject getTexture(long id) {
-        return materials.get(TextureCacheObject.OBJECT_TYPE, id);
+        return is.materials.get(TextureCacheObject.OBJECT_TYPE, id);
     }
 
     private Mesh retrieveBlockMesh(MapChunk chunk, int index) {
         long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
-        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
+        ModelCacheObject model = is.models.get(ModelCacheObject.OBJECT_TYPE, oid);
         var geo = ((Node) model.model).getChild(0);
         return ((Geometry) (geo)).getMesh();
     }
 
     private Mesh retrieveCeilingMesh(MapChunk chunk, int index) {
-        long oid = knowledges.get(OBJECT_BLOCK_CEILING);
-        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, oid);
+        long oid = is.knowledges.get(OBJECT_BLOCK_CEILING);
+        ModelCacheObject model = is.models.get(ModelCacheObject.OBJECT_TYPE, oid);
         var node = (Node) model.model;
         return ((Geometry) (node.getChild(0))).getMesh();
     }
@@ -602,9 +563,9 @@ public class TerrainActor {
         } else {
             geo.setShadowMode(ShadowMode.Receive);
         }
-        if (m.isMaterial(knowledges.get(BLOCK_MATERIAL_WATER))) {
+        if (m.isMaterial(is.knowledges.get(BLOCK_MATERIAL_WATER))) {
             waterNodes.add(geo);
-        } else if (m.isMaterial(knowledges.get(BLOCK_MATERIAL_MAGMA))) {
+        } else if (m.isMaterial(is.knowledges.get(BLOCK_MATERIAL_MAGMA))) {
             magmaNodes.add(geo);
         } else {
             blockNodes.add(geo);
