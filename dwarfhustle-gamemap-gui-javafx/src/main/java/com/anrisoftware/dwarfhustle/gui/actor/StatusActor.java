@@ -27,13 +27,12 @@ import java.util.concurrent.CompletionStage;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedProgressMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.CreateSchemasMessage;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;

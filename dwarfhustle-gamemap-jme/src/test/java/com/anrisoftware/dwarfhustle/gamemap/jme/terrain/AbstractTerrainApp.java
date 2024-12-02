@@ -60,7 +60,6 @@ import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbStoragesSchemasModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustleModelKnowledgePowerloomPlModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
@@ -145,7 +144,6 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
             @Override
             protected void configure() {
                 install(new DwarfhustleModelKnowledgePowerloomPlModule());
-                install(new DwarfhustleModelDbStoragesSchemasModule());
                 install(new DwarfhustleModelDbCacheModule());
                 install(new DwarfhustleGamemapModelObjectsModule());
                 install(new DwarfhustleGamemapJmeAppModule());

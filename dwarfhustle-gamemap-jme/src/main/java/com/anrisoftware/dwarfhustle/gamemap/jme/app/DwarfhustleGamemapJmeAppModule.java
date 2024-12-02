@@ -17,7 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.AppActor.AppActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickActor.GameTickActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor.MaterialAssetsJcsCacheActorFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor.ModelsAssetsJcsCacheActorFactory;
@@ -33,7 +32,8 @@ public class DwarfhustleGamemapJmeAppModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new FactoryModuleBuilder().implement(AppActor.class, AppActor.class).build(AppActorFactory.class));
+        // install(new FactoryModuleBuilder().implement(AppActor.class,
+        // AppActor.class).build(AppActorFactory.class));
         install(new FactoryModuleBuilder().implement(MaterialAssetsCacheActor.class, MaterialAssetsCacheActor.class)
                 .build(MaterialAssetsJcsCacheActorFactory.class));
         install(new FactoryModuleBuilder().implement(ModelsAssetsCacheActor.class, ModelsAssetsCacheActor.class)

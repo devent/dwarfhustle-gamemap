@@ -23,7 +23,6 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GamemapModelResource
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
-import com.anrisoftware.dwarfhustle.model.db.orientdb.actor.DwarfhustleModelDbOrientdbModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustleModelKnowledgePowerloomPlModule;
 import com.anrisoftware.resources.binary.internal.binaries.BinariesResourcesModule;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
@@ -41,26 +40,25 @@ import com.google.inject.AbstractModule;
  */
 public class AppModule extends AbstractModule {
 
-	@Override
-	protected void configure() {
-		install(new DwarfhustleModelActorsModule());
-		install(new GamemapConsoleActorModule());
-		install(new GamemapConsoleAntlrModule());
-		bind(Engine.class).asEagerSingleton();
-		install(new GamemapModelResourcesModule());
-		// Model Modules
-		install(new DwarfhustleModelActorsModule());
-		install(new DwarfhustleModelKnowledgePowerloomPlModule());
-		install(new DwarfhustleModelDbOrientdbModule());
-		install(new DwarfhustleModelApiObjectsModule());
-		install(new DwarfhustleModelDbCacheModule());
-		// Resources
-		install(new ImagesResourcesModule());
-		install(new ResourcesImagesCachedMapModule());
-		install(new ResourcesSmoothScalingModule());
-		install(new TextsResourcesDefaultModule());
-		install(new BinariesResourcesModule());
-		install(new BinariesDefaultMapsModule());
-	}
+    @Override
+    protected void configure() {
+        install(new DwarfhustleModelActorsModule());
+        install(new GamemapConsoleActorModule());
+        install(new GamemapConsoleAntlrModule());
+        bind(Engine.class).asEagerSingleton();
+        install(new GamemapModelResourcesModule());
+        // Model Modules
+        install(new DwarfhustleModelActorsModule());
+        install(new DwarfhustleModelKnowledgePowerloomPlModule());
+        install(new DwarfhustleModelApiObjectsModule());
+        install(new DwarfhustleModelDbCacheModule());
+        // Resources
+        install(new ImagesResourcesModule());
+        install(new ResourcesImagesCachedMapModule());
+        install(new ResourcesSmoothScalingModule());
+        install(new TextsResourcesDefaultModule());
+        install(new BinariesResourcesModule());
+        install(new BinariesDefaultMapsModule());
+    }
 
 }
