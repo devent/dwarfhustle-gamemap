@@ -336,7 +336,7 @@ public class ObjectsModelActor {
         }
 
         private void updateObject(long id, int type) {
-            final GameMapObject object = is.og.get(GameMapObject.OBJECT_TYPE, id);
+            final GameMapObject object = is.og.get(type, id);
             final var oid = object.getOid();
             final var k = is.kg.get(oid);
             for (var kv : k.objects) {

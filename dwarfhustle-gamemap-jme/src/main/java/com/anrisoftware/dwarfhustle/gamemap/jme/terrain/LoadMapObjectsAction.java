@@ -72,11 +72,17 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     private Collection<RecursiveAction> createSubtasks() {
         List<RecursiveAction> dividedTasks = new ArrayList<>();
-        final int exx = sx / 2 + ex / 2;
-        final int eyy = sy / 2 + ey / 2;
-        final int ezz = sz / 2 + ez / 2;
-        dividedTasks.add(create(sx, sy, sz, exx, eyy, ezz));
-        dividedTasks.add(create(exx, eyy, ezz, gm.width, gm.height, gm.depth));
+        final int exh = (ex - sx) / 2;
+        final int eyh = (ey - sy) / 2;
+        final int ezh = (ez - sz) / 2;
+        dividedTasks.add(create(sx, sy, sz, sx + exh, sy + eyh, sz + ezh));
+        dividedTasks.add(create(sx + exh, sy + eyh, sz, sx + exh * 2, sy + eyh * 2, sz + ezh));
+        dividedTasks.add(create(sx + exh, sy + eyh, sz + ezh, sx + exh * 2, sy + eyh * 2, sz + ezh * 2));
+        dividedTasks.add(create(sx + exh, sy, sz, sx + exh * 2, sy + eyh, sz + ezh));
+        dividedTasks.add(create(sx + exh, sy, sz + ezh, sx + exh * 2, sy + eyh, sz + ezh * 2));
+        dividedTasks.add(create(sx, sy + eyh, sz, sx + exh, sy + eyh * 2, sz + ezh));
+        dividedTasks.add(create(sx, sy, sz + ezh, sx + exh, sy + eyh, sz + ezh * 2));
+        dividedTasks.add(create(sx, sy + eyh, sz + ezh, sx + exh, sy + eyh * 2, sz + ezh * 2));
         return dividedTasks;
     }
 
@@ -86,7 +92,6 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     @SneakyThrows
     protected void processing() {
-        System.out.printf("processing %d/%d/%d-%d/%d/%d\n", sx, sy, sz, ex, ey, ez); // TODO
         storage.getObjectsRange(sx, sy, sz, ex, ey, ez, this::addObject);
         gm.addAllFilledBlock(indices);
     }
