@@ -118,7 +118,7 @@ m[rid["BLOCK-NORMAL"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
 m[rid["PINE-BRANCH"]] = [model: "Models/trees/tree-branch/tree-branch.j3o"]
 m[rid["PINE-LEAF"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
 m[rid["PINE-ROOT"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
-m[rid["PINE-SAPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-4.j3o"]
+m[rid["PINE-SAPLING"]] = [model: "Models/trees/tree-sampling-pine/tree-sampling-pine-6.j3o"]
 m[rid["PINE-TRUNK"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
 m[rid["PINE-TWIG"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]
 
