@@ -76,17 +76,11 @@ public class ObjectsActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
-
         public final ObjectsGetter og;
-
         public final ObjectsSetter os;
-
         public final ObjectsGetter chunks;
-
         public final ObjectsGetter mg;
-
         public final ObjectsSetter ms;
-
     }
 
     @RequiredArgsConstructor
@@ -222,29 +216,32 @@ public class ObjectsActor {
         m.consumer.accept(go);
         is.os.set(go.getObjectType(), go);
         final var mo = getMapObject(is.mg, m.gm, go.getPos());
+        mo.setCid(m.cid);
         mo.addObject(go.getObjectType(), go.getId());
         setMapObject(is.ms, mo);
-        m.gm.addFilledBlock(mo.getIndex());
+        m.gm.addFilledBlock(mo.getCid(), mo.getIndex());
         is.os.set(m.gm.getObjectType(), m.gm);
+        m.onInserted.run();
         m.replyTo.tell(new InsertObjectSuccessMessage(go));
         return Behaviors.same();
     }
 
     @SneakyThrows
     private Behavior<Message> onDeleteObject(DeleteObjectMessage<? super DeleteObjectSuccessMessage> m) {
-        final var mo = getMapObject(is.mg, m.gm, m.pos);
-        if (!mo.getOids().isEmpty()) {
-            mo.getOids().select(m.test).forEachKeyValue((id, type) -> {
-                final GameMapObject go = is.og.get(type, id);
-                mo.removeObject(id);
-                is.os.remove(go.getObjectType(), go);
-            });
-            if (mo.isEmpty()) {
-                is.ms.remove(MapObject.OBJECT_TYPE, mo);
-                m.gm.removeFilledBlock(mo.getIndex());
+        if (!m.mo.getOids().isEmpty()) {
+            final int type = m.mo.getOids().get(m.id);
+            final GameMapObject go = is.og.get(type, m.id);
+            m.mo.removeObject(m.id);
+            is.ms.set(m.mo.getObjectType(), m.mo);
+            is.os.remove(go.getObjectType(), go);
+            if (m.mo.isEmpty()) {
+                m.gm.removeFilledBlock(m.mo.cid, m.mo.getIndex());
                 is.os.set(m.gm.getObjectType(), m.gm);
+                is.ms.remove(MapObject.OBJECT_TYPE, m.mo);
             }
         }
+        m.onDeleted.run();
+        m.replyTo.tell(new DeleteObjectSuccessMessage());
         return Behaviors.same();
     }
 

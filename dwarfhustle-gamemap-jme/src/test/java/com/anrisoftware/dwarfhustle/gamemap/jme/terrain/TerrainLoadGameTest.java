@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -157,10 +157,10 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     @SneakyThrows
     @Override
     protected void loadMapObjects() {
-        var pool = new ForkJoinPool(4);
-        pool.invoke(new LoadMapObjectsAction(actor.getActorSystem(),
-                actor.getActorAsync(MapObjectsJcsCacheActor.ID).toCompletableFuture().get(10, SECONDS), moStorage,
-                LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth()));
+        final var pool = new ForkJoinPool(4);
+        final var root = getChunk(chunksStorage, 0);
+        pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
+                gm.getWidth(), gm.getHeight(), gm.getDepth()));
         pool.shutdownNow();
     }
 

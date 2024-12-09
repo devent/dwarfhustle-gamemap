@@ -56,7 +56,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObje
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
-import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
@@ -270,8 +269,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     @SneakyThrows
     private void nextStartTerrainForGameMap() {
-        var chunks = actor.getObjectGetterAsync(MapChunksJcsCacheActor.ID).toCompletableFuture().get(15, SECONDS);
-        actor.tell(new StartTerrainForGameMapMessage(gm, chunks));
+        actor.tell(new StartTerrainForGameMapMessage(gm.getId()));
         simpleUpdateCall = SIMPLE_UPDATE_CALL_NOP;
     }
 

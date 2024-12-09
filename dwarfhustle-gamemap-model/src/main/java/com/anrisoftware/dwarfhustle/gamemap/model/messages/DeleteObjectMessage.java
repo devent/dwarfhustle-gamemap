@@ -17,13 +17,11 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
-import org.eclipse.collections.api.block.predicate.primitive.LongIntPredicate;
-
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.DeleteObjectMessage.DeleteObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObject;
 
 import akka.actor.typed.ActorRef;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +32,6 @@ import lombok.ToString;
  *
  * @author Erwin Müller {@literal <erwin@mullerlpublic.de}
  */
-@RequiredArgsConstructor
 @ToString(callSuper = true)
 public class DeleteObjectMessage<T extends DeleteObjectSuccessMessage> extends Message {
 
@@ -48,6 +45,9 @@ public class DeleteObjectMessage<T extends DeleteObjectSuccessMessage> extends M
     public static class DeleteObjectSuccessMessage extends Message {
     }
 
+    private final static Runnable NOP = () -> {
+    };
+
     /**
      * Reply to {@link ActorRef}.
      */
@@ -56,7 +56,22 @@ public class DeleteObjectMessage<T extends DeleteObjectSuccessMessage> extends M
 
     public final GameMap gm;
 
-    public final GameBlockPos pos;
+    public final MapObject mo;
 
-    public final LongIntPredicate test;
+    public final long id;
+
+    public final Runnable onDeleted;
+
+    public DeleteObjectMessage(ActorRef<T> replyTo, GameMap gm, MapObject mo, long id, Runnable onDeleted) {
+        this.replyTo = replyTo;
+        this.gm = gm;
+        this.mo = mo;
+        this.id = id;
+        this.onDeleted = onDeleted;
+    }
+
+    public DeleteObjectMessage(ActorRef<T> replyTo, GameMap gm, MapObject mo, long id) {
+        this(replyTo, gm, mo, id, NOP);
+    }
+
 }

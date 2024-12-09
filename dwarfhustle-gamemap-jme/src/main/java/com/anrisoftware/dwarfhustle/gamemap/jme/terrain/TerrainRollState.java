@@ -77,17 +77,11 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
 
     private boolean rightMouseDown;
 
-    private Node terrainNode;
-
     private boolean shiftDown = false;
 
     private float roll;
 
     private float pitch;
-
-    private Node boundingNode;
-
-    private Node waterNode;
 
     @Inject
     public TerrainRollState() {
@@ -101,18 +95,6 @@ public class TerrainRollState extends BaseAppState implements ActionListener, Ra
         this.roll = 0f;
         this.pitch = 0f;
         sceneNode.setLocalRotation(new Quaternion().fromAngles(0f, 0f, 0f));
-    }
-
-    public void setTerrainNode(Node node) {
-        this.terrainNode = node;
-    }
-
-    public void setWaterNode(Node node) {
-        this.waterNode = node;
-    }
-
-    public void setBoundingNode(Node node) {
-        this.boundingNode = node;
     }
 
     @Override

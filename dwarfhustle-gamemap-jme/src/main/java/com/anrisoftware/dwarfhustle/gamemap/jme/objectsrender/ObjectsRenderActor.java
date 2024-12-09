@@ -20,6 +20,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 
@@ -125,7 +126,7 @@ public class ObjectsRenderActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class UpdateTerrainMessage extends Message {
-        public final GameMap gm;
+        public final long gm;
     }
 
     /**
@@ -223,11 +224,13 @@ public class ObjectsRenderActor {
     /**
      * Chunk-ID := [Block-Index]
      */
-    private MutableMultimap<Long, Integer> chunkBlocks;
+    private MutableMultimap<Integer, Integer> chunkBlocks;
 
     private CollectChunksUpdate collectChunksUpdate;
 
     private int visibleLayers;
+
+    private int depthLayers;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -241,6 +244,8 @@ public class ObjectsRenderActor {
     @SneakyThrows
     public Behavior<Message> start(Injector injector) {
         this.objectEntities = LongObjectMaps.mutable.ofInitialCapacity(100);
+        this.depthLayers = gs.get().visibleDepthLayers.get();
+        gs.get().visibleDepthLayers.addListener((observable, oldValue, newValue) -> depthLayers = newValue.intValue());
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -288,19 +293,19 @@ public class ObjectsRenderActor {
 
     private void onUpdateModel0(UpdateTerrainMessage m) {
         // long oldtime = System.currentTimeMillis();
-        is.objectsState.setGameMap(m.gm);
-        var root = getChunk(is.chunks, 0);
-        var cursorZ = m.gm.getCursorZ();
-        int depthLayers = gs.get().visibleDepthLayers.get();
+        final var gm = getGameMap(is.og, m.gm);
+        is.objectsState.setGameMap(gm);
+        final var root = getChunk(is.chunks, 0);
+        final var cz = gm.getCursorZ();
         chunkBlocks.clear();
-        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible,
-                is.chunks, this::putMapBlock);
-        updateObjectsBlocks(m.gm);
+        collectChunksUpdate.collectChunks(root, cz, cz, depthLayers, gm, this::isBlockVisible, is.chunks,
+                this::putMapBlock);
+        updateObjectsBlocks(gm);
         // long finishtime = System.currentTimeMillis();
         // log.trace("updateModel done in {}", finishtime - oldtime);
     }
 
-    private boolean isBlockVisible(MapChunk chunk, int i, int x, int y, int z) {
+    private boolean isBlockVisible(GameMap gm, MapChunk chunk, int i, int x, int y, int z) {
         int off = MapBlockBuffer.calcOff(chunk, x, y, z);
         int p = MapBlockBuffer.getProp(chunk.getBlocks(), off);
         if (PropertiesSet.get(p, MapBlock.EMPTY_POS)) {
@@ -312,8 +317,8 @@ public class ObjectsRenderActor {
         return false;
     }
 
-    private void putMapBlock(MapChunk chunk, int index) {
-        final long cid = chunk.getId();
+    private void putMapBlock(GameMap gm, MapChunk chunk, int index) {
+        final int cid = chunk.getCid();
         chunkBlocks.put(cid, index);
     }
 
@@ -328,30 +333,29 @@ public class ObjectsRenderActor {
         long oldtime = System.currentTimeMillis();
         final int w = gm.width, h = gm.height, d = gm.depth, cursorZ = gm.cursor.z;
         MutableLongSet alldbids = LongSets.mutable.withInitialCapacity(100);
-        MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunkidsTypeOids = LongObjectMaps.mutable
-                .ofInitialCapacity(100);
-        for (final var pairBlocks : this.chunkBlocks.keyMultiValuePairsView()) {
-            final long cid = pairBlocks.getOne();
-            final var chunkdbids = lazyCreateChunkidsTypeOidsEntry(chunkidsTypeOids, cid);
-            gm.getFilledBlocks().forEachKeyValue((index, count) -> {
-                count.getAndUpdate(c -> {
-                    if (c > 0) {
-                        final int z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
-                        if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
-                            final var mo = getMapObject(is.mg, index);
-                            mo.getOids().forEachKeyValue((id, type) -> {
-                                final GameMapObject go = is.og.get(type, id);
-                                if (go.isVisible()) {
-                                    chunkdbids.put(go.getObjectType(), go.getId());
-                                }
-                                alldbids.add(go.getId());
-                            });
+        final var chunkidsTypeOids = createChunkidsTypeOids();
+        gm.getFilledBlocks().forEachKeyValue((index, count) -> {
+            final int z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
+            if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
+                if (count.get() > 0) {
+                    for (final int cid : this.chunkBlocks.keysView()) {
+                        final var chunkdbids = lazyCreateChunkidsTypeOidsEntry(chunkidsTypeOids, cid);
+                        if (gm.getFilledChunks().containsKey(cid)) {
+                            if (gm.getFilledChunks().get(cid).contains(index)) {
+                                final var mo = getMapObject(is.mg, index);
+                                mo.getOids().forEachKeyValue((id, type) -> {
+                                    final GameMapObject go = is.og.get(type, id);
+                                    if (go.isVisible()) {
+                                        chunkdbids.put(go.getObjectType(), go.getId());
+                                    }
+                                    alldbids.add(go.getId());
+                                });
+                            }
                         }
                     }
-                    return c;
-                });
-            });
-        }
+                }
+            }
+        });
         MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);
         for (var indexOidsEntity : this.objectEntities.values()) {
             if (indexOidsEntity.isEmpty()) {
@@ -374,6 +378,12 @@ public class ObjectsRenderActor {
         }
         long finishtime = System.currentTimeMillis();
         log.trace("onUpdateObjectsBlocks done in {} showing {} objects", finishtime - oldtime, objectEntities.size());
+    }
+
+    private MutableLongObjectMap<MutableListMultimap<Integer, Long>> createChunkidsTypeOids() {
+        MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunkidsTypeOids = LongObjectMaps.mutable
+                .ofInitialCapacity(100);
+        return chunkidsTypeOids;
     }
 
     private MutableListMultimap<Integer, Long> lazyCreateChunkidsTypeOidsEntry(

@@ -21,6 +21,7 @@ import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.create
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcY;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.DISCOVERED_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.EMPTY_POS;
@@ -182,7 +183,7 @@ public class TerrainActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class UpdateTerrainMessage extends Message {
-        public final GameMap gm;
+        public final long gm;
     }
 
     /**
@@ -323,8 +324,6 @@ public class TerrainActor {
 
     private ImmutableList<Geometry> copyMagmaNodes;
 
-    private GameMap gm;
-
     private MutableIntObjectMap<MaterialKey> materialKeys;
 
     private MutableLongObjectMap<Multimap<MaterialKey, Integer>> materialBlocks;
@@ -333,8 +332,6 @@ public class TerrainActor {
 
     private BlockModelUpdate blockModelUpdate;
 
-    private int cursorZ;
-
     private long undiscoveredMaterialId;
 
     private boolean hideUndiscovered;
@@ -342,6 +339,8 @@ public class TerrainActor {
     private long terrainUpdateDuration;
 
     private CollectChunksUpdate collectChunksUpdate;
+
+    private int depthLayers;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -359,6 +358,9 @@ public class TerrainActor {
         this.terrainUpdateDuration = gs.get().terrainUpdateDuration.get().toMillis();
         gs.get().hideUndiscovered
                 .addListener((ChangeListener<Boolean>) (observable, oldValue, newValue) -> hideUndiscovered = newValue);
+        this.depthLayers = gs.get().visibleDepthLayers.get();
+        gs.get().visibleDepthLayers.addListener(
+                (ChangeListener<Number>) (observable, oldValue, newValue) -> depthLayers = newValue.intValue());
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
                 .onMessage(SetupErrorMessage.class, this::onSetupError)//
@@ -403,14 +405,12 @@ public class TerrainActor {
         this.blockModelUpdate = blockModelUpdateFactory.create(is.materials);
         this.collectChunksUpdate = collectChunksUpdateFactory.create();
         app.enqueue(() -> {
-            is.selectBlockState.setStorage(m.chunks);
-            is.selectBlockState.setGameMap(m.gm);
+            final var gm = getGameMap(is.og, m.gm);
+            is.selectBlockState.setStorage(is.chunks);
+            is.selectBlockState.setGameMap(gm);
             is.cameraState.setTerrainBounds(
-                    new BoundingBox(new Vector3f(), m.gm.width, m.gm.height, gs.get().visibleDepthLayers.get()));
-            is.cameraState.updateCamera(m.gm);
-            is.terrainRollState.setTerrainNode(is.terrainState.getTerrainNode());
-            is.terrainRollState.setWaterNode(is.terrainState.getWaterNode());
-            is.terrainRollState.setBoundingNode(is.chunksBoundingBoxState.getNode());
+                    new BoundingBox(new Vector3f(), gm.getWidth(), gm.getHeight(), gs.get().visibleDepthLayers.get()));
+            is.cameraState.updateCamera(gm);
         });
         timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
                 gs.get().terrainUpdateDuration.get());
@@ -431,21 +431,20 @@ public class TerrainActor {
 
     private void onUpdateModel0(UpdateTerrainMessage m) {
         // log.debug("onUpdateModel {}", m);
-        long oldtime = System.currentTimeMillis();
-        var root = getChunk(is.chunks, 0);
+        final long oldtime = System.currentTimeMillis();
+        final var root = getChunk(is.chunks, 0);
+        final var gm = getGameMap(is.og, m.gm);
+        final var cz = gm.getCursorZ();
         clearMaps();
-        this.gm = m.gm;
-        this.cursorZ = m.gm.getCursorZ();
-        int depthLayers = gs.get().visibleDepthLayers.get();
-        collectChunksUpdate.collectChunks(root, cursorZ, cursorZ, depthLayers, m.gm.depth, this::isBlockVisible,
-                is.chunks, this::putMapBlock);
-        int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, m.gm, this::retrieveBlockMesh,
+        collectChunksUpdate.collectChunks(root, cz, cz, depthLayers, gm, this::isBlockVisible, is.chunks,
+                this::putMapBlock);
+        int bnum = blockModelUpdate.updateModelBlocks(materialBlocks, gm, this::retrieveBlockMesh,
                 (chunk, index, n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z) -> {
                     return FastMath.approximateEquals(n0z, -1.0f);
                 }, is.chunks, this::putBlockNodes);
-        blockModelUpdate.updateModelBlocks(materialCeilings, m.gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
+        blockModelUpdate.updateModelBlocks(materialCeilings, gm, this::retrieveCeilingMesh, NormalsPredicate.FALSE,
                 is.chunks, this::putCeilingNodes);
-        renderMeshs();
+        renderMeshs(gm);
         long finishtime = System.currentTimeMillis();
         log.trace("updateModel done in {} showing {} blocks", finishtime - oldtime, bnum);
     }
@@ -465,7 +464,7 @@ public class TerrainActor {
         }
     }
 
-    private boolean isBlockVisible(MapChunk chunk, int i, int x, int y, int z) {
+    private boolean isBlockVisible(GameMap gm, MapChunk chunk, int i, int x, int y, int z) {
         int off = MapBlockBuffer.calcOff(chunk, x, y, z);
         int p = MapBlockBuffer.getProp(chunk.getBlocks(), off);
         if (PropertiesSet.get(p, MapBlock.EMPTY_POS)) {
@@ -477,7 +476,7 @@ public class TerrainActor {
         return true;
     }
 
-    private void putMapBlock(MapChunk chunk, int index) {
+    private void putMapBlock(GameMap gm, MapChunk chunk, int index) {
         final long cid = chunk.getId();
         var blocks = (MutableMultimap<MaterialKey, Integer>) materialBlocks.get(cid);
         if (blocks == null) {
@@ -490,31 +489,32 @@ public class TerrainActor {
             materialCeilings.put(cid, ceilings);
         }
         int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
-        long mid = kid2Id(getMaterial(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
+        long mid = kid2Id(getMaterial(chunk.getBlocks(), MapBlockBuffer.calcOff(index)));
         Long emission = null;
         boolean cursor = gm.isCursor(x, y, z);
         if (cursor) {
-            long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
+            long oid = kid2Id(getObject(chunk.getBlocks(), MapBlockBuffer.calcOff(index)));
             emission = is.selectedMaterials.get(oid);
         }
         boolean transparent = false;
-        if (haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, EMPTY_POS)) {
+        if (haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), EMPTY_POS)) {
             transparent = true;
         }
-        if (hideUndiscovered && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, DISCOVERED_POS))) {
+        if (hideUndiscovered && !(haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), DISCOVERED_POS))) {
             mid = undiscoveredMaterialId;
         }
         try {
             var key = lazyCreateKey(mid, emission, transparent);
             blocks.put(key, index);
         } catch (NullPointerException e) {
-            long oid = kid2Id(getObject(chunk.getBlocks(), index * MapBlockBuffer.SIZE));
+            long oid = kid2Id(getObject(chunk.getBlocks(), MapBlockBuffer.calcOff(index)));
             System.out.printf("%d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
         }
-        if (z <= cursorZ && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, HAVE_NATURAL_LIGHT_POS))) {
+        final var cursorZ = gm.getCursorZ();
+        if (z <= cursorZ && !(haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), HAVE_NATURAL_LIGHT_POS))) {
             var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, is.chunks);
             long ceilingmid = 0;
-            if (hideUndiscovered && !(haveProp(chunk.getBlocks(), index * MapBlockBuffer.SIZE, DISCOVERED_POS))) {
+            if (hideUndiscovered && !(haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), DISCOVERED_POS))) {
                 ceilingmid = undiscoveredMaterialId;
             } else {
                 ceilingmid = getMaterial(neighborUp.c.getBlocks(), neighborUp.getOff());
@@ -578,12 +578,15 @@ public class TerrainActor {
     }
 
     @SneakyThrows
-    private void renderMeshs() {
+    private void renderMeshs(GameMap gm) {
         copyBlockNodes = Lists.immutable.ofAll(blockNodes);
         copyCeilingNodes = Lists.immutable.ofAll(ceilingNodes);
         copyWaterNodes = Lists.immutable.ofAll(waterNodes);
         copyMagmaNodes = Lists.immutable.ofAll(magmaNodes);
-        var task = app.enqueue(this::renderMeshsOnRenderingThread);
+        var task = app.enqueue(() -> {
+            renderMeshsOnRenderingThread(gm);
+            return true;
+        });
         try {
             task.get(terrainUpdateDuration, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
@@ -596,7 +599,7 @@ public class TerrainActor {
         }
     }
 
-    private boolean renderMeshsOnRenderingThread() {
+    private boolean renderMeshsOnRenderingThread(GameMap gm) {
         is.terrainState.setLightDir(gm.sunPos[0], gm.sunPos[1], gm.sunPos[2]);
         is.terrainState.clearBlockNodes();
         is.terrainState.clearCeilingNodes();

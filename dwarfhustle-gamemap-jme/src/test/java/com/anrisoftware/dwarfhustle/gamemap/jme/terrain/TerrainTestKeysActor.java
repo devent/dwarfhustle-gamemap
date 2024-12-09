@@ -366,12 +366,13 @@ public class TerrainTestKeysActor {
             System.out.printf("Block at %s is not valid for %s\n", pos, ko); // TODO
             return;
         }
-        is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, ko, pos));
+        is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, mb.parent, ko, pos));
     }
 
     @SneakyThrows
     private void deleteObject(GameBlockPos pos, KnowledgeObject ko) {
-        is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, pos, (id, type) -> true));
+        // is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, pos, (id,
+        // type) -> true));
     }
 
     /**

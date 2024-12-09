@@ -19,7 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -33,7 +32,5 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class StartTerrainForGameMapMessage extends Message {
 
-    public final GameMap gm;
-
-    public final ObjectsGetter chunks;
+    public final long gm;
 }

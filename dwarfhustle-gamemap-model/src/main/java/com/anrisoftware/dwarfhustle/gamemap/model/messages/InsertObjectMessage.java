@@ -53,6 +53,9 @@ public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends M
     private static final Consumer<GameMapObject> NOP_CONSUMER = (go) -> {
     };
 
+    private final static Runnable NOP = () -> {
+    };
+
     /**
      * Reply to {@link ActorRef}.
      */
@@ -61,23 +64,38 @@ public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends M
 
     public final GameMap gm;
 
+    public final int cid;
+
     public final KnowledgeObject ko;
 
     public final GameBlockPos pos;
 
     public final Consumer<GameMapObject> consumer;
 
-    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, KnowledgeObject ko, GameBlockPos pos,
-            Consumer<GameMapObject> consumer) {
+    public final Runnable onInserted;
+
+    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos,
+            Consumer<GameMapObject> consumer, Runnable onInserted) {
         this.replyTo = replyTo;
         this.gm = gm;
+        this.cid = cid;
         this.ko = ko;
         this.pos = pos;
         this.consumer = consumer;
+        this.onInserted = onInserted;
     }
 
-    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, KnowledgeObject ko, GameBlockPos pos) {
-        this(replyTo, gm, ko, pos, NOP_CONSUMER);
+    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos,
+            Runnable onInserted) {
+        this(replyTo, gm, cid, ko, pos, NOP_CONSUMER, onInserted);
     }
 
+    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos,
+            Consumer<GameMapObject> consumer) {
+        this(replyTo, gm, cid, ko, pos, consumer, NOP);
+    }
+
+    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos) {
+        this(replyTo, gm, cid, ko, pos, NOP_CONSUMER, NOP);
+    }
 }

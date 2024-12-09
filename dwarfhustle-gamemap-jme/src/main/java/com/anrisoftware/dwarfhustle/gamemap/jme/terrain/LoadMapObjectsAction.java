@@ -1,5 +1,8 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,17 +10,12 @@ import java.util.List;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
-import org.eclipse.collections.api.factory.primitive.IntLists;
-import org.eclipse.collections.api.list.primitive.MutableIntList;
-
-import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
-import akka.actor.typed.ActorRef;
-import akka.actor.typed.ActorSystem;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -32,9 +30,9 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     private static final long serialVersionUID = 1L;
 
-    final private ActorSystem<Message> system;
+    private final MapChunk root;
 
-    private final ActorRef<Message> cache;
+    private final ObjectsGetter chunks;
 
     private final MapObjectsStorage storage;
 
@@ -54,8 +52,6 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     private final int ez;
 
-    private MutableIntList indices;
-
     @Override
     protected void compute() {
         final int maxSize = gm.chunkSize;
@@ -65,7 +61,6 @@ public class LoadMapObjectsAction extends RecursiveAction {
                 action.join();
             }
         } else {
-            this.indices = IntLists.mutable.withInitialCapacity((ex - sx) * (ey - sy) * (ez - sz));
             processing();
         }
     }
@@ -87,18 +82,18 @@ public class LoadMapObjectsAction extends RecursiveAction {
     }
 
     private RecursiveAction create(int sx, int sy, int sz, int ex, int ey, int ez) {
-        return new LoadMapObjectsAction(system, cache, storage, timeout, gm, sx, sy, sz, ex, ey, ez);
+        return new LoadMapObjectsAction(root, chunks, storage, timeout, gm, sx, sy, sz, ex, ey, ez);
     }
 
     @SneakyThrows
     protected void processing() {
         storage.getObjectsRange(sx, sy, sz, ex, ey, ez, this::addObject);
-        gm.addAllFilledBlock(indices);
     }
 
-    private void addObject(int type, long id, int x, int y, int z) {
-        int index = GameBlockPos.calcIndex(gm.getWidth(), gm.getHeight(), gm.getDepth(), 0, 0, 0, x, y, z);
-        indices.add(index);
+    private void addObject(long cid, int type, long id, int x, int y, int z) {
+        final int index = calcIndex(gm.getWidth(), gm.getHeight(), gm.getDepth(), 0, 0, 0, x, y, z);
+        final var chunk = findChunk(root, x, y, z, chunks);
+        gm.addFilledBlock(chunk.getCid(), index);
     }
 
 }
