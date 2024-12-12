@@ -54,37 +54,38 @@ rid["BLOCK-WATER"] = 967
 rid["BLOCK-NORMAL"] = 966
 
 // Grass
-rid["RED-POPPY"] = 1023
-rid["DAISY"] = 1022
-rid["CARROT"] = 1021
-rid["WHEAT"] = 1019
+rid["RED-POPPY"] = 1024
+rid["DAISY"] = 1023
+rid["CARROT"] = 1022
+rid["WHEAT"] = 1020
+rid["MEADOW-GRASS"] = 1019
 
 // Shrub
-rid["BLUEBERRIES"] = 1025
+rid["BLUEBERRIES"] = 1026
 
 // Tree-Branch
-rid["BIRCH-BRANCH"] = 1039
-rid["PINE-BRANCH"] = 1031
+rid["BIRCH-BRANCH"] = 1040
+rid["PINE-BRANCH"] = 1032
 
 // Tree-Leaf
-rid["BIRCH-LEAF"] = 1041
-rid["PINE-LEAF"] = 1033
+rid["BIRCH-LEAF"] = 1042
+rid["PINE-LEAF"] = 1034
 
 // Tree-Root
-rid["BIRCH-ROOT"] = 1037
-rid["PINE-ROOT"] = 1029
+rid["BIRCH-ROOT"] = 1038
+rid["PINE-ROOT"] = 1030
 
 // Tree-Sapling
-rid["BIRCH-SAPLING"] = 1036
-rid["PINE-SAPLING"] = 1028
+rid["BIRCH-SAPLING"] = 1037
+rid["PINE-SAPLING"] = 1029
 
 // Tree-Trunk
-rid["BIRCH-TRUNK"] = 1038
-rid["PINE-TRUNK"] = 1030
+rid["BIRCH-TRUNK"] = 1039
+rid["PINE-TRUNK"] = 1031
 
 // Tree-Twig
-rid["BIRCH-TWIG"] = 1040
-rid["PINE-TWIG"] = 1032
+rid["BIRCH-TWIG"] = 1041
+rid["PINE-TWIG"] = 1033
 
 m = new ModelMap()
 

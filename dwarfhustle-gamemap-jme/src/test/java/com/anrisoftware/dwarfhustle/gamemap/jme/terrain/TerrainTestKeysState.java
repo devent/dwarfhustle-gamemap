@@ -28,6 +28,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeGrass;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
@@ -62,6 +63,8 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String ADD_SAMPLING_MAPPING = "TerrainTestKeysState_ADD_SAMPLING_MAPPING";
 
+    private static final String ADD_GRASS_MAPPING = "TerrainTestKeysState_ADD_GRASS_MAPPING";
+
     private static final String TOGGLE_UNDISCOVERED_MAPPING = "TerrainTestKeysState_TOGGLE_UNDISCOVERED_MAPPING";
 
     private static final String CURSOR_NORTH_MAPPING = "TerrainTestKeysState_CURSOR_NORTH_MAPPING";
@@ -77,7 +80,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
             ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING, CURSOR_NORTH_MAPPING,
             CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING, DELETE_VEGETATION_MAPPING,
-            VEGETATION_ADD_GROW_MAPPING };
+            VEGETATION_ADD_GROW_MAPPING, ADD_GRASS_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -165,12 +168,14 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addMapping(CURSOR_EAST_MAPPING, new KeyTrigger(KeyInput.KEY_RIGHT));
         inputManager.addMapping(CURSOR_WEST_MAPPING, new KeyTrigger(KeyInput.KEY_LEFT));
         inputManager.addMapping(VEGETATION_ADD_GROW_MAPPING, new KeyTrigger(KeyInput.KEY_G));
+        inputManager.addMapping(ADD_GRASS_MAPPING, new KeyTrigger(KeyInput.KEY_R));
         inputManager.addListener(this, MAPPINGS);
         System.out.println("I     - " + SHOW_SELECTED_BLOCK_MAPPING);
         System.out.println("O     - " + SHOW_OBJECTS_BLOCK_MAPPING);
         System.out.println("D     - " + DELETE_VEGETATION_MAPPING);
         System.out.println("S     - " + ADD_SHRUB_MAPPING);
         System.out.println("T     - " + ADD_SAMPLING_MAPPING);
+        System.out.println("R     - " + ADD_GRASS_MAPPING);
         System.out.println("G     - " + VEGETATION_ADD_GROW_MAPPING);
         System.out.println("F9    - " + TOGGLE_UNDISCOVERED_MAPPING);
         System.out.println("UP    - " + CURSOR_NORTH_MAPPING);
@@ -212,6 +217,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             }
             case ADD_SAMPLING_MAPPING: {
                 this.nextAction = this::addSampling;
+                break;
+            }
+            case ADD_GRASS_MAPPING: {
+                this.nextAction = this::addGrass;
                 break;
             }
             case VEGETATION_ADD_GROW_MAPPING: {
@@ -288,6 +297,12 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private void addSampling() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSapling.TYPE, "PINE-SAPLING",
+                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+    }
+
+    private void addGrass() {
+        this.oldCursor = gm.getCursor();
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Meadow-Grass",
                 (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 

@@ -212,7 +212,6 @@ public class ObjectsActor {
         go.setPos(m.pos);
         go.setKid(m.ko.getKid());
         go.setOid(m.ko.getKnowledgeType().hashCode());
-        go.setVisible(true);
         m.consumer.accept(go);
         is.os.set(go.getObjectType(), go);
         final var mo = getMapObject(is.mg, m.gm, go.getPos());

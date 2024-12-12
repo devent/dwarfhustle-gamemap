@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcY;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
@@ -27,6 +28,7 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.DISCOVERED
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.EMPTY_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.HAVE_NATURAL_LIGHT_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.calcOff;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getMaterial;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getObject;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.haveProp;
@@ -60,6 +62,7 @@ import org.eclipse.collections.api.map.primitive.MutableLongLongMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
+import org.eclipse.collections.api.tuple.primitive.LongIntPair;
 import org.eclipse.collections.impl.factory.Multimaps;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadMaterialTextures;
@@ -79,6 +82,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
@@ -86,6 +90,8 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet;
 import com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObject;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
@@ -171,6 +177,7 @@ public class TerrainActor {
         public final ObjectsGetter chunks;
         public final ObjectsGetter og;
         public final ObjectsSetter os;
+        public final ObjectsGetter mg;
         public final LongLongMap selectedMaterials;
     }
 
@@ -243,6 +250,7 @@ public class TerrainActor {
             var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
             var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
             var ko = actor.getActorAsyncNow(PowerLoomKnowledgeActor.ID);
+            var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
             var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
             MutableIntLongMap k = IntLongMaps.mutable.ofInitialCapacity(100);
             k.put(BLOCK_MATERIAL_WATER,
@@ -255,7 +263,7 @@ public class TerrainActor {
             k.put(UNKNOWN_MATERIAL, 0xffff);
             var selectedMaterials = loadSelectedMaterials();
             return new InitialStateMessage(terrainState, cameraState, selectBlockState, chunksBoundingBoxState,
-                    terrainRollState, ma, mo, k.toImmutable(), cg, og, os, selectedMaterials);
+                    terrainRollState, ma, mo, k.toImmutable(), cg, og, os, mg, selectedMaterials);
         } catch (Exception ex) {
             return new SetupErrorMessage(ex);
         }
@@ -477,54 +485,94 @@ public class TerrainActor {
     }
 
     private void putMapBlock(GameMap gm, MapChunk chunk, int index) {
+        var blocks = lazyPutMaterialBlocks(chunk);
+        var ceilings = lazyPutMaterialCeilings(chunk);
+        putMaterialKey(gm, chunk, index, blocks, ceilings);
+    }
+
+    private void putMaterialKey(GameMap gm, MapChunk chunk, int index, MutableMultimap<MaterialKey, Integer> blocks,
+            MutableMultimap<MaterialKey, Integer> ceilings) {
+        int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
+        Long object = null;
+        object = findObject(gm, chunk, index);
+        long mid = kid2Id(getMaterial(chunk.getBlocks(), calcOff(index)));
+        Long emission = null;
+        boolean cursor = gm.isCursor(x, y, z);
+        if (cursor) {
+            long oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
+            emission = is.selectedMaterials.get(oid);
+        }
+        boolean transparent = false;
+        if (haveProp(chunk.getBlocks(), calcOff(index), EMPTY_POS)) {
+            transparent = true;
+        }
+        if (hideUndiscovered && !(haveProp(chunk.getBlocks(), calcOff(index), DISCOVERED_POS))) {
+            mid = undiscoveredMaterialId;
+        }
+        MaterialKey key = null;
+        try {
+            key = lazyCreateKey(mid, object, emission, transparent);
+            blocks.put(key, index);
+        } catch (NullPointerException e) {
+            long oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
+            System.out.printf("%d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
+        }
+        final var cursorZ = gm.getCursorZ();
+        if (z <= cursorZ && !(haveProp(chunk.getBlocks(), calcOff(index), HAVE_NATURAL_LIGHT_POS))) {
+            var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, is.chunks);
+            long ceilingmid = 0;
+            if (hideUndiscovered && !(haveProp(chunk.getBlocks(), calcOff(index), DISCOVERED_POS))) {
+                ceilingmid = undiscoveredMaterialId;
+            } else {
+                ceilingmid = getMaterial(neighborUp.c.getBlocks(), neighborUp.getOff());
+            }
+            ceilings.put(lazyCreateKey(ceilingmid, object, emission, false), index);
+        }
+    }
+
+    private Long findObject(GameMap gm, MapChunk chunk, int index) {
+        Long object = null;
+        final var filledChunks = gm.getFilledChunks();
+        if (!filledChunks.containsKey(chunk.getCid())) {
+            return object;
+        }
+        final int mapIndex = calcIndex(gm, calcX(index, chunk), calcY(index, chunk), calcZ(index, chunk));
+        final var count = gm.getFilledBlocks().get(mapIndex);
+        if (count != null && count.get() > 0) {
+            var mo = MapObject.getMapObject(is.mg, mapIndex);
+            for (LongIntPair pair : mo.getOids().keyValuesView()) {
+                GameMapObject go = is.og.get(pair.getTwo(), pair.getOne());
+                if (go.isHaveTex()) {
+                    object = kid2Id(go.getKid());
+                    return object;
+                }
+            }
+        }
+        return object;
+    }
+
+    private MutableMultimap<MaterialKey, Integer> lazyPutMaterialCeilings(MapChunk chunk) {
+        final long cid = chunk.getId();
+        var ceilings = (MutableMultimap<MaterialKey, Integer>) materialCeilings.get(cid);
+        if (ceilings == null) {
+            ceilings = Multimaps.mutable.list.empty();
+            materialCeilings.put(cid, ceilings);
+        }
+        return ceilings;
+    }
+
+    private MutableMultimap<MaterialKey, Integer> lazyPutMaterialBlocks(MapChunk chunk) {
         final long cid = chunk.getId();
         var blocks = (MutableMultimap<MaterialKey, Integer>) materialBlocks.get(cid);
         if (blocks == null) {
             blocks = Multimaps.mutable.list.empty();
             materialBlocks.put(cid, blocks);
         }
-        var ceilings = (MutableMultimap<MaterialKey, Integer>) materialCeilings.get(cid);
-        if (ceilings == null) {
-            ceilings = Multimaps.mutable.list.empty();
-            materialCeilings.put(cid, ceilings);
-        }
-        int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
-        long mid = kid2Id(getMaterial(chunk.getBlocks(), MapBlockBuffer.calcOff(index)));
-        Long emission = null;
-        boolean cursor = gm.isCursor(x, y, z);
-        if (cursor) {
-            long oid = kid2Id(getObject(chunk.getBlocks(), MapBlockBuffer.calcOff(index)));
-            emission = is.selectedMaterials.get(oid);
-        }
-        boolean transparent = false;
-        if (haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), EMPTY_POS)) {
-            transparent = true;
-        }
-        if (hideUndiscovered && !(haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), DISCOVERED_POS))) {
-            mid = undiscoveredMaterialId;
-        }
-        try {
-            var key = lazyCreateKey(mid, emission, transparent);
-            blocks.put(key, index);
-        } catch (NullPointerException e) {
-            long oid = kid2Id(getObject(chunk.getBlocks(), MapBlockBuffer.calcOff(index)));
-            System.out.printf("%d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
-        }
-        final var cursorZ = gm.getCursorZ();
-        if (z <= cursorZ && !(haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), HAVE_NATURAL_LIGHT_POS))) {
-            var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, is.chunks);
-            long ceilingmid = 0;
-            if (hideUndiscovered && !(haveProp(chunk.getBlocks(), MapBlockBuffer.calcOff(index), DISCOVERED_POS))) {
-                ceilingmid = undiscoveredMaterialId;
-            } else {
-                ceilingmid = getMaterial(neighborUp.c.getBlocks(), neighborUp.getOff());
-            }
-            ceilings.put(lazyCreateKey(ceilingmid, emission, false), index);
-        }
+        return blocks;
     }
 
-    private MaterialKey lazyCreateKey(long mid, Long emission, boolean transparent) {
-        int hash = MaterialKey.calcHash(mid, emission, transparent);
+    private MaterialKey lazyCreateKey(long mid, Long object, Long emission, boolean transparent) {
+        int hash = MaterialKey.calcHash(mid, object, emission, transparent);
         MaterialKey key = materialKeys.get(hash);
         if (key == null) {
             TextureCacheObject tex = getTexture(mid);
@@ -532,7 +580,11 @@ public class TerrainActor {
             if (emission != null) {
                 emissionTex = getTexture(emission);
             }
-            key = new MaterialKey(assets, tex, emissionTex, transparent);
+            TextureCacheObject objectTex = null;
+            if (object != null) {
+                // objectTex = getTexture(object);
+            }
+            key = new MaterialKey(assets, tex, objectTex, emissionTex, transparent);
             materialKeys.put(hash, key);
         }
         return key;

@@ -345,7 +345,7 @@ public class ObjectsRenderActor {
                                 final var mo = getMapObject(is.mg, index);
                                 mo.getOids().forEachKeyValue((id, type) -> {
                                     final GameMapObject go = is.og.get(type, id);
-                                    if (go.isVisible()) {
+                                    if (go.isHaveModel()) {
                                         chunkdbids.put(go.getObjectType(), go.getId());
                                     }
                                     alldbids.add(go.getId());

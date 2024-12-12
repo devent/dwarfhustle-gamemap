@@ -93,8 +93,8 @@ rid["LOAMY-SAND"] = 858
 rid["LOAM"] = 857
 
 // Wood
-rid["BIRCH-WOOD"] = 1042
-rid["PINE-WOOD"] = 1034
+rid["BIRCH-WOOD"] = 1043
+rid["PINE-WOOD"] = 1035
 
 rid["SELECTED-BLOCK-RAMP-TWO"] = 0xfff6
 rid["SELECTED-BLOCK-RAMP-TRI"] = 0xfff7
@@ -217,6 +217,7 @@ m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-EDGE-OUT"], x: 0*w, y: 0*h, w: w, h
 m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-EDGE-IN"],  x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
 m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-CORNER"],   x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
 m.Other.frames rid: rid["SELECTED-BLOCK-NORMAL"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+
 // Tree-Branch
 m.Other.frames rid: rid["SELECTED-BLOCK-BRANCH"],        x: 0*w, y: 3*h, w: w, h: h, ww: ww, hh: hh
 

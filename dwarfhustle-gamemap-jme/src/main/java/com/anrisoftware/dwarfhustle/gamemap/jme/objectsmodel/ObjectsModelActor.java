@@ -368,7 +368,6 @@ public class ObjectsModelActor {
                 is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, mo, v.getId(), () -> {
                     is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, cid, kgrowv, v.pos, (og) -> {
                         final var growv = (Tree) og;
-                        growv.setHidden(true);
                         growv.setGrowth(2.0f);
                     }));
                 }));

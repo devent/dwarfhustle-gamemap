@@ -11,6 +11,8 @@ public class MaterialKey {
 
     public final TextureCacheObject tex;
 
+    public final TextureCacheObject object;
+
     public final TextureCacheObject emissive;
 
     public final Material m;
@@ -18,13 +20,16 @@ public class MaterialKey {
     public final boolean transparent;
 
     public MaterialKey(AssetManager assets, TextureCacheObject tex, boolean transparent) {
-        this(assets, tex, null, transparent);
+        this(assets, tex, null, null, transparent);
     }
 
-    public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject emissive, boolean transparent) {
-        this.hash = calcHash(tex.rid, emissive != null ? emissive.rid : null, transparent);
+    public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject object,
+            TextureCacheObject emissive, boolean transparent) {
+        this.hash = calcHash(tex.rid, object != null ? object.rid : null, emissive != null ? emissive.rid : null,
+                transparent);
         this.tex = tex;
         this.emissive = emissive;
+        this.object = object;
         this.m = new Material(assets, "MatDefs/PBRLightingBlock.j3md");
         this.transparent = transparent;
         m.setTexture("BaseColorMap", tex.tex);
@@ -41,11 +46,15 @@ public class MaterialKey {
         }
     }
 
-    public static int calcHash(long texrid, Long emissive, boolean transparent) {
+    public static int calcHash(long texrid, Long object, Long emissive, boolean transparent) {
         final int PRIME = 59;
         int result = 1;
         final long temp1 = Long.hashCode(texrid);
         result = (result * PRIME) + (int) (temp1 ^ (temp1 >>> 32));
+        if (object != null) {
+            final long temp2 = Long.hashCode(object);
+            result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
+        }
         if (emissive != null) {
             final long temp2 = Long.hashCode(emissive);
             result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
