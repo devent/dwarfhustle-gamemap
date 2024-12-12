@@ -494,7 +494,7 @@ public class TerrainActor {
             MutableMultimap<MaterialKey, Integer> ceilings) {
         int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
         Long object = null;
-        object = findObject(gm, chunk, index);
+        object = findObject(gm, chunk, index, z - 1);
         long mid = kid2Id(getMaterial(chunk.getBlocks(), calcOff(index)));
         Long emission = null;
         boolean cursor = gm.isCursor(x, y, z);
@@ -530,16 +530,15 @@ public class TerrainActor {
         }
     }
 
-    private Long findObject(GameMap gm, MapChunk chunk, int index) {
+    private Long findObject(GameMap gm, MapChunk chunk, int index, int upZ) {
         Long object = null;
-        final var filledChunks = gm.getFilledChunks();
-        if (!filledChunks.containsKey(chunk.getCid())) {
+        if (upZ < 0) {
             return object;
         }
-        final int mapIndex = calcIndex(gm, calcX(index, chunk), calcY(index, chunk), calcZ(index, chunk));
-        final var count = gm.getFilledBlocks().get(mapIndex);
+        final int mapIndexUp = calcIndex(gm, calcX(index, chunk), calcY(index, chunk), upZ);
+        final var count = gm.getFilledBlocks().get(mapIndexUp);
         if (count != null && count.get() > 0) {
-            var mo = MapObject.getMapObject(is.mg, mapIndex);
+            var mo = MapObject.getMapObject(is.mg, mapIndexUp);
             for (LongIntPair pair : mo.getOids().keyValuesView()) {
                 GameMapObject go = is.og.get(pair.getTwo(), pair.getOne());
                 if (go.isHaveTex()) {
@@ -582,7 +581,7 @@ public class TerrainActor {
             }
             TextureCacheObject objectTex = null;
             if (object != null) {
-                // objectTex = getTexture(object);
+                objectTex = getTexture(object);
             }
             key = new MaterialKey(assets, tex, objectTex, emissionTex, transparent);
             materialKeys.put(hash, key);
