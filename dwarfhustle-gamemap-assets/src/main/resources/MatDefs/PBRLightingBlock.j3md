@@ -27,6 +27,9 @@ MaterialDef PBR Lighting {
         // BaseColor map
         Texture2D BaseColorMap
 
+        // BaseColor map
+        Texture2D ObjectColorMap_1
+
         // Metallic map
         Texture2D MetallicMap -LINEAR
         
@@ -145,7 +148,8 @@ MaterialDef PBR Lighting {
         }
 
         Defines {         
-            BASECOLORMAP : BaseColorMap            
+            BASECOLORMAP : BaseColorMap
+            OBJECT_COLOR_MAP_1 : ObjectColorMap_1
             NORMALMAP : NormalMap
             METALLICMAP : MetallicMap
             ROUGHNESSMAP : RoughnessMap

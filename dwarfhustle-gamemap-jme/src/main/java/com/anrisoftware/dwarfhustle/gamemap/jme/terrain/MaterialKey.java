@@ -44,6 +44,9 @@ public class MaterialKey {
             // m.setColor("Selected", ColorRGBA.Green);
             m.setTexture("SelectedMap", emissive.tex);
         }
+        if (object != null) {
+            m.setTexture("ObjectColorMap_1", object.tex);
+        }
     }
 
     public static int calcHash(long texrid, Long object, Long emissive, boolean transparent) {

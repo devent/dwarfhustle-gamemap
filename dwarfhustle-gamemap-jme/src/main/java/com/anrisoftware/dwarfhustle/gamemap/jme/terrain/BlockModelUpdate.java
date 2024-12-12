@@ -77,15 +77,17 @@ public class BlockModelUpdate {
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
                 final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
+                final var ctex4 = BufferUtils.createFloatBuffer(2 * spos);
                 final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
                 fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, gm, chunks, cpos, cindex,
-                        cnormal, ctex, ctex3, ccolor);
+                        cnormal, ctex, ctex3, ctex4, ccolor);
                 final var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
                 mesh.setBuffer(Type.Normal, 3, cnormal);
                 mesh.setBuffer(Type.TexCoord, 2, ctex);
                 mesh.setBuffer(Type.TexCoord3, 2, ctex3);
+                mesh.setBuffer(Type.TexCoord4, 2, ctex4);
                 mesh.setBuffer(Type.Color, 4, ccolor);
                 mesh.setMode(Mode.Triangles);
                 mesh.updateBound();
@@ -100,7 +102,7 @@ public class BlockModelUpdate {
     private void fillBuffers(RichIterable<Integer> bs, MeshSupplier meshSupplier, NormalsPredicate faceSkipTest, int w,
             int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk, GameMap gm, ObjectsGetter chunks,
             FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ctex3,
-            FloatBuffer ccolor) {
+            FloatBuffer ctex4, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -159,11 +161,16 @@ public class BlockModelUpdate {
             if (m.emissive != null) {
                 copyTex(index, mesh, m.emissive, ctex3, Type.TexCoord3);
             }
+            if (m.object != null) {
+                copyTex(index, mesh, m.object, ctex4, Type.TexCoord4);
+            }
         }
         cpos.flip();
         cindex.flip();
         cnormal.flip();
         ctex.flip();
+        ctex3.flip();
+        ctex4.flip();
         ccolor.flip();
     }
 

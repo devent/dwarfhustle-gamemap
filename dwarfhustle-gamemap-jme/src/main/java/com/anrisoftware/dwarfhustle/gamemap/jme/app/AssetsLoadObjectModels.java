@@ -102,6 +102,7 @@ public class AssetsLoadObjectModels {
                 log.warn("{} does not have textures coordinates", data.model);
             } else {
                 mesh.setBuffer(tex.clone(Type.TexCoord3));
+                mesh.setBuffer(tex.clone(Type.TexCoord4));
             }
             var newgeo = new Geometry("mesh", mesh);
             newgeo.setMaterial(geo.getMaterial());

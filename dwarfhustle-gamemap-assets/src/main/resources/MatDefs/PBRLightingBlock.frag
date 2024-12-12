@@ -44,6 +44,11 @@ varying vec3 wPosition;
   uniform sampler2D m_BaseColorMap;
 #endif
 
+#ifdef OBJECT_COLOR_MAP_1
+  uniform sampler2D m_ObjectColorMap_1;
+  varying vec2 texCoord4;
+#endif
+
 #ifdef USE_PACKED_MR
   uniform sampler2D m_MetallicRoughnessMap;
 #else
@@ -112,9 +117,6 @@ varying vec3 wNormal;
 
 void main(){
     vec2 newTexCoord;
-	#if defined(SELECTED) || defined(SELECTEDMAP)
-    	vec2 newTexCoord3;
-	#endif
     vec3 viewDir = normalize(g_CameraPosition - wPosition);
 
     vec3 norm = normalize(wNormal);
@@ -146,10 +148,6 @@ void main(){
         newTexCoord = texCoord;    
     #endif
     
-    #if defined(SELECTED) || defined(SELECTEDMAP)
-        newTexCoord3 = texCoord3;
-    #endif
-
     #ifdef BASECOLORMAP
         vec4 albedo = texture2D(m_BaseColorMap, newTexCoord) * Color;
     #else
@@ -343,11 +341,16 @@ void main(){
 
     #if defined(SELECTED) || defined (SELECTEDMAP)
         #ifdef SELECTEDMAP
-            vec4 selected = texture2D(m_SelectedMap, newTexCoord3);
+            vec4 selected = texture2D(m_SelectedMap, texCoord3);
         #else
             vec4 selected = m_Selected;
         #endif
         gl_FragColor += selected * pow(selected.a, m_SelectedPower) * m_SelectedIntensity;
+    #endif
+    
+    #ifdef OBJECT_COLOR_MAP_1
+    	vec4 object_1 = texture2D(m_ObjectColorMap_1, texCoord4);
+    	gl_FragColor.rgb += object_1.rgb * object_1.a;
     #endif
     
     //gl_FragColor.a = alpha;

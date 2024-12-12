@@ -17,6 +17,11 @@ varying vec2 texCoord;
   attribute vec2 inTexCoord3;
 #endif
 
+#ifdef OBJECT_COLOR_MAP_1
+  varying vec2 texCoord4;
+  attribute vec2 inTexCoord4;
+#endif
+
 varying vec4 Color;
 
 attribute vec3 inPosition;
@@ -65,6 +70,9 @@ void main(){
     #endif
 	#if defined(SELECTED) || defined(SELECTEDMAP)
        texCoord3 = inTexCoord3;
+	#endif
+	#ifdef OBJECT_COLOR_MAP_1
+       texCoord4 = inTexCoord4;
 	#endif
 
     wPosition = TransformWorld(modelSpacePos).xyz;
