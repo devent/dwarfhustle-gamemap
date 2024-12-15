@@ -214,7 +214,8 @@ m["Wood"].frames rid: rid["BIRCH-WOOD"], x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh:
 m["Wood"].frames rid: rid["PINE-WOOD"],  x: 1*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m["Grass"].image = "Textures/Tiles/grass-map.png"
-m["Grass"].frames rid: rid["MEADOW-GRASS"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m["Grass"].frames rid: rid["WHEAT"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m["Grass"].frames rid: rid["MEADOW-GRASS"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m.Other.image = "Textures/Tiles/other-map.png"
 m.Other.frames rid: rid["UNDISCOVERED"],                 x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f

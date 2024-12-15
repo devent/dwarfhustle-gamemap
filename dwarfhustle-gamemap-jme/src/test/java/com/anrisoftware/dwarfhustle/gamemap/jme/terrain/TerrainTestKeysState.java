@@ -65,6 +65,8 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private static final String ADD_GRASS_MAPPING = "TerrainTestKeysState_ADD_GRASS_MAPPING";
 
+    private static final String ADD_WHEAT_MAPPING = "TerrainTestKeysState_ADD_WHEAT_MAPPING";
+
     private static final String TOGGLE_UNDISCOVERED_MAPPING = "TerrainTestKeysState_TOGGLE_UNDISCOVERED_MAPPING";
 
     private static final String CURSOR_NORTH_MAPPING = "TerrainTestKeysState_CURSOR_NORTH_MAPPING";
@@ -80,7 +82,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private static final String[] MAPPINGS = new String[] { SHOW_SELECTED_BLOCK_MAPPING, SHOW_OBJECTS_BLOCK_MAPPING,
             ADD_SHRUB_MAPPING, ADD_SAMPLING_MAPPING, TOGGLE_UNDISCOVERED_MAPPING, CURSOR_NORTH_MAPPING,
             CURSOR_SOUTH_MAPPING, CURSOR_EAST_MAPPING, CURSOR_WEST_MAPPING, DELETE_VEGETATION_MAPPING,
-            VEGETATION_ADD_GROW_MAPPING, ADD_GRASS_MAPPING };
+            VEGETATION_ADD_GROW_MAPPING, ADD_GRASS_MAPPING, ADD_WHEAT_MAPPING };
 
     private static final Runnable EMPTY_ACTION = () -> {
     };
@@ -169,6 +171,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         inputManager.addMapping(CURSOR_WEST_MAPPING, new KeyTrigger(KeyInput.KEY_LEFT));
         inputManager.addMapping(VEGETATION_ADD_GROW_MAPPING, new KeyTrigger(KeyInput.KEY_G));
         inputManager.addMapping(ADD_GRASS_MAPPING, new KeyTrigger(KeyInput.KEY_R));
+        inputManager.addMapping(ADD_WHEAT_MAPPING, new KeyTrigger(KeyInput.KEY_W));
         inputManager.addListener(this, MAPPINGS);
         System.out.println("I     - " + SHOW_SELECTED_BLOCK_MAPPING);
         System.out.println("O     - " + SHOW_OBJECTS_BLOCK_MAPPING);
@@ -176,6 +179,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         System.out.println("S     - " + ADD_SHRUB_MAPPING);
         System.out.println("T     - " + ADD_SAMPLING_MAPPING);
         System.out.println("R     - " + ADD_GRASS_MAPPING);
+        System.out.println("W     - " + ADD_WHEAT_MAPPING);
         System.out.println("G     - " + VEGETATION_ADD_GROW_MAPPING);
         System.out.println("F9    - " + TOGGLE_UNDISCOVERED_MAPPING);
         System.out.println("UP    - " + CURSOR_NORTH_MAPPING);
@@ -221,6 +225,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             }
             case ADD_GRASS_MAPPING: {
                 this.nextAction = this::addGrass;
+                break;
+            }
+            case ADD_WHEAT_MAPPING: {
+                this.nextAction = this::addWheat;
                 break;
             }
             case VEGETATION_ADD_GROW_MAPPING: {
@@ -303,6 +311,12 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private void addGrass() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Meadow-Grass",
+                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+    }
+
+    private void addWheat() {
+        this.oldCursor = gm.getCursor();
+        actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Wheat",
                 (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
