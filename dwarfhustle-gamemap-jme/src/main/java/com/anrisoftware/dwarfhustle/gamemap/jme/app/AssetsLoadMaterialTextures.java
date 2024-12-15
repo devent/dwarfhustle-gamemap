@@ -65,7 +65,7 @@ public class AssetsLoadMaterialTextures {
         var engine = new GroovyScriptEngine(
                 new URL[] { AssetsLoadMaterialTextures.class.getResource("/TexturesMaterials.groovy") });
         var binding = new Binding();
-        unknownTextures = am.loadTexture("Textures/Tiles/unknown-02-128.png");
+        unknownTextures = am.loadTexture("Textures/Tiles/unknown.png");
         this.materialTexturesMap = (TexturesMap) engine.run("TexturesMaterials.groovy", binding);
         var syncMap = texturesMapFramesDataMap.asSynchronized();
         materialTexturesMap.data.values().parallelStream().forEach((e) -> loadTextureMap(syncMap, cache, e));
