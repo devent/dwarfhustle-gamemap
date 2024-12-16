@@ -90,11 +90,6 @@
             <groupId>org.jmonkeyengine</groupId>
             <artifactId>jme3-terrain</artifactId>
         </dependency>
-		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-imaging</artifactId>
-		    <version>1.0.0-alpha5</version>
-		</dependency>
 
         <!-- Resources -->
         <dependency>
