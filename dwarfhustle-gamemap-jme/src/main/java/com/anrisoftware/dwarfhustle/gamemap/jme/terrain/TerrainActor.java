@@ -113,6 +113,7 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
+import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
 import groovy.lang.Binding;
@@ -378,7 +379,11 @@ public class TerrainActor {
 
     private Behavior<Message> stashOtherCommand(Message m) {
         log.debug("stashOtherCommand: {}", m);
-        buffer.stash(m);
+        try {
+            buffer.stash(m);
+        } catch (StashOverflowException e) {
+            log.error("stashOtherCommand", e);
+        }
         return Behaviors.same();
     }
 
@@ -493,8 +498,8 @@ public class TerrainActor {
     private void putMaterialKey(GameMap gm, MapChunk chunk, int index, MutableMultimap<MaterialKey, Integer> blocks,
             MutableMultimap<MaterialKey, Integer> ceilings) {
         int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
-        Long object = null;
-        object = findObject(gm, chunk, index, z - 1);
+        Long[] objects = new Long[4];
+        objects = findObjects(objects, gm, chunk, index, z - 1);
         long mid = kid2Id(getMaterial(chunk.getBlocks(), calcOff(index)));
         Long emission = null;
         boolean cursor = gm.isCursor(x, y, z);
@@ -511,7 +516,7 @@ public class TerrainActor {
         }
         MaterialKey key = null;
         try {
-            key = lazyCreateKey(mid, object, emission, transparent);
+            key = lazyCreateKey(mid, objects, emission, transparent);
             blocks.put(key, index);
         } catch (NullPointerException e) {
             long oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
@@ -526,28 +531,30 @@ public class TerrainActor {
             } else {
                 ceilingmid = getMaterial(neighborUp.c.getBlocks(), neighborUp.getOff());
             }
-            ceilings.put(lazyCreateKey(ceilingmid, object, emission, false), index);
+            ceilings.put(lazyCreateKey(ceilingmid, objects, emission, false), index);
         }
     }
 
-    private Long findObject(GameMap gm, MapChunk chunk, int index, int upZ) {
-        Long object = null;
+    private Long[] findObjects(Long[] objects, GameMap gm, MapChunk chunk, int index, int upZ) {
         if (upZ < 0) {
-            return object;
+            return objects;
         }
         final int mapIndexUp = calcIndex(gm, calcX(index, chunk), calcY(index, chunk), upZ);
         final var count = gm.getFilledBlocks().get(mapIndexUp);
         if (count != null && count.get() > 0) {
             var mo = MapObject.getMapObject(is.mg, mapIndexUp);
+            int i = 0;
             for (LongIntPair pair : mo.getOids().keyValuesView()) {
                 GameMapObject go = is.og.get(pair.getTwo(), pair.getOne());
                 if (go.isHaveTex()) {
-                    object = kid2Id(go.getKid());
-                    return object;
+                    objects[i++] = kid2Id(go.getKid());
+                }
+                if (i == objects.length) {
+                    break;
                 }
             }
         }
-        return object;
+        return objects;
     }
 
     private MutableMultimap<MaterialKey, Integer> lazyPutMaterialCeilings(MapChunk chunk) {
@@ -570,8 +577,8 @@ public class TerrainActor {
         return blocks;
     }
 
-    private MaterialKey lazyCreateKey(long mid, Long object, Long emission, boolean transparent) {
-        int hash = MaterialKey.calcHash(mid, object, emission, transparent);
+    private MaterialKey lazyCreateKey(long mid, Long[] objects, Long emission, boolean transparent) {
+        int hash = MaterialKey.calcHash(mid, objects, emission, transparent);
         MaterialKey key = materialKeys.get(hash);
         if (key == null) {
             TextureCacheObject tex = getTexture(mid);
@@ -579,11 +586,13 @@ public class TerrainActor {
             if (emission != null) {
                 emissionTex = getTexture(emission);
             }
-            TextureCacheObject objectTex = null;
-            if (object != null) {
-                objectTex = getTexture(object);
+            final var objectTexs = new TextureCacheObject[objects.length];
+            for (int i = 0; i < objectTexs.length; i++) {
+                if (objects[i] != null) {
+                    objectTexs[i] = getTexture(objects[i]);
+                }
             }
-            key = new MaterialKey(assets, tex, objectTex, emissionTex, transparent);
+            key = new MaterialKey(assets, tex, objectTexs, objects, emissionTex, transparent);
             materialKeys.put(hash, key);
         }
         return key;

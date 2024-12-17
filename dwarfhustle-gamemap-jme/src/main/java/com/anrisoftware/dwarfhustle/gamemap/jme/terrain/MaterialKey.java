@@ -1,5 +1,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static java.lang.String.format;
+
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
@@ -11,7 +13,7 @@ public class MaterialKey {
 
     public final TextureCacheObject tex;
 
-    public final TextureCacheObject object;
+    public final TextureCacheObject[] objects;
 
     public final TextureCacheObject emissive;
 
@@ -20,16 +22,15 @@ public class MaterialKey {
     public final boolean transparent;
 
     public MaterialKey(AssetManager assets, TextureCacheObject tex, boolean transparent) {
-        this(assets, tex, null, null, transparent);
+        this(assets, tex, new TextureCacheObject[0], new Long[0], null, transparent);
     }
 
-    public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject object,
+    public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject[] objectTexs, Long[] objects,
             TextureCacheObject emissive, boolean transparent) {
-        this.hash = calcHash(tex.rid, object != null ? object.rid : null, emissive != null ? emissive.rid : null,
-                transparent);
+        this.hash = calcHash(tex.rid, objects, emissive != null ? emissive.rid : null, transparent);
         this.tex = tex;
         this.emissive = emissive;
-        this.object = object;
+        this.objects = objectTexs;
         this.m = new Material(assets, "MatDefs/PBRLightingBlock.j3md");
         this.transparent = transparent;
         m.setTexture("BaseColorMap", tex.tex);
@@ -44,26 +45,30 @@ public class MaterialKey {
             // m.setColor("Selected", ColorRGBA.Green);
             m.setTexture("SelectedMap", emissive.tex);
         }
-        if (object != null) {
-            m.setTexture("ObjectColorMap_1", object.tex);
+        for (int i = 0; i < (objects.length > 0 ? 1 : 0); i++) {
+            if (objectTexs[i] != null) {
+                m.setTexture(format("ObjectColorMap_%d", i + 1), objectTexs[i].tex);
+            }
         }
     }
 
-    public static int calcHash(long texrid, Long object, Long emissive, boolean transparent) {
+    public static int calcHash(long texrid, Long[] objects, Long emissive, boolean transparent) {
         final int PRIME = 59;
         int result = 1;
         final long temp1 = Long.hashCode(texrid);
         result = (result * PRIME) + (int) (temp1 ^ (temp1 >>> 32));
-        if (object != null) {
-            final long temp2 = Long.hashCode(object);
-            result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
+        for (Long o : objects) {
+            if (o != null) {
+                final long temp2 = Long.hashCode(o);
+                result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
+            }
         }
         if (emissive != null) {
-            final long temp2 = Long.hashCode(emissive);
-            result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
+            final long temp3 = Long.hashCode(emissive);
+            result = (result * PRIME) + (int) (temp3 ^ (temp3 >>> 32));
         }
-        final long temp3 = Boolean.hashCode(transparent);
-        result = (result * PRIME) + (int) (temp3 ^ (temp3 >>> 32));
+        final long temp4 = Boolean.hashCode(transparent);
+        result = (result * PRIME) + (int) (temp4 ^ (temp4 >>> 32));
         return result;
     }
 

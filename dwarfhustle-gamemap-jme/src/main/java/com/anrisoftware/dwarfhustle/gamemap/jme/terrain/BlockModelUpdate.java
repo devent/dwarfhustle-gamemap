@@ -161,8 +161,11 @@ public class BlockModelUpdate {
             if (m.emissive != null) {
                 copyTex(index, mesh, m.emissive, ctex3, Type.TexCoord3);
             }
-            if (m.object != null) {
-                copyTex(index, mesh, m.object, ctex4, Type.TexCoord4);
+            for (var object : m.objects) {
+                if (object != null) {
+                    copyTex(index, mesh, object, ctex4, Type.TexCoord4);
+                }
+                break;
             }
         }
         cpos.flip();
