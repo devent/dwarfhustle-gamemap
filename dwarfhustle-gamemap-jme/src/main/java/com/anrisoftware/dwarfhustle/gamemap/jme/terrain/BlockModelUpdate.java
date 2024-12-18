@@ -1,3 +1,20 @@
+/*
+ * dwarfhustle-gamemap-jme - Game map.
+ * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
@@ -77,17 +94,26 @@ public class BlockModelUpdate {
                 final var cnormal = BufferUtils.createFloatBuffer(3 * spos);
                 final var ctex = BufferUtils.createFloatBuffer(2 * spos);
                 final var ctex3 = BufferUtils.createFloatBuffer(2 * spos);
-                final var ctex4 = BufferUtils.createFloatBuffer(2 * spos);
+                final var cobjtex = new FloatBuffer[m.objects.length];
+                for (int i = 0; i < m.objects.length; i++) {
+                    if (m.objects[i] != null) {
+                        cobjtex[i] = BufferUtils.createFloatBuffer(2 * spos);
+                    }
+                }
                 final var ccolor = BufferUtils.createFloatBuffer(3 * 4 * spos);
                 fillBuffers(bs, meshSupplier, faceSkipTest, w, h, d, m, cursor, chunk, gm, chunks, cpos, cindex,
-                        cnormal, ctex, ctex3, ctex4, ccolor);
+                        cnormal, ctex, ctex3, cobjtex, ccolor);
                 final var mesh = new Mesh();
                 mesh.setBuffer(Type.Position, 3, cpos);
                 mesh.setBuffer(Type.Index, 1, cindex);
                 mesh.setBuffer(Type.Normal, 3, cnormal);
                 mesh.setBuffer(Type.TexCoord, 2, ctex);
                 mesh.setBuffer(Type.TexCoord3, 2, ctex3);
-                mesh.setBuffer(Type.TexCoord4, 2, ctex4);
+                for (int i = 0; i < m.objects.length; i++) {
+                    if (m.objects[i] != null) {
+                        mesh.setBuffer(TexCoordinate.getType(i + 3), 2, cobjtex[i]);
+                    }
+                }
                 mesh.setBuffer(Type.Color, 4, ccolor);
                 mesh.setMode(Mode.Triangles);
                 mesh.updateBound();
@@ -102,7 +128,7 @@ public class BlockModelUpdate {
     private void fillBuffers(RichIterable<Integer> bs, MeshSupplier meshSupplier, NormalsPredicate faceSkipTest, int w,
             int h, int d, MaterialKey m, GameBlockPos cursor, MapChunk chunk, GameMap gm, ObjectsGetter chunks,
             FloatBuffer cpos, ShortBuffer cindex, FloatBuffer cnormal, FloatBuffer ctex, FloatBuffer ctex3,
-            FloatBuffer ctex4, FloatBuffer ccolor) {
+            FloatBuffer[] cobjtex, FloatBuffer ccolor) {
         short in0, in1, in2, i0, i1, i2;
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
         int delta;
@@ -161,11 +187,10 @@ public class BlockModelUpdate {
             if (m.emissive != null) {
                 copyTex(index, mesh, m.emissive, ctex3, Type.TexCoord3);
             }
-            for (var object : m.objects) {
-                if (object != null) {
-                    copyTex(index, mesh, object, ctex4, Type.TexCoord4);
+            for (int i = 0; i < m.objects.length; i++) {
+                if (m.objects[i] != null) {
+                    copyTex(index, mesh, m.objects[i], cobjtex[i], TexCoordinate.getType(i + 3));
                 }
-                break;
             }
         }
         cpos.flip();
@@ -173,7 +198,11 @@ public class BlockModelUpdate {
         cnormal.flip();
         ctex.flip();
         ctex3.flip();
-        ctex4.flip();
+        for (var b : cobjtex) {
+            if (b != null) {
+                b.flip();
+            }
+        }
         ccolor.flip();
     }
 

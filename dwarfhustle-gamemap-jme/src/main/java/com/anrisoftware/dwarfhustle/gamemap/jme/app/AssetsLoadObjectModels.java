@@ -103,6 +103,10 @@ public class AssetsLoadObjectModels {
             } else {
                 mesh.setBuffer(tex.clone(Type.TexCoord3));
                 mesh.setBuffer(tex.clone(Type.TexCoord4));
+                mesh.setBuffer(tex.clone(Type.TexCoord5));
+                mesh.setBuffer(tex.clone(Type.TexCoord6));
+                mesh.setBuffer(tex.clone(Type.TexCoord7));
+                mesh.setBuffer(tex.clone(Type.TexCoord8));
             }
             var newgeo = new Geometry("mesh", mesh);
             newgeo.setMaterial(geo.getMaterial());

@@ -22,6 +22,26 @@ varying vec2 texCoord;
   attribute vec2 inTexCoord4;
 #endif
 
+#ifdef OBJECT_COLOR_MAP_2
+  varying vec2 texCoord5;
+  attribute vec2 inTexCoord5;
+#endif
+
+#ifdef OBJECT_COLOR_MAP_3
+  varying vec2 texCoord6;
+  attribute vec2 inTexCoord6;
+#endif
+
+#ifdef OBJECT_COLOR_MAP_4
+  varying vec2 texCoord7;
+  attribute vec2 inTexCoord7;
+#endif
+
+#ifdef OBJECT_COLOR_MAP_5
+  varying vec2 texCoord8;
+  attribute vec2 inTexCoord8;
+#endif
+
 varying vec4 Color;
 
 attribute vec3 inPosition;
@@ -73,6 +93,18 @@ void main(){
 	#endif
 	#ifdef OBJECT_COLOR_MAP_1
        texCoord4 = inTexCoord4;
+	#endif
+	#ifdef OBJECT_COLOR_MAP_2
+       texCoord5 = inTexCoord5;
+	#endif
+	#ifdef OBJECT_COLOR_MAP_3
+       texCoord6 = inTexCoord6;
+	#endif
+	#ifdef OBJECT_COLOR_MAP_4
+       texCoord7 = inTexCoord7;
+	#endif
+	#ifdef OBJECT_COLOR_MAP_5
+       texCoord8 = inTexCoord8;
 	#endif
 
     wPosition = TransformWorld(modelSpacePos).xyz;

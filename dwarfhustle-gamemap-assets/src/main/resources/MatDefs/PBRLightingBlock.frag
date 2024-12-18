@@ -49,6 +49,26 @@ varying vec3 wPosition;
   varying vec2 texCoord4;
 #endif
 
+#ifdef OBJECT_COLOR_MAP_2
+  uniform sampler2D m_ObjectColorMap_2;
+  varying vec2 texCoord5;
+#endif
+
+#ifdef OBJECT_COLOR_MAP_3
+  uniform sampler2D m_ObjectColorMap_3;
+  varying vec2 texCoord6;
+#endif
+
+#ifdef OBJECT_COLOR_MAP_4
+  uniform sampler2D m_ObjectColorMap_4;
+  varying vec2 texCoord7;
+#endif
+
+#ifdef OBJECT_COLOR_MAP_5
+  uniform sampler2D m_ObjectColorMap_5;
+  varying vec2 texCoord8;
+#endif
+
 #ifdef USE_PACKED_MR
   uniform sampler2D m_MetallicRoughnessMap;
 #else
@@ -351,6 +371,26 @@ void main(){
     #ifdef OBJECT_COLOR_MAP_1
     	vec4 object_1 = texture2D(m_ObjectColorMap_1, texCoord4);
     	gl_FragColor.rgb += object_1.rgb * object_1.a;
+    #endif
+    
+    #ifdef OBJECT_COLOR_MAP_2
+    	vec4 object_2 = texture2D(m_ObjectColorMap_2, texCoord5);
+    	gl_FragColor.rgb += object_2.rgb * object_2.a;
+    #endif
+    
+    #ifdef OBJECT_COLOR_MAP_3
+    	vec4 object_3 = texture2D(m_ObjectColorMap_3, texCoord6);
+    	gl_FragColor.rgb += object_3.rgb * object_3.a;
+    #endif
+    
+    #ifdef OBJECT_COLOR_MAP_4
+    	vec4 object_4 = texture2D(m_ObjectColorMap_4, texCoord7);
+    	gl_FragColor.rgb += object_4.rgb * object_4.a;
+    #endif
+    
+    #ifdef OBJECT_COLOR_MAP_5
+    	vec4 object_5 = texture2D(m_ObjectColorMap_5, texCoord8);
+    	gl_FragColor.rgb += object_5.rgb * object_5.a;
     #endif
     
     //gl_FragColor.a = alpha;
