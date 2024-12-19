@@ -39,7 +39,6 @@
     <properties>
         <globalpom.custom.home>https://project.anrisoftware.com/projects/dwarfhustle-model</globalpom.custom.home>
         <license.custom.license.template>src/main/resources/AGPL-3.txt</license.custom.license.template>
-        <globalpom.custom.year>2023</globalpom.custom.year>
         <!-- Versions -->
         <dwarfhustle.custom.model.version>0.0.2-SNAPSHOT</dwarfhustle.custom.model.version>
     </properties>
