@@ -162,11 +162,12 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 	@SneakyThrows
 	@Override
 	protected void loadMapObjects() {
-		final var pool = new ForkJoinPool(4);
-		final var root = getChunk(chunksStorage, 0);
-		pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
-				gm.getWidth(), gm.getHeight(), gm.getDepth()));
-		pool.shutdownNow();
+		try (final var pool = new ForkJoinPool(4)) {
+			final var root = getChunk(chunksStorage, 0);
+			pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
+					gm.getWidth(), gm.getHeight(), gm.getDepth()));
+			pool.shutdownNow();
+		}
 	}
 
 	private void initMapObjectsStorage(Path root, GameMap gm) {
