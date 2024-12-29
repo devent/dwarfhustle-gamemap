@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
 import org.eclipse.collections.impl.factory.Maps;
@@ -48,9 +47,7 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -109,7 +106,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
             CompletionStage<ObjectsGetter> og) {
 		return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, TesterMainPanelActorFactory.class,
-                "/main_ui.fxml", panelActors, ADDITIONAL_CSS);
+				"/tester_main_ui.fxml", panelActors, ADDITIONAL_CSS);
     }
 
     @Inject
@@ -133,17 +130,9 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     @Named("keyMappings")
     private Map<String, KeyMapping> keyMappings;
 
-    @SuppressWarnings("rawtypes")
-    private ActorRef<CacheResponseMessage> cacheResponseAdapter;
-
-    private ActorRef<Message> objectsActor;
-
     @SneakyThrows
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        this.cacheResponseAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
-        this.objectsActor = actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(1,
-                TimeUnit.SECONDS);
 		TesterStatusActor.create(injector, Duration.ofSeconds(1), initial.controller);
         InfoPanelActor.create(injector, Duration.ofSeconds(1), supplyAsync(() -> og)).whenComplete((v, err) -> {
             if (err == null) {
@@ -161,7 +150,6 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     }
 
     private void saveGameMap(GameMap gm) {
-        objectsActor.tell(new CachePutMessage<>(cacheResponseAdapter, gm));
     }
 
     /**

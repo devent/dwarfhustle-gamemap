@@ -1,15 +1,21 @@
 package org.dwarfhustle.gamemap.tester.gui.javafx.actor
 
+import static java.time.Duration.ofSeconds
+import static java.util.concurrent.CompletableFuture.supplyAsync
+
+import java.time.Duration
+import java.util.concurrent.CountDownLatch
+
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.testfx.framework.junit5.ApplicationExtension
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.DwarfhustleGamemapModelResourcesModule
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule
 import com.anrisoftware.resources.binary.internal.resources.BinaryResourceModule
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule
@@ -22,9 +28,14 @@ import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Provides
 import com.jme3.app.Application
+import com.jme3.app.LostFocusBehavior
 import com.jme3.app.SimpleApplication
+import com.jme3.app.StatsAppState
+import com.jme3.app.state.ConstantVerifierState
+import com.jme3.system.AppSettings
 
 import akka.actor.typed.ActorRef
+import akka.actor.typed.javadsl.AskPattern
 import groovy.util.logging.Slf4j
 
 /**
@@ -32,7 +43,7 @@ import groovy.util.logging.Slf4j
  * @author Erwin Müller <erwin@muellerpublic.de>
  */
 @Slf4j
-@ExtendWith(ApplicationExtension.class)
+//@ExtendWith(ApplicationExtension.class)
 class TesterMainPanelActorTest {
 
 	static SimpleApplication app
@@ -45,10 +56,18 @@ class TesterMainPanelActorTest {
 
 	@BeforeAll
 	static void setupActor() {
-		app = new SimpleApplication() {
-
+		app = new SimpleApplication(new StatsAppState(), new ConstantVerifierState()) {
 					@Override
 					public void simpleInitApp() {
+						setShowSettings(false);
+						def s = new AppSettings(true);
+						s.setResizable(true);
+						s.setWidth(640);
+						s.setHeight(480);
+						s.setVSync(false);
+						s.setOpenCLSupport(false);
+						setLostFocusBehavior(LostFocusBehavior.Disabled);
+						setSettings(s);
 					}
 				}
 		injector = Guice.createInjector(
@@ -81,5 +100,23 @@ class TesterMainPanelActorTest {
 
 	@Test
 	void show_tester_window() {
+		def og = { type, key -> } as ObjectsGetter
+		def panelActor
+		app.start()
+		TesterMainPanelActor.create(injector, ofSeconds(1), supplyAsync({ og })).whenComplete({ it, ex ->
+			panelActor = it
+		} ).get()
+		def result = AskPattern.ask(panelActor, {replyTo ->
+			new AttachGuiMessage(replyTo)
+		}, Duration.ofSeconds(300), actor.scheduler)
+		def lock = new CountDownLatch(1)
+		result.whenComplete( { reply, failure ->
+			log.info "AttachGuiMessage reply ${reply} failure ${failure}"
+			if (failure == null) {
+			}
+			lock.countDown()
+		})
+		lock.await()
+		Thread.sleep(1000000)
 	}
 }

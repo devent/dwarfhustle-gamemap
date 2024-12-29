@@ -21,10 +21,18 @@ import akka.actor.typed.ActorRef;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+/**
+ * 
+ * @author Erwin Müller <erwin@muellerpublic.de>
+ */
 @ToString(callSuper = true)
 @RequiredArgsConstructor
 public class AttachGuiMessage extends GuiMessage {
 
+	/**
+	 * 
+	 * @author Erwin Müller <erwin@muellerpublic.de>
+	 */
     @ToString(callSuper = true)
     public static class AttachGuiFinishedMessage extends GuiMessage {
 

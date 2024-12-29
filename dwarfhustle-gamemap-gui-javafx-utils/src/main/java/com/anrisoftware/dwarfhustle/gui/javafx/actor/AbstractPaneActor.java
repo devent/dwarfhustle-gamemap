@@ -128,6 +128,7 @@ public abstract class AbstractPaneActor<T> {
         var build = injector.getInstance(panelControllerBuildClass);
         context.pipeToSelf(build.loadFxml(injector, context.getExecutionContext(), mainUiResource, additionalCss),
                 (result, cause) -> {
+					log.debug("loadFxml result: {} cause: {}", result, cause);
                     if (cause == null) {
                         var actors = spawnPanelActors(injector, context, panelActors, result);
                         log.debug("build.loadFxml done");
