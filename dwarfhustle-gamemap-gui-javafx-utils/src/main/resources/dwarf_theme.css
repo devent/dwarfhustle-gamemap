@@ -1,0 +1,402 @@
+/**
+ * Dwarf Hustle Game Map - Game map.
+ * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+.root {
+    special1: #0755a0; // more light blue
+    special2: #04478b; // light blue
+    special3: #053a70; // dark blue
+    special4: #04305d; // very dark blue
+    dark1: #586671; // dark lighter teal
+    dark2: #51626a; // dark teal
+    dark3: #334350; // very dark teal
+    dark4: #28313a; // very dark blue
+    neutral1: #d3c8b4; // more light brown
+    neutral2: #ccbea3; // light brown
+    neutral3: #968664; // dark sand
+    neutral4: #3d2c12; // dark brown
+    neutral5: #d3bb8d; // bleak sand
+    neutral6: #d1b77a; // sand
+    neutral7: #d3b14d; // yellow
+    neutral8: #9f6422; // brown
+    highlight1: #d3230c; // red
+    highlight2: #ad3f26; // dark red
+    highlight3: #c95140; // contains mainly RED
+    highlight4: #a86e63; // Copper Rose color
+    buttonNormal: linear-gradient(to bottom, neutral5, neutral7);
+    buttonFocused: linear-gradient(to bottom, neutral7, neutral8);
+    buttonArmed: linear-gradient(to bottom, neutral7, neutral8);
+    buttonPressed: linear-gradient(to bottom, neutral8, neutral7);
+    dwarf-box-border: ladder(
+        neutral1,
+        black 20%,
+        derive(neutral1,-15%) 30%
+    );
+    dwarf-inner-border: linear-gradient(to bottom,
+            ladder(
+                neutral1,
+                derive(neutral1,30%) 0%,
+                derive(neutral1,20%) 40%,
+                derive(neutral1,25%) 60%,
+                derive(neutral1,55%) 80%,
+                derive(neutral1,55%) 90%,
+                derive(neutral1,75%) 100%
+            ),
+            ladder(
+                neutral1,
+                derive(neutral1,20%) 0%,
+                derive(neutral1,10%) 20%,
+                derive(neutral1,5%) 40%,
+                derive(neutral1,-2%) 60%,
+                derive(neutral1,-5%) 100%
+            ));
+    dwarf-inner-border-horizontal: linear-gradient(to right, derive(neutral1,55%), derive(neutral1,-5%));
+    -fx-font-size: 12pt;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-padding: 0 0.25em 0 0.25em; /* 0 3 0 3 */
+}
+
+/* horizontal the two nodes are placed to the left/right of each other. */
+.split-pane:horizontal > .split-pane-divider {
+   -fx-background-color: dwarf-box-border, dwarf-inner-border-horizontal;
+   -fx-background-insets: 0, 0 1 0 1;
+}
+
+/* vertical the two nodes are placed on top of each other. */
+.split-pane:vertical > .split-pane-divider {
+   -fx-background-color: dwarf-box-border, dwarf-inner-border;
+   -fx-background-insets: 0, 1 0 1 0;
+}
+
+.label {
+    -fx-font-family: "Behrensschrift";
+    -fx-background-color: transparent;
+    -fx-text-fill: dark4;
+}
+
+.list-view {
+}
+
+.titleLabel {
+	-fx-text-alignment: center;
+	-fx-font-size: 150%;
+}
+
+.subtitleLabel {
+    -fx-text-alignment: center;
+    -fx-font-size: 120%;
+}
+
+.text-input {
+	-fx-control-inner-background: neutral1;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-border-color: dark4;
+	-fx-border-radius: 4;
+	-fx-padding: 0 0 0 0;
+	-fx-pref-width: 50;
+}
+
+.text-input:focused:hover {
+	-fx-border-color: special1;
+}
+
+.combo-box .list-cell {
+	-fx-background-color: neutral1;
+}
+
+.combo-box-base {
+	-fx-background-color: neutral1;
+	-fx-border-style: solid;
+	-fx-border-width: 1px;
+	-fx-border-color: dark4;
+}
+
+.button, .toggle-button, .scroll-bar .decrement-button, .scroll-bar .increment-button, .scroll-bar .thumb {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral2, neutral3);
+	-fx-background-insets: 0;
+	-fx-background-radius: 12;
+	-fx-border-style: solid inside solid;
+	-fx-border-width: 1px;
+	-fx-border-radius: 12;
+	-fx-border-color: neutral4;
+	-fx-border-insets: 0;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 0.0, 0.0);
+}
+
+.button:armed, .toggle-button:selected, .toggle-button:armed {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral7, neutral8);
+}
+
+.button:armed, .toggle-button:armed {
+	-fx-background-color: buttonArmed;
+	-fx-border-color: neutral8;
+}
+
+.button:pressed, .toggle-button:pressed {
+	-fx-background-color: buttonPressed;
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral3, neutral2);
+}
+
+.commandButton {
+    -fx-pref-width: 8em;
+}
+
+.list-view {
+    -fx-pref-height: 10em;
+	-fx-background-color: neutral1;
+	-fx-border-style: solid inside solid;
+	-fx-border-width: 1px;
+	-fx-border-color: dark4;
+	-fx-border-radius: 4;
+}
+
+.list-view:focused:hover {
+	-fx-border-color: special1;
+}
+
+.list-cell {
+    -fx-font-family: "Behrensschrift";
+	-fx-background-color: neutral1;
+	-fx-padding: 0 0 0 0;
+}
+
+.list-cell:empty {
+    -fx-opacity: 0;
+}
+
+.list-cell:even {
+	-fx-background-color: neutral1;
+}
+
+.list-cell:selected:even {
+	-fx-background-color: neutral7;
+	-fx-text-fill: special1;
+}
+
+.list-cell:odd {
+	-fx-background-color: neutral2;
+}
+
+.list-cell:selected:odd {
+	-fx-background-color: neutral7;
+	-fx-text-fill: special1;
+}
+
+.list-cell:objectitems-sep {
+    -fx-background-color: #33CEFF;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+}
+
+.progress-indicator .percentage {
+	-fx-pref-height: 10;
+	-fx-max-height: 10;
+	-fx-fill: null;
+}
+
+.progress-indicator  {
+	-fx-progress-color: special1;
+    -fx-padding: 0 0 -16 0;
+}
+
+.progress-bar .track {
+    -fx-background-image: url("./Images/en/mdpi/paper-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: null;
+    -fx-border-width: null;
+}
+
+.progress-bar .bar {
+	-fx-background-color: special1;
+}
+
+.dwarf-small-buttons {
+    -fx-font-size: 8pt;
+}
+
+#mainPanel {
+    -fx-background-color: transparent;
+    -fx-border-image-source: url("./Images/en/mdpi/stones-background-seamless.png");
+    -fx-border-image-repeat: repeat;
+    -fx-border-image-width: 12;
+    -fx-border-image-insets: 0;
+    -fx-border-image-slice: 16;
+    -fx-padding: 0;
+    -fx-font-family: "Behrensschrift";
+}
+
+#mainSplit {
+    -fx-background-color: transparent;
+    -fx-border-width: null;
+    -fx-padding: 0;
+}
+
+#statusPanel {
+    -fx-background-image: url("./Images/en/mdpi/stones-2-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: neutral1;
+}
+
+#topPanel {
+    -fx-background-image: url("./Images/en/mdpi/stones-2-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: neutral1;
+}
+
+#leftPane {
+    -fx-background-color: transparent;
+}
+
+#rightPane {
+    -fx-background-image: url("./Images/en/mdpi/paper-background-seamless.png");
+    -fx-background-repeat: repeat repeat;
+    -fx-border-color: neutral1;
+}
+
+#gameMapPane {
+    -fx-background-color: black;
+}
+
+#pauseButton {
+    -fx-background-color: buttonArmed;
+    -fx-border-color: neutral8;
+}
+
+#pauseButton:armed, #pauseButton:selected, #pauseButton:armed {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral7, neutral8);
+    -fx-border-color: neutral8;
+}
+
+#pauseButton:armed {
+    -fx-background-color: buttonArmed;
+    -fx-border-color: neutral8;
+}
+
+#pauseButton:pressed {
+    -fx-background-color: buttonPressed;
+    -fx-border-color: neutral8;
+}
+
+#fortressNameLabel {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 3.0, 3.0);
+    -fx-font-size: 200%;
+}
+
+#infoPane {
+    -fx-background-color: special4;
+    -fx-border-width: 0;
+    -fx-font-family: "Behrensschrift";
+}
+
+#infoPane .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+#infoPane .viewport {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+#infoList {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+#infoList .list-cell {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.objectInfoPane {
+    -fx-background-color: transparent;
+    -fx-border-width: 4;
+    -fx-border-color: transparent;
+}
+
+.objectInfoBox {
+    -fx-background-color: transparent;
+    -fx-text-fill: neutral5;
+    -fx-border-width: 0;
+}
+
+.objectInfoBox .label {
+    -fx-background-color: transparent;
+    -fx-text-fill: neutral5;
+    -fx-border-width: 0;
+}
+
+.objectInfoTitle {
+    -fx-text-fill: neutral5;
+    -fx-font-size: 100%;
+}
+
+.objectInfoPane {
+    -fx-background-color: special4;
+    -fx-padding: 0 0 0 0;
+}
+
+#levelBar {
+    -fx-background-color: transparent;
+    -fx-border-color: neutral3;
+    -fx-background-radius: 0.0em;
+    -fx-border-radius: 2.0em;
+}
+
+#levelLabel {
+    -fx-background-color: transparent;
+    -fx-text-fill: neutral7;
+}
+
+#commandsSplitTopPane {
+    -fx-background-color: transparent;
+}
+
+#commandsSplitBottomPane {
+    -fx-background-color: transparent;
+}
+
+#commandLineText {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: lightyellow;
+}
+
+#commandLinesList {
+    -fx-background-color: transparent;
+}
+
+#commandLinesList .cell.indexed-cell.list-cell {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+}
+
+#commandLinesList .cell.indexed-cell.list-cell:selected {
+    -fx-text-fill: neutral7;
+    -fx-background-color: transparent;
+}
+
+#commandLinesList .cell.indexed-cell.list-cell:focused {
+    -fx-text-fill: neutral7;
+    -fx-background-color: transparent;
+}
+
+#commandsSplit {
+    -fx-background-color: transparent;
+}

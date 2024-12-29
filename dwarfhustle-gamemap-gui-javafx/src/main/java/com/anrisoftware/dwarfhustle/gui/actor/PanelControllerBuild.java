@@ -27,8 +27,8 @@ import java.util.concurrent.Executor;
 
 import org.apache.commons.io.IOUtils;
 
-import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
-import com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
+import com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil;
 import com.google.inject.Injector;
 import com.jayfella.jme.jfx.JavaFxUI;
 import com.jme3.app.Application;

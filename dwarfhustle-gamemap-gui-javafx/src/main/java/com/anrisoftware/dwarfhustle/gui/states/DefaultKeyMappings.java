@@ -27,11 +27,11 @@ import static javafx.scene.input.KeyCombination.CONTROL_DOWN;
 
 import java.util.Optional;
 
-import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.GameQuitMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.GuiMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.ResetCameraMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.GuiMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.ResetCameraMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
 import com.jme3.input.controls.KeyTrigger;
 
 import javafx.scene.input.KeyCodeCombination;

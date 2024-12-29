@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.actor;
 
-import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -32,12 +32,13 @@ import org.eclipse.collections.impl.factory.Maps;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerInitializeFxBuild;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
-import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinishedMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.GameQuitMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.MainWindowResizedMessage;
-import com.anrisoftware.dwarfhustle.gui.states.MainPanelState;
-import com.anrisoftware.dwarfhustle.gui.states.PanelComponent;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.InitialStateMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.MainPanelState;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.PanelComponent;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;

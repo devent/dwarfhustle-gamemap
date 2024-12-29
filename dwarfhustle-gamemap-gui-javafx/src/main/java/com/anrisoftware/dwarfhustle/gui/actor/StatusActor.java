@@ -17,20 +17,18 @@
  */
 package com.anrisoftware.dwarfhustle.gui.actor;
 
-import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static java.lang.String.format;
 
 import java.time.Duration;
-import java.util.Locale;
 import java.util.concurrent.CompletionStage;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.ParsedLineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.UnknownLineMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameMapCachedProgressMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractStatusActor;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -48,15 +46,11 @@ import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Acts on the messages:
- * <ul>
- * <li>{@link CreateSchemasMessage}</li>
- * </ul>
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
-public class StatusActor {
+public class StatusActor extends AbstractStatusActor {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, StatusActor.class.getSimpleName());
 
@@ -105,7 +99,8 @@ public class StatusActor {
     /**
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
      */
-    public Behavior<Message> start() {
+    @Override
+	public Behavior<Message> start() {
         return getInitialBehavior()//
                 .build();
     }
@@ -149,66 +144,18 @@ public class StatusActor {
     }
 
     /**
-     * Processing {@link SetGameMapMessage}.
-     * <p>
-     * Sets the status text that the world and game map is loading.
-     * <p>
-     * Returns a behavior that reacts to the messages from
-     * {@link #getInitialBehavior()}.
-     */
-    private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
-        log.debug("onLoadMapTiles {}", m);
-        runFxThread(() -> {
-            controller.statusLabel.setText("Loading game map...");
-        });
-        return Behaviors.same();
-    }
-
-    /**
-     * Processing {@link GameMapCachedProgressMessage}. Returns a behavior that
-     * reacts to the messages from {@link #getInitialBehavior()}.
-     */
-    private Behavior<Message> onSetGameMapProgress(GameMapCachedProgressMessage m) {
-        log.debug("onSetGameMapProgress {}", m);
-        runFxThread(() -> {
-            controller.statusLabel
-                    .setText(format(Locale.US, appTexts.getResource("game_map_cached_progress", Locale.US).getText(),
-                            (float) m.chunksLoaded / m.chunksCount * 100f));
-        });
-        return Behaviors.same();
-    }
-
-    /**
-     * Processing {@link StartTerrainForGameMapMessage}.
-     * <p>
-     * Sets the status text that the world and game map is finished loading.
-     * <p>
-     * Returns a behavior that reacts to the messages from
-     * {@link #getInitialBehavior()}.
-     */
-    private Behavior<Message> onGameMapCached(StartTerrainForGameMapMessage m) {
-        log.debug("GameMapCached {}", m);
-        runFxThread(() -> {
-            controller.statusLabel.setText("Game map loaded.");
-        });
-        return Behaviors.same();
-    }
-
-    /**
-     * Returns a behavior for the messages:
-     *
-     * <ul>
-     * <li>{@link SetGameMapMessage}
-     * <li>{@link StartTerrainForGameMapMessage}
-     * </ul>
-     */
-    private BehaviorBuilder<Message> getInitialBehavior() {
-        return Behaviors.receive(Message.class)//
+	 * Returns a behaviour for the messages:
+	 *
+	 * <ul>
+	 * <li>{@link SetGameMapMessage}
+	 * <li>{@link StartTerrainForGameMapMessage}
+	 * </ul>
+	 */
+	@Override
+	protected BehaviorBuilder<Message> getInitialBehavior() {
+		return super.getInitialBehavior()//
                 .onMessage(UnknownLineMessage.class, this::onUnknownLine)//
                 .onMessage(ParsedLineMessage.class, this::onParsedLine)//
-                .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
-                .onMessage(GameMapCachedProgressMessage.class, this::onSetGameMapProgress)//
-                .onMessage(StartTerrainForGameMapMessage.class, this::onGameMapCached)//
         ;
     }
 

@@ -29,6 +29,8 @@ import org.testfx.framework.junit5.ApplicationTest;
 import org.testfx.robot.Motion;
 import org.testfx.util.WaitForAsyncUtils;
 
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItem;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;

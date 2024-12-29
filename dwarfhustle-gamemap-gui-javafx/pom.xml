@@ -55,44 +55,6 @@
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.github.palexdev</groupId>
-            <artifactId>scenicview</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.jmejfx</groupId>
-            <artifactId>jme-jfx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-swing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.badlogicgames.ashley</groupId>
-            <artifactId>ashley</artifactId>
-        </dependency>
-
-        <!-- Resources -->
-        <dependency>
-            <groupId>com.anrisoftware.resources</groupId>
-            <artifactId>resources-images</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.resources</groupId>
-            <artifactId>resources-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.resources</groupId>
-            <artifactId>resources-getbundle</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.resources</groupId>
-            <artifactId>resources-texts</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.resources</groupId>
-            <artifactId>resources-binary</artifactId>
-        </dependency>
 
         <!-- Own modules dependencies -->
         <dependency>
@@ -111,6 +73,11 @@
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-console</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-gamemap-gui-javafx-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

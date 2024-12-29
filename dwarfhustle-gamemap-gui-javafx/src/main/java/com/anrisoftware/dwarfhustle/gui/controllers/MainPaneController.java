@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.controllers;
 
-import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.ABOUT_DIALOG_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.QUIT_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTINGS_MAPPING;
@@ -31,7 +31,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.LineMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;

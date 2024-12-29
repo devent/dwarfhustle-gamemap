@@ -18,7 +18,7 @@
 package com.anrisoftware.dwarfhustle.gui.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.actor.AdditionalCss.ADDITIONAL_CSS;
-import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 
 import java.awt.MouseInfo;
 import java.time.Duration;
@@ -31,11 +31,11 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCurs
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
-import com.anrisoftware.dwarfhustle.gui.controllers.InfoPaneController;
-import com.anrisoftware.dwarfhustle.gui.controllers.MapTileItem;
-import com.anrisoftware.dwarfhustle.gui.controllers.MapTileItemWidgetController;
-import com.anrisoftware.dwarfhustle.gui.messages.GameQuitMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.MainWindowResizedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;

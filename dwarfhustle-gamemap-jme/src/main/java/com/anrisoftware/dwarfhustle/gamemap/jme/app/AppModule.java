@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.GamemapConsoleActorModule;
 import com.anrisoftware.dwarfhustle.gamemap.console.antlr.GamemapConsoleAntlrModule;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GamemapModelResourcesModule;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.DwarfhustleGamemapModelResourcesModule;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
@@ -46,7 +46,7 @@ public class AppModule extends AbstractModule {
         install(new GamemapConsoleActorModule());
         install(new GamemapConsoleAntlrModule());
         bind(Engine.class).asEagerSingleton();
-        install(new GamemapModelResourcesModule());
+        install(new DwarfhustleGamemapModelResourcesModule());
         // Model Modules
         install(new DwarfhustleModelActorsModule());
         install(new DwarfhustleModelKnowledgePowerloomPlModule());

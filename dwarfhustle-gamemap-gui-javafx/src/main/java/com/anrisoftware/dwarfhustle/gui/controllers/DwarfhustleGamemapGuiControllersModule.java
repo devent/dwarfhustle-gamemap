@@ -21,10 +21,10 @@ import static com.google.inject.name.Names.named;
 
 import java.util.Map;
 
-import com.anrisoftware.dwarfhustle.gui.states.JmeMapping;
-import com.anrisoftware.dwarfhustle.gui.states.JmeMappingsProvider;
-import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
-import com.anrisoftware.dwarfhustle.gui.states.KeyMappingsProvider;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.JmeMapping;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.JmeMappingsProvider;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.AbstractKeyMappingProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 
@@ -37,7 +37,7 @@ public class DwarfhustleGamemapGuiControllersModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(new TypeLiteral<Map<String, KeyMapping>>() {
-        }).annotatedWith(named("keyMappings")).toProvider(KeyMappingsProvider.class).asEagerSingleton();
+        }).annotatedWith(named("keyMappings")).toProvider(AbstractKeyMappingProvider.class).asEagerSingleton();
         bind(new TypeLiteral<Map<String, JmeMapping>>() {
         }).annotatedWith(named("jmeMappings")).toProvider(JmeMappingsProvider.class).asEagerSingleton();
     }

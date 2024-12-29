@@ -18,7 +18,7 @@
 package com.anrisoftware.dwarfhustle.gui.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.actor.AdditionalCss.ADDITIONAL_CSS;
-import static com.anrisoftware.dwarfhustle.gui.controllers.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import java.time.Duration;
@@ -33,15 +33,15 @@ import org.scenicview.ScenicView;
 import com.anrisoftware.dwarfhustle.gamemap.console.actor.OpenSceneMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
-import com.anrisoftware.dwarfhustle.gui.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
-import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.AttachGuiMessage.AttachGuiFinishedMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage;
-import com.anrisoftware.dwarfhustle.gui.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
-import com.anrisoftware.dwarfhustle.gui.states.KeyMapping;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
