@@ -3,7 +3,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane id="infoPane" fx:id="infoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.controllers.InfoPaneController">
+<BorderPane id="infoPane" fx:id="infoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController">
    <center>
       <VBox id="infoBox" fx:id="infoBox" BorderPane.alignment="CENTER" />
    </center>

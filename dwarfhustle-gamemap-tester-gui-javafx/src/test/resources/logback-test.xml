@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Dwarf Hustle Game Map - Game map.
+    Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+-->
+<!DOCTYPE xml>
+<configuration scan="true">
+	<appender name="MVN_STYLE" class="ch.qos.logback.core.ConsoleAppender">
+		<target>System.err</target>
+		<encoder>
+			<pattern>[%-5level] %-4relative [%thread] %logger{15} - %msg %n</pattern>
+		</encoder>
+		<immediateFlush>false</immediateFlush>
+	</appender>
+
+	<appender name="FILE_DAILY"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${java.io.tmpdir}/${project.name}.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>[%-5level] %-4relative [%thread] %logger{15} - %msg %n</pattern>
+		</encoder>
+		<immediateFlush>false</immediateFlush>
+	</appender>
+
+	<appender name="ASYNC" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
+        <appender-ref ref="MVN_STYLE" />
+    </appender>
+
+    <root level="ERROR">
+        <appender-ref ref="ASYNC" />
+    </root>
+
+    <logger name="com.jme3.app.state" level="FINEST" />
+	<logger name="com.anrisoftware" level="ALL" />
+	<logger name="com.anrisoftware.dwarfhustle" level="TRACE" />
+
+</configuration>

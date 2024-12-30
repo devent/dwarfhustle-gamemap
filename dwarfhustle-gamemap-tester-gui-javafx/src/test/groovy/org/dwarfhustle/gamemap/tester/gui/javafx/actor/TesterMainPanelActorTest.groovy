@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.DwarfhustleGamemapModelResourcesModule
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.DwarfhustleGamemapGuiJavafxUtilsModule
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule
@@ -89,6 +90,7 @@ class TesterMainPanelActorTest {
 				new TextsResourcesModule(),
 				new DwarfhustleGamemapModelResourcesModule(),
 				new DwarfhustleModelActorsModule(),
+				new DwarfhustleGamemapGuiJavafxUtilsModule(),
 				new DwarfhustleGamemapTesterGuiJavafxActorModule())
 		actor = injector.getInstance(ActorSystemProvider.class)
 	}
