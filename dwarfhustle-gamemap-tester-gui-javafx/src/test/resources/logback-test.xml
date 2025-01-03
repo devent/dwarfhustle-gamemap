@@ -51,6 +51,7 @@
 
     <logger name="com.jme3.app.state" level="FINEST" />
 	<logger name="com.anrisoftware" level="ALL" />
-	<logger name="com.anrisoftware.dwarfhustle" level="TRACE" />
+	<logger name="com.dwarfhustle.gamemap" level="ALL" />
+	<logger name="org.dwarfhustle.gamemap" level="ALL" />
 
 </configuration>

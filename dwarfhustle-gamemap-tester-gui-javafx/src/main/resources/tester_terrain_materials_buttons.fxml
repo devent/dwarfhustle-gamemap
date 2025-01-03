@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox alignment="BOTTOM_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TerrainMaterialButtonsController">
+   <children>
+      <Button mnemonicParsing="false" text="Clay" />
+      <Button mnemonicParsing="false" text="Oxygen" />
+      <Button mnemonicParsing="false" text="Extrusive" />
+      <Button mnemonicParsing="false" text="Intrusive" />
+      <Button mnemonicParsing="false" text="Metamorphic" />
+      <Button mnemonicParsing="false" text="Sand" />
+      <Button mnemonicParsing="false" text="Seabed" />
+      <Button mnemonicParsing="false" text="Sedimentary" />
+      <Button mnemonicParsing="false" text="Water" />
+      <Button mnemonicParsing="false" text="Topsoil" />
+      <TabPane minWidth="-Infinity" side="BOTTOM" tabClosingPolicy="UNAVAILABLE" HBox.hgrow="ALWAYS">
+        <tabs>
+          <Tab text="Clays">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Fire Clay" />
+                        <Button mnemonicParsing="false" text="Silty Clay" />
+                        <Button mnemonicParsing="false" text="Sandy Clay" />
+                        <Button mnemonicParsing="false" text="Clay Loam" />
+                        <Button mnemonicParsing="false" text="Clay" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Gases">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Sulfur Dioxide" />
+                        <Button mnemonicParsing="false" text="Carbon Dioxide" />
+                        <Button mnemonicParsing="false" text="Polluted Oxygen" />
+                        <Button mnemonicParsing="false" text="Oxygen" />
+                        <Button mnemonicParsing="false" text="Vacuum" />
+                     </children>
+                  </HBox>
+               </content>
+          </Tab>
+          <Tab text="Extrusive">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Rhyolite" />
+                        <Button mnemonicParsing="false" text="Obsidian" />
+                        <Button mnemonicParsing="false" text="Dacite" />
+                        <Button mnemonicParsing="false" text="Basalt" />
+                        <Button mnemonicParsing="false" text="Andesite" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Intrusive">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Granite" />
+                        <Button mnemonicParsing="false" text="Gabbro" />
+                        <Button mnemonicParsing="false" text="Diorite" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Metamorphic">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Slate" />
+                        <Button mnemonicParsing="false" text="Schist" />
+                        <Button mnemonicParsing="false" text="Quartzite" />
+                        <Button mnemonicParsing="false" text="Phyllite" />
+                        <Button mnemonicParsing="false" text="Marble" />
+                        <Button mnemonicParsing="false" text="Gneiss" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Sand">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Yellow Sand" />
+                        <Button mnemonicParsing="false" text="White Sand" />
+                        <Button mnemonicParsing="false" text="Red Sand" />
+                        <Button mnemonicParsing="false" text="Black Sand" />
+                        <Button mnemonicParsing="false" text="Sand" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Seabed">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Calcareous Ooze" />
+                        <Button mnemonicParsing="false" text="Siliceous Ooze" />
+                        <Button mnemonicParsing="false" text="Pelagic Clay" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Sedimentary">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Siltstone" />
+                        <Button mnemonicParsing="false" text="Shale" />
+                        <Button mnemonicParsing="false" text="Sandstone" />
+                        <Button mnemonicParsing="false" text="Rock Salt" />
+                        <Button mnemonicParsing="false" text="Mudstone" />
+                        <Button mnemonicParsing="false" text="Limestone" />
+                        <Button mnemonicParsing="false" text="Dolomite" />
+                        <Button mnemonicParsing="false" text="Conglomerate" />
+                        <Button mnemonicParsing="false" text="Claystone" />
+                        <Button mnemonicParsing="false" text="Chert" />
+                        <Button mnemonicParsing="false" text="Chalk" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Liquid">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Magma" />
+                        <Button mnemonicParsing="false" text="Water" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+          <Tab text="Topsoil">
+               <content>
+                  <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <Button mnemonicParsing="false" text="Silt Loam" />
+                        <Button mnemonicParsing="false" text="Silty Clay Loam" />
+                        <Button mnemonicParsing="false" text="Silt" />
+                        <Button mnemonicParsing="false" text="Sandy Loam" />
+                        <Button mnemonicParsing="false" text="Sandy Clay Loam" />
+                        <Button mnemonicParsing="false" text="Peat" />
+                        <Button mnemonicParsing="false" text="Loamy Sand" />
+                        <Button mnemonicParsing="false" text="Loam" />
+                     </children>
+                  </HBox>
+               </content>
+            </Tab>
+        </tabs>
+      </TabPane>
+   </children>
+</HBox>

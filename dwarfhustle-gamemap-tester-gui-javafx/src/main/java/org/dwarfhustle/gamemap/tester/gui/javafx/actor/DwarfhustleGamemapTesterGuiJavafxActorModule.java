@@ -19,8 +19,10 @@ package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 
 import java.util.Map;
 
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TerrainMaterialButtonsActor.TerrainMaterialButtonsActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterMainPanelActor.TesterMainPanelActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterStatusActor.TesterStatusActorFactory;
+import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TerrainMaterialButtonsController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.states.TesterKeyMappingProvider;
 
@@ -47,6 +49,9 @@ public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule
 				}, TesterMainPanelActor.class).build(TesterMainPanelActorFactory.class));
 		install(new FactoryModuleBuilder().implement(TesterStatusActor.class, TesterStatusActor.class)
 				.build(TesterStatusActorFactory.class));
+		install(new FactoryModuleBuilder()
+				.implement(new TypeLiteral<AbstractPaneActor<? extends TerrainMaterialButtonsController>>() {
+				}, TerrainMaterialButtonsActor.class).build(TerrainMaterialButtonsActorFactory.class));
 		bind(new TypeLiteral<Map<String, KeyMapping>>() {
 		}).annotatedWith(Names.named("keyMappings")).toProvider(TesterKeyMappingProvider.class).asEagerSingleton();
 		bind(new TypeLiteral<Map<String, JmeMapping>>() {

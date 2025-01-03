@@ -41,6 +41,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollBar;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 
@@ -78,6 +80,14 @@ public class TesterMainPaneController extends AbstractStatusController {
 
     @FXML
     public Label levelLabel;
+
+    public ToggleGroup testerButtons = new ToggleGroup();
+
+    @FXML
+    public ToggleButton terrainButton;
+
+    @FXML
+    public ToggleButton objectsButton;
 
     private Locale locale;
 
@@ -121,14 +131,23 @@ public class TesterMainPaneController extends AbstractStatusController {
     }
 
     public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
+        terrainButton.setToggleGroup(testerButtons);
+        objectsButton.setToggleGroup(testerButtons);
         quitButton.setOnAction(e -> {
-			globalKeys.runAction(keyMappings.get("QUIT_MAPPING"));
+            globalKeys.runAction(keyMappings.get("QUIT_MAPPING"));
         });
         settingsButton.setOnAction(e -> {
-			globalKeys.runAction(keyMappings.get("SETTINGS_MAPPING"));
+            globalKeys.runAction(keyMappings.get("SETTINGS_MAPPING"));
         });
         aboutButton.setOnAction(e -> {
-			globalKeys.runAction(keyMappings.get("ABOUT_DIALOG_MAPPING"));
+            globalKeys.runAction(keyMappings.get("ABOUT_DIALOG_MAPPING"));
+        });
+        testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
+            if (nval != null && nval.isSelected()) {
+                if (nval == terrainButton) {
+                    globalKeys.runAction(keyMappings.get("OPEN_TERRAIN_BUTTONS_MAPPING"));
+                }
+            }
         });
     }
 
@@ -146,9 +165,9 @@ public class TesterMainPaneController extends AbstractStatusController {
         levelLabel.setText(Integer.toString(cursor.z + 1));
     }
 
-	@Override
-	public Label getStatusLabel() {
-		return statusLabel;
-	}
+    @Override
+    public Label getStatusLabel() {
+        return statusLabel;
+    }
 
 }
