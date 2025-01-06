@@ -66,131 +66,136 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
-	public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-			InfoPanelActor.class.getSimpleName());
+    public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
+            InfoPanelActor.class.getSimpleName());
 
-	public static final String NAME = InfoPanelActor.class.getSimpleName();
+    public static final String NAME = InfoPanelActor.class.getSimpleName();
 
-	public static final int ID = KEY.hashCode();
+    public static final int ID = KEY.hashCode();
 
-	private static final Map<String, PanelActorCreator> panelActors = Maps.mutable.empty();
+    private static final Map<String, PanelActorCreator> panelActors = Maps.mutable.empty();
 
-	static {
-	}
+    static {
+    }
 
-	public interface InfoPanelActorFactory extends AbstractPaneActorFactory<InfoPaneController> {
-	}
+    public interface InfoPanelActorFactory extends AbstractPaneActorFactory<InfoPaneController> {
+    }
 
-	public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-			CompletionStage<ObjectsGetter> og) {
-		return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, InfoPanelActorFactory.class,
-				"/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
-	}
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
+            CompletionStage<ObjectsGetter> og) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, InfoPanelActorFactory.class,
+                "/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
+    }
 
-	@Inject
-	private Application app;
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, ObjectsGetter og) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, InfoPanelActorFactory.class,
+                "/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
+    }
 
-	@Inject
-	private GameSettings gs;
+    @Inject
+    private Application app;
 
-	private Texts texts;
+    @Inject
+    private GameSettings gs;
 
-	private InfoPaneController controller;
+    private Texts texts;
 
-	private PanelControllerResult<MapTileItemWidgetController> mapTileItemWidget;
+    private InfoPaneController controller;
 
-	@Inject
-	public void setTextsFactory(TextsFactory texts) {
-		this.texts = texts.create("InfoPanelActor_Texts");
-	}
+    private PanelControllerResult<MapTileItemWidgetController> mapTileItemWidget;
 
-	@Override
-	protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-		this.controller = initial.controller;
-		runFxThread(() -> {
-			var controller = initial.controller;
-		});
-		var builder = injector.getInstance(PanelControllerBuild.class);
-		builder.<MapTileItemWidgetController>loadFxml(injector, context.getExecutionContext(),
-				"/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
-					if (err == null) {
-						mapTileItemWidget = res;
-						var controller = initial.controller;
-						controller.setup(injector);
-					}
-				});
-		return getDefaultBehavior()//
-		;
-	}
+    @Inject
+    public void setTextsFactory(TextsFactory texts) {
+        this.texts = texts.create("InfoPanelActor_Texts");
+    }
 
-	private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
-		// log.debug("onMapTileUnderCursor {}", m);
-		var mt = new MapBlock(1, new GameBlockPos(5, 5, 5));
-		var p = new Person(1);
-		p.setFirstName("Gorbir");
-		p.setLastName("Shatterfeet");
-		runFxThread(() -> {
-			controller.items.clear();
-			controller.items.add(new MapTileItem(mt));
-			controller.items.add(new MapTileItem(p));
-			controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-			controller.infoPane.setVisible(true);
-		});
-		return Behaviors.same();
-	}
+    @Override
+    protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
+        this.controller = initial.controller;
+        runFxThread(() -> {
+            var controller = initial.controller;
+        });
+        var builder = injector.getInstance(PanelControllerBuild.class);
+        builder.<MapTileItemWidgetController>loadFxml(injector, context.getExecutionContext(),
+                "/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
+                    if (err == null) {
+                        mapTileItemWidget = res;
+                        var controller = initial.controller;
+                        controller.setup(injector);
+                    }
+                });
+        return getDefaultBehavior()//
+        ;
+    }
 
-	private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
-		// log.debug("onMapTileEmptyUnderCursor {}", m);
-		runFxThread(() -> {
-			if (controller.items != null) {
-				controller.items.clear();
-			}
-			controller.infoPane.setVisible(false);
-		});
-		return Behaviors.same();
-	}
+    private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
+        // log.debug("onMapTileUnderCursor {}", m);
+        var mt = new MapBlock(1, new GameBlockPos(5, 5, 5));
+        var p = new Person(1);
+        p.setFirstName("Gorbir");
+        p.setLastName("Shatterfeet");
+        runFxThread(() -> {
+            controller.items.clear();
+            controller.items.add(new MapTileItem(mt));
+            controller.items.add(new MapTileItem(p));
+            controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+            controller.infoPane.setVisible(true);
+        });
+        return Behaviors.same();
+    }
 
-	private BehaviorBuilder<Message> getDefaultBehavior() {
-		return super.getBehaviorAfterAttachGui()//
-				.onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
-				.onMessage(MapTileEmptyUnderCursorMessage.class, this::onMapTileEmptyUnderCursor)//
-		;
-	}
+    private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
+        // log.debug("onMapTileEmptyUnderCursor {}", m);
+        runFxThread(() -> {
+            if (controller.items != null) {
+                controller.items.clear();
+            }
+            controller.infoPane.setVisible(false);
+        });
+        return Behaviors.same();
+    }
 
-	@Override
-	protected Behavior<Message> onShutdown(ShutdownMessage m) {
-		return Behaviors.stopped();
-	}
+    private BehaviorBuilder<Message> getDefaultBehavior() {
+        return super.getBehaviorAfterAttachGui()//
+                .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
+                .onMessage(MapTileEmptyUnderCursorMessage.class, this::onMapTileEmptyUnderCursor)//
+        ;
+    }
 
-	@Override
-	protected void attachPaneState() {
-		// nothing
-	}
+    @Override
+    protected Behavior<Message> onShutdown(ShutdownMessage m) {
+        return Behaviors.stopped();
+    }
 
-	@Override
-	protected void setupUi() {
-		var pane = initial.root;
-		var p = MouseInfo.getPointerInfo().getLocation();
-		pane.setLayoutX(p.x);
-		pane.setLayoutY(p.y);
-		pane.setPrefSize(100, 100);
-		JavaFxUI.getInstance().attachChild(pane);
-		JavaFxUI.getInstance().getScene().setOnMouseMoved(this::onMouseMoved);
-	}
+    @Override
+    protected void attachPaneState() {
+        // nothing
+    }
 
-	@Override
-	protected Behavior<Message> onGameQuit(GameQuitMessage m) {
-		return Behaviors.same();
-	}
+    @Override
+    protected void setupUi() {
+        var pane = initial.root;
+        var p = MouseInfo.getPointerInfo().getLocation();
+        pane.setLayoutX(p.x);
+        pane.setLayoutY(p.y);
+        pane.setPrefSize(100, 100);
+        JavaFxUI.getInstance().attachChild(pane);
+        JavaFxUI.getInstance().getScene().setOnMouseMoved(this::onMouseMoved);
+    }
 
-	@Override
-	protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
-		return Behaviors.same();
-	}
+    @Override
+    protected Behavior<Message> onGameQuit(GameQuitMessage m) {
+        return Behaviors.same();
+    }
 
-	private void onMouseMoved(MouseEvent e) {
-		var pane = initial.root;
-		pane.setLayoutX(e.getSceneX() + 20);
-		pane.setLayoutY(e.getSceneY() + 20);
-	}
+    @Override
+    protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
+        return Behaviors.same();
+    }
+
+    private void onMouseMoved(MouseEvent e) {
+        var pane = initial.root;
+        pane.setLayoutX(e.getSceneX() + 20);
+        pane.setLayoutY(e.getSceneY() + 20);
+    }
 }

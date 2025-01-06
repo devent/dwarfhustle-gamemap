@@ -18,14 +18,18 @@
 package com.anrisoftware.dwarfhustle.gui.javafx.utils;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+import static javafx.embed.swing.SwingFXUtils.toFXImage;
 
+import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.ImageResource;
+import com.anrisoftware.resources.images.external.Images;
 import com.jayfella.jme.jfx.JavaFxUI;
 
 import javafx.application.Platform;
@@ -38,6 +42,15 @@ import javafx.scene.image.ImageView;
  * @author Erwin Müller
  */
 public class JavaFxUtil {
+
+    /**
+     * Returns an {@link ImageView} from the image resource.
+     */
+    public static ImageView getImageView(Images images, String name, Locale locale, IconSize size) {
+        final var res = images.getResource(name, locale, size).getBufferedImage(TYPE_INT_ARGB);
+        final var view = new ImageView(toFXImage(res, null));
+        return view;
+    }
 
     /**
      * Runs the task on the JME thread.

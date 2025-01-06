@@ -31,11 +31,11 @@
                <center>
                   <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                      <bottom>
-                        <VBox alignment="BOTTOM_LEFT" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+                        <VBox fx:id="testerButtonsBox" alignment="BOTTOM_LEFT" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
                            <children>
                               <HBox alignment="BOTTOM_LEFT" prefHeight="100.0" prefWidth="200.0">
                                  <children>
-                                    <ToggleButton fx:id="terrainButton" mnemonicParsing="false" text="Terrain" />
+                                    <ToggleButton fx:id="materialsButton" mnemonicParsing="false" text="Materials" />
                                     <ToggleButton fx:id="objectsButton" mnemonicParsing="false" text="Objects" />
                                  </children>
                               </HBox>

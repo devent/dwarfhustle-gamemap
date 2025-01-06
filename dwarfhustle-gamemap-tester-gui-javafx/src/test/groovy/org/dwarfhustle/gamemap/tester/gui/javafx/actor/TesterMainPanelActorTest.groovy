@@ -29,11 +29,7 @@ import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Provides
 import com.jme3.app.Application
-import com.jme3.app.LostFocusBehavior
 import com.jme3.app.SimpleApplication
-import com.jme3.app.StatsAppState
-import com.jme3.app.state.ConstantVerifierState
-import com.jme3.system.AppSettings
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.javadsl.AskPattern
@@ -47,78 +43,65 @@ import groovy.util.logging.Slf4j
 //@ExtendWith(ApplicationExtension.class)
 class TesterMainPanelActorTest {
 
-	static SimpleApplication app
+    static SimpleApplication app
 
-	static Injector injector
+    static Injector injector
 
-	static ActorRef<Message> knowledgeActor
+    static ActorRef<Message> knowledgeActor
 
-	static ActorSystemProvider actor
+    static ActorSystemProvider actor
 
-	@BeforeAll
-	static void setupActor() {
-		app = new SimpleApplication(new StatsAppState(), new ConstantVerifierState()) {
-					@Override
-					public void simpleInitApp() {
-						setShowSettings(false);
-						def s = new AppSettings(true);
-						s.setResizable(true);
-						s.setWidth(640);
-						s.setHeight(480);
-						s.setVSync(false);
-						s.setOpenCLSupport(false);
-						setLostFocusBehavior(LostFocusBehavior.Disabled);
-						setSettings(s);
-					}
-				}
-		injector = Guice.createInjector(
-				new AbstractModule() {
-					@Override
-					protected void configure() {
-					}
-					@Provides
-					public Application getApp() {
-						return app
-					}
-				},
-				new BinaryResourceModule(),
-				new BinariesDefaultMapsModule(),
-				new ImagesResourcesModule(),
-				new ResourcesImagesCachedMapModule(),
-				new ResourcesSmoothScalingModule(),
-				new TextsResourcesDefaultModule(),
-				new TextsResourcesModule(),
-				new DwarfhustleGamemapModelResourcesModule(),
-				new DwarfhustleModelActorsModule(),
-				new DwarfhustleGamemapGuiJavafxUtilsModule(),
-				new DwarfhustleGamemapTesterGuiJavafxActorModule())
-		actor = injector.getInstance(ActorSystemProvider.class)
-	}
+    @BeforeAll
+    static void setupActor() {
+        app = new TestApp()
+        injector = Guice.createInjector(
+                new AbstractModule() {
+                    @Override
+                    protected void configure() {
+                    }
+                    @Provides
+                    public Application getApp() {
+                        return app
+                    }
+                },
+                new BinaryResourceModule(),
+                new BinariesDefaultMapsModule(),
+                new ImagesResourcesModule(),
+                new ResourcesImagesCachedMapModule(),
+                new ResourcesSmoothScalingModule(),
+                new TextsResourcesDefaultModule(),
+                new TextsResourcesModule(),
+                new DwarfhustleGamemapModelResourcesModule(),
+                new DwarfhustleModelActorsModule(),
+                new DwarfhustleGamemapGuiJavafxUtilsModule(),
+                new DwarfhustleGamemapTesterGuiJavafxActorModule())
+        actor = injector.getInstance(ActorSystemProvider.class)
+    }
 
-	@AfterAll
-	static void closeActor() {
-		actor.shutdownWait()
-	}
+    @AfterAll
+    static void closeActor() {
+        actor.shutdownWait()
+    }
 
-	@Test
-	void show_tester_window() {
-		def og = { type, key -> } as ObjectsGetter
-		def panelActor
-		app.start()
-		TesterMainPanelActor.create(injector, ofSeconds(1), supplyAsync({ og })).whenComplete({ it, ex ->
-			panelActor = it
-		} ).get()
-		def result = AskPattern.ask(panelActor, {replyTo ->
-			new AttachGuiMessage(replyTo)
-		}, Duration.ofSeconds(300), actor.scheduler)
-		def lock = new CountDownLatch(1)
-		result.whenComplete( { reply, failure ->
-			log.info "AttachGuiMessage reply ${reply} failure ${failure}"
-			if (failure == null) {
-			}
-			lock.countDown()
-		})
-		lock.await()
-		Thread.sleep(1000000)
-	}
+    @Test
+    void show_tester_window() {
+        def og = { type, key -> } as ObjectsGetter
+        def panelActor
+        app.start()
+        TesterMainPanelActor.create(injector, ofSeconds(1), supplyAsync({ og })).whenComplete({ it, ex ->
+            panelActor = it
+        } ).get()
+        def result = AskPattern.ask(panelActor, {replyTo ->
+            new AttachGuiMessage(replyTo)
+        }, Duration.ofSeconds(300), actor.scheduler)
+        def lock = new CountDownLatch(1)
+        result.whenComplete( { reply, failure ->
+            log.info "AttachGuiMessage reply ${reply} failure ${failure}"
+            if (failure == null) {
+            }
+            lock.countDown()
+        })
+        lock.await()
+        Thread.sleep(1000000)
+    }
 }

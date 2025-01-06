@@ -71,10 +71,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractPaneActor<T> {
 
-	/**
-	 * 
-	 * @author Erwin Müller <erwin@muellerpublic.de>
-	 */
+    /**
+     * 
+     * @author Erwin Müller <erwin@muellerpublic.de>
+     */
     public interface AbstractPaneActorFactory<T> {
 
         AbstractPaneActor<? extends T> create(ActorContext<Message> context, StashBuffer<Message> buffer,
@@ -89,7 +89,7 @@ public abstract class AbstractPaneActor<T> {
 
     }
 
-	private static <T> Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og,
+    private static <T> Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og,
             Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {
@@ -100,7 +100,17 @@ public abstract class AbstractPaneActor<T> {
         }));
     }
 
-	private static <T> Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og,
+    private static <T> Behavior<Message> create(Injector injector, ObjectsGetter og,
+            Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
+            String... additionalCss) {
+        return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
+            startJavafxBuild(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
+            return injector.getInstance(paneActorFactoryType).create(context, stash, og).start(injector);
+        }));
+    }
+
+    private static <T> Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og,
             Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
@@ -128,7 +138,7 @@ public abstract class AbstractPaneActor<T> {
         var build = injector.getInstance(panelControllerBuildClass);
         context.pipeToSelf(build.loadFxml(injector, context.getExecutionContext(), mainUiResource, additionalCss),
                 (result, cause) -> {
-					log.debug("loadFxml result: {} cause: {}", result, cause);
+                    log.debug("loadFxml result: {} cause: {}", result, cause);
                     if (cause == null) {
                         var actors = spawnPanelActors(injector, context, panelActors, result);
                         log.debug("build.loadFxml done");
@@ -162,6 +172,16 @@ public abstract class AbstractPaneActor<T> {
 
     public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
             ServiceKey<Message> key, String name, CompletionStage<ObjectsGetter> og,
+            Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
+            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
+            String... additionalCss) {
+        var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
+        return createNamedActor(system, timeout, id, key, name, create(injector, og, mainPanelActorFactoryType,
+                mainUiResource, panelActors, panelControllerBuildClass, additionalCss));
+    }
+
+    public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
+            ServiceKey<Message> key, String name, ObjectsGetter og,
             Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {

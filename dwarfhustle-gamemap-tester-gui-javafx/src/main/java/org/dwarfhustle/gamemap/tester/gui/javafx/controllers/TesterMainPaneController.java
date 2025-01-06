@@ -17,6 +17,7 @@
  */
 package org.dwarfhustle.gamemap.tester.gui.javafx.controllers;
 
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.getImageView;
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 
 import java.time.ZonedDateTime;
@@ -44,6 +45,8 @@ import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -81,10 +84,13 @@ public class TesterMainPaneController extends AbstractStatusController {
     @FXML
     public Label levelLabel;
 
+    @FXML
+    public VBox testerButtonsBox;
+
     public ToggleGroup testerButtons = new ToggleGroup();
 
     @FXML
-    public ToggleButton terrainButton;
+    public ToggleButton materialsButton;
 
     @FXML
     public ToggleButton objectsButton;
@@ -112,7 +118,7 @@ public class TesterMainPaneController extends AbstractStatusController {
 
     public void initListeners(Consumer<GameMap> saveZ) {
         log.debug("initListeners");
-        setupImagePropertiesFields();
+        setupImages();
         gs.get().currentMap.addListener((o, ov, nv) -> {
             runFxThread(() -> {
                 levelBar.setMin(1);
@@ -131,7 +137,7 @@ public class TesterMainPaneController extends AbstractStatusController {
     }
 
     public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
-        terrainButton.setToggleGroup(testerButtons);
+        materialsButton.setToggleGroup(testerButtons);
         objectsButton.setToggleGroup(testerButtons);
         quitButton.setOnAction(e -> {
             globalKeys.runAction(keyMappings.get("QUIT_MAPPING"));
@@ -144,14 +150,34 @@ public class TesterMainPaneController extends AbstractStatusController {
         });
         testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
             if (nval != null && nval.isSelected()) {
-                if (nval == terrainButton) {
-                    globalKeys.runAction(keyMappings.get("OPEN_TERRAIN_BUTTONS_MAPPING"));
+                if (nval == materialsButton) {
+                    globalKeys.runAction(keyMappings.get("OPEN_MATERIALS_BUTTONS_MAPPING"));
+                }
+            } else if (oval != null && !oval.isSelected()) {
+                if (oval == materialsButton) {
+                    globalKeys.runAction(keyMappings.get("CLOSE_MATERIALS_BUTTONS_MAPPING"));
+                }
+            }
+        });
+        testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
+            if (nval != null && nval.isSelected()) {
+                if (nval == objectsButton) {
+                    globalKeys.runAction(keyMappings.get("OPEN_OBJECTS_BUTTONS_MAPPING"));
+                }
+            } else if (oval != null && !oval.isSelected()) {
+                if (oval == objectsButton) {
+                    globalKeys.runAction(keyMappings.get("CLOSE_OBJECTS_BUTTONS_MAPPING"));
                 }
             }
         });
     }
 
-    private void setupImagePropertiesFields() {
+    @SneakyThrows
+    private void setupImages() {
+        materialsButton.setGraphic(getImageView(images, "buttons_materials", locale, iconSize));
+        materialsButton.setText(null);
+        objectsButton.setGraphic(getImageView(images, "buttons_objects", locale, iconSize));
+        objectsButton.setText(null);
     }
 
     public void setMap(WorldMap wm, GameMap gm) {

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane fx:id="materialsBox" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.MaterialsButtonsController">
+   <children>
+            <VBox>
+               <children>
+                  <TabPane side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
+                    <tabs>
+                      <Tab text="Clays">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="fireClayButton" mnemonicParsing="false" text="Fire Clay">
+                                 <tooltip>
+                                    <Tooltip text="Fire Clay" />
+                                 </tooltip></Button>
+                                    <Button fx:id="siltyClayButton" mnemonicParsing="false" text="Silty Clay">
+                                 <tooltip>
+                                    <Tooltip text="Silty Clay" />
+                                 </tooltip></Button>
+                                    <Button fx:id="sandyClayButton" mnemonicParsing="false" text="Sandy Clay">
+                                 <tooltip>
+                                    <Tooltip text="Sandy Clay" />
+                                 </tooltip></Button>
+                                    <Button fx:id="clayLoamButton" mnemonicParsing="false" text="Clay Loam">
+                                 <tooltip>
+                                    <Tooltip text="Clay Loam" />
+                                 </tooltip></Button>
+                                    <Button fx:id="clayButton" mnemonicParsing="false" text="Clay">
+                                 <tooltip>
+                                    <Tooltip text="Clay" />
+                                 </tooltip></Button>
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Gases">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="so2Button" mnemonicParsing="false" text="Sulfur Dioxide">
+                                 <tooltip>
+                                    <Tooltip text="Sulfur Dioxide" />
+                                 </tooltip></Button>
+                                    <Button fx:id="co2Button" mnemonicParsing="false" text="Carbon Dioxide">
+                                 <tooltip>
+                                    <Tooltip text="Carbon Dioxide" />
+                                 </tooltip></Button>
+                                    <Button fx:id="pollutedO2Button" mnemonicParsing="false" text="Polluted Oxygen">
+                                 <tooltip>
+                                    <Tooltip text="Polluted Oxygen" />
+                                 </tooltip></Button>
+                                    <Button fx:id="o2Button" mnemonicParsing="false" text="Oxygen">
+                                 <tooltip>
+                                    <Tooltip text="Oxygen" />
+                                 </tooltip></Button>
+                                    <Button fx:id="vacuumButton" mnemonicParsing="false" text="Vacuum">
+                                 <tooltip>
+                                    <Tooltip text="Vacuum" />
+                                 </tooltip></Button>
+                                 </children>
+                              </HBox>
+                           </content>
+                     <tooltip>
+                        <Tooltip text="Gases" />
+                     </tooltip>
+                      </Tab>
+                      <Tab text="Extrusive">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="rhyoliteButton" mnemonicParsing="false" text="Rhyolite" />
+                                    <Button fx:id="obsidianButton" mnemonicParsing="false" text="Obsidian" />
+                                    <Button fx:id="daciteButton" mnemonicParsing="false" text="Dacite" />
+                                    <Button fx:id="basaltButton" mnemonicParsing="false" text="Basalt" />
+                                    <Button fx:id="andesiteButton" mnemonicParsing="false" text="Andesite" />
+                                 </children>
+                              </HBox>
+                           </content>
+                     <tooltip>
+                        <Tooltip text="Igneous Extrusive" />
+                     </tooltip>
+                        </Tab>
+                      <Tab text="Intrusive">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="graniteButton" mnemonicParsing="false" text="Granite" />
+                                    <Button fx:id="gabbroButton" mnemonicParsing="false" text="Gabbro" />
+                                    <Button fx:id="dioriteButton" mnemonicParsing="false" text="Diorite" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Metamorphic">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="slateButton" mnemonicParsing="false" text="Slate" />
+                                    <Button fx:id="schistButton" mnemonicParsing="false" text="Schist" />
+                                    <Button fx:id="quartziteButton" mnemonicParsing="false" text="Quartzite" />
+                                    <Button fx:id="phylliteButton" mnemonicParsing="false" text="Phyllite" />
+                                    <Button fx:id="marbleButton" mnemonicParsing="false" text="Marble" />
+                                    <Button fx:id="gneissButton" mnemonicParsing="false" text="Gneiss" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Sand">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="yellowSandButton" mnemonicParsing="false" text="Yellow Sand" />
+                                    <Button fx:id="whiteSandButton" mnemonicParsing="false" text="White Sand" />
+                                    <Button fx:id="redSandButton" mnemonicParsing="false" text="Red Sand" />
+                                    <Button fx:id="blackSandButton" mnemonicParsing="false" text="Black Sand" />
+                                    <Button fx:id="sandButton" mnemonicParsing="false" text="Sand" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Seabed">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="calcareousOozeButton" mnemonicParsing="false" text="Calcareous Ooze" />
+                                    <Button fx:id="siliceousOozeButton" mnemonicParsing="false" text="Siliceous Ooze" />
+                                    <Button fx:id="pelagicClayButton" mnemonicParsing="false" text="Pelagic Clay" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Sedimentary">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="siltstoneButton" mnemonicParsing="false" text="Siltstone" />
+                                    <Button fx:id="shaleButton" mnemonicParsing="false" text="Shale" />
+                                    <Button fx:id="sandstoneButton" mnemonicParsing="false" text="Sandstone" />
+                                    <Button fx:id="rockSaltButton" mnemonicParsing="false" text="Rock Salt" />
+                                    <Button fx:id="mudstoneButton" mnemonicParsing="false" text="Mudstone" />
+                                    <Button fx:id="limestoneButton" mnemonicParsing="false" text="Limestone" />
+                                    <Button fx:id="dolomiteButton" mnemonicParsing="false" text="Dolomite" />
+                                    <Button fx:id="conglomerateButton" mnemonicParsing="false" text="Conglomerate" />
+                                    <Button fx:id="claystoneButton" mnemonicParsing="false" text="Claystone" />
+                                    <Button fx:id="chertButton" mnemonicParsing="false" text="Chert" />
+                                    <Button fx:id="chalkButton" mnemonicParsing="false" text="Chalk" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Liquid">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="magmaButton" mnemonicParsing="false" text="Magma" />
+                                    <Button fx:id="waterButton" mnemonicParsing="false" text="Water" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                      <Tab text="Topsoil">
+                           <content>
+                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                                 <children>
+                                    <Button fx:id="siltLoamButton" mnemonicParsing="false" text="Silt Loam" />
+                                    <Button fx:id="siltyClayLoamButton" mnemonicParsing="false" text="Silty Clay Loam" />
+                                    <Button fx:id="siltButton" mnemonicParsing="false" text="Silt" />
+                                    <Button fx:id="sandyLoamButton" mnemonicParsing="false" text="Sandy Loam" />
+                                    <Button fx:id="sandyClayLoamButton" mnemonicParsing="false" text="Sandy Clay Loam" />
+                                    <Button fx:id="peatButton" mnemonicParsing="false" text="Peat" />
+                                    <Button fx:id="loamySandButton" mnemonicParsing="false" text="Loamy Sand" />
+                                    <Button fx:id="loamButton" mnemonicParsing="false" text="Loam" />
+                                 </children>
+                              </HBox>
+                           </content>
+                        </Tab>
+                    </tabs>
+                  </TabPane>
+                  <HBox alignment="BOTTOM_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity">
+                     <children>
+                        <Button fx:id="clayDefaultButton" mnemonicParsing="false" text="Clay">
+                           <tooltip>
+                              <Tooltip text="Clay" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="oxygenDefaultButton" mnemonicParsing="false" text="Oxygen">
+                           <tooltip>
+                              <Tooltip text="Oxygen" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="extrusiveDefaultButton" mnemonicParsing="false" text="Extrusive">
+                           <tooltip>
+                              <Tooltip text="Igneous Extrusive" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="intrusiveDefaultButton" mnemonicParsing="false" text="Intrusive">
+                           <tooltip>
+                              <Tooltip text="Igneous Intrusive" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="metamorphicDefaultButton" mnemonicParsing="false" text="Metamorphic">
+                           <tooltip>
+                              <Tooltip text="Metamorphic" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="sandDefaultButton" mnemonicParsing="false" text="Sand">
+                           <tooltip>
+                              <Tooltip text="Sand" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="seabedDefaultButton" mnemonicParsing="false" text="Seabed">
+                           <tooltip>
+                              <Tooltip text="Seabed" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="sedimentaryDefaultButton" mnemonicParsing="false" text="Sedimentary">
+                           <tooltip>
+                              <Tooltip text="Sedimentary" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="waterDefaultButton" mnemonicParsing="false" text="Water">
+                           <tooltip>
+                              <Tooltip text="Water" />
+                           </tooltip>
+                        </Button>
+                        <Button fx:id="topsoilDefaultButton" mnemonicParsing="false" text="Topsoil">
+                           <tooltip>
+                              <Tooltip text="Topsoil" />
+                           </tooltip>
+                        </Button>
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+   </children>
+</Pane>

@@ -50,6 +50,11 @@
             <artifactId>dwarfhustle-gamemap-gui-javafx-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-gamemap-assets</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 	</dependencies>
 	
 </project>
