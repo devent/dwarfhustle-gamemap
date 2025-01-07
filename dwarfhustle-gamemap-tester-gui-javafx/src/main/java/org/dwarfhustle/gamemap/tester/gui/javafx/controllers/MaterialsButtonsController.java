@@ -38,6 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Controller for {@code tester_materials_buttons.fxml}
+ * <p>
+ * {@code ^\s*<Button fx:id="(\w+)" mnemonicParsing="false" text="(.+)" \/>}
+ * <p>
+ * {@code @FXML public Button $1;}
  *
  * @author Erwin Müller
  */
@@ -208,5 +212,35 @@ public class MaterialsButtonsController {
     }
 
     public void initListeners(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
+        clayDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("CLAY_DEFAULT_MAPPING"));
+        });
+        oxygenDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("OXYGEN_DEFAULT_MAPPING"));
+        });
+        extrusiveDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("EXTRUSIVE_DEFAULT_MAPPING"));
+        });
+        intrusiveDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("INTRUSIVE_DEFAULT_MAPPING"));
+        });
+        metamorphicDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("METAMORPHIC_DEFAULT_MAPPING"));
+        });
+        sandDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("SAND_DEFAULT_MAPPING"));
+        });
+        seabedDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("SEABED_DEFAULT_MAPPING"));
+        });
+        sedimentaryDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("SEDIMENTARY_DEFAULT_MAPPING"));
+        });
+        waterDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("WATER_DEFAULT_MAPPING"));
+        });
+        topsoilDefaultButton.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get("TOPSOIL_DEFAULT_MAPPING"));
+        });
     }
 }

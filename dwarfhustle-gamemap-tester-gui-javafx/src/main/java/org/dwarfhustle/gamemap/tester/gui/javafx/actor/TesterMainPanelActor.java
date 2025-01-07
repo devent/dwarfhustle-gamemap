@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialSetTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenMessage;
@@ -104,7 +105,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     }
 
     /**
-     * 
+     *
      * @author Erwin Müller <erwin@muellerpublic.de>
      */
     public interface TesterMainPanelActorFactory extends AbstractPaneActorFactory<TesterMainPaneController> {
@@ -295,6 +296,16 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         return Behaviors.same();
     }
 
+    /**
+     * Processing {@link MaterialSetTriggeredMessage}.
+     */
+    private Behavior<Message> onMaterialSetTriggered(MaterialSetTriggeredMessage m) {
+        log.debug("onMaterialSetTriggered {}", m);
+        // actor.tell(new
+        // ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        return Behaviors.same();
+    }
+
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
                 .onMessage(SettingsDialogOpenTriggeredMessage.class, this::onSettingsDialogOpenTriggered)//
@@ -305,6 +316,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
                 .onMessage(MaterialsButtonsCloseTriggeredMessage.class, this::onMaterialsButtonsCloseTriggered)//
                 .onMessage(ObjectsButtonsOpenTriggeredMessage.class, this::onObjectsButtonsOpenTriggered)//
                 .onMessage(ObjectsButtonsCloseTriggeredMessage.class, this::onObjectsButtonsCloseTriggered)//
+                .onMessage(MaterialSetTriggeredMessage.class, this::onMaterialSetTriggered)//
         ;
     }
 
