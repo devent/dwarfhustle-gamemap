@@ -22,7 +22,6 @@ import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.getImageV
 import java.util.Locale;
 import java.util.Map;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.resources.images.external.IconSize;
@@ -30,7 +29,6 @@ import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 
-import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
@@ -200,9 +198,6 @@ public class MaterialsButtonsController {
     public Tab liquidTab;
     @FXML
     public Tab topsoilTab;
-
-    @Inject
-    private GameSettingsProvider gs;
 
     public void setup(Injector injector) {
         log.debug("setup()");

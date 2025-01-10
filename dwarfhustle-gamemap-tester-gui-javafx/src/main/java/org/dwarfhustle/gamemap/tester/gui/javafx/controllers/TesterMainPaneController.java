@@ -29,7 +29,6 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractStatusController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
-import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
@@ -90,10 +89,10 @@ public class TesterMainPaneController extends AbstractStatusController {
     public ToggleGroup testerButtons = new ToggleGroup();
 
     @FXML
-    public ToggleButton materialsButton;
+    public ToggleButton paintButton;
 
     @FXML
-    public ToggleButton objectsButton;
+    public ToggleButton insertButton;
 
     private Locale locale;
 
@@ -102,9 +101,6 @@ public class TesterMainPaneController extends AbstractStatusController {
     private Images images;
 
     private IconSize iconSize;
-
-    @Inject
-    private ActorSystemProvider actor;
 
     @Inject
     private GameSettingsProvider gs;
@@ -137,8 +133,8 @@ public class TesterMainPaneController extends AbstractStatusController {
     }
 
     public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
-        materialsButton.setToggleGroup(testerButtons);
-        objectsButton.setToggleGroup(testerButtons);
+        paintButton.setToggleGroup(testerButtons);
+        insertButton.setToggleGroup(testerButtons);
         quitButton.setOnAction(e -> {
             globalKeys.runAction(keyMappings.get("QUIT_MAPPING"));
         });
@@ -150,22 +146,22 @@ public class TesterMainPaneController extends AbstractStatusController {
         });
         testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
             if (nval != null && nval.isSelected()) {
-                if (nval == materialsButton) {
+                if (nval == paintButton) {
                     globalKeys.runAction(keyMappings.get("OPEN_MATERIALS_BUTTONS_MAPPING"));
                 }
             } else if (oval != null && !oval.isSelected()) {
-                if (oval == materialsButton) {
+                if (oval == paintButton) {
                     globalKeys.runAction(keyMappings.get("CLOSE_MATERIALS_BUTTONS_MAPPING"));
                 }
             }
         });
         testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
             if (nval != null && nval.isSelected()) {
-                if (nval == objectsButton) {
+                if (nval == insertButton) {
                     globalKeys.runAction(keyMappings.get("OPEN_OBJECTS_BUTTONS_MAPPING"));
                 }
             } else if (oval != null && !oval.isSelected()) {
-                if (oval == objectsButton) {
+                if (oval == insertButton) {
                     globalKeys.runAction(keyMappings.get("CLOSE_OBJECTS_BUTTONS_MAPPING"));
                 }
             }
@@ -174,10 +170,10 @@ public class TesterMainPaneController extends AbstractStatusController {
 
     @SneakyThrows
     private void setupImages() {
-        materialsButton.setGraphic(getImageView(images, "buttons_materials", locale, iconSize));
-        materialsButton.setText(null);
-        objectsButton.setGraphic(getImageView(images, "buttons_objects", locale, iconSize));
-        objectsButton.setText(null);
+        paintButton.setGraphic(getImageView(images, "buttons_materials", locale, iconSize));
+        paintButton.setText(null);
+        insertButton.setGraphic(getImageView(images, "buttons_objects", locale, iconSize));
+        insertButton.setText(null);
     }
 
     public void setMap(WorldMap wm, GameMap gm) {
