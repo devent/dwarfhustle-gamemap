@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
 
-<Pane fx:id="materialsBox" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.MaterialsButtonsController">
+<Pane fx:id="materialsBox" prefHeight="107.0" prefWidth="1100.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.MaterialsButtonsController">
    <children>
             <VBox>
                <children>
-                  <TabPane side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
+                  <TabPane id="materialsTabPane" fx:id="materialsTabPane" prefHeight="68.0" prefWidth="1132.0" side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
                     <tabs>
-                      <Tab text="Clays">
+                      <Tab fx:id="claysTab" text="Clays">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -37,8 +41,11 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Clay Materials" />
+                     </tooltip>
                         </Tab>
-                      <Tab text="Gases">
+                      <Tab fx:id="gasesTab" text="Gases">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -66,10 +73,10 @@
                               </HBox>
                            </content>
                      <tooltip>
-                        <Tooltip text="Gases" />
+                        <Tooltip text="Gase Materials" />
                      </tooltip>
                       </Tab>
-                      <Tab text="Extrusive">
+                      <Tab fx:id="extrusiveTab" text="Extrusive Rocks">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -82,10 +89,10 @@
                               </HBox>
                            </content>
                      <tooltip>
-                        <Tooltip text="Igneous Extrusive" />
+                        <Tooltip text="Igneous Extrusive Rock Materials" />
                      </tooltip>
                         </Tab>
-                      <Tab text="Intrusive">
+                      <Tab fx:id="intrusiveTab" text="Intrusive Rocks">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -95,8 +102,11 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Igneous Intrusive Rock Materials" />
+                     </tooltip>
                         </Tab>
-                      <Tab text="Metamorphic">
+                      <Tab fx:id="metamorphicTab" text="Metamorphic Rocks">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -109,8 +119,11 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Metamorphic Rock Materials" />
+                     </tooltip>
                         </Tab>
-                      <Tab text="Sand">
+                      <Tab fx:id="sandTab" text="Sands">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -123,7 +136,7 @@
                               </HBox>
                            </content>
                         </Tab>
-                      <Tab text="Seabed">
+                      <Tab fx:id="seabedTab" text="Seabeds">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -133,8 +146,11 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Seabed Materials" />
+                     </tooltip>
                         </Tab>
-                      <Tab text="Sedimentary">
+                      <Tab fx:id="sedimentaryTab" text="Sedimentary Rocks">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -152,8 +168,11 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Sedimentary Rock Materials" />
+                     </tooltip>
                         </Tab>
-                      <Tab text="Liquid">
+                      <Tab fx:id="liquidTab" text="Liquids">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -162,8 +181,11 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Liquid Materials" />
+                     </tooltip>
                         </Tab>
-                      <Tab text="Topsoil">
+                      <Tab fx:id="topsoilTab" text="Topsoils">
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
@@ -178,6 +200,9 @@
                                  </children>
                               </HBox>
                            </content>
+                     <tooltip>
+                        <Tooltip text="Topsoil Materials" />
+                     </tooltip>
                         </Tab>
                     </tabs>
                   </TabPane>

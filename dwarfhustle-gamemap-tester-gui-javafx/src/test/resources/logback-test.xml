@@ -53,5 +53,6 @@
 	<logger name="com.anrisoftware" level="ALL" />
 	<logger name="com.dwarfhustle.gamemap" level="ALL" />
 	<logger name="org.dwarfhustle.gamemap" level="ALL" />
+	<logger name="com.anrisoftware.resources" level="INFO" />
 
 </configuration>

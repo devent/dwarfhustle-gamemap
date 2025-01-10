@@ -33,15 +33,17 @@ import com.google.inject.Injector;
 import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Controller for {@code tester_materials_buttons.fxml}
  * <p>
- * {@code ^\s*<Button fx:id="(\w+)" mnemonicParsing="false" text="(.+)" \/>}
+ * {@code ^\s*<(\w+) fx:id="(\w+)".*$}
  * <p>
- * {@code @FXML public Button $1;}
+ * {@code @FXML public $1 $2;}
  *
  * @author Erwin Müller
  */
@@ -176,6 +178,28 @@ public class MaterialsButtonsController {
     public Button waterDefaultButton;
     @FXML
     public Button topsoilDefaultButton;
+    @FXML
+    public TabPane materialsTabPane;
+    @FXML
+    public Tab claysTab;
+    @FXML
+    public Tab gasesTab;
+    @FXML
+    public Tab extrusiveTab;
+    @FXML
+    public Tab intrusiveTab;
+    @FXML
+    public Tab metamorphicTab;
+    @FXML
+    public Tab sandTab;
+    @FXML
+    public Tab seabedTab;
+    @FXML
+    public Tab sedimentaryTab;
+    @FXML
+    public Tab liquidTab;
+    @FXML
+    public Tab topsoilTab;
 
     @Inject
     private GameSettingsProvider gs;
@@ -209,6 +233,10 @@ public class MaterialsButtonsController {
         o2Button.setText(null);
         vacuumButton.setGraphic(getImageView(images, "buttons_vacuum", locale, iconSize));
         vacuumButton.setText(null);
+        claysTab.setGraphic(getImageView(images, "buttons_clay", locale, iconSize));
+        claysTab.setText(null);
+        sandTab.setGraphic(getImageView(images, "buttons_sand", locale, iconSize));
+        sandTab.setText(null);
     }
 
     public void initListeners(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {

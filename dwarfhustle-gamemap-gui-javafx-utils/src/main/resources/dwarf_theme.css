@@ -127,7 +127,7 @@
 	-fx-border-color: dark4;
 }
 
-.button, .toggle-button, .scroll-bar .decrement-button, .scroll-bar .increment-button, .scroll-bar .thumb {
+.tab, .button, .toggle-button, .scroll-bar .decrement-button, .scroll-bar .increment-button, .scroll-bar .thumb {
     -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral2, neutral3);
 	-fx-background-insets: 0;
 	-fx-background-radius: 12;
@@ -139,22 +139,39 @@
 	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 0.0, 0.0);
 }
 
-.button:armed, .toggle-button:selected, .toggle-button:armed {
+.tab:selected, .toggle-button:selected {
     -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral7, neutral8);
 }
 
-.button:armed, .toggle-button:armed {
+.tab:armed, .button:armed, .toggle-button:armed {
 	-fx-background-color: buttonArmed;
 	-fx-border-color: neutral8;
 }
 
-.button:pressed, .toggle-button:pressed {
+.tab:pressed,.button:pressed, .toggle-button:pressed {
 	-fx-background-color: buttonPressed;
     -fx-background-color: radial-gradient(center 50% 50%, radius 60%, reflect, neutral3, neutral2);
 }
 
 .commandButton {
     -fx-pref-width: 8em;
+}
+
+.tab-pane {/* w  w   w.   d e   m o   2  s .   c o    m*/
+    -fx-padding: 0;
+    -fx-hgap: 0;
+    -fx-vgap: 0;
+}
+
+.tab-content {
+    -fx-padding: 0;
+}
+
+/* Remove border and padding for the TabPane header area */
+.tab-header-area {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
 }
 
 .list-view {
