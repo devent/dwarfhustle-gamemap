@@ -233,7 +233,7 @@
 }
 
 .progress-bar .track {
-    -fx-background-image: url("./Images/en/mdpi/paper-background-seamless.png");
+    -fx-background-image: url("/Images/en/mdpi/paper-background-seamless.png");
     -fx-background-repeat: repeat repeat;
     -fx-border-color: null;
     -fx-border-width: null;
@@ -249,13 +249,29 @@
 
 #mainPanel {
     -fx-background-color: transparent;
-    -fx-border-image-source: url("./Images/en/mdpi/stones-background-seamless.png");
+    -fx-border-image-source: url("/Images/en/mdpi/stones-background-seamless.png");
     -fx-border-image-repeat: repeat;
     -fx-border-image-width: 12;
     -fx-border-image-insets: 0;
     -fx-border-image-slice: 16;
     -fx-padding: 0;
     -fx-font-family: "Behrensschrift";
+}
+
+#centerPane {
+	-fx-background-color: transparent;
+}
+
+#gameMapPane {
+	-fx-background-color: red;
+}
+
+#levelPane {
+	-fx-background-color: transparent;
+}
+
+.mainPanel {
+    -fx-background-color: transparent;
 }
 
 #mainSplit {
@@ -265,13 +281,13 @@
 }
 
 #statusPanel {
-    -fx-background-image: url("./Images/en/mdpi/stones-2-background-seamless.png");
+    -fx-background-image: url("/Images/en/mdpi/stones-2-background-seamless.png");
     -fx-background-repeat: repeat repeat;
     -fx-border-color: neutral1;
 }
 
 #topPanel {
-    -fx-background-image: url("./Images/en/mdpi/stones-2-background-seamless.png");
+    -fx-background-image: url("/Images/en/mdpi/stones-2-background-seamless.png");
     -fx-background-repeat: repeat repeat;
     -fx-border-color: neutral1;
 }
@@ -281,7 +297,7 @@
 }
 
 #rightPane {
-    -fx-background-image: url("./Images/en/mdpi/paper-background-seamless.png");
+    -fx-background-image: url("/Images/en/mdpi/paper-background-seamless.png");
     -fx-background-repeat: repeat repeat;
     -fx-border-color: neutral1;
 }

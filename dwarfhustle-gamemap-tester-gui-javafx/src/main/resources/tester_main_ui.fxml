@@ -13,86 +13,56 @@
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane id="mainPanel" fx:id="mainPanel" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="972.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController">
-    <center>
-        <VBox id="centerPane" fx:id="centerPane" prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-         <children>
-            <BorderPane id="gameMapPane" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-               <right>
-                  <StackPane BorderPane.alignment="CENTER">
-                     <children>
-                        <ScrollBar id="levelBar" fx:id="levelBar" orientation="VERTICAL" />
-                        <Label id="levelLabel" fx:id="levelLabel" text="0" />
-                     </children>
-                  </StackPane>
-               </right>
-               <center>
-                  <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-                     <bottom>
-                        <VBox fx:id="testerButtonsBox" alignment="BOTTOM_LEFT" prefWidth="100.0" BorderPane.alignment="CENTER">
-                           <children>
-                              <HBox alignment="BOTTOM_LEFT" prefWidth="200.0">
-                                 <children>
-                                    <ToggleButton fx:id="paintButton" mnemonicParsing="false" text="Paint" />
-                                    <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" />
-                                 </children>
-                              </HBox>
-                           </children>
-                        </VBox>
-                     </bottom>
-                  </BorderPane>
-               </center>
-            </BorderPane>
-         </children>
-        </VBox>
-    </center>
     <bottom>
-        <VBox fx:id="bottomPanel" BorderPane.alignment="CENTER">
+        <VBox fx:id="bottomPanel" styleClass="mainPanel" BorderPane.alignment="CENTER">
             <children>
-                <BorderPane>
-                    <bottom>
-                        <HBox id="statusPanel" alignment="CENTER" BorderPane.alignment="CENTER">
-                            <children>
-                                  <Label id="statusLabel" fx:id="statusLabel" text="Label" />
-                            </children>
-                        </HBox>
-                    </bottom>
-                </BorderPane>
+            <VBox fx:id="testerButtonsBox" alignment="BOTTOM_LEFT" prefWidth="100.0" styleClass="mainPanel">
+               <children>
+                  <HBox alignment="BOTTOM_LEFT" prefWidth="200.0">
+                     <children>
+                        <ToggleButton fx:id="paintButton" mnemonicParsing="false" text="Paint" />
+                        <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+                  <HBox id="statusPanel" alignment="CENTER">
+                      <children>
+                            <Label id="statusLabel" fx:id="statusLabel" text="Label" />
+                      </children>
+                  </HBox>
             </children>
         </VBox>
     </bottom>
-    <top>
-        <VBox fx:id="topPanel" BorderPane.alignment="CENTER">
-            <children>
-                <BorderPane>
-                    <bottom>
-                        <VBox BorderPane.alignment="CENTER">
-                            <children>
-                                <GridPane id="topPanel" hgap="10.0" prefHeight="32.0" prefWidth="1297.0">
-                                    <columnConstraints>
-                              <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
-                                        <ColumnConstraints hgrow="SOMETIMES" percentWidth="80.0" />
-                              <ColumnConstraints fillWidth="false" halignment="RIGHT" hgrow="SOMETIMES" percentWidth="50.0" />
-                                    </columnConstraints>
-                                    <rowConstraints>
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                    </rowConstraints>
-                                    <children>
-                                        <Label id="fortressNameLabel" fx:id="fortressNameLabel" text="Fortress-Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER" />
-                              <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="2" GridPane.valignment="CENTER">
-                                 <children>
-                                              <Label id="gameTimeLabel" fx:id="gameTimeLabel" alignment="CENTER" text="Game-Time" textAlignment="JUSTIFY" HBox.hgrow="ALWAYS" />
-                                    <Button id="settingsButton" fx:id="settingsButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="S" />
-                                    <Button id="aboutButton" fx:id="aboutButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="H" />
-                                    <Button id="quitButton" fx:id="quitButton" ellipsisString="ffffffffffff" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" />
-                                 </children>
-                              </HBox>
-                                    </children>
-                                </GridPane>
-                            </children>
-                        </VBox>
-                    </bottom>
-                </BorderPane>
-            </children>
-        </VBox>
-    </top>
+   <top>
+              <GridPane id="topPanel" hgap="10.0" prefHeight="32.0" prefWidth="1297.0" BorderPane.alignment="CENTER">
+                  <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" percentWidth="80.0" />
+            <ColumnConstraints fillWidth="false" halignment="RIGHT" hgrow="SOMETIMES" percentWidth="50.0" />
+                  </columnConstraints>
+                  <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  </rowConstraints>
+                  <children>
+                      <Label id="fortressNameLabel" fx:id="fortressNameLabel" text="Fortress-Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER" />
+            <HBox alignment="CENTER" spacing="5.0" GridPane.columnIndex="2" GridPane.valignment="CENTER">
+               <children>
+                            <Label id="gameTimeLabel" fx:id="gameTimeLabel" alignment="CENTER" text="Game-Time" textAlignment="JUSTIFY" HBox.hgrow="ALWAYS" />
+                  <Button id="settingsButton" fx:id="settingsButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="S" />
+                  <Button id="aboutButton" fx:id="aboutButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="H" />
+                  <Button id="quitButton" fx:id="quitButton" ellipsisString="ffffffffffff" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" />
+               </children>
+            </HBox>
+                  </children>
+              </GridPane>
+   </top>
+   <center>
+      <StackPane id="levelPane" alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
+         <children>
+            <ScrollBar id="levelBar" fx:id="levelBar" orientation="VERTICAL" />
+            <Label id="levelLabel" fx:id="levelLabel" text="0" />
+         </children>
+      </StackPane>
+   </center>
 </BorderPane>

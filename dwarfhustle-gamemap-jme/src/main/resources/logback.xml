@@ -51,6 +51,7 @@
 
     <logger name="com.jme3.app.state" level="FINEST" />
 	<logger name="com.anrisoftware" level="ALL" />
+	<logger name="com.anrisoftware.resources" level="INFO" />
 	<logger name="com.anrisoftware.dwarfhustle.model" level="ERROR" />
 	<logger name="com.anrisoftware.dwarfhustle.model.actor" level="DEBUG" />
     <logger name="com.anrisoftware.dwarfhustle.gamemap.jme.app.AppActor" level="DEBUG" />

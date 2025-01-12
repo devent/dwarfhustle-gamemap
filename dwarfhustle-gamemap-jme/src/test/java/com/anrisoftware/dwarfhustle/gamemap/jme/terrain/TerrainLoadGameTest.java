@@ -17,7 +17,10 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
+import static akka.actor.typed.javadsl.AskPattern.ask;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static java.lang.Math.pow;
+import static java.time.Duration.ofSeconds;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -25,11 +28,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ForkJoinPool;
 
 import org.apache.commons.lang3.StringUtils;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.DwarfhustleGamemapTesterGuiJavafxActorModule;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterMainPanelActor;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.DwarfhustleGamemapModelResourcesModule;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.DwarfhustleGamemapGuiJavafxUtilsModule;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
@@ -42,6 +52,14 @@ import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObj
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage.MapChunksLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
+import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
+import com.anrisoftware.resources.binary.internal.resources.BinaryResourceModule;
+import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
+import com.anrisoftware.resources.images.internal.mapcached.ResourcesImagesCachedMapModule;
+import com.anrisoftware.resources.images.internal.scaling.ResourcesSmoothScalingModule;
+import com.anrisoftware.resources.texts.internal.texts.TextsResourcesDefaultModule;
+import com.anrisoftware.resources.texts.internal.texts.TextsResourcesModule;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 
 import jakarta.inject.Inject;
@@ -56,151 +74,197 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainLoadGameTest extends AbstractTerrainApp {
 
-	private static final Duration LOAD_MAP_OBJECTS_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration LOAD_MAP_OBJECTS_TIMEOUT = Duration.ofSeconds(30);
 
-	public static void main(String[] args) {
-		var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule(),
-				new DwarfhustleModelDbLmbdModule());
-		var app = injector.getInstance(TerrainLoadGameTest.class);
-		app.start(injector);
-	}
+    public static void main(String[] args) {
+        var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule(),
+                new DwarfhustleModelDbLmbdModule());
+        var app = injector.getInstance(TerrainLoadGameTest.class);
+        app.start(injector);
+    }
 
-	@Inject
-	private GameObjectsLmbdStorageFactory gameObjectsFactory;
+    @Inject
+    private GameObjectsLmbdStorageFactory gameObjectsFactory;
 
-	@Inject
-	private MapObjectsLmbdStorageFactory mapObjectsFactory;
+    @Inject
+    private MapObjectsLmbdStorageFactory mapObjectsFactory;
 
-	@Inject
-	private MapChunksLmbdStorageFactory storageFactory;
+    @Inject
+    private MapChunksLmbdStorageFactory storageFactory;
 
-	private MapChunksLmbdStorage chunksStorage;
+    private MapChunksLmbdStorage chunksStorage;
 
-	public TerrainLoadGameTest() {
-	}
+    public TerrainLoadGameTest() {
+    }
 
-	@Override
-	public void simpleInitApp() {
-		log.debug("simpleInitApp");
-		super.simpleInitApp();
-	}
+    @Override
+    public void simpleInitApp() {
+        log.debug("simpleInitApp");
+        createTesterMainPanel();
+        super.simpleInitApp();
+    }
 
-	@Override
-	protected void createMapObjectsCache() {
-		var task = MapObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage, moStorage);
-		task.whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("MapObjectsJcsCacheActor.create", ex);
-			} else {
-				log.debug("MapObjectsJcsCacheActor created");
-			}
-		});
-	}
+    @Override
+    protected com.google.inject.Module getAdditionalModule() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                install(new BinaryResourceModule());
+                install(new BinariesDefaultMapsModule());
+                install(new ImagesResourcesModule());
+                install(new ResourcesImagesCachedMapModule());
+                install(new ResourcesSmoothScalingModule());
+                install(new TextsResourcesDefaultModule());
+                install(new TextsResourcesModule());
+                install(new DwarfhustleGamemapModelResourcesModule());
+                install(new DwarfhustleGamemapGuiJavafxUtilsModule());
+                install(new DwarfhustleGamemapTesterGuiJavafxActorModule());
+            }
+        };
+    }
 
-	@Override
-	protected void createStoredObjectsCache() {
-		var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
-		task.whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("StoredObjectsJcsCacheActor.create", ex);
-			} else {
-				log.debug("StoredObjectsJcsCacheActor created");
-			}
-		});
-	}
+    @Override
+    protected void createMapObjectsCache() {
+        var task = MapObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage, moStorage);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("MapObjectsJcsCacheActor.create", ex);
+            } else {
+                log.debug("MapObjectsJcsCacheActor created");
+            }
+        });
+    }
 
-	@Override
-	protected void createChunksCache() {
-		var task = MapChunksJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, chunksStorage, chunksStorage);
-		task.whenComplete((ret, ex) -> {
-			if (ex != null) {
-				log.error("MapChunksJcsCacheActor.create", ex);
-			} else {
-				log.debug("MapChunksJcsCacheActor created");
-			}
-		});
-	}
+    @Override
+    protected void createStoredObjectsCache() {
+        var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("StoredObjectsJcsCacheActor.create", ex);
+            } else {
+                log.debug("StoredObjectsJcsCacheActor created");
+            }
+        });
+    }
 
-	@Override
-	@SneakyThrows
-	protected void loadTerrain() {
-		var root = Path.of("/home/devent/Projects/dwarf-hustle/terrain-maps/");
-		if (StringUtils.startsWith(System.getProperty("os.name"), "Windows")) {
-			var user = System.getProperty("user.home");
-			root = Path.of(user + "/Projects/dwarf-hustle/terrain-maps/");
-		}
-		// loadTerrain(root, "terrain_4_4_4_2", 1);
-		loadTerrain(root, "terrain_32_32_32_8", 9);
+    @Override
+    protected void createChunksCache() {
+        var task = MapChunksJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, chunksStorage, chunksStorage);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("MapChunksJcsCacheActor.create", ex);
+            } else {
+                log.debug("MapChunksJcsCacheActor created");
+            }
+        });
+    }
+
+    protected void createTesterMainPanel() {
+        var task = TesterMainPanelActor.create(injector, CREATE_ACTOR_TIMEOUT,
+                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID));
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("MapChunksJcsCacheActor.create", ex);
+            } else {
+                log.debug("MapChunksJcsCacheActor created");
+                CompletionStage<AttachGuiFinishedMessage> result = ask(ret, replyTo -> new AttachGuiMessage(replyTo),
+                        ofSeconds(3), actor.getScheduler());
+                result.whenComplete((ret1, ex1) -> {
+                    if (ex1 != null) {
+                        log.error("AttachGuiMessage", ex1);
+                    } else {
+                        log.debug("AttachGuiMessage done");
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    @SneakyThrows
+    protected void loadTerrain() {
+        var root = Path.of("/home/devent/Projects/dwarf-hustle/terrain-maps/");
+        if (StringUtils.startsWith(System.getProperty("os.name"), "Windows")) {
+            var user = System.getProperty("user.home");
+            root = Path.of(user + "/Projects/dwarf-hustle/terrain-maps/");
+        } else {
+            root = root.resolve("game");
+        }
+        // loadTerrain(root, "terrain_4_4_4_2", 1);
+        loadTerrain(root, "terrain_32_32_32_8", 9);
 //        loadTerrain(root, "terrain_512_512_128_16", 171, 189, 18, new float[] { -180.88005f, 114.93917f, 55.877968f },
 //                new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
-		// var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
-		// block.setMined(true);
-		// block.setMaterialRid(898);
-	}
+        // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
+        // block.setMined(true);
+        // block.setMaterialRid(898);
+    }
 
-	private void loadTerrain(Path root, String name, int z) throws IOException {
-		loadTerrain(root, name, 0, 0, z, new float[] { 0.0f, 0.0f, 50.821163f },
-				new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
-	}
+    private void loadTerrain(Path root, String name, int z) throws IOException {
+        assertThat("Terrain root directory exist", root.resolve(name).toFile().isDirectory(), is(true));
+        loadTerrain(root, name, 0, 0, z, new float[] { 0.0f, 0.0f, 50.821163f },
+                new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
+    }
 
-	private void loadTerrain(Path root, String name, int x, int y, int z, float[] cameraPos, float[] cameraRot)
-			throws IOException {
-		root = root.resolve(name);
-		var tmp = Files.createTempDirectory(name);
-		injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
-		initGameObjectsStorage(root);
-		loadGameMap();
-		this.chunksStorage = initMapStorage(root);
-		initMapObjectsStorage(root, gm);
-		gm.cursor.x = x;
-		gm.cursor.y = y;
-		gm.cursor.z = z;
-		gm.cameraPos = cameraPos;
-		gm.cameraRot = cameraRot;
-	}
+    private void loadTerrain(Path root, String name, int x, int y, int z, float[] cameraPos, float[] cameraRot)
+            throws IOException {
+        root = root.resolve(name);
+        var tmp = Files.createTempDirectory(name);
+        injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
+        initGameObjectsStorage(root);
+        loadGameMap();
+        this.chunksStorage = initMapStorage(root);
+        initMapObjectsStorage(root, gm);
+        gm.cursor.x = x;
+        gm.cursor.y = y;
+        gm.cursor.z = z;
+        gm.cameraPos = cameraPos;
+        gm.cameraRot = cameraRot;
+    }
 
-	@SneakyThrows
-	@Override
-	protected void loadMapObjects() {
-		try (final var pool = new ForkJoinPool(4)) {
-			final var root = getChunk(chunksStorage, 0);
-			pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
-					gm.getWidth(), gm.getHeight(), gm.getDepth()));
-			pool.shutdownNow();
-		}
-	}
+    @SneakyThrows
+    @Override
+    protected void loadMapObjects() {
+        try (final var pool = new ForkJoinPool(4)) {
+            final var root = getChunk(chunksStorage, 0);
+            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
+                    gm.getWidth(), gm.getHeight(), gm.getDepth()));
+            pool.shutdownNow();
+        }
+    }
 
-	private void initMapObjectsStorage(Path root, GameMap gm) {
-		var path = root.resolve("map-" + gm.id);
-		if (!path.toFile().isDirectory()) {
-			path.toFile().mkdir();
-		}
-		this.moStorage = mapObjectsFactory.create(path, gm);
-	}
+    private void initMapObjectsStorage(Path root, GameMap gm) {
+        var path = root.resolve("map-" + gm.id);
+        if (!path.toFile().isDirectory()) {
+            path.toFile().mkdir();
+        }
+        final long mapSize = 200 * (long) pow(10, 6);
+        this.moStorage = mapObjectsFactory.create(path, gm, mapSize);
+    }
 
-	private void initGameObjectsStorage(Path root) {
-		var path = root.resolve("objects");
-		if (!path.toFile().isDirectory()) {
-			path.toFile().mkdir();
-		}
-		this.goStorage = gameObjectsFactory.create(path);
-	}
+    private void initGameObjectsStorage(Path root) {
+        var path = root.resolve("objects");
+        if (!path.toFile().isDirectory()) {
+            path.toFile().mkdir();
+        }
+        final long mapSize = 200 * (long) pow(10, 6);
+        this.goStorage = gameObjectsFactory.create(path, mapSize);
+    }
 
-	@SneakyThrows
-	private MapChunksLmbdStorage initMapStorage(Path root) {
-		var path = root.resolve(String.format("%d-%d", wm.id, gm.id));
-		var storage = storageFactory.create(path, gm.chunkSize);
-		this.mcRoot = storage.getChunk(0);
-		return storage;
-	}
+    @SneakyThrows
+    private MapChunksLmbdStorage initMapStorage(Path root) {
+        var path = root.resolve(String.format("%d-%d", wm.id, gm.id));
+        var storage = storageFactory.create(path, gm.chunkSize);
+        this.mcRoot = storage.getChunk(0);
+        return storage;
+    }
 
-	@SneakyThrows
-	private void loadGameMap() {
-		try (var it = goStorage.getObjects(WorldMap.OBJECT_TYPE)) {
-			assertThat(it.hasNext(), is(true));
-			this.wm = (WorldMap) it.next();
-		}
-		this.gm = goStorage.getObject(GameMap.OBJECT_TYPE, wm.currentMap);
-	}
+    @SneakyThrows
+    private void loadGameMap() {
+        try (var it = goStorage.getObjects(WorldMap.OBJECT_TYPE)) {
+            assertThat(it.hasNext(), is(true));
+            this.wm = (WorldMap) it.next();
+        }
+        this.gm = goStorage.getObject(GameMap.OBJECT_TYPE, wm.currentMap);
+    }
 
 }

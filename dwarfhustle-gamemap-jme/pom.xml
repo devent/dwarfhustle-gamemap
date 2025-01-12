@@ -156,17 +156,22 @@
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
-            <artifactId>dwarfhustle-gamemap-gui-javafx</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-console</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-console-antlr</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-gamemap-gui-javafx-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-gamemap-tester-gui-javafx</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

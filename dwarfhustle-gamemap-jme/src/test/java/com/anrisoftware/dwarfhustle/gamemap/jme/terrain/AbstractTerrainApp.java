@@ -198,12 +198,14 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 return AbstractTerrainApp.this.viewPort;
             }
 
-        });
+        }, getAdditionalModule());
         loadTerrain();
         setupGameSettings();
         setupApp();
         start();
     }
+
+    protected abstract com.google.inject.Module getAdditionalModule();
 
     protected abstract void loadTerrain();
 

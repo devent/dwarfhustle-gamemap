@@ -19,8 +19,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.DwarfhustleGamemapJmeTerrainModule;
-import com.anrisoftware.dwarfhustle.gui.actor.DwarfhustleGamemapGuiActorsModule;
-import com.anrisoftware.dwarfhustle.gui.controllers.DwarfhustleGamemapGuiControllersModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.jme3.app.Application;
@@ -45,8 +43,6 @@ public class GamemapJmeModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        install(new DwarfhustleGamemapGuiActorsModule());
-        install(new DwarfhustleGamemapGuiControllersModule());
         install(new DwarfhustleGamemapJmeAppModule());
         install(new DwarfhustleGamemapJmeTerrainModule());
         install(new DwarfhustleGamemapJmeLightsModule());
