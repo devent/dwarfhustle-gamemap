@@ -35,6 +35,6 @@ public class SetMaterialBlockMessage extends Message {
 
     public final KnowledgeObject ko;
 
-    public final GameBlockPos pos;
+    public final GameBlockPos[] pos;
 
 }

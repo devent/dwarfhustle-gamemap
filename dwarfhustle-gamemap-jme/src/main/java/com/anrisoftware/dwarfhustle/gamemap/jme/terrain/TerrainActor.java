@@ -72,6 +72,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate.CollectChunksUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
@@ -205,7 +206,7 @@ public class TerrainActor {
 
     /**
      * Creates the {@link TerrainActor}.
-     * 
+     *
      * @param actor
      */
     private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
@@ -297,6 +298,9 @@ public class TerrainActor {
     @Inject
     @Assisted
     private TimerScheduler<Message> timer;
+
+    @Inject
+    private ActorSystemProvider actor;
 
     @Inject
     private BlockModelUpdateFactory blockModelUpdateFactory;
@@ -424,6 +428,10 @@ public class TerrainActor {
             is.cameraState.setTerrainBounds(
                     new BoundingBox(new Vector3f(), gm.getWidth(), gm.getHeight(), gs.get().visibleDepthLayers.get()));
             is.cameraState.updateCamera(gm);
+            is.cameraState.setSaveZ((gm0) -> {
+                is.os.set(GameMap.OBJECT_TYPE, gm0);
+                actor.tell(new MapCursorUpdateMessage(gm0.getCursor()));
+            });
         });
         timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
                 gs.get().terrainUpdateDuration.get());

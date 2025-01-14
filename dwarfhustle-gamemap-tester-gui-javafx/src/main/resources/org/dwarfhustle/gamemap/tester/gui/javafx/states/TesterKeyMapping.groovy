@@ -23,10 +23,13 @@ m = new KeyMappingMap()
 m.QUIT_MAPPING = [message: new GameQuitMessage(), keyCode: of(new KeyCodeCombination(Q, CONTROL_DOWN)), keyTrigger: of(new KeyTrigger(KEY_Q))]
 m.SETTINGS_MAPPING = [message: new SettingsDialogOpenTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
 m.ABOUT_DIALOG_MAPPING = [message: new AboutDialogOpenTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
+
 m.OPEN_MATERIALS_BUTTONS_MAPPING = [message: new MaterialsButtonsOpenTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
 m.CLOSE_MATERIALS_BUTTONS_MAPPING = [message: new MaterialsButtonsCloseTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
+
 m.OPEN_OBJECTS_BUTTONS_MAPPING = [message: new ObjectsButtonsOpenTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
 m.CLOSE_OBJECTS_BUTTONS_MAPPING = [message: new ObjectsButtonsCloseTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
+
 m.CLAY_DEFAULT_MAPPING = [message: new MaterialSetTriggeredMessage("clay"), keyCode: empty(), keyTrigger: empty()]
 m.OXYGEN_DEFAULT_MAPPING = [message: new MaterialSetTriggeredMessage("oxygen"), keyCode: empty(), keyTrigger: empty()]
 m.EXTRUSIVE_DEFAULT_MAPPING = [message: new MaterialSetTriggeredMessage("Andesite"), keyCode: empty(), keyTrigger: empty()]

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
@@ -18,26 +19,29 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="fireClayButton" mnemonicParsing="false" text="Fire Clay">
+                                    <ToggleButton fx:id="fireClayButton" mnemonicParsing="false" text="Fire Clay">
                                  <tooltip>
                                     <Tooltip text="Fire Clay" />
-                                 </tooltip></Button>
-                                    <Button fx:id="siltyClayButton" mnemonicParsing="false" text="Silty Clay">
+                                 </tooltip>
+                                 <toggleGroup>
+                                    <ToggleGroup fx:id="materialGroup" />
+                                 </toggleGroup></ToggleButton>
+                                    <ToggleButton fx:id="siltyClayButton" mnemonicParsing="false" text="Silty Clay" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Silty Clay" />
-                                 </tooltip></Button>
-                                    <Button fx:id="sandyClayButton" mnemonicParsing="false" text="Sandy Clay">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="sandyClayButton" mnemonicParsing="false" text="Sandy Clay" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Sandy Clay" />
-                                 </tooltip></Button>
-                                    <Button fx:id="clayLoamButton" mnemonicParsing="false" text="Clay Loam">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="clayLoamButton" mnemonicParsing="false" text="Clay Loam" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Clay Loam" />
-                                 </tooltip></Button>
-                                    <Button fx:id="clayButton" mnemonicParsing="false" text="Clay">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="clayButton" mnemonicParsing="false" text="Clay" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Clay" />
-                                 </tooltip></Button>
+                                 </tooltip></ToggleButton>
                                  </children>
                               </HBox>
                            </content>
@@ -49,26 +53,26 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="so2Button" mnemonicParsing="false" text="Sulfur Dioxide">
+                                    <ToggleButton fx:id="so2Button" mnemonicParsing="false" text="Sulfur Dioxide" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Sulfur Dioxide" />
-                                 </tooltip></Button>
-                                    <Button fx:id="co2Button" mnemonicParsing="false" text="Carbon Dioxide">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="co2Button" mnemonicParsing="false" text="Carbon Dioxide" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Carbon Dioxide" />
-                                 </tooltip></Button>
-                                    <Button fx:id="pollutedO2Button" mnemonicParsing="false" text="Polluted Oxygen">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="pollutedO2Button" mnemonicParsing="false" text="Polluted Oxygen" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Polluted Oxygen" />
-                                 </tooltip></Button>
-                                    <Button fx:id="o2Button" mnemonicParsing="false" text="Oxygen">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="o2Button" mnemonicParsing="false" text="Oxygen" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Oxygen" />
-                                 </tooltip></Button>
-                                    <Button fx:id="vacuumButton" mnemonicParsing="false" text="Vacuum">
+                                 </tooltip></ToggleButton>
+                                    <ToggleButton fx:id="vacuumButton" mnemonicParsing="false" text="Vacuum" toggleGroup="$materialGroup">
                                  <tooltip>
                                     <Tooltip text="Vacuum" />
-                                 </tooltip></Button>
+                                 </tooltip></ToggleButton>
                                  </children>
                               </HBox>
                            </content>
@@ -80,11 +84,11 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="rhyoliteButton" mnemonicParsing="false" text="Rhyolite" />
-                                    <Button fx:id="obsidianButton" mnemonicParsing="false" text="Obsidian" />
-                                    <Button fx:id="daciteButton" mnemonicParsing="false" text="Dacite" />
-                                    <Button fx:id="basaltButton" mnemonicParsing="false" text="Basalt" />
-                                    <Button fx:id="andesiteButton" mnemonicParsing="false" text="Andesite" />
+                                    <ToggleButton fx:id="rhyoliteButton" mnemonicParsing="false" text="Rhyolite" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="obsidianButton" mnemonicParsing="false" text="Obsidian" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="daciteButton" mnemonicParsing="false" text="Dacite" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="basaltButton" mnemonicParsing="false" text="Basalt" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="andesiteButton" mnemonicParsing="false" text="Andesite" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -96,9 +100,9 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="graniteButton" mnemonicParsing="false" text="Granite" />
-                                    <Button fx:id="gabbroButton" mnemonicParsing="false" text="Gabbro" />
-                                    <Button fx:id="dioriteButton" mnemonicParsing="false" text="Diorite" />
+                                    <ToggleButton fx:id="graniteButton" mnemonicParsing="false" text="Granite" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="gabbroButton" mnemonicParsing="false" text="Gabbro" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="dioriteButton" mnemonicParsing="false" text="Diorite" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -110,12 +114,12 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="slateButton" mnemonicParsing="false" text="Slate" />
-                                    <Button fx:id="schistButton" mnemonicParsing="false" text="Schist" />
-                                    <Button fx:id="quartziteButton" mnemonicParsing="false" text="Quartzite" />
-                                    <Button fx:id="phylliteButton" mnemonicParsing="false" text="Phyllite" />
-                                    <Button fx:id="marbleButton" mnemonicParsing="false" text="Marble" />
-                                    <Button fx:id="gneissButton" mnemonicParsing="false" text="Gneiss" />
+                                    <ToggleButton fx:id="slateButton" mnemonicParsing="false" text="Slate" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="schistButton" mnemonicParsing="false" text="Schist" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="quartziteButton" mnemonicParsing="false" text="Quartzite" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="phylliteButton" mnemonicParsing="false" text="Phyllite" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="marbleButton" mnemonicParsing="false" text="Marble" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="gneissButton" mnemonicParsing="false" text="Gneiss" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -127,11 +131,11 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="yellowSandButton" mnemonicParsing="false" text="Yellow Sand" />
-                                    <Button fx:id="whiteSandButton" mnemonicParsing="false" text="White Sand" />
-                                    <Button fx:id="redSandButton" mnemonicParsing="false" text="Red Sand" />
-                                    <Button fx:id="blackSandButton" mnemonicParsing="false" text="Black Sand" />
-                                    <Button fx:id="sandButton" mnemonicParsing="false" text="Sand" />
+                                    <ToggleButton fx:id="yellowSandButton" mnemonicParsing="false" text="Yellow Sand" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="whiteSandButton" mnemonicParsing="false" text="White Sand" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="redSandButton" mnemonicParsing="false" text="Red Sand" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="blackSandButton" mnemonicParsing="false" text="Black Sand" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="sandButton" mnemonicParsing="false" text="Sand" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -140,9 +144,9 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="calcareousOozeButton" mnemonicParsing="false" text="Calcareous Ooze" />
-                                    <Button fx:id="siliceousOozeButton" mnemonicParsing="false" text="Siliceous Ooze" />
-                                    <Button fx:id="pelagicClayButton" mnemonicParsing="false" text="Pelagic Clay" />
+                                    <ToggleButton fx:id="calcareousOozeButton" mnemonicParsing="false" text="Calcareous Ooze" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="siliceousOozeButton" mnemonicParsing="false" text="Siliceous Ooze" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="pelagicClayButton" mnemonicParsing="false" text="Pelagic Clay" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -154,17 +158,17 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="siltstoneButton" mnemonicParsing="false" text="Siltstone" />
-                                    <Button fx:id="shaleButton" mnemonicParsing="false" text="Shale" />
-                                    <Button fx:id="sandstoneButton" mnemonicParsing="false" text="Sandstone" />
-                                    <Button fx:id="rockSaltButton" mnemonicParsing="false" text="Rock Salt" />
-                                    <Button fx:id="mudstoneButton" mnemonicParsing="false" text="Mudstone" />
-                                    <Button fx:id="limestoneButton" mnemonicParsing="false" text="Limestone" />
-                                    <Button fx:id="dolomiteButton" mnemonicParsing="false" text="Dolomite" />
-                                    <Button fx:id="conglomerateButton" mnemonicParsing="false" text="Conglomerate" />
-                                    <Button fx:id="claystoneButton" mnemonicParsing="false" text="Claystone" />
-                                    <Button fx:id="chertButton" mnemonicParsing="false" text="Chert" />
-                                    <Button fx:id="chalkButton" mnemonicParsing="false" text="Chalk" />
+                                    <ToggleButton fx:id="siltstoneButton" mnemonicParsing="false" text="Siltstone" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="shaleButton" mnemonicParsing="false" text="Shale" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="sandstoneButton" mnemonicParsing="false" text="Sandstone" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="rockSaltButton" mnemonicParsing="false" text="Rock Salt" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="mudstoneButton" mnemonicParsing="false" text="Mudstone" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="limestoneButton" mnemonicParsing="false" text="Limestone" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="dolomiteButton" mnemonicParsing="false" text="Dolomite" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="conglomerateButton" mnemonicParsing="false" text="Conglomerate" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="claystoneButton" mnemonicParsing="false" text="Claystone" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="chertButton" mnemonicParsing="false" text="Chert" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="chalkButton" mnemonicParsing="false" text="Chalk" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -176,8 +180,8 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="magmaButton" mnemonicParsing="false" text="Magma" />
-                                    <Button fx:id="waterButton" mnemonicParsing="false" text="Water" />
+                                    <ToggleButton fx:id="magmaButton" mnemonicParsing="false" text="Magma" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="waterButton" mnemonicParsing="false" text="Water" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -189,14 +193,14 @@
                            <content>
                               <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
-                                    <Button fx:id="siltLoamButton" mnemonicParsing="false" text="Silt Loam" />
-                                    <Button fx:id="siltyClayLoamButton" mnemonicParsing="false" text="Silty Clay Loam" />
-                                    <Button fx:id="siltButton" mnemonicParsing="false" text="Silt" />
-                                    <Button fx:id="sandyLoamButton" mnemonicParsing="false" text="Sandy Loam" />
-                                    <Button fx:id="sandyClayLoamButton" mnemonicParsing="false" text="Sandy Clay Loam" />
-                                    <Button fx:id="peatButton" mnemonicParsing="false" text="Peat" />
-                                    <Button fx:id="loamySandButton" mnemonicParsing="false" text="Loamy Sand" />
-                                    <Button fx:id="loamButton" mnemonicParsing="false" text="Loam" />
+                                    <ToggleButton fx:id="siltLoamButton" mnemonicParsing="false" text="Silt Loam" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="siltyClayLoamButton" mnemonicParsing="false" text="Silty Clay Loam" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="siltButton" mnemonicParsing="false" text="Silt" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="sandyLoamButton" mnemonicParsing="false" text="Sandy Loam" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="sandyClayLoamButton" mnemonicParsing="false" text="Sandy Clay Loam" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="peatButton" mnemonicParsing="false" text="Peat" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="loamySandButton" mnemonicParsing="false" text="Loamy Sand" toggleGroup="$materialGroup" />
+                                    <ToggleButton fx:id="loamButton" mnemonicParsing="false" text="Loam" toggleGroup="$materialGroup" />
                                  </children>
                               </HBox>
                            </content>
@@ -208,56 +212,56 @@
                   </TabPane>
                   <HBox alignment="BOTTOM_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity">
                      <children>
-                        <Button fx:id="clayDefaultButton" mnemonicParsing="false" text="Clay">
+                        <ToggleButton fx:id="clayDefaultButton" mnemonicParsing="false" text="Clay" toggleGroup="$materialGroup">
                            <tooltip>
                               <Tooltip text="Clay" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="oxygenDefaultButton" mnemonicParsing="false" text="Oxygen">
+                        </ToggleButton>
+                        <ToggleButton fx:id="oxygenDefaultButton" mnemonicParsing="false" text="Oxygen" toggleGroup="$materialGroup">
                            <tooltip>
                               <Tooltip text="Oxygen" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="extrusiveDefaultButton" mnemonicParsing="false" text="Extrusive">
+                        </ToggleButton>
+                        <ToggleButton fx:id="extrusiveDefaultButton" mnemonicParsing="false" text="Andesite" toggleGroup="$materialGroup">
                            <tooltip>
-                              <Tooltip text="Igneous Extrusive" />
+                              <Tooltip text="Andesite Igneous Extrusive" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="intrusiveDefaultButton" mnemonicParsing="false" text="Intrusive">
+                        </ToggleButton>
+                        <ToggleButton fx:id="intrusiveDefaultButton" mnemonicParsing="false" text="Granite" toggleGroup="$materialGroup">
                            <tooltip>
-                              <Tooltip text="Igneous Intrusive" />
+                              <Tooltip text="Granite Igneous Intrusive" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="metamorphicDefaultButton" mnemonicParsing="false" text="Metamorphic">
+                        </ToggleButton>
+                        <ToggleButton fx:id="metamorphicDefaultButton" mnemonicParsing="false" text="Marble" toggleGroup="$materialGroup">
                            <tooltip>
-                              <Tooltip text="Metamorphic" />
+                              <Tooltip text="Marble Metamorphic" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="sandDefaultButton" mnemonicParsing="false" text="Sand">
+                        </ToggleButton>
+                        <ToggleButton fx:id="sandDefaultButton" mnemonicParsing="false" text="Sand" toggleGroup="$materialGroup">
                            <tooltip>
                               <Tooltip text="Sand" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="seabedDefaultButton" mnemonicParsing="false" text="Seabed">
+                        </ToggleButton>
+                        <ToggleButton fx:id="seabedDefaultButton" mnemonicParsing="false" text="Seabed" toggleGroup="$materialGroup">
                            <tooltip>
                               <Tooltip text="Seabed" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="sedimentaryDefaultButton" mnemonicParsing="false" text="Sedimentary">
+                        </ToggleButton>
+                        <ToggleButton fx:id="sedimentaryDefaultButton" mnemonicParsing="false" text="Sandstone" toggleGroup="$materialGroup">
                            <tooltip>
-                              <Tooltip text="Sedimentary" />
+                              <Tooltip text="Sandstone Sedimentary" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="waterDefaultButton" mnemonicParsing="false" text="Water">
+                        </ToggleButton>
+                        <ToggleButton fx:id="waterDefaultButton" mnemonicParsing="false" text="Water" toggleGroup="$materialGroup">
                            <tooltip>
                               <Tooltip text="Water" />
                            </tooltip>
-                        </Button>
-                        <Button fx:id="topsoilDefaultButton" mnemonicParsing="false" text="Topsoil">
+                        </ToggleButton>
+                        <ToggleButton fx:id="topsoilDefaultButton" mnemonicParsing="false" text="Topsoil" toggleGroup="$materialGroup">
                            <tooltip>
                               <Tooltip text="Topsoil" />
                            </tooltip>
-                        </Button>
+                        </ToggleButton>
                      </children>
                   </HBox>
                </children>

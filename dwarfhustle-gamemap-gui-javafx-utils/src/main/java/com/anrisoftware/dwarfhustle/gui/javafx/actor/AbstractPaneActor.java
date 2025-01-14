@@ -72,7 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractPaneActor<T> {
 
     /**
-     * 
+     *
      * @author Erwin Müller <erwin@muellerpublic.de>
      */
     public interface AbstractPaneActorFactory<T> {
@@ -315,7 +315,13 @@ public abstract class AbstractPaneActor<T> {
     protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
         log.debug("onMainWindowResized {}", m);
         runFxThread(() -> {
+            // JavaFxUI.getInstance().getJmeFxContainer().initial.root.setMinSize(m.width,
+            // m.height);
             initial.root.setPrefSize(m.width, m.height);
+            initial.root.setMaxSize(m.width, m.height);
+            initial.root.layout();
+            initial.root.requestLayout();
+            initial.root.resize(m.width, m.height);
         });
         return Behaviors.same();
     }

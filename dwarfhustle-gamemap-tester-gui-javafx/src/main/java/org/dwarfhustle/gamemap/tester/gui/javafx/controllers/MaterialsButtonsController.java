@@ -30,9 +30,11 @@ import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,131 +53,131 @@ public class MaterialsButtonsController {
     @FXML
     public Pane materialsBox;
     @FXML
-    public Button fireClayButton;
+    public ToggleButton fireClayButton;
     @FXML
-    public Button siltyClayButton;
+    public ToggleButton siltyClayButton;
     @FXML
-    public Button sandyClayButton;
+    public ToggleButton sandyClayButton;
     @FXML
-    public Button clayLoamButton;
+    public ToggleButton clayLoamButton;
     @FXML
-    public Button clayButton;
+    public ToggleButton clayButton;
     @FXML
-    public Button so2Button;
+    public ToggleButton so2Button;
     @FXML
-    public Button co2Button;
+    public ToggleButton co2Button;
     @FXML
-    public Button pollutedO2Button;
+    public ToggleButton pollutedO2Button;
     @FXML
-    public Button o2Button;
+    public ToggleButton o2Button;
     @FXML
-    public Button vacuumButton;
+    public ToggleButton vacuumButton;
     @FXML
-    public Button rhyoliteButton;
+    public ToggleButton rhyoliteButton;
     @FXML
-    public Button obsidianButton;
+    public ToggleButton obsidianButton;
     @FXML
-    public Button daciteButton;
+    public ToggleButton daciteButton;
     @FXML
-    public Button basaltButton;
+    public ToggleButton basaltButton;
     @FXML
-    public Button andesiteButton;
+    public ToggleButton andesiteButton;
     @FXML
-    public Button graniteButton;
+    public ToggleButton graniteButton;
     @FXML
-    public Button gabbroButton;
+    public ToggleButton gabbroButton;
     @FXML
-    public Button dioriteButton;
+    public ToggleButton dioriteButton;
     @FXML
-    public Button slateButton;
+    public ToggleButton slateButton;
     @FXML
-    public Button schistButton;
+    public ToggleButton schistButton;
     @FXML
-    public Button quartziteButton;
+    public ToggleButton quartziteButton;
     @FXML
-    public Button phylliteButton;
+    public ToggleButton phylliteButton;
     @FXML
-    public Button marbleButton;
+    public ToggleButton marbleButton;
     @FXML
-    public Button gneissButton;
+    public ToggleButton gneissButton;
     @FXML
-    public Button yellowSandButton;
+    public ToggleButton yellowSandButton;
     @FXML
-    public Button whiteSandButton;
+    public ToggleButton whiteSandButton;
     @FXML
-    public Button redSandButton;
+    public ToggleButton redSandButton;
     @FXML
-    public Button blackSandButton;
+    public ToggleButton blackSandButton;
     @FXML
-    public Button sandButton;
+    public ToggleButton sandButton;
     @FXML
-    public Button calcareousOozeButton;
+    public ToggleButton calcareousOozeButton;
     @FXML
-    public Button siliceousOozeButton;
+    public ToggleButton siliceousOozeButton;
     @FXML
-    public Button pelagicClayButton;
+    public ToggleButton pelagicClayButton;
     @FXML
-    public Button siltstoneButton;
+    public ToggleButton siltstoneButton;
     @FXML
-    public Button shaleButton;
+    public ToggleButton shaleButton;
     @FXML
-    public Button sandstoneButton;
+    public ToggleButton sandstoneButton;
     @FXML
-    public Button rockSaltButton;
+    public ToggleButton rockSaltButton;
     @FXML
-    public Button mudstoneButton;
+    public ToggleButton mudstoneButton;
     @FXML
-    public Button limestoneButton;
+    public ToggleButton limestoneButton;
     @FXML
-    public Button dolomiteButton;
+    public ToggleButton dolomiteButton;
     @FXML
-    public Button conglomerateButton;
+    public ToggleButton conglomerateButton;
     @FXML
-    public Button claystoneButton;
+    public ToggleButton claystoneButton;
     @FXML
-    public Button chertButton;
+    public ToggleButton chertButton;
     @FXML
-    public Button chalkButton;
+    public ToggleButton chalkButton;
     @FXML
-    public Button magmaButton;
+    public ToggleButton magmaButton;
     @FXML
-    public Button waterButton;
+    public ToggleButton waterButton;
     @FXML
-    public Button siltLoamButton;
+    public ToggleButton siltLoamButton;
     @FXML
-    public Button siltyClayLoamButton;
+    public ToggleButton siltyClayLoamButton;
     @FXML
-    public Button siltButton;
+    public ToggleButton siltButton;
     @FXML
-    public Button sandyLoamButton;
+    public ToggleButton sandyLoamButton;
     @FXML
-    public Button sandyClayLoamButton;
+    public ToggleButton sandyClayLoamButton;
     @FXML
-    public Button peatButton;
+    public ToggleButton peatButton;
     @FXML
-    public Button loamySandButton;
+    public ToggleButton loamySandButton;
     @FXML
-    public Button loamButton;
+    public ToggleButton loamButton;
     @FXML
-    public Button clayDefaultButton;
+    public ToggleButton clayDefaultButton;
     @FXML
-    public Button oxygenDefaultButton;
+    public ToggleButton oxygenDefaultButton;
     @FXML
-    public Button extrusiveDefaultButton;
+    public ToggleButton extrusiveDefaultButton;
     @FXML
-    public Button intrusiveDefaultButton;
+    public ToggleButton intrusiveDefaultButton;
     @FXML
-    public Button metamorphicDefaultButton;
+    public ToggleButton metamorphicDefaultButton;
     @FXML
-    public Button sandDefaultButton;
+    public ToggleButton sandDefaultButton;
     @FXML
-    public Button seabedDefaultButton;
+    public ToggleButton seabedDefaultButton;
     @FXML
-    public Button sedimentaryDefaultButton;
+    public ToggleButton sedimentaryDefaultButton;
     @FXML
-    public Button waterDefaultButton;
+    public ToggleButton waterDefaultButton;
     @FXML
-    public Button topsoilDefaultButton;
+    public ToggleButton topsoilDefaultButton;
     @FXML
     public TabPane materialsTabPane;
     @FXML
@@ -198,6 +200,8 @@ public class MaterialsButtonsController {
     public Tab liquidTab;
     @FXML
     public Tab topsoilTab;
+    @FXML
+    public ToggleGroup materialGroup;
 
     public void setup(Injector injector) {
         log.debug("setup()");
@@ -232,38 +236,67 @@ public class MaterialsButtonsController {
         claysTab.setText(null);
         sandTab.setGraphic(getImageView(images, "buttons_sand", locale, iconSize));
         sandTab.setText(null);
+        extrusiveTab.setGraphic(getImageView(images, "buttons_andesite", locale, iconSize));
+        extrusiveTab.setText(null);
+        setButtonImage(extrusiveDefaultButton, "buttons_andesite", locale, images, iconSize);
+        setButtonImage(andesiteButton, "buttons_andesite", locale, images, iconSize);
+        setButtonImage(basaltButton, "buttons_basalt", locale, images, iconSize);
+        setButtonImage(daciteButton, "buttons_dacite", locale, images, iconSize);
+        setButtonImage(obsidianButton, "buttons_obsidian", locale, images, iconSize);
+        setButtonImage(rhyoliteButton, "buttons_rhyolite", locale, images, iconSize);
+        intrusiveTab.setGraphic(getImageView(images, "buttons_granite", locale, iconSize));
+        intrusiveTab.setText(null);
+        setButtonImage(intrusiveDefaultButton, "buttons_granite", locale, images, iconSize);
+        setButtonImage(dioriteButton, "buttons_diorite", locale, images, iconSize);
+        setButtonImage(gabbroButton, "buttons_gabbro", locale, images, iconSize);
+        setButtonImage(graniteButton, "buttons_granite", locale, images, iconSize);
+        metamorphicTab.setGraphic(getImageView(images, "buttons_marble", locale, iconSize));
+        metamorphicTab.setText(null);
+        setButtonImage(metamorphicDefaultButton, "buttons_marble", locale, images, iconSize);
+        setButtonImage(slateButton, "buttons_slate", locale, images, iconSize);
+        setButtonImage(schistButton, "buttons_schist", locale, images, iconSize);
+        setButtonImage(quartziteButton, "buttons_quartzite", locale, images, iconSize);
+        setButtonImage(phylliteButton, "buttons_phyllite", locale, images, iconSize);
+        setButtonImage(marbleButton, "buttons_marble", locale, images, iconSize);
+        setButtonImage(gneissButton, "buttons_gneiss", locale, images, iconSize);
+        sedimentaryTab.setGraphic(getImageView(images, "buttons_sandstone", locale, iconSize));
+        sedimentaryTab.setText(null);
+        setButtonImage(sedimentaryDefaultButton, "buttons_sandstone", locale, images, iconSize);
+        setButtonImage(siltstoneButton, "buttons_siltstone", locale, images, iconSize);
+        setButtonImage(shaleButton, "buttons_shale", locale, images, iconSize);
+        setButtonImage(sandstoneButton, "buttons_sandstone", locale, images, iconSize);
+        setButtonImage(rockSaltButton, "buttons_rock_salt", locale, images, iconSize);
+        setButtonImage(mudstoneButton, "buttons_mudstone", locale, images, iconSize);
+        setButtonImage(limestoneButton, "buttons_limestone", locale, images, iconSize);
+        setButtonImage(dolomiteButton, "buttons_dolomite", locale, images, iconSize);
+        setButtonImage(conglomerateButton, "buttons_conglomerate", locale, images, iconSize);
+        setButtonImage(claystoneButton, "buttons_claystone", locale, images, iconSize);
+        setButtonImage(chertButton, "buttons_chert", locale, images, iconSize);
+        setButtonImage(chalkButton, "buttons_chalk", locale, images, iconSize);
+    }
+
+    private void setButtonImage(ButtonBase b, String name, Locale locale, Images images, IconSize iconSize) {
+        b.setGraphic(getImageView(images, name, locale, iconSize));
+        b.setText(null);
     }
 
     public void initListeners(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
-        clayDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("CLAY_DEFAULT_MAPPING"));
-        });
-        oxygenDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("OXYGEN_DEFAULT_MAPPING"));
-        });
-        extrusiveDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("EXTRUSIVE_DEFAULT_MAPPING"));
-        });
-        intrusiveDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("INTRUSIVE_DEFAULT_MAPPING"));
-        });
-        metamorphicDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("METAMORPHIC_DEFAULT_MAPPING"));
-        });
-        sandDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("SAND_DEFAULT_MAPPING"));
-        });
-        seabedDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("SEABED_DEFAULT_MAPPING"));
-        });
-        sedimentaryDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("SEDIMENTARY_DEFAULT_MAPPING"));
-        });
-        waterDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("WATER_DEFAULT_MAPPING"));
-        });
-        topsoilDefaultButton.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get("TOPSOIL_DEFAULT_MAPPING"));
+        setButtonAction(clayDefaultButton, "CLAY_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(oxygenDefaultButton, "OXYGEN_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(extrusiveDefaultButton, "EXTRUSIVE_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(intrusiveDefaultButton, "INTRUSIVE_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(metamorphicDefaultButton, "METAMORPHIC_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandDefaultButton, "SAND_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(seabedDefaultButton, "SEABED_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sedimentaryDefaultButton, "SEDIMENTARY_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(waterDefaultButton, "WATER_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(topsoilDefaultButton, "TOPSOIL_DEFAULT_MAPPING", globalKeys, keyMappings);
+    }
+
+    private void setButtonAction(ButtonBase button, String name, GlobalKeys globalKeys,
+            Map<String, KeyMapping> keyMappings) {
+        button.setOnAction((e) -> {
+            globalKeys.runAction(keyMappings.get(name));
         });
     }
 }

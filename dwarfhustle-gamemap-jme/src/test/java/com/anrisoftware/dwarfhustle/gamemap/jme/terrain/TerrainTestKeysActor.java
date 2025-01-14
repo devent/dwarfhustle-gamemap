@@ -34,6 +34,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.DeleteObjectMessage.D
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMaterialBlockMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -48,7 +49,6 @@ import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeVegetation;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
@@ -275,8 +275,7 @@ public class TerrainTestKeysActor {
     private Behavior<Message> onAddObjectOnBlock(AddObjectOnBlockMessage m) {
         log.debug("onAddObjectOnBlock {}", m);
         is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, m.type, (ko) -> {
-            insertObject(m.cursor, ko.objects
-                    .detectOptional((it) -> ((KnowledgeVegetation) it).getName().equalsIgnoreCase(m.name)).get(),
+            insertObject(m.cursor, ko.objects.detectOptional((it) -> it.getName().equalsIgnoreCase(m.name)).get(),
                     m.validBlock);
         }));
         return Behaviors.same();
@@ -376,6 +375,14 @@ public class TerrainTestKeysActor {
     }
 
     /**
+     * Reacts to the {@link SetMaterialBlockMessage} message.
+     */
+    private Behavior<Message> onSetMaterialBlock(SetMaterialBlockMessage m) {
+        log.debug("onSetMaterialBlock {}", m);
+        return Behaviors.same();
+    }
+
+    /**
      * Returns a behavior for the messages:
      *
      * <ul>
@@ -392,6 +399,7 @@ public class TerrainTestKeysActor {
                 .onMessage(ToggleUndiscoveredMessage.class, this::onToggleUndiscovered)//
                 .onMessage(DeleteVegetationOnBlockMessage.class, this::onDeleteVegetationOnBlock)//
                 .onMessage(VegetationAddGrowMessage.class, this::onVegetationAddGrow)//
+                .onMessage(SetMaterialBlockMessage.class, this::onSetMaterialBlock)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
                 .onMessage(WrappedInsertObjectResponse.class, (m) -> {
                     return Behaviors.same();

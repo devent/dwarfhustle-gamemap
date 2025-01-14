@@ -180,6 +180,9 @@ public class TesterMainPaneController extends AbstractStatusController {
         fortressNameLabel
                 .setText(texts.getResource("fortress_name", locale).getFormattedText(wm.getName(), gm.getName()));
         gameTimeLabel.setText(gs.get().gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));
+        levelBar.setMin(1);
+        levelBar.setMax(gm.getDepth());
+        updateMapCursor(gm.getCursor());
     }
 
     public void updateMapCursor(GameBlockPos cursor) {
