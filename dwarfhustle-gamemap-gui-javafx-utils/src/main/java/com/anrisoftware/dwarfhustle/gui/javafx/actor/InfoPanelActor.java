@@ -22,13 +22,16 @@ import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThre
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findBlock;
+import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 
 import java.awt.MouseInfo;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
@@ -46,8 +49,8 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
@@ -234,14 +237,20 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         // return;
         // }
         var chunk = getChunk(cg, 0);
+        final MutableList<MapTileItem> items = Lists.mutable.empty();
         var mb = findBlock(chunk, gm.getCursor(), cg);
-        var p = new Person(1);
-        p.setFirstName("Gorbir");
-        p.setLastName("Shatterfeet");
+        items.add(new MapTileItem(mb));
+        if (gm.isFilledBlock(mb)) {
+            final var mo = getMapObject(mg, gm, mb.getPos());
+            mo.getOids().forEachKeyValue((id, type) -> {
+                final GameMapObject go = og.get(type, id);
+                System.out.println(go); // TODO
+                items.add(new MapTileItem(go));
+            });
+        }
         runFxThread(() -> {
             controller.items.clear();
-            controller.items.add(new MapTileItem(mb));
-            controller.items.add(new MapTileItem(p));
+            controller.items.addAll(items);
             controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             controller.infoPane.setVisible(true);
         });
