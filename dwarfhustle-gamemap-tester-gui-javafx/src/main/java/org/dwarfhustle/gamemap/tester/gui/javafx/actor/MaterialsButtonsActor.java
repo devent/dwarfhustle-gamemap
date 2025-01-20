@@ -32,7 +32,7 @@ import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsCloseMes
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsOpenMessage;
 import org.eclipse.collections.api.factory.Maps;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelActorCreator;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild;
@@ -43,12 +43,10 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
-import com.jme3.app.Application;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -80,28 +78,19 @@ public class MaterialsButtonsActor extends AbstractPaneActor<MaterialsButtonsCon
     }
 
     /**
-     * 
+     *
      * @author Erwin Müller <erwin@muellerpublic.de>
      */
     public interface MaterialsButtonsActorFactory extends AbstractPaneActorFactory<MaterialsButtonsController> {
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> og) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, MaterialsButtonsActorFactory.class,
-                "/tester_materials_buttons.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
-    }
-
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, ObjectsGetter og) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, MaterialsButtonsActorFactory.class,
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, MaterialsButtonsActorFactory.class,
                 "/tester_materials_buttons.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
     }
 
     @Inject
-    private Application app;
-
-    @Inject
-    private GameSettings gs;
+    private GameSettingsProvider gs;
 
     @Inject
     private GlobalKeys globalKeys;
@@ -174,11 +163,14 @@ public class MaterialsButtonsActor extends AbstractPaneActor<MaterialsButtonsCon
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        this.controller = initial.controller;
+        final var c = initial.controller;
+        this.controller = c;
         runFxThread(() -> {
-            var c = initial.controller;
             c.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
             c.initListeners(globalKeys, keyMappings);
+            c.setOnMouseEnteredGui((entered) -> {
+                gs.get().mouseEnteredGui.set(entered);
+            });
         });
         return super.getBehaviorAfterAttachGui()//
                 .onMessage(MaterialsButtonsOpenMessage.class, this::onMaterialsButtonsOpen)//

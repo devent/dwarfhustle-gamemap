@@ -44,6 +44,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.objects.DwarfhustleGamemapModelObjectsModule;
 import com.anrisoftware.dwarfhustle.gamemap.model.objects.ObjectsActor;
@@ -212,8 +213,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     private void setupGameSettings() {
         var gs = injector.getInstance(GameSettingsProvider.class).get();
         gs.visibleDepthLayers.set(4);
-        gs.currentMap.set(gm);
-        gs.currentWorld.set(wm);
+        gs.currentMap.set(gm.id);
+        gs.currentWorld.set(wm.id);
     }
 
     private void setupApp() {
@@ -263,7 +264,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     private void nextSetGameMap() {
         if (texturesLoaded && modelsLoaded) {
-            actor.tell(new SetGameMapMessage(gm));
+            actor.tell(new SetWorldMapMessage(wm.id));
+            actor.tell(new SetGameMapMessage(gm.id));
             resetCameraState.updateCamera(gm);
             simpleUpdateCall = tpl -> nextStartTerrainForGameMap();
         }

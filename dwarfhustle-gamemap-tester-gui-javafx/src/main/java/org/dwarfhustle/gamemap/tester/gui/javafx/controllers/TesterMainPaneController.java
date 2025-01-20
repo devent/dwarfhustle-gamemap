@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractStatusController;
@@ -112,22 +113,20 @@ public class TesterMainPaneController extends AbstractStatusController {
         this.iconSize = iconSize;
     }
 
-    public void initListeners(Consumer<GameMap> saveZ) {
+    public void initListeners(Supplier<GameMap> gm, Consumer<GameMap> saveZ) {
         log.debug("initListeners");
         setupImages();
-        gs.get().currentMap.addListener((o, ov, nv) -> {
-            runFxThread(() -> {
-                levelBar.setMin(1);
-                levelBar.setMax(nv.getDepth());
-                levelBar.setValue(nv.getCursorZ() + 1);
-                levelLabel.setText(Integer.toString(nv.getCursorZ() + 1));
-            });
+        runFxThread(() -> {
+            levelBar.setMin(1);
+            levelBar.setMax(gm.get().getDepth());
+            levelBar.setValue(gm.get().getCursorZ() + 1);
+            levelLabel.setText(Integer.toString(gm.get().getCursorZ() + 1));
         });
         levelBar.valueProperty().addListener((o, ov, nv) -> {
             runFxThread(() -> {
                 levelLabel.setText(Integer.toString(nv.intValue()));
-                gs.get().currentMap.get().setCursorZ(nv.intValue() - 1);
-                saveZ.accept(gs.get().currentMap.get());
+                gm.get().setCursorZ(nv.intValue() - 1);
+                saveZ.accept(gm.get());
             });
         });
     }
@@ -168,6 +167,21 @@ public class TesterMainPaneController extends AbstractStatusController {
         });
     }
 
+    public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
+        paintButton.setOnMouseEntered((e) -> {
+            consumer.accept(true);
+        });
+        paintButton.setOnMouseExited((e) -> {
+            consumer.accept(false);
+        });
+        insertButton.setOnMouseEntered((e) -> {
+            consumer.accept(true);
+        });
+        insertButton.setOnMouseExited((e) -> {
+            consumer.accept(false);
+        });
+    }
+
     @SneakyThrows
     private void setupImages() {
         paintButton.setGraphic(getImageView(images, "buttons_materials", locale, iconSize));
@@ -194,5 +208,4 @@ public class TesterMainPaneController extends AbstractStatusController {
     public Label getStatusLabel() {
         return statusLabel;
     }
-
 }

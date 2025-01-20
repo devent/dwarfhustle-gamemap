@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.lights;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -27,10 +28,13 @@ import java.util.concurrent.CompletionStage;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.SunTaskWorker.SunTaskWorkerFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -69,6 +73,7 @@ public class SunActor {
     @ToString(callSuper = true)
     private static class InitialStateMessage extends Message {
         public final LightAppState lightAppState;
+        public final ObjectsGetter og;
     }
 
     @RequiredArgsConstructor
@@ -120,10 +125,12 @@ public class SunActor {
     private static Message attachState(Injector injector) {
         var app = injector.getInstance(Application.class);
         var lightAppState = injector.getInstance(LightAppState.class);
+        var actor = injector.getInstance(ActorSystemProvider.class);
         try {
             var f = app.enqueue(() -> {
                 app.getStateManager().attach(lightAppState);
-                return new InitialStateMessage(lightAppState);
+                var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+                return new InitialStateMessage(lightAppState, og);
             });
             return f.get();
         } catch (Exception ex) {
@@ -145,12 +152,13 @@ public class SunActor {
     @Inject
     private Application app;
 
-    @Inject
-    private GameSettingsProvider gs;
-
-    private InitialStateMessage initialState;
+    private InitialStateMessage is;
 
     private Optional<SunTaskWorker> sunTaskWorker = Optional.empty();
+
+    private long currentMap;
+
+    private long currentWorld;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -194,7 +202,7 @@ public class SunActor {
      */
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
-        this.initialState = m;
+        this.is = m;
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -212,7 +220,18 @@ public class SunActor {
      * <li>
      * </ul>
      */
+    private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
+        this.currentWorld = m.wm;
+        return Behaviors.same();
+    }
+
+    /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
+        this.currentMap = m.gm;
         app.enqueue(this::createSunTaskWorker);
         return Behaviors.same();
     }
@@ -226,14 +245,15 @@ public class SunActor {
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
+                .onMessage(SetWorldMapMessage.class, this::onSetWorldMap)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(GameTickMessage.class, this::onGameTick)//
         ;
     }
 
     private void createSunTaskWorker() {
-        var wm = gs.get().currentWorld.get();
-        var gm = gs.get().currentMap.get();
+        var wm = WorldMap.getWorldMap(is.og, currentWorld);
+        var gm = getGameMap(is.og, currentMap);
         this.sunTaskWorker = Optional.of(sunTaskWorkerFactory.create(wm, gm));
     }
 

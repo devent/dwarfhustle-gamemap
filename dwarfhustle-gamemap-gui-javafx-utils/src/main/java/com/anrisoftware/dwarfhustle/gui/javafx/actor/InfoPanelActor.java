@@ -19,6 +19,9 @@ package com.anrisoftware.dwarfhustle.gui.javafx.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.actor.AdditionalCss.ADDITIONAL_CSS;
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findBlock;
 
 import java.awt.MouseInfo;
 import java.time.Duration;
@@ -27,26 +30,31 @@ import java.util.concurrent.CompletionStage;
 
 import org.eclipse.collections.api.factory.Maps;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
 import com.jayfella.jme.jfx.JavaFxUI;
-import com.jme3.app.Application;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -81,28 +89,32 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     public interface InfoPanelActorFactory extends AbstractPaneActorFactory<InfoPaneController> {
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> og) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, InfoPanelActorFactory.class,
-                "/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
-    }
-
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, ObjectsGetter og) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, InfoPanelActorFactory.class,
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, InfoPanelActorFactory.class,
                 "/info_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
     }
 
     @Inject
-    private Application app;
+    private ActorSystemProvider actor;
 
     @Inject
-    private GameSettings gs;
+    private GameSettingsProvider gs;
 
     private Texts texts;
 
     private InfoPaneController controller;
 
     private PanelControllerResult<MapTileItemWidgetController> mapTileItemWidget;
+
+    private ObjectsGetter og;
+
+    private ObjectsGetter cg;
+
+    private ObjectsGetter mg;
+
+    private long currentMap;
+
+    private final GameBlockPos oldCursor = new GameBlockPos();
 
     @Inject
     public void setTextsFactory(TextsFactory texts) {
@@ -111,7 +123,14 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
+        this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+        this.cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+        this.mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
         this.controller = initial.controller;
+        this.currentMap = gs.get().currentMap.get();
+        gs.get().currentMap.addListener((o, ov, nv) -> {
+            currentMap = nv.longValue();
+        });
         runFxThread(() -> {
             var controller = initial.controller;
         });
@@ -129,36 +148,46 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     }
 
     private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
-        // log.debug("onMapTileUnderCursor {}", m);
-        var mt = new MapBlock(1, new GameBlockPos(5, 5, 5));
-        var p = new Person(1);
-        p.setFirstName("Gorbir");
-        p.setLastName("Shatterfeet");
-        runFxThread(() -> {
-            controller.items.clear();
-            controller.items.add(new MapTileItem(mt));
-            controller.items.add(new MapTileItem(p));
-            controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-            controller.infoPane.setVisible(true);
-        });
+        log.trace("onMapTileUnderCursor {}", m);
+        updateInfoPane();
         return Behaviors.same();
     }
 
     private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
-        // log.debug("onMapTileEmptyUnderCursor {}", m);
+        log.trace("onMapTileEmptyUnderCursor {}", m);
+        clearInfoPane();
+        return Behaviors.same();
+    }
+
+    private Behavior<Message> onMouseEnteredGui(MouseEnteredGuiMessage m) {
+        log.trace("onMouseEnteredGui {}", m);
         runFxThread(() -> {
-            if (controller.items != null) {
-                controller.items.clear();
-            }
             controller.infoPane.setVisible(false);
         });
         return Behaviors.same();
     }
 
+    private Behavior<Message> onMouseExitedGui(MouseExitedGuiMessage m) {
+        log.trace("onMouseExitedGui {}", m);
+        runFxThread(() -> {
+            controller.infoPane.setVisible(true);
+        });
+        return Behaviors.same();
+    }
+
+    private Behavior<Message> onGameTick(GameTickMessage m) {
+        // log.trace("onGameTick {}", m);
+        updateInfoPane();
+        return Behaviors.same();
+    }
+
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
+                .onMessage(MouseEnteredGuiMessage.class, this::onMouseEnteredGui)//
+                .onMessage(MouseExitedGuiMessage.class, this::onMouseExitedGui)//
                 .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
                 .onMessage(MapTileEmptyUnderCursorMessage.class, this::onMapTileEmptyUnderCursor)//
+                .onMessage(GameTickMessage.class, this::onGameTick)//
         ;
     }
 
@@ -198,4 +227,33 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         pane.setLayoutX(e.getSceneX() + 20);
         pane.setLayoutY(e.getSceneY() + 20);
     }
+
+    private void updateInfoPane() {
+        var gm = getGameMap(og, currentMap);
+        // if (oldCursor.equals(gm.getCursor())) {
+        // return;
+        // }
+        var chunk = getChunk(cg, 0);
+        var mb = findBlock(chunk, gm.getCursor(), cg);
+        var p = new Person(1);
+        p.setFirstName("Gorbir");
+        p.setLastName("Shatterfeet");
+        runFxThread(() -> {
+            controller.items.clear();
+            controller.items.add(new MapTileItem(mb));
+            controller.items.add(new MapTileItem(p));
+            controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+            controller.infoPane.setVisible(true);
+        });
+    }
+
+    private void clearInfoPane() {
+        runFxThread(() -> {
+            if (controller.items != null) {
+                controller.items.clear();
+            }
+            controller.infoPane.setVisible(false);
+        });
+    }
+
 }

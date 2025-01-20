@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-model - Game map.
+ * dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,22 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.model.messages;
+package com.anrisoftware.dwarfhustle.gui.javafx.actor;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Message to set the {@link GameMap}.
+ * Message to update the info box pane.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@RequiredArgsConstructor
 @ToString(callSuper = true)
-public class SetGameMapMessage extends Message {
+public class UpdateInfoPaneMessage extends Message {
 
-    public final long gm;
+    public static final String KEY = UpdateInfoPaneMessage.class.getName();
 }

@@ -73,6 +73,9 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate.Collec
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.BlockModelUpdate.BlockModelUpdateFactory;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
@@ -432,6 +435,18 @@ public class TerrainActor {
                 is.os.set(GameMap.OBJECT_TYPE, gm0);
                 actor.tell(new MapCursorUpdateMessage(gm0.getCursor()));
             });
+            is.selectBlockState.setSaveCursor((gm0) -> {
+                is.os.set(GameMap.OBJECT_TYPE, gm0);
+                actor.tell(new MapCursorUpdateMessage(gm0.getCursor()));
+                actor.tell(new MapTileUnderCursorMessage(gm0.getCursor()));
+            });
+        });
+        gs.get().mouseEnteredGui.addListener((o, oldv, newv) -> {
+            if (newv) {
+                actor.tell(new MouseEnteredGuiMessage());
+            } else {
+                actor.tell(new MouseExitedGuiMessage());
+            }
         });
         timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
                 gs.get().terrainUpdateDuration.get());

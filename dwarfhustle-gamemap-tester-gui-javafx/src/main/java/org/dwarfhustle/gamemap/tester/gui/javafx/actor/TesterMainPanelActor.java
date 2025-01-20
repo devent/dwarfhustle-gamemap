@@ -40,6 +40,7 @@ import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelActorCreator;
@@ -55,13 +56,14 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
-import com.jme3.app.Application;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -112,9 +114,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
 
     }
 
-    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout,
-            CompletionStage<ObjectsGetter> og) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, og, TesterMainPanelActorFactory.class,
+    public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, TesterMainPanelActorFactory.class,
                 "/tester_main_ui.fxml", panelActors, ADDITIONAL_CSS);
     }
 
@@ -127,7 +128,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Images appIcons;
 
     @Inject
-    private Application app;
+    private GameSettingsProvider gs;
 
     @Inject
     private ActorSystemProvider actor;
@@ -139,19 +140,25 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     @Named("keyMappings")
     private Map<String, KeyMapping> keyMappings;
 
+    private ObjectsGetter og;
+
+    private ObjectsSetter os;
+
     @SneakyThrows
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
+        this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+        this.os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
         TesterStatusActor.create(injector, ofSeconds(1), initial.controller).whenComplete((v, err) -> {
             log.debug("TesterStatusActor {} {}", v, err);
         });
-        InfoPanelActor.create(injector, ofSeconds(1), og).whenComplete((v, err) -> {
+        InfoPanelActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
             log.debug("InfoPanelActor {} {}", v, err);
             if (err == null) {
                 v.tell(new AttachGuiMessage(null));
             }
         });
-        MaterialsButtonsActor.create(injector, ofSeconds(1), og).whenComplete((v, err) -> {
+        MaterialsButtonsActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
             log.debug("TerrainMaterialButtonsActor {} {}", v, err);
             if (err == null) {
                 v.tell(new AttachGuiMessage(null));
@@ -160,14 +167,13 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         runFxThread(() -> {
             var controller = initial.controller;
             controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
-            controller.initListeners(this::saveGameMap);
             controller.initButtons(globalKeys, keyMappings);
+            controller.setOnMouseEnteredGui((entered) -> {
+                gs.get().mouseEnteredGui.set(entered);
+            });
         });
         return getDefaultBehavior()//
         ;
-    }
-
-    private void saveGameMap(GameMap gm) {
     }
 
     /**
@@ -234,8 +240,10 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
             var controller = initial.controller;
-            var wm = (WorldMap) og.get(WorldMap.OBJECT_TYPE, m.gm.world);
-            controller.setMap(wm, m.gm);
+            var gm = GameMap.getGameMap(og, m.gm);
+            var wm = WorldMap.getWorldMap(og, gm.world);
+            controller.setMap(wm, gm);
+            controller.initListeners(() -> gm, this::saveGameMap);
         });
         return Behaviors.same();
     }
@@ -304,6 +312,10 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         // actor.tell(new
         // ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
         return Behaviors.same();
+    }
+
+    private void saveGameMap(GameMap gm) {
+        os.set(gm.getObjectType(), gm);
     }
 
     private BehaviorBuilder<Message> getDefaultBehavior() {

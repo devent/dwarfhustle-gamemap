@@ -92,7 +92,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Updates the objects on the map.
- * 
+ *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
@@ -383,7 +383,7 @@ public class ObjectsModelActor {
                         .detect((it) -> it.name.equalsIgnoreCase(growsInto));
                 final var gm = getGameMap(is.og, this.gm);
                 is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, mo, v.getId(), () -> {
-                    is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, cid, kgrowv, v.pos, (og) -> {
+                    is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, this.gm, cid, kgrowv, v.pos, (og) -> {
                         final var growv = (Tree) og;
                         growv.setGrowth(2.0f);
                     }));

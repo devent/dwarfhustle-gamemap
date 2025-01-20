@@ -17,12 +17,11 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import jakarta.inject.Inject;
-
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 
+import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -65,5 +64,7 @@ public class MapTileItemWidgetController {
             objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             return;
         }
+        objectInfoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+        objectInfoPane.autosize();
     }
 }

@@ -18,9 +18,13 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
+import static java.util.Optional.of;
 
+import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
 
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
@@ -70,6 +74,10 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private boolean searchingSelected;
 
+    private Optional<Consumer<GameMap>> saveCursor = Optional.empty();
+
+    private final GameBlockPos oldCursor = new GameBlockPos();
+
     @Inject
     public TerrainSelectBlockState() {
         super(TerrainSelectBlockState.class.getSimpleName());
@@ -85,6 +93,10 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         if (!keyInit) {
             initKeys();
         }
+    }
+
+    public void setSaveCursor(Consumer<GameMap> saveCursor) {
+        this.saveCursor = of(saveCursor);
     }
 
     @Override
@@ -216,7 +228,13 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
                     float extentz = 1f;
                     if (z == cursorZ
                             && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
-                        gm.setCursor(x, y, z);
+                        if (!oldCursor.equals(x, y, z)) {
+                            this.oldCursor.x = x;
+                            this.oldCursor.y = y;
+                            this.oldCursor.z = z;
+                            gm.setCursor(x, y, z);
+                            saveCursor.get().accept(gm);
+                        }
                         return true;
                     }
                 }

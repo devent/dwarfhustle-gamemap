@@ -33,7 +33,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Region;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,7 +50,7 @@ public class InfoPaneController implements ListChangeListener<MapTileItem> {
     public BorderPane infoPane;
 
     @FXML
-    public VBox infoBox;
+    public FlowPane infoBox;
 
     @Inject
     private GameSettingsProvider gs;
@@ -58,10 +59,11 @@ public class InfoPaneController implements ListChangeListener<MapTileItem> {
 
     private Injector injector;
 
-    private MutableMap<MapTileItem, MapTileItemWidgetController> widgets = Maps.mutable.empty();
+    private final MutableMap<MapTileItem, MapTileItemWidgetController> widgets = Maps.mutable.empty();
 
     public void setup(Injector injector) {
         log.debug("setup()");
+        infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
         this.injector = injector;
         List<MapTileItem> list = Lists.mutable.empty();
         this.items = FXCollections.observableList(list);

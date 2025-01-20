@@ -21,9 +21,11 @@ import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.getImageV
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
+import com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -299,4 +301,16 @@ public class MaterialsButtonsController {
             globalKeys.runAction(keyMappings.get(name));
         });
     }
+
+    public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
+        JavaFxUtil.forEachController(this, ButtonBase.class, (c) -> {
+            c.setOnMouseEntered(e -> consumer.accept(true));
+            c.setOnMouseExited(e -> consumer.accept(false));
+        });
+        JavaFxUtil.forEachController(this, TabPane.class, (c) -> {
+            c.setOnMouseEntered(e -> consumer.accept(true));
+            c.setOnMouseExited(e -> consumer.accept(false));
+        });
+    }
+
 }

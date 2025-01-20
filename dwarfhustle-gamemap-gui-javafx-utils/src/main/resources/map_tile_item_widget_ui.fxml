@@ -5,14 +5,14 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="objectInfoPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" styleClass="objectInfoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController">
+<BorderPane fx:id="objectInfoPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" styleClass="objectInfoPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController">
    <top>
       <Label fx:id="objectInfoTitle" styleClass="objectInfoTitle" text="Label" BorderPane.alignment="CENTER_LEFT" />
    </top>
    <center>
       <VBox fx:id="objectInfoBox" styleClass="objectInfoBox" BorderPane.alignment="CENTER">
          <BorderPane.margin>
-            <Insets left="25.0" />
+            <Insets left="25.0" right="4.0" />
          </BorderPane.margin>
       </VBox>
    </center>

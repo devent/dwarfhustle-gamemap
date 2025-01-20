@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.model.objects;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.setMapObject;
 
@@ -208,18 +209,19 @@ public class ObjectsActor {
     @SneakyThrows
     private Behavior<Message> onInsertObject(InsertObjectMessage<? super InsertObjectSuccessMessage> m) {
         final GameMapObject go = m.ko.createObject(ids.generate());
-        go.setMap(m.gm.getId());
+        go.setMap(m.gm);
         go.setPos(m.pos);
         go.setKid(m.ko.getKid());
         go.setOid(m.ko.getKnowledgeType().hashCode());
         m.consumer.accept(go);
         is.os.set(go.getObjectType(), go);
-        final var mo = getMapObject(is.mg, m.gm, go.getPos());
+        final var gm = getGameMap(is.og, m.gm);
+        final var mo = getMapObject(is.mg, gm, go.getPos());
         mo.setCid(m.cid);
         mo.addObject(go.getObjectType(), go.getId());
         setMapObject(is.ms, mo);
-        m.gm.addFilledBlock(mo.getCid(), mo.getIndex());
-        is.os.set(m.gm.getObjectType(), m.gm);
+        gm.addFilledBlock(mo.getCid(), mo.getIndex());
+        is.os.set(gm.getObjectType(), gm);
         m.onInserted.run();
         m.replyTo.tell(new InsertObjectSuccessMessage(go));
         return Behaviors.same();

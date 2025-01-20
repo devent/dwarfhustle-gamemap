@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findBlock;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
@@ -41,7 +42,6 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
@@ -194,7 +194,7 @@ public class TerrainTestKeysActor {
 
     private InitialStateMessage is;
 
-    private GameMap gm;
+    private long currentMap;
 
     @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> cacheAdapter;
@@ -264,8 +264,9 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
-        this.gm = m.gm;
-        is.state.setGameMap(m.gm);
+        this.currentMap = m.gm;
+        var gm = getGameMap(is.og, m.gm);
+        is.state.setGameMap(gm);
         return Behaviors.same();
     }
 
@@ -299,6 +300,7 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowObjectsOnBlock(ShowObjectsOnBlockMessage m) {
         log.debug("onShowObjectsOnBlock {}", m);
+        var gm = getGameMap(is.og, this.currentMap);
         final var mo = getMapObject(is.mg, gm, m.cursor.getX(), m.cursor.getY(), m.cursor.getZ());
         mo.getOids().forEachKeyValue((id, type) -> {
             final GameMapObject go = is.og.get(type, id);
@@ -333,6 +335,7 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onVegetationAddGrow(VegetationAddGrowMessage m) {
         log.debug("onVegetationAddGrow {}", m);
+        final var gm = getGameMap(is.og, this.currentMap);
         final var mo = getMapObject(is.mg, gm, m.cursor.getX(), m.cursor.getY(), m.cursor.getZ());
         mo.getOids().forEachKeyValue((id, type) -> {
             final GameMapObject go = is.og.get(type, id);
@@ -365,7 +368,7 @@ public class TerrainTestKeysActor {
             System.out.printf("Block at %s is not valid for %s\n", pos, ko); // TODO
             return;
         }
-        is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, mb.parent, ko, pos));
+        is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, currentMap, mb.parent, ko, pos));
     }
 
     @SneakyThrows

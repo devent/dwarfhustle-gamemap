@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.FlowPane?>
 
-<BorderPane id="infoPane" fx:id="infoPane" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController">
+<BorderPane id="infoPane" fx:id="infoPane" prefHeight="200.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController">
    <center>
-      <VBox id="infoBox" fx:id="infoBox" BorderPane.alignment="CENTER" />
+      <FlowPane id="infoBox" fx:id="infoBox" hgap="4.0" orientation="VERTICAL" vgap="4.0" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets />
+         </BorderPane.margin>
+      </FlowPane>
    </center>
 </BorderPane>

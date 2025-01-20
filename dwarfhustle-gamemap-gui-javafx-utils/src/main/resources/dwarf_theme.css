@@ -332,7 +332,7 @@
 }
 
 #infoPane {
-    -fx-background-color: special4;
+    -fx-background-color: transparent;
     -fx-border-width: 0;
     -fx-font-family: "Behrensschrift";
 }
@@ -347,20 +347,14 @@
     -fx-border-width: 0;
 }
 
-#infoList {
+#infoBox {
     -fx-background-color: transparent;
-    -fx-border-width: 0;
-}
-
-#infoList .list-cell {
-    -fx-background-color: transparent;
-    -fx-border-width: 0;
+    -fx-spacing: 10;
 }
 
 .objectInfoPane {
-    -fx-background-color: transparent;
-    -fx-border-width: 4;
-    -fx-border-color: transparent;
+    -fx-background-color: special4;
+    -fx-border-width: 0;
 }
 
 .objectInfoBox {
@@ -378,11 +372,6 @@
 .objectInfoTitle {
     -fx-text-fill: neutral5;
     -fx-font-size: 100%;
-}
-
-.objectInfoPane {
-    -fx-background-color: special4;
-    -fx-padding: 0 0 0 0;
 }
 
 #levelBar {

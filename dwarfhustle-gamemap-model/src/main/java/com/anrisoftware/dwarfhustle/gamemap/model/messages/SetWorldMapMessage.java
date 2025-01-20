@@ -32,5 +32,5 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class SetWorldMapMessage extends Message {
 
-	public final WorldMap wm;
+    public final long wm;
 }

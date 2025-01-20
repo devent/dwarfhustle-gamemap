@@ -22,8 +22,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -31,8 +29,10 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.adapter.JavaBeanBooleanPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanDoublePropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanFloatPropertyBuilder;
@@ -88,6 +88,7 @@ public class ObservableGameSettings {
         public float timeUpdateInterval = 1 / 30f;
 
         public boolean hideUndiscovered = true;
+
     }
 
     /**
@@ -136,15 +137,17 @@ public class ObservableGameSettings {
 
     public final ObjectProperty<String> lastCommand;
 
-    public final ObjectProperty<WorldMap> currentWorld;
+    public final LongProperty currentWorld;
 
-    public final ObjectProperty<GameMap> currentMap;
+    public final LongProperty currentMap;
 
     public final IntegerProperty visibleDepthLayers;
 
     public final FloatProperty timeUpdateInterval;
 
     public final BooleanProperty hideUndiscovered;
+
+    public final SimpleBooleanProperty mouseEnteredGui;
 
     @SuppressWarnings("unchecked")
     @SneakyThrows
@@ -165,8 +168,9 @@ public class ObservableGameSettings {
         this.visibleDepthLayers = JavaBeanIntegerPropertyBuilder.create().bean(p).name("visibleDepthLayers").build();
         this.timeUpdateInterval = JavaBeanFloatPropertyBuilder.create().bean(p).name("timeUpdateInterval").build();
         this.hideUndiscovered = JavaBeanBooleanPropertyBuilder.create().bean(p).name("hideUndiscovered").build();
-        this.currentWorld = new SimpleObjectProperty<>();
-        this.currentMap = new SimpleObjectProperty<>();
+        this.currentWorld = new SimpleLongProperty();
+        this.currentMap = new SimpleLongProperty();
+        this.mouseEnteredGui = new SimpleBooleanProperty(false);
     }
 
     public void copy(GameSettings other) {

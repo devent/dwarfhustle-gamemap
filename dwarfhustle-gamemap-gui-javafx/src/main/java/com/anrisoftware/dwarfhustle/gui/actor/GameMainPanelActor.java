@@ -36,17 +36,16 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.controllers.MainPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage;
-import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
-import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
@@ -229,8 +228,6 @@ public class GameMainPanelActor extends AbstractPaneActor<MainPaneController> {
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
             var controller = initial.controller;
-            var wm = (WorldMap) og.get(WorldMap.OBJECT_TYPE, m.gm.world);
-            controller.setMap(wm, m.gm);
         });
         return Behaviors.same();
     }

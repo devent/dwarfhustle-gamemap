@@ -160,8 +160,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     protected void createTesterMainPanel() {
-        var task = TesterMainPanelActor.create(injector, CREATE_ACTOR_TIMEOUT,
-                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID));
+        var task = TesterMainPanelActor.create(injector, CREATE_ACTOR_TIMEOUT);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("MapChunksJcsCacheActor.create", ex);

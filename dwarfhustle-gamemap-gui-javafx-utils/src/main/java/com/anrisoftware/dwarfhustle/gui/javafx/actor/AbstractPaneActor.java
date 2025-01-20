@@ -19,7 +19,6 @@ package com.anrisoftware.dwarfhustle.gui.javafx.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.time.Duration;
 import java.util.Map;
@@ -41,7 +40,6 @@ import com.anrisoftware.dwarfhustle.gui.javafx.states.PanelComponent;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -77,8 +75,7 @@ public abstract class AbstractPaneActor<T> {
      */
     public interface AbstractPaneActorFactory<T> {
 
-        AbstractPaneActor<? extends T> create(ActorContext<Message> context, StashBuffer<Message> buffer,
-                ObjectsGetter og);
+        AbstractPaneActor<? extends T> create(ActorContext<Message> context, StashBuffer<Message> buffer);
     }
 
     @RequiredArgsConstructor
@@ -89,34 +86,22 @@ public abstract class AbstractPaneActor<T> {
 
     }
 
-    private static <T> Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og,
+    private static <T> Behavior<Message> create(Injector injector,
             Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             startJavafxBuild(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
-            return injector.getInstance(paneActorFactoryType)
-                    .create(context, stash, og.toCompletableFuture().get(15, SECONDS)).start(injector);
+            return injector.getInstance(paneActorFactoryType).create(context, stash).start(injector);
         }));
     }
 
-    private static <T> Behavior<Message> create(Injector injector, ObjectsGetter og,
-            Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
-            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
-            String... additionalCss) {
-        return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            startJavafxBuild(injector, context, mainUiResource, panelActors, panelControllerBuildClass, additionalCss);
-            return injector.getInstance(paneActorFactoryType).create(context, stash, og).start(injector);
-        }));
-    }
-
-    private static <T> Behavior<Message> create(Injector injector, CompletionStage<ObjectsGetter> og,
+    private static <T> Behavior<Message> create(Injector injector,
             Class<? extends AbstractPaneActorFactory<T>> paneActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
             startJavafxBuild(injector, context, mainUiResource, panelActors, additionalCss);
-            return injector.getInstance(paneActorFactoryType)
-                    .create(context, stash, og.toCompletableFuture().get(15, SECONDS)).start(injector);
+            return injector.getInstance(paneActorFactoryType).create(context, stash).start(injector);
         }));
     }
 
@@ -162,31 +147,21 @@ public abstract class AbstractPaneActor<T> {
     }
 
     public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
-            ServiceKey<Message> key, String name, CompletionStage<ObjectsGetter> og,
+            ServiceKey<Message> key, String name,
             Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, String... additionalCss) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
         return createNamedActor(system, timeout, id, key, name,
-                create(injector, og, mainPanelActorFactoryType, mainUiResource, panelActors, additionalCss));
+                create(injector, mainPanelActorFactoryType, mainUiResource, panelActors, additionalCss));
     }
 
     public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
-            ServiceKey<Message> key, String name, CompletionStage<ObjectsGetter> og,
+            ServiceKey<Message> key, String name,
             Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
             Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
             String... additionalCss) {
         var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, id, key, name, create(injector, og, mainPanelActorFactoryType,
-                mainUiResource, panelActors, panelControllerBuildClass, additionalCss));
-    }
-
-    public static <T> CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout, int id,
-            ServiceKey<Message> key, String name, ObjectsGetter og,
-            Class<? extends AbstractPaneActorFactory<T>> mainPanelActorFactoryType, String mainUiResource,
-            Map<String, PanelActorCreator> panelActors, Class<? extends PanelControllerBuild> panelControllerBuildClass,
-            String... additionalCss) {
-        var system = injector.getInstance(ActorSystemProvider.class).getActorSystem();
-        return createNamedActor(system, timeout, id, key, name, create(injector, og, mainPanelActorFactoryType,
+        return createNamedActor(system, timeout, id, key, name, create(injector, mainPanelActorFactoryType,
                 mainUiResource, panelActors, panelControllerBuildClass, additionalCss));
     }
 
@@ -197,10 +172,6 @@ public abstract class AbstractPaneActor<T> {
     @Inject
     @Assisted
     protected StashBuffer<Message> buffer;
-
-    @Inject
-    @Assisted
-    protected ObjectsGetter og;
 
     @Inject
     protected Application app;

@@ -17,7 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gui.controllers;
 
-import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.ABOUT_DIALOG_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.QUIT_MAPPING;
 import static com.anrisoftware.dwarfhustle.gui.states.DefaultKeyMappings.SETTINGS_MAPPING;
@@ -119,21 +118,6 @@ public class MainPaneController {
                 actor.tell(new LineMessage(text));
                 gs.get().lastCommand.set(text);
             }
-        });
-        gs.get().currentMap.addListener((o, ov, nv) -> {
-            runFxThread(() -> {
-                levelBar.setMin(1);
-                levelBar.setMax(nv.getDepth());
-                levelBar.setValue(nv.getCursorZ() + 1);
-                levelLabel.setText(Integer.toString(nv.getCursorZ() + 1));
-            });
-        });
-        levelBar.valueProperty().addListener((o, ov, nv) -> {
-            runFxThread(() -> {
-                levelLabel.setText(Integer.toString(nv.intValue()));
-                gs.get().currentMap.get().setCursorZ(nv.intValue() - 1);
-                saveZ.accept(gs.get().currentMap.get());
-            });
         });
     }
 

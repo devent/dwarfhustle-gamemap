@@ -39,8 +39,8 @@ import lombok.ToString;
 public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends Message {
 
     /**
-     * 
-     * 
+     *
+     *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     @RequiredArgsConstructor
@@ -62,7 +62,7 @@ public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends M
     @ToString.Exclude
     public final ActorRef<T> replyTo;
 
-    public final GameMap gm;
+    public final long gm;
 
     public final int cid;
 
@@ -74,7 +74,7 @@ public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends M
 
     public final Runnable onInserted;
 
-    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos,
+    public InsertObjectMessage(ActorRef<T> replyTo, long gm, int cid, KnowledgeObject ko, GameBlockPos pos,
             Consumer<GameMapObject> consumer, Runnable onInserted) {
         this.replyTo = replyTo;
         this.gm = gm;
@@ -85,17 +85,17 @@ public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends M
         this.onInserted = onInserted;
     }
 
-    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos,
+    public InsertObjectMessage(ActorRef<T> replyTo, long gm, int cid, KnowledgeObject ko, GameBlockPos pos,
             Runnable onInserted) {
         this(replyTo, gm, cid, ko, pos, NOP_CONSUMER, onInserted);
     }
 
-    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos,
+    public InsertObjectMessage(ActorRef<T> replyTo, long gm, int cid, KnowledgeObject ko, GameBlockPos pos,
             Consumer<GameMapObject> consumer) {
         this(replyTo, gm, cid, ko, pos, consumer, NOP);
     }
 
-    public InsertObjectMessage(ActorRef<T> replyTo, GameMap gm, int cid, KnowledgeObject ko, GameBlockPos pos) {
+    public InsertObjectMessage(ActorRef<T> replyTo, long gm, int cid, KnowledgeObject ko, GameBlockPos pos) {
         this(replyTo, gm, cid, ko, pos, NOP_CONSUMER, NOP);
     }
 }

@@ -18,14 +18,17 @@
 package com.anrisoftware.dwarfhustle.gui.javafx.utils;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+import static java.util.Arrays.stream;
 import static javafx.embed.swing.SwingFXUtils.toFXImage;
 
+import java.lang.reflect.Field;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.ImageResource;
@@ -34,7 +37,9 @@ import com.jayfella.jme.jfx.JavaFxUI;
 
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.control.Control;
 import javafx.scene.image.ImageView;
+import lombok.SneakyThrows;
 
 /**
  * Utils methods to run on the different threats.
@@ -123,6 +128,22 @@ public class JavaFxUtil {
      */
     public static ImageView toGraphicFromResource(ImageResource res) {
         return new ImageView(SwingFXUtils.toFXImage(res.getBufferedImage(TYPE_INT_ARGB), null));
+    }
+
+    /**
+     * Iterates over the fields of an object for all of sub-type of {@link Control}.
+     */
+    public static <T extends Control> void forEachController(Object controller, Class<T> type, Consumer<T> consumer) {
+        stream(controller.getClass().getDeclaredFields()).filter(f -> type.isAssignableFrom(f.getType()))
+                .forEach((f) -> {
+                    final var c = getControl(type, f, controller);
+                    consumer.accept(c);
+                });
+    }
+
+    @SneakyThrows
+    private static <T extends Control> T getControl(Class<T> type, Field field, Object controller) {
+        return type.cast(field.get(controller));
     }
 
     private JavaFxUtil() {

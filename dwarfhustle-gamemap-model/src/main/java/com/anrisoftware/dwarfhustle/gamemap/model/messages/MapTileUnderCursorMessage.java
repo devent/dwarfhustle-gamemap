@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -31,9 +32,5 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class MapTileUnderCursorMessage extends Message {
 
-    public final int level;
-
-    public final int y;
-
-    public final int x;
+    public final GameBlockPos cursor;
 }
