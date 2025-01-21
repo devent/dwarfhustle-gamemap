@@ -2,15 +2,44 @@
 
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.VBox?>
 
-
-<VBox xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox fx:id="objectsBox" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController">
    <children>
-      <TabPane prefHeight="200.0" prefWidth="1024.0" side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
+      <TabPane fx:id="objectsTabPane" side="BOTTOM" styleClass="testerTabPane" tabClosingPolicy="UNAVAILABLE">
         <tabs>
-          <Tab text="Untitled Tab 1" />
-          <Tab text="Untitled Tab 2" />
+          <Tab fx:id="blockTab" text="Block">
+               <content>
+                  <FlowPane fx:id="blockPane" minHeight="-Infinity" minWidth="-Infinity" />
+               </content>
+               <tooltip>
+                  <Tooltip text="Terrain Block Types" />
+               </tooltip></Tab>
+          <Tab fx:id="grassBlock" text="Grass">
+               <content>
+                  <FlowPane fx:id="grassPane" minHeight="-Infinity" minWidth="-Infinity" />
+               </content>
+               <tooltip>
+                  <Tooltip text="Grasses" />
+               </tooltip></Tab>
+            <Tab fx:id="shrubTab" text="Shrub">
+               <content>
+                  <FlowPane fx:id="shrubPane" minHeight="-Infinity" minWidth="-Infinity" />
+               </content>
+               <tooltip>
+                  <Tooltip text="Shrubs" />
+               </tooltip>
+            </Tab>
+            <Tab fx:id="treeTab" text="Tree">
+               <content>
+                  <FlowPane fx:id="treePane" minHeight="-Infinity" minWidth="-Infinity" />
+               </content>
+               <tooltip>
+                  <Tooltip text="Trees" />
+               </tooltip>
+            </Tab>
         </tabs>
       </TabPane>
    </children>

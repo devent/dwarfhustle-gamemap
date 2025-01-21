@@ -143,7 +143,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
                     if (err == null) {
                         mapTileItemWidget = res;
                         var controller = initial.controller;
-                        controller.setup(injector);
+                        controller.setup();
                     }
                 });
         return getDefaultBehavior()//
@@ -249,8 +249,10 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
             });
         }
         runFxThread(() -> {
-            controller.items.clear();
-            controller.items.addAll(items);
+            if (controller.items != null) {
+                controller.items.clear();
+                controller.items.addAll(items);
+            }
             controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             controller.infoPane.setVisible(true);
         });

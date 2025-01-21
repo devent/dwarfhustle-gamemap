@@ -16,21 +16,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#materialsTabPane {
+.testerTabPane {
 	-fx-background-color: transparent;
 }
 
-#materialsTabPane .tab-content {
+.testerTabPane .tab-content-area {
     -fx-padding: 0;
 	-fx-background-color: transparent;
 }
 
-#materialsTabPane .tab-header-area {
+.testerTabPane .tab-header-area {
     -fx-padding: 0;
     -fx-background-color: transparent;
     -fx-border-width: 0;
 }
 
-#materialsTabPane .tab-header-background {
+.testerTabPane .tab-header-background {
 	-fx-background-color: transparent;
 }

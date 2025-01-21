@@ -159,7 +159,13 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
             }
         });
         MaterialsButtonsActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
-            log.debug("TerrainMaterialButtonsActor {} {}", v, err);
+            log.debug("MaterialsButtonsActor {} {}", v, err);
+            if (err == null) {
+                v.tell(new AttachGuiMessage(null));
+            }
+        });
+        ObjectsButtonsActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
+            log.debug("ObjectsButtonsActor {} {}", v, err);
             if (err == null) {
                 v.tell(new AttachGuiMessage(null));
             }

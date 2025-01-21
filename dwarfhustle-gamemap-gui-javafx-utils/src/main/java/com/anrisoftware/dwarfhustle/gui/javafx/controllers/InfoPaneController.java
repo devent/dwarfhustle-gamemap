@@ -23,10 +23,6 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.google.inject.Injector;
-
-import jakarta.inject.Inject;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -52,19 +48,13 @@ public class InfoPaneController implements ListChangeListener<MapTileItem> {
     @FXML
     public FlowPane infoBox;
 
-    @Inject
-    private GameSettingsProvider gs;
-
     public ObservableList<MapTileItem> items;
-
-    private Injector injector;
 
     private final MutableMap<MapTileItem, MapTileItemWidgetController> widgets = Maps.mutable.empty();
 
-    public void setup(Injector injector) {
+    public void setup() {
         log.debug("setup()");
         infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        this.injector = injector;
         List<MapTileItem> list = Lists.mutable.empty();
         this.items = FXCollections.observableList(list);
         items.addListener(this);
@@ -103,7 +93,6 @@ public class InfoPaneController implements ListChangeListener<MapTileItem> {
         var loader = new FXMLLoader(getClass().getResource("/map_tile_item_widget_ui.fxml"));
         loader.load();
         MapTileItemWidgetController c = loader.getController();
-        injector.injectMembers(c);
         return c;
     }
 

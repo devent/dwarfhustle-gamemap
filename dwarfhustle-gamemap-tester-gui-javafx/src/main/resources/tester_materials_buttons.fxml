@@ -5,7 +5,7 @@
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.Tooltip?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -13,11 +13,11 @@
    <children>
             <VBox>
                <children>
-                  <TabPane id="materialsTabPane" fx:id="materialsTabPane" prefHeight="68.0" prefWidth="1132.0" side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
+                  <TabPane id="materialsTabPane" fx:id="materialsTabPane" prefHeight="68.0" prefWidth="1132.0" side="BOTTOM" styleClass="testerTabPane" tabClosingPolicy="UNAVAILABLE">
                     <tabs>
                       <Tab fx:id="claysTab" text="Clays">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="fireClayButton" mnemonicParsing="false" text="Fire Clay">
                                  <tooltip>
@@ -43,7 +43,7 @@
                                     <Tooltip text="Clay" />
                                  </tooltip></ToggleButton>
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Clay Materials" />
@@ -51,7 +51,7 @@
                         </Tab>
                       <Tab fx:id="gasesTab" text="Gases">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="so2Button" mnemonicParsing="false" text="Sulfur Dioxide" toggleGroup="$materialGroup">
                                  <tooltip>
@@ -74,7 +74,7 @@
                                     <Tooltip text="Vacuum" />
                                  </tooltip></ToggleButton>
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Gase Materials" />
@@ -82,7 +82,7 @@
                       </Tab>
                       <Tab fx:id="extrusiveTab" text="Extrusive Rocks">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="rhyoliteButton" mnemonicParsing="false" text="Rhyolite" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="obsidianButton" mnemonicParsing="false" text="Obsidian" toggleGroup="$materialGroup" />
@@ -90,7 +90,7 @@
                                     <ToggleButton fx:id="basaltButton" mnemonicParsing="false" text="Basalt" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="andesiteButton" mnemonicParsing="false" text="Andesite" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Igneous Extrusive Rock Materials" />
@@ -98,13 +98,13 @@
                         </Tab>
                       <Tab fx:id="intrusiveTab" text="Intrusive Rocks">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="graniteButton" mnemonicParsing="false" text="Granite" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="gabbroButton" mnemonicParsing="false" text="Gabbro" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="dioriteButton" mnemonicParsing="false" text="Diorite" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Igneous Intrusive Rock Materials" />
@@ -112,7 +112,7 @@
                         </Tab>
                       <Tab fx:id="metamorphicTab" text="Metamorphic Rocks">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="slateButton" mnemonicParsing="false" text="Slate" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="schistButton" mnemonicParsing="false" text="Schist" toggleGroup="$materialGroup" />
@@ -121,7 +121,7 @@
                                     <ToggleButton fx:id="marbleButton" mnemonicParsing="false" text="Marble" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="gneissButton" mnemonicParsing="false" text="Gneiss" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Metamorphic Rock Materials" />
@@ -129,7 +129,7 @@
                         </Tab>
                       <Tab fx:id="sandTab" text="Sands">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="yellowSandButton" mnemonicParsing="false" text="Yellow Sand" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="whiteSandButton" mnemonicParsing="false" text="White Sand" toggleGroup="$materialGroup" />
@@ -137,18 +137,18 @@
                                     <ToggleButton fx:id="blackSandButton" mnemonicParsing="false" text="Black Sand" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="sandButton" mnemonicParsing="false" text="Sand" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                         </Tab>
                       <Tab fx:id="seabedTab" text="Seabeds">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="calcareousOozeButton" mnemonicParsing="false" text="Calcareous Ooze" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="siliceousOozeButton" mnemonicParsing="false" text="Siliceous Ooze" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="pelagicClayButton" mnemonicParsing="false" text="Pelagic Clay" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Seabed Materials" />
@@ -156,7 +156,7 @@
                         </Tab>
                       <Tab fx:id="sedimentaryTab" text="Sedimentary Rocks">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="siltstoneButton" mnemonicParsing="false" text="Siltstone" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="shaleButton" mnemonicParsing="false" text="Shale" toggleGroup="$materialGroup" />
@@ -170,7 +170,7 @@
                                     <ToggleButton fx:id="chertButton" mnemonicParsing="false" text="Chert" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="chalkButton" mnemonicParsing="false" text="Chalk" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Sedimentary Rock Materials" />
@@ -178,12 +178,12 @@
                         </Tab>
                       <Tab fx:id="liquidTab" text="Liquids">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="magmaButton" mnemonicParsing="false" text="Magma" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="waterButton" mnemonicParsing="false" text="Water" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Liquid Materials" />
@@ -191,7 +191,7 @@
                         </Tab>
                       <Tab fx:id="topsoilTab" text="Topsoils">
                            <content>
-                              <HBox maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                              <FlowPane maxWidth="1.7976931348623157E308" minWidth="-Infinity">
                                  <children>
                                     <ToggleButton fx:id="siltLoamButton" mnemonicParsing="false" text="Silt Loam" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="siltyClayLoamButton" mnemonicParsing="false" text="Silty Clay Loam" toggleGroup="$materialGroup" />
@@ -202,7 +202,7 @@
                                     <ToggleButton fx:id="loamySandButton" mnemonicParsing="false" text="Loamy Sand" toggleGroup="$materialGroup" />
                                     <ToggleButton fx:id="loamButton" mnemonicParsing="false" text="Loam" toggleGroup="$materialGroup" />
                                  </children>
-                              </HBox>
+                              </FlowPane>
                            </content>
                      <tooltip>
                         <Tooltip text="Topsoil Materials" />
@@ -210,7 +210,7 @@
                         </Tab>
                     </tabs>
                   </TabPane>
-                  <HBox alignment="BOTTOM_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity">
+                  <FlowPane alignment="BOTTOM_LEFT" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity">
                      <children>
                         <ToggleButton fx:id="clayDefaultButton" mnemonicParsing="false" text="Clay" toggleGroup="$materialGroup">
                            <tooltip>
@@ -263,7 +263,7 @@
                            </tooltip>
                         </ToggleButton>
                      </children>
-                  </HBox>
+                  </FlowPane>
                </children>
             </VBox>
    </children>

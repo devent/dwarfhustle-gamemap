@@ -20,9 +20,11 @@ package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 import java.util.Map;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.MaterialsButtonsActor.MaterialsButtonsActorFactory;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectsButtonsActor.ObjectsButtonsActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterMainPanelActor.TesterMainPanelActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterStatusActor.TesterStatusActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.MaterialsButtonsController;
+import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.states.TesterKeyMappingProvider;
 
@@ -38,24 +40,31 @@ import com.google.inject.name.Names;
 /**
  * @see TesterMainPanelActorFactory
  * @see TesterStatusActorFactory
+ * @see MaterialsButtonsActorFactory
+ * @see ObjectsButtonsActorFactory
+ * @see TesterKeyMappingProvider
+ * @see JmeMappingsProvider
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule {
 
-	@Override
-	protected void configure() {
-		install(new FactoryModuleBuilder()
-				.implement(new TypeLiteral<AbstractPaneActor<? extends TesterMainPaneController>>() {
-				}, TesterMainPanelActor.class).build(TesterMainPanelActorFactory.class));
-		install(new FactoryModuleBuilder().implement(TesterStatusActor.class, TesterStatusActor.class)
-				.build(TesterStatusActorFactory.class));
-		install(new FactoryModuleBuilder()
-				.implement(new TypeLiteral<AbstractPaneActor<? extends MaterialsButtonsController>>() {
-				}, MaterialsButtonsActor.class).build(MaterialsButtonsActorFactory.class));
-		bind(new TypeLiteral<Map<String, KeyMapping>>() {
-		}).annotatedWith(Names.named("keyMappings")).toProvider(TesterKeyMappingProvider.class).asEagerSingleton();
-		bind(new TypeLiteral<Map<String, JmeMapping>>() {
-		}).annotatedWith(Names.named("jmeMappings")).toProvider(JmeMappingsProvider.class).asEagerSingleton();
-	}
+    @Override
+    protected void configure() {
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends TesterMainPaneController>>() {
+                }, TesterMainPanelActor.class).build(TesterMainPanelActorFactory.class));
+        install(new FactoryModuleBuilder().implement(TesterStatusActor.class, TesterStatusActor.class)
+                .build(TesterStatusActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends MaterialsButtonsController>>() {
+                }, MaterialsButtonsActor.class).build(MaterialsButtonsActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends ObjectsButtonsController>>() {
+                }, ObjectsButtonsActor.class).build(ObjectsButtonsActorFactory.class));
+        bind(new TypeLiteral<Map<String, KeyMapping>>() {
+        }).annotatedWith(Names.named("keyMappings")).toProvider(TesterKeyMappingProvider.class).asEagerSingleton();
+        bind(new TypeLiteral<Map<String, JmeMapping>>() {
+        }).annotatedWith(Names.named("jmeMappings")).toProvider(JmeMappingsProvider.class).asEagerSingleton();
+    }
 
 }

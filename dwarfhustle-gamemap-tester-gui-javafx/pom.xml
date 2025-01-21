@@ -4,16 +4,16 @@
 	xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<parent>
 		<groupId>com.anrisoftware.dwarfhustle</groupId>
 		<artifactId>dwarfhustle-gamemap</artifactId>
 		<version>0.0.2-SNAPSHOT</version>
 	</parent>
-	
+
 	<artifactId>dwarfhustle-gamemap-tester-gui-javafx</artifactId>
 	<name>dwarfhustle-gamemap-tester-gui-javafx</name>
-	
+
 	<dependencies>
         <!-- Test dependencies -->
         <dependency>
@@ -36,14 +36,14 @@
             <artifactId>logstash-logback-encoder</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <!-- Compile dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- Own modules dependencies -->
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
@@ -55,6 +55,10 @@
             <artifactId>dwarfhustle-gamemap-assets</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-model-knowledge</artifactId>
+        </dependency>
 	</dependencies>
-	
+
 </project>

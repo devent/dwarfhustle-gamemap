@@ -17,11 +17,9 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.Person;
 
-import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -43,9 +41,6 @@ public class MapTileItemWidgetController {
 
     @FXML
     public VBox objectInfoBox;
-
-    @Inject
-    private GameSettingsProvider gs;
 
     public void setup(MapTileItem item) {
         if (item.item instanceof MapBlock mt) {
