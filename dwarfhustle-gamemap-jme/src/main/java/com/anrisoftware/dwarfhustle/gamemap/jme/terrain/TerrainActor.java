@@ -37,9 +37,7 @@ import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.Knowledg
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askObjectTypeId;
 import static java.time.Duration.ofSeconds;
 
-import java.net.URL;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -50,22 +48,18 @@ import java.util.concurrent.TimeoutException;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.primitive.IntLongMaps;
 import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
-import org.eclipse.collections.api.factory.primitive.LongLongMaps;
 import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.IntLongMap;
-import org.eclipse.collections.api.map.primitive.LongLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntLongMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
-import org.eclipse.collections.api.map.primitive.MutableLongLongMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.tuple.primitive.LongIntPair;
 import org.eclipse.collections.impl.factory.Multimaps;
 
-import com.anrisoftware.dwarfhustle.gamemap.jme.app.AssetsLoadMaterialTextures;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.model.CollectChunksUpdate;
@@ -120,8 +114,6 @@ import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
-import groovy.lang.Binding;
-import groovy.util.GroovyScriptEngine;
 import jakarta.inject.Inject;
 import javafx.beans.value.ChangeListener;
 import lombok.RequiredArgsConstructor;
@@ -153,20 +145,17 @@ public class TerrainActor {
 
     static final int BLOCK_MATERIAL_MAGMA = "magma".hashCode();
 
+    static final int BLOCK_MATERIAL_SELECTED = "selected".hashCode();
+
+    static final int BLOCK_MATERIAL_FOCUSED = "focused".hashCode();
+
     static final int OBJECT_BLOCK_CEILING = "OBJECT_BLOCK_CEILING".hashCode();
+
+    static final int OBJECT_BLOCK_FOCUS = "OBJECT_BLOCK_FOCUS".hashCode();
 
     static final int UNDISCOVERED_MATERIAL = "UNDISCOVERED_MATERIAL".hashCode();
 
     static final int UNKNOWN_MATERIAL = "UNKNOWN_MATERIAL".hashCode();
-
-    static final long SELECTED_BLOCK_RAMP_TWO = 0xfff6;
-    static final long SELECTED_BLOCK_RAMP_TRI = 0xfff7;
-    static final long SELECTED_BLOCK_RAMP_SINGLE = 0xfff8;
-    static final long SELECTED_BLOCK_RAMP_PERP = 0xfff9;
-    static final long SELECTED_BLOCK_RAMP_EDGE_OUT = 0xfffa;
-    static final long SELECTED_BLOCK_RAMP_EDGE_IN = 0xfffb;
-    static final long SELECTED_BLOCK_RAMP_CORNER = 0xfffc;
-    static final long SELECTED_BLOCK_NORMAL = 0xfffd;
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
@@ -183,7 +172,6 @@ public class TerrainActor {
         public final ObjectsGetter og;
         public final ObjectsSetter os;
         public final ObjectsGetter mg;
-        public final LongLongMap selectedMaterials;
     }
 
     @RequiredArgsConstructor
@@ -264,30 +252,17 @@ public class TerrainActor {
                     askBlockMaterialId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), Liquid.TYPE, "magma"));
             k.put(OBJECT_BLOCK_CEILING,
                     askObjectTypeId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), BlockObject.TYPE, "block-ceiling"));
+            k.put(OBJECT_BLOCK_FOCUS,
+                    askObjectTypeId(ko, KNOWLEDGE_GET_TIMEOUT, system.scheduler(), BlockObject.TYPE, "block-focus"));
             k.put(UNDISCOVERED_MATERIAL, 0xfffe);
             k.put(UNKNOWN_MATERIAL, 0xffff);
-            var selectedMaterials = loadSelectedMaterials();
+            k.put(BLOCK_MATERIAL_SELECTED, 0xfffd);
+            k.put(BLOCK_MATERIAL_FOCUSED, 0xfffc);
             return new InitialStateMessage(terrainState, cameraState, selectBlockState, chunksBoundingBoxState,
-                    terrainRollState, ma, mo, k.toImmutable(), cg, og, os, mg, selectedMaterials);
+                    terrainRollState, ma, mo, k.toImmutable(), cg, og, os, mg);
         } catch (Exception ex) {
             return new SetupErrorMessage(ex);
         }
-    }
-
-    @SneakyThrows
-    private static LongLongMap loadSelectedMaterials() {
-        MutableLongLongMap selectedMaterials = LongLongMaps.mutable.empty();
-        var engine = new GroovyScriptEngine(
-                new URL[] { AssetsLoadMaterialTextures.class.getResource("/BlockSelectedMaterials.groovy") });
-        var binding = new Binding();
-        @SuppressWarnings("unchecked")
-        var map = (Map<Integer, Integer>) engine.run("BlockSelectedMaterials.groovy", binding);
-        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-            Long key = kid2Id(entry.getKey());
-            Long val = kid2Id(entry.getValue());
-            selectedMaterials.put(key, val);
-        }
-        return selectedMaterials.toImmutable();
     }
 
     @Inject
@@ -528,7 +503,7 @@ public class TerrainActor {
         boolean cursor = gm.isCursor(x, y, z);
         if (cursor) {
             long oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
-            emission = is.selectedMaterials.get(oid);
+            emission = null;
         }
         boolean transparent = false;
         if (haveProp(chunk.getBlocks(), calcOff(index), EMPTY_POS)) {

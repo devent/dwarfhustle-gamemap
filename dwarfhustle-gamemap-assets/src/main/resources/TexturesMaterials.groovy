@@ -93,41 +93,20 @@ rid["LOAMY-SAND"] = 858
 rid["LOAM"] = 857
 
 // Wood
-rid["BIRCH-WOOD"] = 1043
-rid["PINE-WOOD"] = 1035
+rid["BIRCH-WOOD"] = 1045
+rid["PINE-WOOD"] = 1037
 
 // Grass
-rid["RED-POPPY"] = 1024
-rid["DAISY"] = 1023
-rid["CARROT"] = 1022
-rid["WHEAT"] = 1020
-rid["MEADOW-GRASS"] = 1019
+rid["RED-POPPY"] = 1026
+rid["DAISY"] = 1025
+rid["CARROT"] = 1024
+rid["WHEAT"] = 1022
+rid["MEADOW-GRASS"] = 1021
 
-rid["SELECTED-BLOCK-RAMP-TWO"] = 0xfff6
-rid["SELECTED-BLOCK-RAMP-TRI"] = 0xfff7
-rid["SELECTED-BLOCK-RAMP-SINGLE"] = 0xfff8
-rid["SELECTED-BLOCK-RAMP-PERP"] = 0xfff9
-rid["SELECTED-BLOCK-RAMP-EDGE-OUT"] = 0xfffa
-rid["SELECTED-BLOCK-RAMP-EDGE-IN"] = 0xfffb
-rid["SELECTED-BLOCK-RAMP-CORNER"] = 0xfffc
-rid["SELECTED-BLOCK-NORMAL"] = 0xfffd
+rid["FOCUSED-BLOCK"] = 0xfffc
+rid["SELECTED-BLOCK"] = 0xfffd
 rid["UNDISCOVERED"] = 0xfffe
 rid["UNKNOWN"] = 0xffff
-
-// Tree-Branch
-rid["SELECTED-BLOCK-BRANCH"] = 0xfff5
-
-// Tree-Leaf
-rid["SELECTED-BLOCK-LEAF"] = 0xfff4
-
-// Tree-Root
-rid["SELECTED-BLOCK-ROOT"] = 0xfff3
-
-// Tree-Trunk
-rid["SELECTED-BLOCK-TRUNK"] = 0xfff2
-
-// Tree-Twig
-rid["SELECTED-BLOCK-TWIG"] = 0xfff1
 
 int w = 256, h = 256
 int ww = 1024, hh = 1024
@@ -218,30 +197,9 @@ m["Grass"].frames rid: rid["WHEAT"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, 
 m["Grass"].frames rid: rid["MEADOW-GRASS"], x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m.Other.image = "Textures/Tiles/other-map.png"
-m.Other.frames rid: rid["UNDISCOVERED"],                 x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
-m.Other.frames rid: rid["UNKNOWN"],                      x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-TWO"],      x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-TRI"],      x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-SINGLE"],   x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-PERP"],     x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-EDGE-OUT"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-EDGE-IN"],  x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-RAMP-CORNER"],   x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-m.Other.frames rid: rid["SELECTED-BLOCK-NORMAL"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-
-// Tree-Branch
-m.Other.frames rid: rid["SELECTED-BLOCK-BRANCH"],        x: 0*w, y: 3*h, w: w, h: h, ww: ww, hh: hh
-
-// Tree-Leaf
-m.Other.frames rid: rid["SELECTED-BLOCK-LEAF"],          x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-
-// Tree-Root
-m.Other.frames rid: rid["SELECTED-BLOCK-ROOT"],          x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
-
-// Tree-Trunk
-m.Other.frames rid: rid["SELECTED-BLOCK-TRUNK"],         x: 0*w, y: 3*h, w: w, h: h, ww: ww, hh: hh
-
-// Tree-Twig
-m.Other.frames rid: rid["SELECTED-BLOCK-TWIG"],          x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh
+m.Other.frames rid: rid["UNDISCOVERED"],          x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["UNKNOWN"],               x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["SELECTED-BLOCK"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 1f
+m.Other.frames rid: rid["FOCUSED-BLOCK"],         x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: true, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m

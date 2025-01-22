@@ -52,6 +52,7 @@ import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObj
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage.MapChunksLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.binary.internal.resources.BinaryResourceModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
@@ -193,9 +194,6 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         loadTerrain(root, "terrain_32_32_32_8", 9);
 //        loadTerrain(root, "terrain_512_512_128_16", 171, 189, 18, new float[] { -180.88005f, 114.93917f, 55.877968f },
 //                new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
-        // var block = mcRoot.findBlock(0, 0, 0, id -> store.getChunk(id));
-        // block.setMined(true);
-        // block.setMaterialRid(898);
     }
 
     private void loadTerrain(Path root, String name, int z) throws IOException {
@@ -225,8 +223,10 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     protected void loadMapObjects() {
         try (final var pool = new ForkJoinPool(4)) {
             final var root = getChunk(chunksStorage, 0);
-            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
-                    gm.getWidth(), gm.getHeight(), gm.getDepth()));
+            final var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var kg = actor.getObjectGetterAsyncNow(KnowledgeJcsCacheActor.ID);
+            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, og, kg, LOAD_MAP_OBJECTS_TIMEOUT, gm,
+                    0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth()));
             pool.shutdownNow();
         }
     }

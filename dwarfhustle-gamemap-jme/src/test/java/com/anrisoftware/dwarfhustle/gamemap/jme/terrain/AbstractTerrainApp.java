@@ -18,6 +18,9 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static akka.actor.typed.javadsl.AskPattern.ask;
+import static com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.askInsertObject;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
+import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.time.Duration;
@@ -41,6 +44,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainTestKeysActor.Ter
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
@@ -52,11 +56,14 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
@@ -251,7 +258,36 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createGameTick();
         createTerrainTestKeys();
         loadMapObjects();
+        setupCursorObject();
         storeGameMap();
+    }
+
+    @SneakyThrows
+    private void setupCursorObject() {
+        if (gm.haveCursorObject()) {
+            return;
+        }
+        var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+        var mb = MapChunkBuffer.findBlock(mcRoot, 0, 0, 0, cg);
+        var kret = askKnowledgeObjects(actor.getActorSystem(), ofSeconds(3), BlockObject.TYPE);
+        kret.whenComplete((ret, ex) -> {
+            if (ex == null) {
+                var ko = ret.detect(_ko -> _ko.name.equalsIgnoreCase("block-focus"));
+                var iret = askInsertObject(actor.getActorSystem(), gm.getId(), mb.getParent(), ko, gm.getCursor(),
+                        ofSeconds(1));
+                iret.whenComplete((ret1, ex1) -> {
+                    if (ex1 == null) {
+                        if (ret1 instanceof InsertObjectSuccessMessage sm) {
+                            gm.setCursorObject(sm.go.getId());
+                        }
+                    } else {
+                        log.error("askInsertObject", ex1);
+                    }
+                });
+            } else {
+                log.error("askKnowledgeObjects", ex);
+            }
+        });
     }
 
     @SneakyThrows

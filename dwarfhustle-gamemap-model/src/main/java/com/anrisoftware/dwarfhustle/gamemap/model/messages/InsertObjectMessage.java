@@ -17,9 +17,10 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.model.messages;
 
+import java.time.Duration;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
@@ -27,6 +28,8 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 
 import akka.actor.typed.ActorRef;
+import akka.actor.typed.ActorSystem;
+import akka.actor.typed.javadsl.AskPattern;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
@@ -36,7 +39,7 @@ import lombok.ToString;
  * @author Erwin Müller {@literal <erwin@mullerlpublic.de}
  */
 @ToString(callSuper = true)
-public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends Message {
+public class InsertObjectMessage<T extends Message> extends Message {
 
     /**
      *
@@ -48,6 +51,12 @@ public class InsertObjectMessage<T extends InsertObjectSuccessMessage> extends M
     public static class InsertObjectSuccessMessage extends Message {
 
         public final GameMapObject go;
+    }
+
+    public static CompletionStage<Message> askInsertObject(ActorSystem<Message> a, long gm, int cid, KnowledgeObject ko,
+            GameBlockPos pos, Duration timeout) {
+        return AskPattern.ask(a, replyTo -> new InsertObjectMessage<>(replyTo, gm, cid, ko, pos, NOP_CONSUMER, NOP),
+                timeout, a.scheduler());
     }
 
     private static final Consumer<GameMapObject> NOP_CONSUMER = (go) -> {
