@@ -99,6 +99,11 @@
         <artifactId>dwarfhustle-model-knowledge</artifactId>
         <version>${dwarfhustle.custom.model.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.anrisoftware.dwarfhustle</groupId>
+        <artifactId>dwarfhustle-model-objects</artifactId>
+        <version>${dwarfhustle.custom.model.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <build>

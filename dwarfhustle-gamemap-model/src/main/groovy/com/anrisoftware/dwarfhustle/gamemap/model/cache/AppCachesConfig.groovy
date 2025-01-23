@@ -62,11 +62,11 @@ class AppCachesConfig {
         //
         params.knowledge = [:]
         params.knowledge.cache_name = "knowledge"
-        params.knowledge.max_objects = 1000
-        params.knowledge.is_eternal = false
+        params.knowledge.max_objects = 10000
+        params.knowledge.is_eternal = true
         params.knowledge.max_idle = Duration.ofHours(24).seconds
         params.knowledge.max_life = Duration.ofHours(24).seconds
-        params.knowledge.max_key_size = 1000
+        params.knowledge.max_key_size = 10000
         params.knowledge.have_file_aux = true
         params.knowledge.parent_dir = parentDir
         //

@@ -146,6 +146,10 @@
         </dependency>
         <dependency>
             <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-model-objects</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-gamemap-model</artifactId>
             <version>${project.version}</version>
         </dependency>

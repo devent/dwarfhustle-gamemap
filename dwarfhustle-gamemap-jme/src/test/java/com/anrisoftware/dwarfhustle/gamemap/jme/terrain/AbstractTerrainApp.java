@@ -18,8 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static akka.actor.typed.javadsl.AskPattern.ask;
-import static com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.askInsertObject;
-import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.RetrieveKnowledgesMessage.askRetrieveKnowledges;
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -44,32 +43,28 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainTestKeysActor.Ter
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetWorldMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.objects.DwarfhustleGamemapModelObjectsModule;
-import com.anrisoftware.dwarfhustle.gamemap.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
-import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule;
-import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustleModelKnowledgePowerloomPlModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
+import com.anrisoftware.dwarfhustle.model.objects.DwarfhustleModelObjectsModule;
+import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -152,7 +147,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
             protected void configure() {
                 install(new DwarfhustleModelKnowledgePowerloomPlModule());
                 install(new DwarfhustleModelDbCacheModule());
-                install(new DwarfhustleGamemapModelObjectsModule());
+                install(new DwarfhustleModelObjectsModule());
                 install(new DwarfhustleGamemapJmeAppModule());
                 install(new DwarfhustleGamemapJmeLightsModule());
                 install(new DwarfhustleGamemapJmeModelModule());
@@ -258,42 +253,14 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createGameTick();
         createTerrainTestKeys();
         loadMapObjects();
-        setupCursorObject();
         storeGameMap();
-    }
-
-    @SneakyThrows
-    private void setupCursorObject() {
-        if (gm.haveCursorObject()) {
-            return;
-        }
-        var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
-        var mb = MapChunkBuffer.findBlock(mcRoot, 0, 0, 0, cg);
-        var kret = askKnowledgeObjects(actor.getActorSystem(), ofSeconds(3), BlockObject.TYPE);
-        kret.whenComplete((ret, ex) -> {
-            if (ex == null) {
-                var ko = ret.detect(_ko -> _ko.name.equalsIgnoreCase("block-focus"));
-                var iret = askInsertObject(actor.getActorSystem(), gm.getId(), mb.getParent(), ko, gm.getCursor(),
-                        ofSeconds(1));
-                iret.whenComplete((ret1, ex1) -> {
-                    if (ex1 == null) {
-                        if (ret1 instanceof InsertObjectSuccessMessage sm) {
-                            gm.setCursorObject(sm.go.getId());
-                        }
-                    } else {
-                        log.error("askInsertObject", ex1);
-                    }
-                });
-            } else {
-                log.error("askKnowledgeObjects", ex);
-            }
-        });
     }
 
     @SneakyThrows
     protected void storeGameMap() {
         var gs = actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, SECONDS);
         gs.set(GameMap.OBJECT_TYPE, gm);
+        System.out.println(gm); // TODO
     }
 
     protected abstract void loadMapObjects();
@@ -433,6 +400,15 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                         actor.tell(new AppErrorMessage(ex));
                     } else {
                         log.debug("PowerLoomKnowledgeActor created");
+                        var res = askRetrieveKnowledges(actor.getActorSystem(), ofSeconds(30));
+                        res.whenComplete((ret1, ex1) -> {
+                            if (ex1 != null) {
+                                log.error("askRetrieveKnowledges", ex1);
+                                actor.tell(new AppErrorMessage(ex1));
+                            } else {
+                                log.debug("askRetrieveKnowledges done");
+                            }
+                        });
                     }
                 });
     }

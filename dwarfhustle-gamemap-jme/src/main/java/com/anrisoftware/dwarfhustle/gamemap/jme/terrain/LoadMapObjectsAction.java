@@ -18,7 +18,6 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
-import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
 
 import java.time.Duration;
@@ -28,8 +27,6 @@ import java.util.List;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
-import com.anrisoftware.dwarfhustle.model.api.map.Block;
-import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
@@ -55,10 +52,6 @@ public class LoadMapObjectsAction extends RecursiveAction {
     private final ObjectsGetter chunks;
 
     private final MapObjectsStorage storage;
-
-    private final ObjectsGetter og;
-
-    private final ObjectsGetter kg;
 
     final private Duration timeout;
 
@@ -106,7 +99,7 @@ public class LoadMapObjectsAction extends RecursiveAction {
     }
 
     private RecursiveAction create(int sx, int sy, int sz, int ex, int ey, int ez) {
-        return new LoadMapObjectsAction(root, chunks, storage, og, kg, timeout, gm, sx, sy, sz, ex, ey, ez);
+        return new LoadMapObjectsAction(root, chunks, storage, timeout, gm, sx, sy, sz, ex, ey, ez);
     }
 
     @SneakyThrows
@@ -118,13 +111,6 @@ public class LoadMapObjectsAction extends RecursiveAction {
         final int index = calcIndex(gm.getWidth(), gm.getHeight(), gm.getDepth(), 0, 0, 0, x, y, z);
         final var chunk = findChunk(root, x, y, z, chunks);
         gm.addFilledBlock(chunk.getCid(), index);
-        if (type == Block.OBJECT_TYPE) {
-            Block block = og.get(Block.OBJECT_TYPE, id);
-            BlockObject kblock = kg.get(BlockObject.OBJECT_TYPE, kid2Id(block.getKid()));
-            if (kblock.getName().equalsIgnoreCase("block-focus")) {
-                gm.setCursorObject(id);
-            }
-        }
     }
 
 }

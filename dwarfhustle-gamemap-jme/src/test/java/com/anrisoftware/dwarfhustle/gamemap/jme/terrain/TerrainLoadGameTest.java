@@ -52,7 +52,6 @@ import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObj
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage.MapChunksLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.binary.internal.resources.BinaryResourceModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
@@ -223,11 +222,8 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     protected void loadMapObjects() {
         try (final var pool = new ForkJoinPool(4)) {
             final var root = getChunk(chunksStorage, 0);
-            final var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            final var kg = actor.getObjectGetterAsyncNow(KnowledgeJcsCacheActor.ID);
-            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, og, kg, LOAD_MAP_OBJECTS_TIMEOUT, gm,
-                    0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth()));
-            pool.shutdownNow();
+            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
+                    gm.getWidth(), gm.getHeight(), gm.getDepth()));
         }
     }
 

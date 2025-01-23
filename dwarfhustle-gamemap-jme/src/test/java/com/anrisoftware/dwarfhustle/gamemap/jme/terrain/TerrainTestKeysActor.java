@@ -30,13 +30,8 @@ import java.util.function.Function;
 
 import org.lable.oss.uniqueid.IDGenerator;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.DeleteObjectMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.DeleteObjectMessage.DeleteObjectSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMaterialBlockMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -56,6 +51,11 @@ import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
+import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage;
+import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
+import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
+import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage.DeleteObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage.InsertObjectSuccessMessage;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
