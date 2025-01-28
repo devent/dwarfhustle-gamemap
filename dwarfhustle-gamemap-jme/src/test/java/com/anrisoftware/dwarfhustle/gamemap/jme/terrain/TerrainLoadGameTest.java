@@ -44,6 +44,7 @@ import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
@@ -77,9 +78,9 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     private static final Duration LOAD_MAP_OBJECTS_TIMEOUT = Duration.ofSeconds(30);
 
     public static void main(String[] args) {
-        var injector = Guice.createInjector(new DwarfhustleModelActorsModule(), new DwarfhustleModelApiObjectsModule(),
-                new DwarfhustleModelDbLmbdModule());
-        var app = injector.getInstance(TerrainLoadGameTest.class);
+        final var injector = Guice.createInjector(new DwarfhustleModelActorsModule(),
+                new DwarfhustleModelApiObjectsModule(), new DwarfhustleModelDbLmbdModule());
+        final var app = injector.getInstance(TerrainLoadGameTest.class);
         app.start(injector);
     }
 
@@ -125,7 +126,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @Override
     protected void createMapObjectsCache() {
-        var task = MapObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage, moStorage);
+        final var task = MapObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, moStorage, moStorage);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("MapObjectsJcsCacheActor.create", ex);
@@ -137,7 +138,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @Override
     protected void createStoredObjectsCache() {
-        var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
+        final var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("StoredObjectsJcsCacheActor.create", ex);
@@ -149,7 +150,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @Override
     protected void createChunksCache() {
-        var task = MapChunksJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, chunksStorage, chunksStorage);
+        final var task = MapChunksJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, chunksStorage, chunksStorage);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("MapChunksJcsCacheActor.create", ex);
@@ -160,14 +161,14 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     protected void createTesterMainPanel() {
-        var task = TesterMainPanelActor.create(injector, CREATE_ACTOR_TIMEOUT);
+        final var task = TesterMainPanelActor.create(injector, CREATE_ACTOR_TIMEOUT);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("MapChunksJcsCacheActor.create", ex);
             } else {
                 log.debug("MapChunksJcsCacheActor created");
-                CompletionStage<AttachGuiFinishedMessage> result = ask(ret, replyTo -> new AttachGuiMessage(replyTo),
-                        ofSeconds(3), actor.getScheduler());
+                final CompletionStage<AttachGuiFinishedMessage> result = ask(ret, AttachGuiMessage::new, ofSeconds(3),
+                        actor.getScheduler());
                 result.whenComplete((ret1, ex1) -> {
                     if (ex1 != null) {
                         log.error("AttachGuiMessage", ex1);
@@ -204,7 +205,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     private void loadTerrain(Path root, String name, int x, int y, int z, float[] cameraPos, float[] cameraRot)
             throws IOException {
         root = root.resolve(name);
-        var tmp = Files.createTempDirectory(name);
+        final var tmp = Files.createTempDirectory(name);
         injector.getInstance(AppCachesConfig.class).create(tmp.toFile());
         initGameObjectsStorage(root);
         loadGameMap();
@@ -215,6 +216,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         gm.cursor.z = z;
         gm.cameraPos = cameraPos;
         gm.cameraRot = cameraRot;
+        MapChunkBuffer.cacheCids(gm, chunksStorage);
     }
 
     @SneakyThrows
@@ -228,7 +230,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     private void initMapObjectsStorage(Path root, GameMap gm) {
-        var path = root.resolve("map-" + gm.id);
+        final var path = root.resolve("map-" + gm.id);
         if (!path.toFile().isDirectory()) {
             path.toFile().mkdir();
         }
@@ -237,7 +239,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     }
 
     private void initGameObjectsStorage(Path root) {
-        var path = root.resolve("objects");
+        final var path = root.resolve("objects");
         if (!path.toFile().isDirectory()) {
             path.toFile().mkdir();
         }

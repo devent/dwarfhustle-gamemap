@@ -95,6 +95,15 @@ public class TesterMainPaneController extends AbstractStatusController {
     @FXML
     public ToggleButton insertButton;
 
+    @FXML
+    public Button northButton;
+    @FXML
+    public Button westButton;
+    @FXML
+    public Button southButton;
+    @FXML
+    public Button eastButton;
+
     private Locale locale;
 
     private Texts texts;
@@ -168,16 +177,16 @@ public class TesterMainPaneController extends AbstractStatusController {
     }
 
     public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
-        paintButton.setOnMouseEntered((e) -> {
+        paintButton.setOnMouseEntered(e -> {
             consumer.accept(true);
         });
-        paintButton.setOnMouseExited((e) -> {
+        paintButton.setOnMouseExited(e -> {
             consumer.accept(false);
         });
-        insertButton.setOnMouseEntered((e) -> {
+        insertButton.setOnMouseEntered(e -> {
             consumer.accept(true);
         });
-        insertButton.setOnMouseExited((e) -> {
+        insertButton.setOnMouseExited(e -> {
             consumer.accept(false);
         });
     }
@@ -188,6 +197,14 @@ public class TesterMainPaneController extends AbstractStatusController {
         paintButton.setText(null);
         insertButton.setGraphic(getImageView(images, "buttons_objects", locale, iconSize));
         insertButton.setText(null);
+        northButton.setGraphic(getImageView(images, "buttons_north", locale, iconSize));
+        northButton.setText(null);
+        southButton.setGraphic(getImageView(images, "buttons_south", locale, iconSize));
+        southButton.setText(null);
+        westButton.setGraphic(getImageView(images, "buttons_west", locale, iconSize));
+        westButton.setText(null);
+        eastButton.setGraphic(getImageView(images, "buttons_east", locale, iconSize));
+        eastButton.setText(null);
     }
 
     public void setMap(WorldMap wm, GameMap gm) {

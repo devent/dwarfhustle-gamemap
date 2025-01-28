@@ -157,6 +157,11 @@
     -fx-pref-width: 8em;
 }
 
+.smallButton {
+    -fx-pref-width: 16px;
+	-fx-max-width: 16px;
+}
+
 .tab-pane {/* w  w   w.   d e   m o   2  s .   c o    m*/
     -fx-padding: 0;
     -fx-hgap: 0;

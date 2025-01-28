@@ -64,10 +64,15 @@ class ModelMapData {
 
     public float[] rotation = new float[3]
 
+    public float[] scale = new float[3]
+
     def set(Map args) {
         this.model = args.model
         if (args.rotation) {
             this.rotation = args.rotation
+        }
+        if (args.scale) {
+            this.scale = args.scale
         }
         if (args.rotationDeg) {
             args.rotationDeg.eachWithIndex { it, i -> rotation[i] = Math.toRadians(it) }

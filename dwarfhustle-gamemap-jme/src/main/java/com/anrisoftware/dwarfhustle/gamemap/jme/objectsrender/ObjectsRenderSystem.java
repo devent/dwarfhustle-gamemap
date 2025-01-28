@@ -44,7 +44,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
 
     /**
      * Creates {@link ObjectsRenderSystem}.
-     * 
+     *
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface ObjectsRenderSystemFactory {
@@ -98,35 +98,36 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
     }
 
     private void addObject(Entity entity) {
-        var c = entity.getComponent(ObjectMeshComponent.class);
-        var node = new Node("" + c.object.getId());
-        if (c.object.getKid() == 1027) {
-            System.out.println("Tree should be hidden " + c.object); // TODO
-        }
-        ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, kid2Id(c.object.getKid()));
+        final var c = entity.getComponent(ObjectMeshComponent.class);
+        System.out.println("ObjectsRenderSystem.addObject() " + c.object); // TODO
+        final var node = new Node("" + c.object.getId());
+        final ModelCacheObject model = models.get(ModelCacheObject.OBJECT_TYPE, kid2Id(c.object.getKid()));
         node.attachChild(model.getModel().clone());
         node.setShadowMode(ShadowMode.Off);
-        updateLocation(c.object, node);
+        updateLocation(c.object, node, entity);
         objectNodes.put(entity.hashCode(), node);
         this.sceneNode.attachChild(node);
     }
 
     private void removeObject(Entity entity) {
-        var node = objectNodes.remove(entity.hashCode());
+        final var c = entity.getComponent(ObjectMeshComponent.class);
+        System.out.println("ObjectsRenderSystem.removeObject() " + c.object); // TODO
+        final var node = objectNodes.remove(entity.hashCode());
         sceneNode.detachChild(node);
     }
 
     @Override
     protected void processEntity(Entity entity) {
-        var c = entity.getComponent(ObjectMeshComponent.class);
-        var node = objectNodes.get(entity.hashCode());
-        updateLocation(c.object, node);
+        final var c = entity.getComponent(ObjectMeshComponent.class);
+        final var node = objectNodes.get(entity.hashCode());
+        updateLocation(c.object, node, entity);
     }
 
-    private void updateLocation(GameMapObject o, Node node) {
-        float tx = -gm.getWidth() + 2f * o.getPos().getX() + 1f;
-        float ty = gm.getHeight() - 2f * o.getPos().getY() - 1f;
-        float tz = -1f + 2f * (gm.cursor.z - o.getPos().getZ());
+    private void updateLocation(GameMapObject o, Node node, Entity entity) {
+        final var ec = entity.getComponent(ObjectElevatedComponent.class);
+        final float tx = -gm.getWidth() + 2f * o.getPos().getX() + 1f;
+        final float ty = gm.getHeight() - 2f * o.getPos().getY() - 1f;
+        final float tz = -1f + 2f * (gm.cursor.z - o.getPos().getZ()) + ec.zoff;
         node.setLocalTranslation(tx, ty, tz);
     }
 

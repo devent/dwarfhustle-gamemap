@@ -69,10 +69,10 @@ import com.anrisoftware.dwarfhustle.model.knowledge.evrete.VegetationKnowledge;
 import com.anrisoftware.dwarfhustle.model.knowledge.evrete.VegetationLoadKnowledges;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage;
-import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
-import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage.DeleteObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
 import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage.InsertObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 
@@ -177,24 +177,24 @@ public class ObjectsModelActor {
      * Creates the {@link ObjectsRenderActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        var actor = injector.getInstance(ActorSystemProvider.class);
+        final var actor = injector.getInstance(ActorSystemProvider.class);
         return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
     }
 
     private static Message returnInitialState(Injector injector, ActorSystemProvider actor) {
         try {
-            var ma = actor.getObjectGetterAsyncNow(MaterialAssetsCacheActor.ID);
-            var mo = actor.getObjectGetterAsyncNow(ModelsAssetsCacheActor.ID);
-            var kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
-            var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
-            var cs = actor.getObjectSetterAsyncNow(MapChunksJcsCacheActor.ID);
-            var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
-            var ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
-            var oa = actor.getActorAsyncNow(ObjectsActor.ID);
+            final var ma = actor.getObjectGetterAsyncNow(MaterialAssetsCacheActor.ID);
+            final var mo = actor.getObjectGetterAsyncNow(ModelsAssetsCacheActor.ID);
+            final var kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
+            final var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+            final var cs = actor.getObjectSetterAsyncNow(MapChunksJcsCacheActor.ID);
+            final var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            final var ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            final var oa = actor.getActorAsyncNow(ObjectsActor.ID);
             return new InitialStateMessage(ma, mo, cg, cs, og, os, kg, mg, ms, oa);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             return new SetupErrorMessage(ex);
         }
     }
@@ -275,7 +275,7 @@ public class ObjectsModelActor {
      */
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
-        this.is = m;
+        is = m;
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -285,11 +285,11 @@ public class ObjectsModelActor {
      */
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
         log.debug("onStartTerrainForGameMap {}", m);
-        this.previousStartTerrainForGameMapMessage = Optional.of(m);
+        previousStartTerrainForGameMapMessage = Optional.of(m);
         Duration interval = gs.get().gameTickDuration.get();
         interval = Duration.ofMillis(1000);
         timer.startTimerAtFixedRate(UPDATE_OBJECTS_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm), interval);
-        this.pauseOnFocusLost = false;
+        pauseOnFocusLost = false;
         return Behaviors.same();
     }
 
@@ -300,7 +300,7 @@ public class ObjectsModelActor {
         // long oldtime = System.currentTimeMillis();
         try {
             onUpdateModel0(m);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("", e);
         }
         // log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
@@ -318,15 +318,15 @@ public class ObjectsModelActor {
 
         @Override
         protected void compute() {
-            var tasks = ForkJoinTask.invokeAll(createSubtasks());
-            for (var action : tasks) {
+            final var tasks = ForkJoinTask.invokeAll(createSubtasks());
+            for (final var action : tasks) {
                 action.join();
             }
         }
 
         private Collection<RecursiveAction> createSubtasks() {
-            List<RecursiveAction> dividedTasks = new ArrayList<>();
-            for (var cidIndices : map.keyValuesView()) {
+            final List<RecursiveAction> dividedTasks = new ArrayList<>();
+            for (final var cidIndices : map.keyValuesView()) {
                 dividedTasks.add(create(cidIndices.getOne(), cidIndices.getTwo()));
             }
             return dividedTasks;
@@ -351,8 +351,9 @@ public class ObjectsModelActor {
 
         @Override
         protected void compute() {
-            for (int index : indices) {
-                var mo = getMapObject(is.mg, index);
+            final var gm = getGameMap(is.og, this.gm);
+            for (final int index : indices) {
+                final var mo = getMapObject(is.mg, gm, index);
                 mo.getOids().forEachKeyValue((id, type) -> updateObject(mo, id, type));
             }
         }
@@ -361,7 +362,7 @@ public class ObjectsModelActor {
             final GameMapObject object = is.og.get(type, id);
             final var oid = object.getOid();
             final var k = is.kg.get(oid);
-            for (var kv : k.objects) {
+            for (final var kv : k.objects) {
                 if (kv.kid == object.kid) {
                     if (object.getObjectType() == TreeSapling.OBJECT_TYPE) {
                         runTreeSapling(mo, kv, (Vegetation) object);
@@ -385,6 +386,8 @@ public class ObjectsModelActor {
                 is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, mo, v.getId(), () -> {
                     is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, this.gm, cid, kgrowv, v.pos, (og) -> {
                         final var growv = (Tree) og;
+                        growv.setVisible(false);
+                        growv.setCanSelect(false);
                         growv.setGrowth(2.0f);
                     }));
                 }));
@@ -462,12 +465,8 @@ public class ObjectsModelActor {
                 .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
                 .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
-                .onMessage(WrappedInsertObjectResponse.class, (m) -> {
-                    return Behaviors.same();
-                })//
-                .onMessage(WrappedDeleteObjectResponse.class, (m) -> {
-                    return Behaviors.same();
-                })//
+                .onMessage(WrappedInsertObjectResponse.class, m -> Behaviors.same())//
+                .onMessage(WrappedDeleteObjectResponse.class, m -> Behaviors.same())//
         ;
     }
 }

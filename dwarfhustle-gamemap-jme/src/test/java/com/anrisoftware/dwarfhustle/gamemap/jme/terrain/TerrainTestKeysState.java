@@ -20,6 +20,10 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findBlock;
+import static java.util.Optional.of;
+
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.eclipse.collections.api.factory.Sets;
 
@@ -114,6 +118,8 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private ObjectsGetter chunks;
 
+    private Optional<Consumer<GameMap>> saveCursor = Optional.empty();
+
     @Inject
     public TerrainTestKeysState() {
         super(TerrainTestKeysState.class.getSimpleName());
@@ -129,6 +135,10 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
         if (!keyInit) {
             initKeys();
         }
+    }
+
+    public void setSaveCursor(Consumer<GameMap> consumer) {
+        this.saveCursor = of(consumer);
     }
 
     public void setChunks(ObjectsGetter chunks) {
@@ -191,7 +201,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     private void deleteKeys() {
         inputManager.removeListener(this);
-        for (String element : MAPPINGS) {
+        for (final String element : MAPPINGS) {
             inputManager.deleteMapping(element);
         }
         this.keyInit = false;
@@ -242,24 +252,28 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
             case CURSOR_NORTH_MAPPING: {
                 if (gm.cursor.canAddY(-1, gm.height)) {
                     gm.setCursor(gm.cursor.addY(-1));
+                    saveCursor.get().accept(gm);
                 }
                 break;
             }
             case CURSOR_SOUTH_MAPPING: {
                 if (gm.cursor.canAddY(1, gm.height)) {
                     gm.setCursor(gm.cursor.addY(1));
+                    saveCursor.get().accept(gm);
                 }
                 break;
             }
             case CURSOR_EAST_MAPPING: {
                 if (gm.cursor.canAddX(1, gm.width)) {
                     gm.setCursor(gm.cursor.addX(1));
+                    saveCursor.get().accept(gm);
                 }
                 break;
             }
             case CURSOR_WEST_MAPPING: {
                 if (gm.cursor.canAddX(-1, gm.width)) {
                     gm.setCursor(gm.cursor.addX(-1));
+                    saveCursor.get().accept(gm);
                 }
                 break;
             }
@@ -299,25 +313,25 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     private void addShrub() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeShrub.TYPE, "BLUEBERRIES",
-                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+                mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addSampling() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSapling.TYPE, "PINE-SAPLING",
-                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+                mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addGrass() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Meadow-Grass",
-                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+                mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addWheat() {
         this.oldCursor = gm.getCursor();
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Wheat",
-                (mb) -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
+                mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addVegetationGrow() {
@@ -326,9 +340,9 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     }
 
     private boolean isDownDirt(MapBlock mb) {
-        var down = mb.pos.addZ(1);
-        var c = getChunk(chunks, cid2Id(mb.parent));
-        var downBlock = findBlock(c, down, chunks);
+        final var down = mb.pos.addZ(1);
+        final var c = getChunk(chunks, cid2Id(mb.parent));
+        final var downBlock = findBlock(c, down, chunks);
         if (downBlock == null) {
             return false;
         }

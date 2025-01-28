@@ -70,34 +70,35 @@ public class AssetsLoadObjectModels {
     }
 
     public void loadModelMap(MutableLongObjectMap<AssetCacheObject> cache, ModelMapData data) {
-        var mo = loadModelData(data);
-        var model = loadModel(data.model);
-        var node = setupMesh(data, model);
+        final var mo = loadModelData(data);
+        final var model = loadModel(data.model);
+        final var node = setupMesh(data, model);
         mo.model = node;
         cache.put(mo.id, mo);
     }
 
     private Spatial setupMesh(ModelMapData data, Spatial model) {
-        var node = setupTexCoord3(data, model);
+        final var node = setupTexCoord3(data, model);
         if (approximateEquals(data.rotation[0], 0) && approximateEquals(data.rotation[1], 0)
-                && approximateEquals(data.rotation[2], 0)) {
+                && approximateEquals(data.rotation[2], 0) && approximateEquals(data.scale[0], 0)
+                && approximateEquals(data.scale[1], 0) && approximateEquals(data.scale[2], 0)) {
             return node;
         }
-        for (var child : node.getChildren()) {
-            var geo = (Geometry) child;
-            var mesh = geo.getMesh();
-            rotateMechGeo(mesh, data.rotation);
+        for (final var child : node.getChildren()) {
+            final var geo = (Geometry) child;
+            final var mesh = geo.getMesh();
+            rotateMechGeo(mesh, data.rotation, data.scale);
         }
         return node;
     }
 
     private Node setupTexCoord3(ModelMapData data, Spatial model) {
-        var oldnode = (Node) model;
-        var node = new Node("model-" + data.rid);
-        for (var child : oldnode.getChildren()) {
-            var geo = (Geometry) child;
-            var mesh = geo.getMesh().deepClone();
-            var tex = mesh.getBuffer(Type.TexCoord);
+        final var oldnode = (Node) model;
+        final var node = new Node("model-" + data.rid);
+        for (final var child : oldnode.getChildren()) {
+            final var geo = (Geometry) child;
+            final var mesh = geo.getMesh().deepClone();
+            final var tex = mesh.getBuffer(Type.TexCoord);
             if (tex == null) {
                 log.warn("{} does not have textures coordinates", data.model);
             } else {
@@ -108,20 +109,20 @@ public class AssetsLoadObjectModels {
                 mesh.setBuffer(tex.clone(Type.TexCoord7));
                 mesh.setBuffer(tex.clone(Type.TexCoord8));
             }
-            var newgeo = new Geometry("mesh", mesh);
+            final var newgeo = new Geometry("mesh", mesh);
             newgeo.setMaterial(geo.getMaterial());
             node.attachChild(newgeo);
         }
         return node;
     }
 
-    public static Mesh rotateMechGeo(Mesh mesh, float[] rotation) {
+    public static Mesh rotateMechGeo(Mesh mesh, float[] rotation, float[] scale) {
         mesh.getFloatBuffer(Type.Position);
-        var q = new Quaternion(rotation);
-        var normal = mesh.getFloatBuffer(Type.Normal).rewind();
-        var pos = mesh.getFloatBuffer(Type.Position).rewind();
+        final var q = new Quaternion(rotation);
+        final var normal = mesh.getFloatBuffer(Type.Normal).rewind();
+        final var pos = mesh.getFloatBuffer(Type.Position).rewind();
         float n0x, n0y, n0z, n1x, n1y, n1z, n2x, n2y, n2z;
-        var tmp = TempVars.get();
+        final var tmp = TempVars.get();
         for (int i = 0; i < normal.limit() / 9; i++) {
             normal.mark();
             n0x = normal.get();
@@ -161,6 +162,7 @@ public class AssetsLoadObjectModels {
             tmp.vect1.y = pos.get(i + 1);
             tmp.vect1.z = pos.get(i + 2);
             q.multLocal(tmp.vect1);
+            tmp.vect1.multLocal(scale[0], scale[1], scale[2]);
             pos.put(i, tmp.vect1.x);
             pos.put(i + 1, tmp.vect1.y);
             pos.put(i + 2, tmp.vect1.z);
@@ -171,7 +173,7 @@ public class AssetsLoadObjectModels {
     }
 
     private ModelCacheObject loadModelData(ModelMapData data) {
-        var mo = new ModelCacheObject();
+        final var mo = new ModelCacheObject();
         mo.id = KnowledgeObject.kid2Id(data.rid);
         mo.rid = data.rid;
         return mo;
@@ -182,7 +184,7 @@ public class AssetsLoadObjectModels {
         log.trace("Loading model {}", name);
         try {
             model = am.loadModel(name);
-        } catch (AssetNotFoundException e) {
+        } catch (final AssetNotFoundException e) {
             model = unknown;
             log.error("Error loading model", e);
         }
@@ -195,8 +197,8 @@ public class AssetsLoadObjectModels {
             d = modelMap.data.get(819);
             log.error("No model for KID {}", KnowledgeObject.id2Kid(key));
         }
-        var to = loadModelData(d);
-        var model = loadModel(d.model);
+        final var to = loadModelData(d);
+        final var model = loadModel(d.model);
         to.model = setupMesh(d, model);
         return to;
     }

@@ -135,14 +135,14 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
             currentMap = nv.longValue();
         });
         runFxThread(() -> {
-            var controller = initial.controller;
+            final var controller = initial.controller;
         });
-        var builder = injector.getInstance(PanelControllerBuild.class);
+        final var builder = injector.getInstance(PanelControllerBuild.class);
         builder.<MapTileItemWidgetController>loadFxml(injector, context.getExecutionContext(),
                 "/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
                     if (err == null) {
                         mapTileItemWidget = res;
-                        var controller = initial.controller;
+                        final var controller = initial.controller;
                         controller.setup();
                     }
                 });
@@ -206,8 +206,8 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     @Override
     protected void setupUi() {
-        var pane = initial.root;
-        var p = MouseInfo.getPointerInfo().getLocation();
+        final var pane = initial.root;
+        final var p = MouseInfo.getPointerInfo().getLocation();
         pane.setLayoutX(p.x);
         pane.setLayoutY(p.y);
         pane.setPrefSize(100, 100);
@@ -226,25 +226,25 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     }
 
     private void onMouseMoved(MouseEvent e) {
-        var pane = initial.root;
+        final var pane = initial.root;
         pane.setLayoutX(e.getSceneX() + 20);
         pane.setLayoutY(e.getSceneY() + 20);
     }
 
     private void updateInfoPane() {
-        var gm = getGameMap(og, currentMap);
+        final var gm = getGameMap(og, currentMap);
         // if (oldCursor.equals(gm.getCursor())) {
         // return;
         // }
-        var chunk = getChunk(cg, 0);
+        final var chunk = getChunk(cg, 0);
         final MutableList<MapTileItem> items = Lists.mutable.empty();
-        var mb = findBlock(chunk, gm.getCursor(), cg);
+        final var mb = findBlock(chunk, gm.getCursor(), cg);
         items.add(new MapTileItem(mb));
         if (gm.isFilledBlock(mb)) {
             final var mo = getMapObject(mg, gm, mb.getPos());
             mo.getOids().forEachKeyValue((id, type) -> {
                 final GameMapObject go = og.get(type, id);
-                System.out.println(go); // TODO
+                // System.out.println("InfoPanelActor " +go); // TODO
                 items.add(new MapTileItem(go));
             });
         }

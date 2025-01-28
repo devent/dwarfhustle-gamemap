@@ -104,7 +104,7 @@ m[rid["BLOCK-CEILING"]] = [model: "Models/blocks/block-ceiling/block-ceiling.j3o
 m[rid["BLOCK-WATER"]] = [model: "Models/blocks/block-water/block-water.j3o"]
 m[rid["BLOCK-NORMAL"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
 m[rid["BLOCK-SELECT"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
-m[rid["BLOCK-FOCUS"]] = [model: "Models/blocks/block-normal/block-normal.j3o"]
+m[rid["BLOCK-FOCUS"]] = [model: "Models/blocks/block-focused/block-focused.j3o"]
 
 m[rid["PINE-BRANCH"]] = [model: "Models/trees/tree-branch/tree-branch.j3o"]
 m[rid["PINE-LEAF"]] = [model: "Models/trees/tree-trunk/tree-trunk.j3o"]

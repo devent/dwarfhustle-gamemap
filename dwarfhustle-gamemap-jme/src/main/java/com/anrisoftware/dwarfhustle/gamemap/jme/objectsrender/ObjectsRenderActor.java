@@ -18,7 +18,6 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
-import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
@@ -29,10 +28,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.factory.primitive.LongObjectMaps;
 import org.eclipse.collections.api.factory.primitive.LongSets;
-import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
@@ -141,9 +138,9 @@ public class ObjectsRenderActor {
 
     /**
      * Creates the {@link ObjectsRenderActor}.
-     * 
+     *
      * @param actor
-     * 
+     *
      * @param mapObjects
      */
     private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
@@ -164,26 +161,26 @@ public class ObjectsRenderActor {
      * Creates the {@link ObjectsRenderActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        var actor = injector.getInstance(ActorSystemProvider.class);
+        final var actor = injector.getInstance(ActorSystemProvider.class);
         return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
     }
 
     private static Message returnInitialState(Injector injector, ActorSystemProvider actor) {
-        var app = injector.getInstance(Application.class);
+        final var app = injector.getInstance(Application.class);
         try {
-            var ma = actor.getObjectGetterAsyncNow(MaterialAssetsCacheActor.ID);
-            var mo = actor.getObjectGetterAsyncNow(ModelsAssetsCacheActor.ID);
-            var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
-            var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
-            var terrainState = injector.getInstance(ObjectsState.class);
+            final var ma = actor.getObjectGetterAsyncNow(MaterialAssetsCacheActor.ID);
+            final var mo = actor.getObjectGetterAsyncNow(ModelsAssetsCacheActor.ID);
+            final var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+            final var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            final var terrainState = injector.getInstance(ObjectsState.class);
             app.enqueue(() -> {
                 terrainState.setup(ma, mo);
                 app.getStateManager().attach(terrainState);
             });
             return new InitialStateMessage(terrainState, ma, mo, og, os, cg, mg);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             return new SetupErrorMessage(ex);
         }
     }
@@ -217,14 +214,19 @@ public class ObjectsRenderActor {
     private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
 
     /**
-     * Chunk-ID := [Block-Index := [Object-ID := Entity]]
+     * [Object-ID := Entity]]
      */
-    private MutableLongObjectMap<MutableIntObjectMap<MutableLongObjectMap<Entity>>> objectEntities;
+    private MutableLongObjectMap<Entity> objectEntities;
 
     /**
      * Chunk-ID := [Block-Index]
      */
     private MutableMultimap<Integer, Integer> chunkBlocks;
+
+    private final MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);
+
+    private final MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunkidsTypeOids = LongObjectMaps.mutable
+            .ofInitialCapacity(100);
 
     private CollectChunksUpdate collectChunksUpdate;
 
@@ -269,9 +271,9 @@ public class ObjectsRenderActor {
      */
     private Behavior<Message> onInitialState(InitialStateMessage m) {
         log.debug("onInitialState");
-        this.is = m;
-        this.collectChunksUpdate = collectChunksUpdateFactory.create();
-        this.visibleLayers = gs.get().visibleDepthLayers.get();
+        is = m;
+        collectChunksUpdate = collectChunksUpdateFactory.create();
+        visibleLayers = gs.get().visibleDepthLayers.get();
         gs.get().visibleDepthLayers.addListener((observable, oldValue, newValue) -> {
             visibleLayers = newValue.intValue();
         });
@@ -285,7 +287,7 @@ public class ObjectsRenderActor {
     private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
         try {
             onUpdateModel0(m);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.error("", e);
         }
         return Behaviors.same();
@@ -306,12 +308,15 @@ public class ObjectsRenderActor {
     }
 
     private boolean isBlockVisible(GameMap gm, MapChunk chunk, int i, int x, int y, int z) {
-        int off = MapBlockBuffer.calcOff(chunk, x, y, z);
-        int p = MapBlockBuffer.getProp(chunk.getBlocks(), off);
+        final int off = MapBlockBuffer.calcOff(chunk, x, y, z);
+        final int p = MapBlockBuffer.getProp(chunk.getBlocks(), off);
         if (PropertiesSet.get(p, MapBlock.EMPTY_POS)) {
             return true;
         }
         if (PropertiesSet.get(p, MapBlock.LIQUID_POS)) {
+            return true;
+        }
+        if (PropertiesSet.get(p, MapBlock.FILLED_POS)) {
             return true;
         }
         return false;
@@ -325,24 +330,24 @@ public class ObjectsRenderActor {
     private void updateObjectsBlocks(GameMap gm) {
         /*
          * check entities from map if in db, if not, remove from map
-         * 
+         *
          * check entities from map if in visible blocks, if not, set to hidden
-         * 
+         *
          * if new object, create entity, put in (x,y,z)->entity map
          */
-        long oldtime = System.currentTimeMillis();
-        final int w = gm.width, h = gm.height, d = gm.depth, cursorZ = gm.cursor.z;
-        MutableLongSet alldbids = LongSets.mutable.withInitialCapacity(100);
-        final var chunkidsTypeOids = createChunkidsTypeOids();
+        final long oldtime = System.currentTimeMillis();
+        final int cursorZ = gm.cursor.z;
+        final MutableLongSet alldbids = LongSets.mutable.withInitialCapacity(100);
+        chunkidsTypeOids.clear();
         gm.getFilledBlocks().forEachKeyValue((index, count) -> {
             final int z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
             if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
                 if (count.get() > 0) {
-                    for (final int cid : this.chunkBlocks.keysView()) {
+                    for (final int cid : chunkBlocks.keysView()) {
                         final var chunkdbids = lazyCreateChunkidsTypeOidsEntry(chunkidsTypeOids, cid);
                         if (gm.getFilledChunks().containsKey(cid)) {
                             if (gm.getFilledChunks().get(cid).contains(index)) {
-                                final var mo = getMapObject(is.mg, index);
+                                final var mo = getMapObject(is.mg, gm, index);
                                 mo.getOids().forEachKeyValue((id, type) -> {
                                     final GameMapObject go = is.og.get(type, id);
                                     if (go.isHaveModel()) {
@@ -356,34 +361,20 @@ public class ObjectsRenderActor {
                 }
             }
         });
-        MutableLongSet removeids = LongSets.mutable.withInitialCapacity(100);
-        for (var indexOidsEntity : this.objectEntities.values()) {
-            if (indexOidsEntity.isEmpty()) {
-                continue;
-            }
-            checkOldEntries(indexOidsEntity, alldbids, removeids, w, h);
-        }
-        for (var chunkidTypeOids : chunkidsTypeOids.keyValuesView()) {
-            removeids.clear();
-            long cid = chunkidTypeOids.getOne();
-            var typeOids = chunkidTypeOids.getTwo();
-            var indexOidsEntity = lazyCreateChunkEntities(cid);
-            for (var typeOid : typeOids.keyMultiValuePairsView()) {
+        removeids.clear();
+        checkOldEntries(objectEntities, alldbids, removeids);
+        for (final var chunkidTypeOids : chunkidsTypeOids.keyValuesView()) {
+            final var typeOids = chunkidTypeOids.getTwo();
+            for (final var typeOid : typeOids.keyMultiValuePairsView()) {
                 final int type = typeOid.getOne();
-                for (long oid : typeOid.getTwo()) {
-                    GameMapObject object = is.og.get(type, oid);
-                    updateObjectEntity(indexOidsEntity, object, w, h, d);
+                for (final long oid : typeOid.getTwo()) {
+                    final GameMapObject object = is.og.get(type, oid);
+                    updateObjectEntity(objectEntities, object);
                 }
             }
         }
-        long finishtime = System.currentTimeMillis();
+        final long finishtime = System.currentTimeMillis();
         log.trace("onUpdateObjectsBlocks done in {} showing {} objects", finishtime - oldtime, objectEntities.size());
-    }
-
-    private MutableLongObjectMap<MutableListMultimap<Integer, Long>> createChunkidsTypeOids() {
-        MutableLongObjectMap<MutableListMultimap<Integer, Long>> chunkidsTypeOids = LongObjectMaps.mutable
-                .ofInitialCapacity(100);
-        return chunkidsTypeOids;
     }
 
     private MutableListMultimap<Integer, Long> lazyCreateChunkidsTypeOidsEntry(
@@ -396,62 +387,42 @@ public class ObjectsRenderActor {
         return chunkids;
     }
 
-    private MutableIntObjectMap<MutableLongObjectMap<Entity>> lazyCreateChunkEntities(long cid) {
-        MutableIntObjectMap<MutableLongObjectMap<Entity>> chunkEntities;
-        chunkEntities = objectEntities.get(cid);
-        if (chunkEntities == null) {
-            chunkEntities = IntObjectMaps.mutable.ofInitialCapacity(100);
-            objectEntities.put(cid, chunkEntities);
-        }
-        return chunkEntities;
-    }
-
-    private void checkOldEntries(MutableIntObjectMap<MutableLongObjectMap<Entity>> indexOidsEntity,
-            MutableLongSet alldbids, MutableLongSet removeids, int w, int h) {
-        for (var pair : indexOidsEntity.keyValuesView()) {
-            MutableLongObjectMap<Entity> oidsEntityMap = pair.getTwo();
-            for (var oidsEntity : oidsEntityMap.keyValuesView()) {
-                final long id = oidsEntity.getOne();
-                if (!alldbids.contains(id)) {
-                    removeids.add(id);
-                } else {
-                    var e = oidsEntity.getTwo();
-                    app.enqueue(() -> {
-                        e.add(new ObjectMeshVisibleComponent(id, false));
-                    });
-                }
+    private void checkOldEntries(MutableLongObjectMap<Entity> indexOidsEntity, MutableLongSet alldbids,
+            MutableLongSet removeids) {
+        for (final var pair : indexOidsEntity.keyValuesView()) {
+            final Entity entity = pair.getTwo();
+            final long id = pair.getOne();
+            if (!alldbids.contains(id)) {
+                removeids.add(id);
+            } else {
+                app.enqueue(() -> {
+                    entity.add(new ObjectMeshVisibleComponent(id, false));
+                });
             }
-            removeids.forEach((id) -> {
-                var e = oidsEntityMap.remove(id);
-                if (e != null) {
-                    app.enqueue(() -> {
-                        engine.removeEntity(e);
-                    });
-                }
-            });
         }
+        removeids.forEach(id -> {
+            final var e = indexOidsEntity.remove(id);
+            if (e != null) {
+                app.enqueue(() -> {
+                    engine.removeEntity(e);
+                });
+            }
+        });
     }
 
-    private void updateObjectEntity(MutableIntObjectMap<MutableLongObjectMap<Entity>> chunksEntities,
-            GameMapObject object, int w, int h, int d) {
-        final var pos = object.getPos();
-        final int index = calcIndex(w, h, d, 0, 0, 0, pos.getX(), pos.getY(), pos.getZ());
-        var objectEntitiesEntry = chunksEntities.get(index);
-        if (objectEntitiesEntry == null) {
-            objectEntitiesEntry = LongObjectMaps.mutable.ofInitialCapacity(100);
-            chunksEntities.put(index, objectEntitiesEntry);
-        }
-        var old = objectEntitiesEntry.get(object.getId());
+    private void updateObjectEntity(MutableLongObjectMap<Entity> objectEntities, GameMapObject object) {
+        final var old = objectEntities.get(object.getId());
         Entity e;
         if (old == null) {
             e = engine.createEntity();
-            objectEntitiesEntry.put(object.getId(), e);
+            objectEntities.put(object.getId(), e);
         } else {
             e = old;
         }
         app.enqueue(() -> {
             e.add(new ObjectMeshVisibleComponent(object.getId(), true));
             e.add(new ObjectMeshComponent(object));
+            e.add(new ObjectElevatedComponent(object.isElevated() ? 1f : 0f));
             if (old == null) {
                 engine.addEntity(e);
             }
@@ -463,12 +434,15 @@ public class ObjectsRenderActor {
      */
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
         log.debug("onStartTerrainForGameMap {}", m);
-        this.previousStartTerrainForGameMapMessage = Optional.of(m);
-        this.chunkBlocks = Multimaps.mutable.list.empty();
+        previousStartTerrainForGameMapMessage = Optional.of(m);
+        chunkBlocks = Multimaps.mutable.list.empty();
         app.enqueue(() -> {
         });
         timer.startTimerAtFixedRate(UPDATE_OBJECTS_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
                 gs.get().terrainUpdateDuration.get());
+        // timer.startTimerAtFixedRate(UPDATE_OBJECTS_MESSAGE_TIMER_KEY, new
+        // UpdateTerrainMessage(m.gm),
+        // Duration.ofMillis(3000));
         return Behaviors.same();
     }
 

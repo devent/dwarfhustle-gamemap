@@ -30,6 +30,7 @@ import java.util.function.Function;
 
 import org.lable.oss.uniqueid.IDGenerator;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMaterialBlockMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -37,6 +38,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
@@ -52,10 +54,10 @@ import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage;
-import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
-import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
 import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage.DeleteObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
 import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage.InsertObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -153,26 +155,26 @@ public class TerrainTestKeysActor {
      * Creates the {@link TerrainTestKeysActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        var actor = injector.getInstance(ActorSystemProvider.class);
+        final var actor = injector.getInstance(ActorSystemProvider.class);
         return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
     }
 
     private static Message returnInitialState(Injector injector, ActorSystemProvider actor) {
-        var app = injector.getInstance(Application.class);
+        final var app = injector.getInstance(Application.class);
         try {
-            var state = injector.getInstance(TerrainTestKeysState.class);
+            final var state = injector.getInstance(TerrainTestKeysState.class);
             app.enqueue(() -> {
                 app.getStateManager().attach(state);
             });
-            var knowledgeActor = actor.getActorAsyncNow(PowerLoomKnowledgeActor.ID);
-            var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            var chunks = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
-            var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
-            var ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
-            var oa = actor.getActorAsyncNow(ObjectsActor.ID);
+            final var knowledgeActor = actor.getActorAsyncNow(PowerLoomKnowledgeActor.ID);
+            final var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var chunks = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
+            final var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            final var ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            final var oa = actor.getActorAsyncNow(ObjectsActor.ID);
             return new InitialStateMessage(state, knowledgeActor, og, os, chunks, mg, ms, oa);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             return new SetupErrorMessage(ex);
         }
     }
@@ -188,6 +190,9 @@ public class TerrainTestKeysActor {
     @Inject
     @IdsObjects
     private IDGenerator ids;
+
+    @Inject
+    private ActorSystemProvider actor;
 
     @Inject
     private GameSettingsProvider gs;
@@ -245,6 +250,10 @@ public class TerrainTestKeysActor {
         this.is = m;
         is.state.setActor(context.getSelf());
         is.state.setChunks(is.chunks);
+        is.state.setSaveCursor(gm0 -> {
+            is.os.set(GameMap.OBJECT_TYPE, gm0);
+            actor.tell(new MapCursorUpdateMessage(gm0.getCursor()));
+        });
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
@@ -265,7 +274,7 @@ public class TerrainTestKeysActor {
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
         this.currentMap = m.gm;
-        var gm = getGameMap(is.og, m.gm);
+        final var gm = getGameMap(is.og, m.gm);
         is.state.setGameMap(gm);
         return Behaviors.same();
     }
@@ -275,8 +284,8 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onAddObjectOnBlock(AddObjectOnBlockMessage m) {
         log.debug("onAddObjectOnBlock {}", m);
-        is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, m.type, (ko) -> {
-            insertObject(m.cursor, ko.objects.detectOptional((it) -> it.getName().equalsIgnoreCase(m.name)).get(),
+        is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, m.type, ko -> {
+            insertObject(m.cursor, ko.objects.detectOptional(it -> it.getName().equalsIgnoreCase(m.name)).get(),
                     m.validBlock);
         }));
         return Behaviors.same();
@@ -287,8 +296,8 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onDeleteVegetationOnBlock(DeleteVegetationOnBlockMessage m) {
         log.debug("onDeleteVegetationOnBlock {}", m);
-        for (String type : m.types) {
-            is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, type, (ko) -> {
+        for (final String type : m.types) {
+            is.knowledgeActor.tell(new KnowledgeGetMessage<>(cacheAdapter, type, ko -> {
                 deleteObject(m.cursor, ko.objects.getFirst());
             }));
         }
@@ -300,7 +309,7 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowObjectsOnBlock(ShowObjectsOnBlockMessage m) {
         log.debug("onShowObjectsOnBlock {}", m);
-        var gm = getGameMap(is.og, this.currentMap);
+        final var gm = getGameMap(is.og, this.currentMap);
         final var mo = getMapObject(is.mg, gm, m.cursor.getX(), m.cursor.getY(), m.cursor.getZ());
         mo.getOids().forEachKeyValue((id, type) -> {
             final GameMapObject go = is.og.get(type, id);
@@ -314,8 +323,8 @@ public class TerrainTestKeysActor {
      */
     private Behavior<Message> onShowSelectedBlock(ShowSelectedBlockMessage m) {
         log.debug("onShowSelectedBlock {}", m);
-        MapChunk root = is.chunks.get(MapChunk.OBJECT_TYPE, 0);
-        var mb = findBlock(root, m.cursor, is.chunks);
+        final MapChunk root = is.chunks.get(MapChunk.OBJECT_TYPE, 0);
+        final var mb = findBlock(root, m.cursor, is.chunks);
         System.out.println(mb); // TODO
         return Behaviors.same();
     }
@@ -404,12 +413,8 @@ public class TerrainTestKeysActor {
                 .onMessage(VegetationAddGrowMessage.class, this::onVegetationAddGrow)//
                 .onMessage(SetMaterialBlockMessage.class, this::onSetMaterialBlock)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCache)//
-                .onMessage(WrappedInsertObjectResponse.class, (m) -> {
-                    return Behaviors.same();
-                })//
-                .onMessage(WrappedDeleteObjectResponse.class, (m) -> {
-                    return Behaviors.same();
-                })//
+                .onMessage(WrappedInsertObjectResponse.class, m -> Behaviors.same())//
+                .onMessage(WrappedDeleteObjectResponse.class, m -> Behaviors.same())//
         ;
     }
 

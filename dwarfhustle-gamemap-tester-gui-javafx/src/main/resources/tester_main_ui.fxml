@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
@@ -70,6 +71,23 @@
                      <children>
                         <ToggleButton fx:id="paintButton" mnemonicParsing="false" text="Paint" />
                         <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <GridPane>
+                          <columnConstraints>
+                            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" />
+                          </columnConstraints>
+                          <rowConstraints>
+                            <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                            <RowConstraints valignment="CENTER" vgrow="SOMETIMES" />
+                          </rowConstraints>
+                           <children>
+                              <Button fx:id="northButton" maxHeight="16.0" maxWidth="16.0" mnemonicParsing="false" styleClass="smallButton" text="N" />
+                              <Button fx:id="westButton" maxHeight="16.0" maxWidth="16.0" mnemonicParsing="false" styleClass="smallButton" text="W" GridPane.rowIndex="1" />
+                              <Button fx:id="southButton" maxHeight="16.0" maxWidth="16.0" mnemonicParsing="false" styleClass="smallButton" text="S" GridPane.columnIndex="1" />
+                              <Button fx:id="eastButton" maxHeight="16.0" maxWidth="16.0" mnemonicParsing="false" styleClass="smallButton" text="E" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                           </children>
+                        </GridPane>
                      </children>
                   </HBox>
                </children>
