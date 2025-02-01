@@ -23,6 +23,7 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcY;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.setGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.DISCOVERED_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.EMPTY_POS;
@@ -79,6 +80,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.Block;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
@@ -118,6 +120,7 @@ import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -400,20 +403,42 @@ public class TerrainActor {
         collectChunksUpdate = collectChunksUpdateFactory.create();
         app.enqueue(() -> {
             final var gm = getGameMap(is.og, m.gm);
-            is.selectBlockState.setStorage(is.chunks);
-            is.selectBlockState.setGameMap(gm);
+            is.selectBlockState.setOnRetrieveChunk(id -> getChunk(is.chunks, id));
+            is.selectBlockState.setOnRetrieveMap(() -> getGameMap(is.og, m.gm));
             is.cameraState.setTerrainBounds(
                     new BoundingBox(new Vector3f(), gm.getWidth(), gm.getHeight(), gs.get().visibleDepthLayers.get()));
-            is.cameraState.updateCamera(gm);
-            is.cameraState.setSaveZ(gm0 -> {
-                is.os.set(GameMap.OBJECT_TYPE, gm0);
+            is.cameraState.updateCamera(gm.getCameraPos(), gm.getCameraRot(), gm.getCursorZ());
+            is.cameraState.setOnRetrieveMap(() -> getGameMap(is.og, m.gm));
+            is.cameraState.setOnSaveCamera((pos, rot) -> {
+                final var gm0 = getGameMap(is.og, m.gm);
+                gm0.setCameraPos(pos.x, pos.y, pos.z);
+                gm0.setCameraRot(rot.getX(), rot.getY(), rot.getZ(), rot.getW());
+                setGameMap(is.os, gm0);
+            });
+            is.cameraState.setOnSaveZ(cursorZ -> {
+                final var gm0 = getGameMap(is.og, m.gm);
+                gm0.setCursorZ(cursorZ);
+                setGameMap(is.os, gm0);
                 actor.tell(new MapCursorUpdateMessage(gm0.getCursor()));
             });
-            is.selectBlockState.setSaveCursor(gm0 -> {
-                is.os.set(GameMap.OBJECT_TYPE, gm0);
-                actor.tell(new MapCursorUpdateMessage(gm0.getCursor()));
-                actor.tell(new MapTileUnderCursorMessage(gm0.getCursor()));
+            is.selectBlockState.setOnSaveCursor(c -> {
+                final val gm0 = getGameMap(is.og, m.gm);
+                gm0.setCursor(c);
+                setGameMap(is.os, gm0);
+                actor.tell(new MapCursorUpdateMessage(c));
+                actor.tell(new MapTileUnderCursorMessage(c));
             });
+            is.selectBlockState.setOnSelectSet((s, e) -> {
+                final var gm0 = getGameMap(is.og, m.gm);
+                gm0.clearSelectedBlocks();
+                for (int x = s.getX(); x <= e.getX(); x++) {
+                    for (int y = e.getY(); y <= s.getY(); y++) {
+                        final int index = GameBlockPos.calcIndex(gm0, x, y, s.getZ());
+                        gm0.addSelectedBlock(index);
+                    }
+                }
+            });
+            is.selectBlockState.initKeys();
         });
         gs.get().mouseEnteredGui.addListener((o, oldv, newv) -> {
             if (newv) {
@@ -494,6 +519,9 @@ public class TerrainActor {
     private void putMaterialKey(GameMap gm, MapChunk chunk, int index, MutableMultimap<MaterialKey, Integer> blocks,
             MutableMultimap<MaterialKey, Integer> ceilings) {
         final int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
+        // if (x == 1 && y == 1 && z == 1) {
+        // System.out.println("TerrainActor.putMaterialKey()"); // TODO
+        // }
         var objects = new Long[4];
         objects = findObjects(objects, gm, chunk, index, z - 1);
         var mid = kid2Id(getMaterial(chunk.getBlocks(), calcOff(index)));
@@ -516,7 +544,7 @@ public class TerrainActor {
             blocks.put(key, index);
         } catch (final NullPointerException e) {
             final var oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
-            System.out.printf("%d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
+            System.out.printf("[MaterialKey NULL] %d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
         }
         final var cursorZ = gm.getCursorZ();
         if (z <= cursorZ && !(haveProp(chunk.getBlocks(), calcOff(index), HAVE_NATURAL_LIGHT_POS))) {

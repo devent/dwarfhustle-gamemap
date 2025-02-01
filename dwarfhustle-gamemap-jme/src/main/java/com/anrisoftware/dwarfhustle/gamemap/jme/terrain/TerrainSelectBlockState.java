@@ -18,22 +18,26 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.cid2Id;
-import static java.util.Optional.of;
+import static com.jme3.input.MouseInput.BUTTON_LEFT;
 
-import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import org.eclipse.collections.api.block.function.primitive.LongToObjectFunction;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.jme3.app.Application;
 import com.jme3.app.state.BaseAppState;
 import com.jme3.input.InputManager;
 import com.jme3.input.RawInputListener;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.AnalogListener;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.input.event.JoyAxisEvent;
 import com.jme3.input.event.JoyButtonEvent;
 import com.jme3.input.event.KeyInputEvent;
@@ -46,6 +50,7 @@ import com.jme3.util.TempVars;
 
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -56,7 +61,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TerrainSelectBlockState extends BaseAppState implements ActionListener, AnalogListener, RawInputListener {
 
-    private static final String[] MAPPINGS = new String[] {};
+    private static final String LEFT_MOUSE_BUTTON_MAPPING = "TerrainSelectBlockState_LEFT_MOUSE_BUTTON_MAPPING";
+
+    private static final String[] MAPPINGS = new String[] { LEFT_MOUSE_BUTTON_MAPPING };
 
     private final Vector2f mouse;
 
@@ -66,17 +73,31 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     @Inject
     private Camera camera;
 
-    private GameMap gm;
-
     private boolean keyInit = false;
 
-    private ObjectsGetter chunks;
+    private boolean searchingFocusedBlock;
 
-    private boolean searchingSelected;
+    private Supplier<GameMap> onRetrieveGameMap;
 
-    private Optional<Consumer<GameMap>> saveCursor = Optional.empty();
+    private Consumer<GameBlockPos> onSaveCursor;
+
+    private BiConsumer<GameBlockPos, GameBlockPos> onSelectSet;
 
     private final GameBlockPos oldCursor = new GameBlockPos();
+
+    private final GameBlockPos selectStartCursor = new GameBlockPos();
+
+    private final GameBlockPos selectEndCursor = new GameBlockPos();
+
+    private boolean selecting = false;
+
+    private ForkJoinPool pool;
+
+    private LongToObjectFunction<MapChunk> onRetrieveChunk;
+
+    private final Vector2f selectStartMouse = new Vector2f();
+
+    private final Vector2f selectEndMouse = new Vector2f();
 
     @Inject
     public TerrainSelectBlockState() {
@@ -84,28 +105,31 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         this.mouse = new Vector2f();
     }
 
-    public void setStorage(ObjectsGetter chunks) {
-        this.chunks = chunks;
+    public void setOnRetrieveChunk(LongToObjectFunction<MapChunk> onRetrieveChunk) {
+        this.onRetrieveChunk = onRetrieveChunk;
     }
 
-    public void setGameMap(GameMap gm) {
-        this.gm = gm;
-        if (!keyInit) {
-            initKeys();
-        }
+    public void setOnRetrieveMap(Supplier<GameMap> onRetrieveGameMap) {
+        this.onRetrieveGameMap = onRetrieveGameMap;
     }
 
-    public void setSaveCursor(Consumer<GameMap> saveCursor) {
-        this.saveCursor = of(saveCursor);
+    public void setOnSaveCursor(Consumer<GameBlockPos> onSaveCursor) {
+        this.onSaveCursor = onSaveCursor;
+    }
+
+    public void setOnSelectSet(BiConsumer<GameBlockPos, GameBlockPos> onSelectSet) {
+        this.onSelectSet = onSelectSet;
     }
 
     @Override
     protected void initialize(Application app) {
+        this.pool = new ForkJoinPool(4);
         log.debug("initialize");
     }
 
     @Override
     protected void cleanup(Application app) {
+        pool.close();
         log.debug("cleanup");
     }
 
@@ -122,16 +146,20 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         }
     }
 
-    private void initKeys() {
+    public void initKeys() {
+        if (keyInit) {
+            return;
+        }
         inputManager.addRawInputListener(this);
         inputManager.addListener(this, MAPPINGS);
+        inputManager.addMapping(LEFT_MOUSE_BUTTON_MAPPING, new MouseButtonTrigger(BUTTON_LEFT));
         this.keyInit = true;
     }
 
     private void deleteKeys() {
         inputManager.removeListener(this);
         inputManager.removeRawInputListener(this);
-        for (String element : MAPPINGS) {
+        for (final String element : MAPPINGS) {
             inputManager.deleteMapping(element);
         }
         this.keyInit = false;
@@ -139,6 +167,22 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
+        switch (name) {
+        case LEFT_MOUSE_BUTTON_MAPPING:
+            if (isPressed && !selecting) {
+                this.selecting = true;
+                this.selectStartMouse.x = mouse.x;
+                this.selectStartMouse.y = mouse.y;
+            }
+            if (!isPressed && selecting) {
+                this.selecting = false;
+                this.selectEndMouse.x = mouse.x;
+                this.selectEndMouse.y = mouse.y;
+                collectSelectedBlocks();
+            }
+            break;
+        default:
+        }
     }
 
     @Override
@@ -165,75 +209,110 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     public void onMouseMotionEvent(MouseMotionEvent evt) {
         mouse.x = evt.getX();
         mouse.y = evt.getY();
-        var temp = TempVars.get();
-        try {
-            updateSelectedObject(temp, mouse);
-        } catch (Exception e) {
-            log.error("", e);
-        } finally {
-            temp.release();
+        updateFocusedBlock();
+    }
+
+    @SneakyThrows
+    private void updateFocusedBlock() {
+        if (searchingFocusedBlock) {
+            return;
         }
+        this.searchingFocusedBlock = true;
+        final var gm = onRetrieveGameMap.get();
+        var task = pool.submit(new FindBlockUnderMouseAction(gm, mouse, onSaveCursor::accept));
+        task.get();
+        this.searchingFocusedBlock = false;
+    }
+
+    @SneakyThrows
+    private void collectSelectedBlocks() {
+        final var gm = onRetrieveGameMap.get();
+        final var startMouse = new Vector2f(Math.min(selectStartMouse.x, selectEndMouse.x),
+                Math.min(selectStartMouse.y, selectEndMouse.y));
+        final var endMouse = new Vector2f(Math.max(selectStartMouse.x, selectEndMouse.x),
+                Math.max(selectStartMouse.y, selectEndMouse.y));
+        var taskStart = pool.submit(new FindBlockUnderMouseAction(gm, startMouse, (c) -> {
+            selectStartCursor.x = c.x;
+            selectStartCursor.y = c.y;
+            selectStartCursor.z = c.z;
+        }));
+        var taskEnd = pool.submit(new FindBlockUnderMouseAction(gm, endMouse, (c) -> {
+            selectEndCursor.x = c.x;
+            selectEndCursor.y = c.y;
+            selectEndCursor.z = c.z;
+        }));
+        taskStart.get();
+        taskEnd.get();
+        onSelectSet.accept(selectStartCursor, selectEndCursor);
     }
 
     @RequiredArgsConstructor
-    private class UpdateSelectedObjectAction implements Runnable {
+    private class FindBlockUnderMouseAction implements Callable<Boolean> {
 
-        private final Vector2f mouse;
+        private final int width;
+
+        private final int height;
 
         private final int cursorZ;
 
         private final int chunksCount;
 
+        private final Vector2f mouse = new Vector2f();
+
+        private final Consumer<GameBlockPos> foundCursor;
+
+        public FindBlockUnderMouseAction(GameMap gm, Vector2f mouse, Consumer<GameBlockPos> foundCursor) {
+            this.width = gm.getWidth();
+            this.height = gm.getHeight();
+            this.cursorZ = gm.getCursorZ();
+            this.chunksCount = gm.getChunksCount();
+            this.mouse.x = mouse.x;
+            this.mouse.y = mouse.y;
+            this.foundCursor = foundCursor;
+        }
+
         @Override
-        public void run() {
-            var temp = TempVars.get();
+        public Boolean call() {
+            final var temp = TempVars.get();
             for (int i = 0; i < chunksCount; i++) {
-                MapChunk chunk = chunks.get(MapChunk.OBJECT_TYPE, cid2Id(i));
+                final MapChunk chunk = onRetrieveChunk.apply(cid2Id(i));
                 if (chunk.isLeaf() && chunk.pos.z <= cursorZ && chunk.pos.ep.z > cursorZ) {
-                    var c = chunk.getCenterExtent();
+                    final var c = chunk.getCenterExtent();
                     if (checkCenterExtent(temp, mouse, c.centerx, c.centery, c.centerz, c.extentx, c.extenty,
                             c.extentz)) {
-                        if (findBlockUnderCursor(temp, mouse, chunk, gm.cursor.z, gm.width, gm.height)) {
-                            break;
+                        if (findBlockUnderCursor(temp, mouse, chunk, cursorZ, width, height, foundCursor)) {
+                            temp.release();
+                            return true;
                         }
                     }
                 }
             }
             temp.release();
-            searchingSelected = false;
+            return false;
         }
 
     }
 
-    private void updateSelectedObject(TempVars temp, Vector2f mouse) {
-        if (this.searchingSelected) {
-            return;
-        }
-        this.searchingSelected = true;
-        var pool = ForkJoinPool.commonPool();
-        pool.execute(new UpdateSelectedObjectAction(mouse, gm.cursor.z, gm.chunksCount));
-    }
-
-    private boolean findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int cursorZ, float w, float h) {
+    private boolean findBlockUnderCursor(TempVars temp, Vector2f mouse, MapChunk chunk, int cursorZ, float w, float h,
+            Consumer<GameBlockPos> foundCursor) {
         for (int x = chunk.getPos().getX(); x < chunk.getPos().getEp().getX(); x++) {
             for (int y = chunk.getPos().getY(); y < chunk.getPos().getEp().getY(); y++) {
                 for (int z = chunk.getPos().getZ(); z < chunk.getPos().getEp().getZ(); z++) {
-                    float tx = -w + 2f * x + 1f;
-                    float ty = h - 2f * y - 1f;
-                    float centerx = tx;
-                    float centery = ty;
-                    float centerz = 0;
-                    float extentx = 1f;
-                    float extenty = 1f;
-                    float extentz = 1f;
+                    final float tx = -w + 2f * x + 1f;
+                    final float ty = h - 2f * y - 1f;
+                    final float centerx = tx;
+                    final float centery = ty;
+                    final float centerz = 0;
+                    final float extentx = 1f;
+                    final float extenty = 1f;
+                    final float extentz = 1f;
                     if (z == cursorZ
                             && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
+                        foundCursor.accept(new GameBlockPos(x, y, z));
                         if (!oldCursor.equals(x, y, z)) {
                             this.oldCursor.x = x;
                             this.oldCursor.y = y;
                             this.oldCursor.z = z;
-                            gm.setCursor(x, y, z);
-                            saveCursor.get().accept(gm);
                         }
                         return true;
                     }
@@ -245,8 +324,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private boolean checkCenterExtent(TempVars temp, Vector2f mouse, float centerx, float centery, float centerz,
             float extentx, float extenty, float extentz) {
-        var bottomc = temp.vect1;
-        var topc = temp.vect2;
+        final var bottomc = temp.vect1;
+        final var topc = temp.vect2;
         bottomc.x = centerx - extentx;
         bottomc.y = centery - extenty;
         bottomc.z = centerz - extentz;

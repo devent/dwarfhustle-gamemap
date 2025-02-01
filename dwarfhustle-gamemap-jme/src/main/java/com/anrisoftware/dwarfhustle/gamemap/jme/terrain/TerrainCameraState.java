@@ -22,8 +22,9 @@ import static com.jme3.input.MouseInput.BUTTON_MIDDLE;
 import static com.jme3.input.MouseInput.BUTTON_RIGHT;
 import static java.lang.Math.abs;
 
-import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.jme3.app.Application;
@@ -91,11 +92,11 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private final Vector3f mapTopRight;
 
-    private GameMap gm;
+    private BiConsumer<Vector3f, Quaternion> onSaveCamera;
 
-    private Optional<Consumer<GameMap>> saveCamera = Optional.empty();
+    private IntConsumer onSaveZ;
 
-    private Optional<Consumer<GameMap>> saveZ = Optional.empty();
+    private Supplier<GameMap> onRetrieveGameMap;
 
     private boolean rightMouseDown;
 
@@ -104,6 +105,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private boolean shiftDown = false;
 
     private boolean keyInit = false;
+
+    private int currentZ;
 
     @Inject
     public TerrainCameraState() {
@@ -114,12 +117,16 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         this.bounds = new BoundingBox(new Vector3f(), 10f, 10f, 10f);
     }
 
-    public void setSaveCamera(Consumer<GameMap> saveCamera) {
-        this.saveCamera = Optional.of(saveCamera);
+    public void setOnRetrieveMap(Supplier<GameMap> onRetrieveGameMap) {
+        this.onRetrieveGameMap = onRetrieveGameMap;
     }
 
-    public void setSaveZ(Consumer<GameMap> saveZ) {
-        this.saveZ = Optional.of(saveZ);
+    public void setOnSaveCamera(BiConsumer<Vector3f, Quaternion> onSaveCamera) {
+        this.onSaveCamera = onSaveCamera;
+    }
+
+    public void setOnSaveZ(IntConsumer onSaveZ) {
+        this.onSaveZ = onSaveZ;
     }
 
     public void resetCamera() {
@@ -132,22 +139,13 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         updateScreenCoordinatesMap();
     }
 
-    public void updateCamera(GameMap gm) {
-        this.gm = gm;
-        camera.setLocation(new Vector3f(gm.getCameraPos()[0], gm.getCameraPos()[1], gm.getCameraPos()[2]));
-        camera.setRotation(
-                new Quaternion(gm.getCameraRot()[0], gm.getCameraRot()[1], gm.getCameraRot()[2], gm.getCameraRot()[3]));
+    public void updateCamera(float[] pos, float[] rot, int currentZ) {
+        camera.setLocation(new Vector3f(pos[0], pos[1], pos[2]));
+        camera.setRotation(new Quaternion(rot[0], rot[1], rot[2], rot[3]));
+        this.currentZ = currentZ;
         if (!keyInit) {
             initKeys();
         }
-    }
-
-    private void saveCamera() {
-        saveCamera.ifPresent(it -> it.accept(gm));
-    }
-
-    private void saveZ() {
-        saveZ.ifPresent(it -> it.accept(gm));
     }
 
     public void setCameraPos(float x, float y, float z) {
@@ -195,7 +193,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     private void deleteKeys() {
         inputManager.removeListener(this);
         inputManager.removeRawInputListener(this);
-        for (String element : MAPPINGS) {
+        for (final String element : MAPPINGS) {
             inputManager.deleteMapping(element);
         }
         this.keyInit = false;
@@ -229,7 +227,7 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
         if (shiftDown) {
             return;
         }
-        var m = 1f;
+        final var m = 1f;
         updateScreenCoordinatesMap();
         switch (name) {
         case Z_IN_MAPPING:
@@ -248,7 +246,8 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     }
 
     private boolean canZ(float m) {
-        var z = gm.cursor.z;
+        final var gm = onRetrieveGameMap.get();
+        final var z = gm.getCursorZ();
         if (m > 0) {
             return z + m < gm.getDepth();
         } else {
@@ -276,16 +275,16 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     public void onMouseMotionEvent(MouseMotionEvent evt) {
         mouse.x = evt.getX();
         mouse.y = evt.getY();
-        var temp = TempVars.get();
-        var oldpos = temp.vect1;
-        var newpos = temp.vect2;
+        final var temp = TempVars.get();
+        final var oldpos = temp.vect1;
+        final var newpos = temp.vect2;
         camera.getWorldCoordinates(new Vector2f(camera.getWidth() / 2f, camera.getHeight() / 2f), 0.0f, oldpos);
         camera.getWorldCoordinates(mouse, 0.0f, newpos);
         if (!shiftDown && (middleMouseDown || rightMouseDown)) {
             updateScreenCoordinatesMap();
-            float dx = evt.getDX();
-            float dy = -evt.getDY();
-            var s = calcSpeed(Math.max(abs(dx), abs(dy)));
+            final float dx = evt.getDX();
+            final float dy = -evt.getDY();
+            final var s = calcSpeed(Math.max(abs(dx), abs(dy)));
             if (middleMouseDown) {
                 doMove(dx, dy, s);
             } else if (rightMouseDown) {
@@ -308,37 +307,38 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
     }
 
     private void updateScreenCoordinatesMap() {
-        var temp = TempVars.get();
-        var btr = bounds.getMax(temp.vect1);
-        var bbl = bounds.getMin(temp.vect2);
+        final var temp = TempVars.get();
+        final var btr = bounds.getMax(temp.vect1);
+        final var bbl = bounds.getMin(temp.vect2);
         camera.getScreenCoordinates(btr, mapTopRight);
         camera.getScreenCoordinates(bbl, mapBottomLeft);
         temp.release();
     }
 
     private void boundMove(float dx, float dy, float dz) {
-        var pos = camera.getLocation();
+        final var pos = camera.getLocation();
         pos.x += dx;
         pos.y += dy;
         pos.z += dz;
-        gm.setCameraPos(pos.x, pos.y, pos.z);
+        camera.setLocation(pos);
         camera.update();
+        saveCamera();
     }
 
     private void boundZMove(float d) {
-        var dd = (int) d;
-        gm.addCursorZ(dd);
+        final var dd = (int) d;
+        this.currentZ += dd;
     }
 
     private void doZoom(float dx, float dy, float s, Vector3f oldpos, Vector3f newpos) {
-        var tmpc = camera.clone();
-        var pos = tmpc.getLocation();
+        final var tmpc = camera.clone();
+        final var pos = tmpc.getLocation();
         pos.z += dy * s;
-        var temp = TempVars.get();
-        var tmpTopRight = temp.vect1;
-        var tmpBottomLeft = temp.vect2;
-        var topright = temp.vect3.set(2f, 2f, 0f);
-        var bottomleft = temp.vect4.set(-2f, -2f, 0f);
+        final var temp = TempVars.get();
+        final var tmpTopRight = temp.vect1;
+        final var tmpBottomLeft = temp.vect2;
+        final var topright = temp.vect3.set(2f, 2f, 0f);
+        final var bottomleft = temp.vect4.set(-2f, -2f, 0f);
         tmpc.getScreenCoordinates(topright, tmpTopRight);
         tmpc.getScreenCoordinates(bottomleft, tmpBottomLeft);
         if (dy > 0) {
@@ -346,11 +346,9 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
             if (tmpTopRight.x < 0f || tmpBottomLeft.x < 0 || tmpTopRight.x - tmpBottomLeft.x > 10) {
                 boundMove(0f, 0f, dy * s);
             }
-        } else {
-            // zoom in
-            if (tmpTopRight.x > 0f && tmpBottomLeft.x > 0 && tmpTopRight.x - tmpBottomLeft.x < camera.getWidth()) {
-                boundMove(0f, 0f, dy * s);
-            }
+        } else // zoom in
+        if (tmpTopRight.x > 0f && tmpBottomLeft.x > 0 && tmpTopRight.x - tmpBottomLeft.x < camera.getWidth()) {
+            boundMove(0f, 0f, dy * s);
         }
         temp.release();
     }
@@ -387,6 +385,14 @@ public class TerrainCameraState extends BaseAppState implements ActionListener, 
 
     private float calcSpeed(float d) {
         return camera.getLocation().z * 0.0025f;
+    }
+
+    private void saveCamera() {
+        onSaveCamera.accept(camera.getLocation(), camera.getRotation());
+    }
+
+    private void saveZ() {
+        onSaveZ.accept(currentZ);
     }
 
 }

@@ -131,7 +131,7 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
 
     public void setGameMap(GameMap gm) {
         this.gm = gm;
-        this.oldCursor = gm.getCursor();
+        this.oldCursor.set(gm.getCursor());
         if (!keyInit) {
             initKeys();
         }
@@ -295,13 +295,13 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
                     actor.tell(new ShowSelectedBlockMessage(gm.getCursor()));
                 }
             }
-            if (showSelectedBlock) {
+            if (showObjectsBlock) {
                 if (!oldCursor.equals(gm.getCursor())) {
                     actor.tell(new ShowObjectsOnBlockMessage(gm.getCursor()));
                 }
             }
             if (gm != null) {
-                this.oldCursor = gm.getCursor();
+                this.oldCursor.set(gm.getCursor());
             }
         }
     }
@@ -311,25 +311,25 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
     }
 
     private void addShrub() {
-        this.oldCursor = gm.getCursor();
+        this.oldCursor.set(gm.getCursor());
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeShrub.TYPE, "BLUEBERRIES",
                 mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addSampling() {
-        this.oldCursor = gm.getCursor();
+        this.oldCursor.set(gm.getCursor());
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeTreeSapling.TYPE, "PINE-SAPLING",
                 mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addGrass() {
-        this.oldCursor = gm.getCursor();
+        this.oldCursor.set(gm.getCursor());
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Meadow-Grass",
                 mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
 
     private void addWheat() {
-        this.oldCursor = gm.getCursor();
+        this.oldCursor.set(gm.getCursor());
         actor.tell(new AddObjectOnBlockMessage(oldCursor, KnowledgeGrass.TYPE, "Wheat",
                 mb -> mb.isEmpty() && mb.isDiscovered() && isDownDirt(mb)));
     }
