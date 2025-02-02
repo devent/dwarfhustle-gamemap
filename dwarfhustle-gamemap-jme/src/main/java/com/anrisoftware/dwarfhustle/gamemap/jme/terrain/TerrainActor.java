@@ -27,12 +27,14 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.setGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.DISCOVERED_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.EMPTY_POS;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.FILLED_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.HAVE_NATURAL_LIGHT_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
+import static com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet.isProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.calcOff;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getMaterial;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getObject;
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.haveProp;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeIdByName;
@@ -522,40 +524,47 @@ public class TerrainActor {
         // if (x == 1 && y == 1 && z == 1) {
         // System.out.println("TerrainActor.putMaterialKey()"); // TODO
         // }
-        var objects = new Long[4];
-        objects = findObjects(objects, gm, chunk, index, z - 1);
-        var mid = kid2Id(getMaterial(chunk.getBlocks(), calcOff(index)));
-        Long emission = null;
-        final var cursor = gm.isCursor(x, y, z);
-        if (cursor) {
-            final var oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
-            emission = null;
-        }
-        var transparent = false;
-        if (haveProp(chunk.getBlocks(), calcOff(index), EMPTY_POS)) {
+        final int offset = calcOff(index);
+        val bblocks = chunk.getBlocks();
+        final int prop = getProp(bblocks, offset);
+        val objects = new Long[4];
+        findObjects(objects, gm, chunk, index, z - 1);
+        long mid = kid2Id(getMaterial(bblocks, offset));
+        final Long emission = null; // TODO emission
+        boolean selected = false;
+        selected = gm.isSelectedBlock(x, y, z);
+        boolean transparent = false;
+        if (isProp(prop, EMPTY_POS)) {
             transparent = true;
+            selected = false;
         }
-        if (hideUndiscovered && !(haveProp(chunk.getBlocks(), calcOff(index), DISCOVERED_POS))) {
+        if (!selected && isProp(prop, FILLED_POS)) {
+            val up = getNeighborUp(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), is.chunks);
+            if (up.isValid()) {
+                selected = gm.isSelectedBlock(x, y, z - 1);
+            }
+        }
+        if (hideUndiscovered && !isProp(prop, DISCOVERED_POS)) {
             mid = undiscoveredMaterialId;
         }
         MaterialKey key = null;
         try {
-            key = lazyCreateKey(mid, objects, emission, transparent);
+            key = lazyCreateKey(mid, objects, emission, selected, transparent);
             blocks.put(key, index);
         } catch (final NullPointerException e) {
-            final var oid = kid2Id(getObject(chunk.getBlocks(), calcOff(index)));
+            final var oid = kid2Id(getObject(bblocks, offset));
             System.out.printf("[MaterialKey NULL] %d %d/%d/%d - %s\n", oid, x, y, z, e); // TODO
         }
         final var cursorZ = gm.getCursorZ();
-        if (z <= cursorZ && !(haveProp(chunk.getBlocks(), calcOff(index), HAVE_NATURAL_LIGHT_POS))) {
-            final var neighborUp = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, is.chunks);
+        if (z <= cursorZ && !(isProp(prop, HAVE_NATURAL_LIGHT_POS))) {
+            val up = getNeighborUp(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), is.chunks);
             var ceilingmid = 0L;
-            if (hideUndiscovered && !(haveProp(chunk.getBlocks(), calcOff(index), DISCOVERED_POS))) {
+            if (hideUndiscovered && !(isProp(prop, DISCOVERED_POS))) {
                 ceilingmid = undiscoveredMaterialId;
             } else {
-                ceilingmid = getMaterial(neighborUp.c.getBlocks(), neighborUp.getOff());
+                ceilingmid = getMaterial(up.c.getBlocks(), up.getOff());
             }
-            ceilings.put(lazyCreateKey(ceilingmid, objects, emission, false), index);
+            ceilings.put(lazyCreateKey(ceilingmid, objects, emission, selected, false), index);
         }
     }
 
@@ -601,8 +610,8 @@ public class TerrainActor {
         return blocks;
     }
 
-    private MaterialKey lazyCreateKey(long mid, Long[] objects, Long emission, boolean transparent) {
-        final var hash = MaterialKey.calcHash(mid, objects, emission, transparent);
+    private MaterialKey lazyCreateKey(long mid, Long[] objects, Long emission, boolean selected, boolean transparent) {
+        final var hash = MaterialKey.calcHash(mid, objects, emission, selected, transparent);
         var key = materialKeys.get(hash);
         if (key == null) {
             final var tex = getTexture(mid);
@@ -616,7 +625,7 @@ public class TerrainActor {
                     objectTexs[i] = getTexture(objects[i]);
                 }
             }
-            key = new MaterialKey(assets, tex, objectTexs, objects, emissionTex, transparent);
+            key = new MaterialKey(assets, tex, objectTexs, objects, emissionTex, selected, transparent);
             materialKeys.put(hash, key);
         }
         return key;

@@ -23,6 +23,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject;
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
 import com.jme3.material.RenderState.BlendMode;
+import com.jme3.math.ColorRGBA;
 
 public class MaterialKey {
 
@@ -38,13 +39,13 @@ public class MaterialKey {
 
     public final boolean transparent;
 
-    public MaterialKey(AssetManager assets, TextureCacheObject tex, boolean transparent) {
-        this(assets, tex, new TextureCacheObject[0], new Long[0], null, transparent);
+    public MaterialKey(AssetManager assets, TextureCacheObject tex, boolean selected, boolean transparent) {
+        this(assets, tex, new TextureCacheObject[0], new Long[0], null, selected, transparent);
     }
 
     public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject[] objectTexs, Long[] objects,
-            TextureCacheObject emissive, boolean transparent) {
-        this.hash = calcHash(tex.rid, objects, emissive != null ? emissive.rid : null, transparent);
+            TextureCacheObject emissive, boolean selected, boolean transparent) {
+        this.hash = calcHash(tex.rid, objects, emissive != null ? emissive.rid : null, selected, transparent);
         this.tex = tex;
         this.emissive = emissive;
         this.objects = objectTexs;
@@ -55,6 +56,11 @@ public class MaterialKey {
         m.setFloat("Metallic", tex.metallic);
         m.setFloat("Roughness", tex.roughness);
         m.setBoolean("UseVertexColor", false);
+        if (selected) {
+            m.setColor("Selected", new ColorRGBA(0.0f, 1.0f, 1.0f, 0.5f));
+            m.setFloat("SelectedPower", 3.0f);
+            m.setFloat("SelectedIntensity", 2.0f);
+        }
         m.getAdditionalRenderState().setBlendMode(tex.transparent ? BlendMode.Alpha : BlendMode.Off);
         if (emissive != null) {
             m.setFloat("SelectedPower", 3.0f);
@@ -69,12 +75,12 @@ public class MaterialKey {
         }
     }
 
-    public static int calcHash(long texrid, Long[] objects, Long emissive, boolean transparent) {
+    public static int calcHash(long texrid, Long[] objects, Long emissive, boolean selected, boolean transparent) {
         final int PRIME = 59;
         int result = 1;
         final long temp1 = Long.hashCode(texrid);
         result = (result * PRIME) + (int) (temp1 ^ (temp1 >>> 32));
-        for (Long o : objects) {
+        for (final Long o : objects) {
             if (o != null) {
                 final long temp2 = Long.hashCode(o);
                 result = (result * PRIME) + (int) (temp2 ^ (temp2 >>> 32));
@@ -84,8 +90,10 @@ public class MaterialKey {
             final long temp3 = Long.hashCode(emissive);
             result = (result * PRIME) + (int) (temp3 ^ (temp3 >>> 32));
         }
-        final long temp4 = Boolean.hashCode(transparent);
+        final long temp4 = Boolean.hashCode(selected);
         result = (result * PRIME) + (int) (temp4 ^ (temp4 >>> 32));
+        final long temp5 = Boolean.hashCode(transparent);
+        result = (result * PRIME) + (int) (temp5 ^ (temp5 >>> 32));
         return result;
     }
 
@@ -94,7 +102,7 @@ public class MaterialKey {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof MaterialKey other)) {
+        if (!(o instanceof final MaterialKey other)) {
             return false;
         }
         if (other.hash != this.hash) {
