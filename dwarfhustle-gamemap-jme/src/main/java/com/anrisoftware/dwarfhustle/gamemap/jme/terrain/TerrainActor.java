@@ -29,12 +29,14 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.DISCOVERED
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.EMPTY_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.FILLED_POS;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlock.HAVE_NATURAL_LIGHT_POS;
+import static com.anrisoftware.dwarfhustle.model.api.objects.MapBlockFlags.EMPTY;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.api.objects.PropertiesSet.isProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.calcOff;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getMaterial;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getObject;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getProp;
+import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.isProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeIdByName;
@@ -524,7 +526,7 @@ public class TerrainActor {
     private void putMaterialKey(GameMap gm, MapChunk chunk, int index, MutableMultimap<MaterialKey, Integer> blocks,
             MutableMultimap<MaterialKey, Integer> ceilings) {
         final int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
-        // if (x == 1 && y == 1 && z == 1) {
+        // if (x == 13 && y == 14 && z == 10) {
         // System.out.println("TerrainActor.putMaterialKey()"); // TODO
         // }
         final int offset = calcOff(index);
@@ -535,16 +537,20 @@ public class TerrainActor {
         long mid = kid2Id(getMaterial(bblocks, offset));
         final Long emission = null; // TODO emission
         boolean selected = false;
-        selected = gm.isSelectedBlock(x, y, z);
         boolean transparent = false;
         if (isProp(prop, EMPTY_POS)) {
             transparent = true;
-            selected = false;
         }
-        if (!selected && isProp(prop, FILLED_POS)) {
-            val up = getNeighborUp(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), is.chunks);
-            if (up.isValid()) {
-                selected = gm.isSelectedBlock(x, y, z - 1);
+        if (isProp(prop, FILLED_POS)) {
+            selected = gm.isSelectedBlock(x, y, z);
+            if (!selected && z == gm.getCursorZ() + 1) {
+                val up = getNeighborUp(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), is.chunks);
+                if (up.isValid()) {
+                    val upchunk = up.getC();
+                    if (isProp(upchunk.getBlocks(), up.getOff(), EMPTY.flag)) {
+                        selected = gm.isSelectedBlock(x, y, z - 1);
+                    }
+                }
             }
         }
         if (hideUndiscovered && !isProp(prop, DISCOVERED_POS)) {
