@@ -425,6 +425,9 @@ public class TerrainActor {
             });
             is.selectBlockState.setOnSaveCursor(c -> {
                 final val gm0 = getGameMap(is.og, m.gm);
+                if (gm0.getCursor().equals(c.getX(), c.getY(), c.getZ())) {
+                    return;
+                }
                 gm0.setCursor(c);
                 setGameMap(is.os, gm0);
                 actor.tell(new MapCursorUpdateMessage(c));
@@ -745,25 +748,28 @@ public class TerrainActor {
      * <li>
      * </ul>
      */
+    @SneakyThrows
     private Behavior<Message> onMapCursorUpdate(MapCursorUpdateMessage m) {
         log.trace("onMapCursorUpdate {}", m);
         final var gm = getGameMap(is.og, gs.get().currentMap.get());
-        final Block block = is.og.get(Block.OBJECT_TYPE, gm.getCursorObject());
-        final var mo = getMapObject(is.mg, gm, block.getPos());
-        if (mo.removeObject(block.getId())) {
-            is.ms.set(MapObject.OBJECT_TYPE, mo);
-            if (mo.isEmpty()) {
-                gm.removeFilledBlock(mo.getCid(), mo.getIndex());
+        try (val lock = gm.acquireLockMapObjects()) {
+            final Block block = is.og.get(Block.OBJECT_TYPE, gm.getCursorObject());
+            final var mo = getMapObject(is.mg, gm, block.getPos());
+            if (mo.removeObject(block.getId())) {
+                is.ms.set(MapObject.OBJECT_TYPE, mo);
+                if (mo.isEmpty()) {
+                    gm.removeFilledBlock(mo.getCid(), mo.getIndex());
+                    is.os.set(GameMap.OBJECT_TYPE, gm);
+                }
+            }
+            block.setPos(m.cursor);
+            is.os.set(Block.OBJECT_TYPE, block);
+            final var monew = getMapObject(is.mg, gm, block.getPos());
+            if (monew.addObject(Block.OBJECT_TYPE, block.getId())) {
+                is.ms.set(MapObject.OBJECT_TYPE, monew);
+                gm.addFilledBlock(monew.getCid(), monew.getIndex());
                 is.os.set(GameMap.OBJECT_TYPE, gm);
             }
-        }
-        block.setPos(m.cursor);
-        is.os.set(Block.OBJECT_TYPE, block);
-        final var monew = getMapObject(is.mg, gm, block.getPos());
-        if (monew.addObject(Block.OBJECT_TYPE, block.getId())) {
-            is.ms.set(MapObject.OBJECT_TYPE, monew);
-            gm.addFilledBlock(monew.getCid(), monew.getIndex());
-            is.os.set(GameMap.OBJECT_TYPE, gm);
         }
         return Behaviors.same();
     }

@@ -309,11 +309,9 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
                     if (z == cursorZ
                             && checkCenterExtent(temp, mouse, centerx, centery, centerz, extentx, extenty, extentz)) {
                         foundCursor.accept(new GameBlockPos(x, y, z));
-                        if (!oldCursor.equals(x, y, z)) {
-                            this.oldCursor.x = x;
-                            this.oldCursor.y = y;
-                            this.oldCursor.z = z;
-                        }
+                        this.oldCursor.x = x;
+                        this.oldCursor.y = y;
+                        this.oldCursor.z = z;
                         return true;
                     }
                 }
