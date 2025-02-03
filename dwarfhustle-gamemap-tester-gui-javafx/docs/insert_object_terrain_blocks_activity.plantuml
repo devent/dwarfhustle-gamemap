@@ -1,0 +1,13 @@
+@startuml
+start
+:User selects toggle button "Insert";
+:Open objects buttons;
+group Selection
+:Start single block selection mode;
+:User selects block;
+end group
+if (User press button "Object") then
+:Selected block insert Object;
+endif
+end
+@enduml

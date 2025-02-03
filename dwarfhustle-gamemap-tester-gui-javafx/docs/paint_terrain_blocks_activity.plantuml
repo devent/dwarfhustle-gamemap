@@ -1,0 +1,14 @@
+@startuml
+start
+:User selects toggle button "Paint";
+:Open materials buttons;
+group Selection
+:Start multi-blocks selection mode;
+:User select one or more blocks;
+:User ends selecting blocks;
+end group
+if (User press button "Material") then
+:Selected blocks changed to Material;
+endif
+end
+@enduml
