@@ -18,6 +18,10 @@
 package org.dwarfhustle.gamemap.tester.gui.javafx.controllers;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.getImageView;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.DescribedAs.describedAs;
 
 import java.util.Locale;
 import java.util.Map;
@@ -32,11 +36,10 @@ import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,131 +58,131 @@ public class MaterialsButtonsController {
     @FXML
     public Pane materialsBox;
     @FXML
-    public ToggleButton fireClayButton;
+    public Button fireClayButton;
     @FXML
-    public ToggleButton siltyClayButton;
+    public Button siltyClayButton;
     @FXML
-    public ToggleButton sandyClayButton;
+    public Button sandyClayButton;
     @FXML
-    public ToggleButton clayLoamButton;
+    public Button clayLoamButton;
     @FXML
-    public ToggleButton clayButton;
+    public Button clayButton;
     @FXML
-    public ToggleButton so2Button;
+    public Button so2Button;
     @FXML
-    public ToggleButton co2Button;
+    public Button co2Button;
     @FXML
-    public ToggleButton pollutedO2Button;
+    public Button pollutedO2Button;
     @FXML
-    public ToggleButton o2Button;
+    public Button o2Button;
     @FXML
-    public ToggleButton vacuumButton;
+    public Button vacuumButton;
     @FXML
-    public ToggleButton rhyoliteButton;
+    public Button rhyoliteButton;
     @FXML
-    public ToggleButton obsidianButton;
+    public Button obsidianButton;
     @FXML
-    public ToggleButton daciteButton;
+    public Button daciteButton;
     @FXML
-    public ToggleButton basaltButton;
+    public Button basaltButton;
     @FXML
-    public ToggleButton andesiteButton;
+    public Button andesiteButton;
     @FXML
-    public ToggleButton graniteButton;
+    public Button graniteButton;
     @FXML
-    public ToggleButton gabbroButton;
+    public Button gabbroButton;
     @FXML
-    public ToggleButton dioriteButton;
+    public Button dioriteButton;
     @FXML
-    public ToggleButton slateButton;
+    public Button slateButton;
     @FXML
-    public ToggleButton schistButton;
+    public Button schistButton;
     @FXML
-    public ToggleButton quartziteButton;
+    public Button quartziteButton;
     @FXML
-    public ToggleButton phylliteButton;
+    public Button phylliteButton;
     @FXML
-    public ToggleButton marbleButton;
+    public Button marbleButton;
     @FXML
-    public ToggleButton gneissButton;
+    public Button gneissButton;
     @FXML
-    public ToggleButton yellowSandButton;
+    public Button yellowSandButton;
     @FXML
-    public ToggleButton whiteSandButton;
+    public Button whiteSandButton;
     @FXML
-    public ToggleButton redSandButton;
+    public Button redSandButton;
     @FXML
-    public ToggleButton blackSandButton;
+    public Button blackSandButton;
     @FXML
-    public ToggleButton sandButton;
+    public Button sandButton;
     @FXML
-    public ToggleButton calcareousOozeButton;
+    public Button calcareousOozeButton;
     @FXML
-    public ToggleButton siliceousOozeButton;
+    public Button siliceousOozeButton;
     @FXML
-    public ToggleButton pelagicClayButton;
+    public Button pelagicClayButton;
     @FXML
-    public ToggleButton siltstoneButton;
+    public Button siltstoneButton;
     @FXML
-    public ToggleButton shaleButton;
+    public Button shaleButton;
     @FXML
-    public ToggleButton sandstoneButton;
+    public Button sandstoneButton;
     @FXML
-    public ToggleButton rockSaltButton;
+    public Button rockSaltButton;
     @FXML
-    public ToggleButton mudstoneButton;
+    public Button mudstoneButton;
     @FXML
-    public ToggleButton limestoneButton;
+    public Button limestoneButton;
     @FXML
-    public ToggleButton dolomiteButton;
+    public Button dolomiteButton;
     @FXML
-    public ToggleButton conglomerateButton;
+    public Button conglomerateButton;
     @FXML
-    public ToggleButton claystoneButton;
+    public Button claystoneButton;
     @FXML
-    public ToggleButton chertButton;
+    public Button chertButton;
     @FXML
-    public ToggleButton chalkButton;
+    public Button chalkButton;
     @FXML
-    public ToggleButton magmaButton;
+    public Button magmaButton;
     @FXML
-    public ToggleButton waterButton;
+    public Button waterButton;
     @FXML
-    public ToggleButton siltLoamButton;
+    public Button siltLoamButton;
     @FXML
-    public ToggleButton siltyClayLoamButton;
+    public Button siltyClayLoamButton;
     @FXML
-    public ToggleButton siltButton;
+    public Button siltButton;
     @FXML
-    public ToggleButton sandyLoamButton;
+    public Button sandyLoamButton;
     @FXML
-    public ToggleButton sandyClayLoamButton;
+    public Button sandyClayLoamButton;
     @FXML
-    public ToggleButton peatButton;
+    public Button peatButton;
     @FXML
-    public ToggleButton loamySandButton;
+    public Button loamySandButton;
     @FXML
-    public ToggleButton loamButton;
+    public Button loamButton;
     @FXML
-    public ToggleButton clayDefaultButton;
+    public Button clayDefaultButton;
     @FXML
-    public ToggleButton oxygenDefaultButton;
+    public Button oxygenDefaultButton;
     @FXML
-    public ToggleButton extrusiveDefaultButton;
+    public Button extrusiveDefaultButton;
     @FXML
-    public ToggleButton intrusiveDefaultButton;
+    public Button intrusiveDefaultButton;
     @FXML
-    public ToggleButton metamorphicDefaultButton;
+    public Button metamorphicDefaultButton;
     @FXML
-    public ToggleButton sandDefaultButton;
+    public Button sandDefaultButton;
     @FXML
-    public ToggleButton seabedDefaultButton;
+    public Button seabedDefaultButton;
     @FXML
-    public ToggleButton sedimentaryDefaultButton;
+    public Button sedimentaryDefaultButton;
     @FXML
-    public ToggleButton waterDefaultButton;
+    public Button waterDefaultButton;
     @FXML
-    public ToggleButton topsoilDefaultButton;
+    public Button topsoilDefaultButton;
     @FXML
     public TabPane materialsTabPane;
     @FXML
@@ -202,8 +205,6 @@ public class MaterialsButtonsController {
     public Tab liquidTab;
     @FXML
     public Tab topsoilTab;
-    @FXML
-    public ToggleGroup materialGroup;
 
     public void setup(Injector injector) {
         log.debug("setup()");
@@ -283,31 +284,85 @@ public class MaterialsButtonsController {
     }
 
     public void initListeners(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
-        setButtonAction(clayDefaultButton, "CLAY_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(oxygenDefaultButton, "OXYGEN_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(extrusiveDefaultButton, "EXTRUSIVE_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(intrusiveDefaultButton, "INTRUSIVE_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(metamorphicDefaultButton, "METAMORPHIC_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(sandDefaultButton, "SAND_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(seabedDefaultButton, "SEABED_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(sedimentaryDefaultButton, "SEDIMENTARY_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(waterDefaultButton, "WATER_DEFAULT_MAPPING", globalKeys, keyMappings);
-        setButtonAction(topsoilDefaultButton, "TOPSOIL_DEFAULT_MAPPING", globalKeys, keyMappings);
+        setButtonAction(clayDefaultButton, "CLAY_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(clayButton, "CLAY_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(clayLoamButton, "CLAYLOAM_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(fireClayButton, "FIRECLAY_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandyClayButton, "SANDYCLAY_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(siltyClayButton, "SILTYCLAY_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(oxygenDefaultButton, "OXYGEN_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(so2Button, "SO2_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(co2Button, "CO2_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(pollutedO2Button, "POLLUTED_O2_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(o2Button, "O2_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(vacuumButton, "VACUUM_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(extrusiveDefaultButton, "EXTRUSIVE_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(andesiteButton, "ANDESITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(basaltButton, "BASALT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(daciteButton, "DACITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(obsidianButton, "OBSIDIAN_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(rhyoliteButton, "RHYOLITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(intrusiveDefaultButton, "INTRUSIVE_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(dioriteButton, "DIORITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(gabbroButton, "GABBRO_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(graniteButton, "GRANITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(metamorphicDefaultButton, "METAMORPHIC_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(slateButton, "SLATE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(schistButton, "SCHIST_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(quartziteButton, "QUARTZITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(phylliteButton, "PHYLLITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(marbleButton, "MARBLE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(gneissButton, "GNEISS_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandDefaultButton, "SAND_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(yellowSandButton, "YELLOWSAND_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(whiteSandButton, "WHITESAND_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(redSandButton, "REDSAND_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(blackSandButton, "BLACKSAND_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandButton, "SAND_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(seabedDefaultButton, "SEABED_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(calcareousOozeButton, "CALCAREOUSOOZE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(siliceousOozeButton, "SILICEOUSOOZE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(pelagicClayButton, "PELAGICCLAY_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sedimentaryDefaultButton, "SEDIMENTARY_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(siltstoneButton, "SILTSTONE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(shaleButton, "SHALE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandstoneButton, "SANDSTONE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(rockSaltButton, "ROCKSALT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(mudstoneButton, "MUDSTONE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(limestoneButton, "LIMESTONE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(dolomiteButton, "DOLOMITE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(conglomerateButton, "CONGLOMERATE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(claystoneButton, "CLAYSTONE_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(chertButton, "CHERT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(chalkButton, "CHALK_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(waterDefaultButton, "WATER_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(magmaButton, "MAGMA_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(waterButton, "WATER_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(topsoilDefaultButton, "TOPSOIL_DEFAULT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(siltLoamButton, "SILTLOAM_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(siltyClayLoamButton, "SILTYCLAYLOAM_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(siltButton, "SILT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandyLoamButton, "SANDYLOAM_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(sandyClayLoamButton, "SANDYCLAYLOAM_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(peatButton, "PEAT_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(loamySandButton, "LOAMYSAND_MATERIAL_MAPPING", globalKeys, keyMappings);
+        setButtonAction(loamButton, "LOAM_MATERIAL_MAPPING", globalKeys, keyMappings);
     }
 
     private void setButtonAction(ButtonBase button, String name, GlobalKeys globalKeys,
             Map<String, KeyMapping> keyMappings) {
-        button.setOnAction((e) -> {
+        assertThat(keyMappings.get(name), is(describedAs("keyMappings %0", notNullValue(), name)));
+        button.setOnAction(e -> {
             globalKeys.runAction(keyMappings.get(name));
         });
     }
 
     public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
-        JavaFxUtil.forEachController(this, ButtonBase.class, (c) -> {
+        JavaFxUtil.forEachController(this, ButtonBase.class, c -> {
             c.setOnMouseEntered(e -> consumer.accept(true));
             c.setOnMouseExited(e -> consumer.accept(false));
         });
-        JavaFxUtil.forEachController(this, TabPane.class, (c) -> {
+        JavaFxUtil.forEachController(this, TabPane.class, c -> {
             c.setOnMouseEntered(e -> consumer.accept(true));
             c.setOnMouseExited(e -> consumer.accept(false));
         });

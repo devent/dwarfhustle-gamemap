@@ -99,6 +99,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private final Vector2f selectEndMouse = new Vector2f();
 
+    private boolean multiSelectEnabled = false;
+
     @Inject
     public TerrainSelectBlockState() {
         super(TerrainSelectBlockState.class.getSimpleName());
@@ -119,6 +121,13 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     public void setOnSelectSet(BiConsumer<GameBlockPos, GameBlockPos> onSelectSet) {
         this.onSelectSet = onSelectSet;
+    }
+
+    public void setMultiSelectEnabled(boolean multiSelectEnabled) {
+        this.multiSelectEnabled = multiSelectEnabled;
+        if (!multiSelectEnabled) {
+            this.selecting = false;
+        }
     }
 
     @Override
@@ -169,12 +178,12 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     public void onAction(String name, boolean isPressed, float tpf) {
         switch (name) {
         case LEFT_MOUSE_BUTTON_MAPPING:
-            if (isPressed && !selecting) {
+            if (multiSelectEnabled && isPressed && !selecting) {
                 this.selecting = true;
                 this.selectStartMouse.x = mouse.x;
                 this.selectStartMouse.y = mouse.y;
             }
-            if (!isPressed && selecting) {
+            if (multiSelectEnabled && !isPressed && selecting) {
                 this.selecting = false;
                 this.selectEndMouse.x = mouse.x;
                 this.selectEndMouse.y = mouse.y;

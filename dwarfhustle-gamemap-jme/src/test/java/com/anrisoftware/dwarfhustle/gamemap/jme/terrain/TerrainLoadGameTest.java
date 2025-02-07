@@ -44,6 +44,7 @@ import com.anrisoftware.dwarfhustle.model.actor.DwarfhustleModelActorsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.DwarfhustleModelApiObjectsModule;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer;
 import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
@@ -250,7 +251,8 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     @SneakyThrows
     private MapChunksLmbdStorage initMapStorage(Path root) {
         var path = root.resolve(String.format("%d-%d", wm.id, gm.id));
-        var storage = storageFactory.create(path, gm.chunkSize);
+        var storage = storageFactory.create(path,
+                gm.getChunksCount() * MapChunkBuffer.SIZE_MIN + gm.getBlocksCount() * MapBlockBuffer.SIZE);
         this.mcRoot = storage.getChunk(0);
         return storage;
     }

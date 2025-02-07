@@ -98,7 +98,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     protected static final Duration CREATE_ACTOR_TIMEOUT = Duration.ofSeconds(30);
 
-    protected static final Consumer<Float> SIMPLE_UPDATE_CALL_NOP = (tpl) -> {
+    protected static final Consumer<Float> SIMPLE_UPDATE_CALL_NOP = tpl -> {
     };
 
     @Inject
@@ -260,7 +260,6 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     protected void storeGameMap() {
         var gs = actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, SECONDS);
         gs.set(GameMap.OBJECT_TYPE, gm);
-        System.out.println(gm); // TODO
     }
 
     protected abstract void loadMapObjects();

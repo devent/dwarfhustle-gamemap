@@ -74,6 +74,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessag
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMultiBlockSelectingModeMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
@@ -781,6 +782,18 @@ public class TerrainActor {
     }
 
     /**
+     * <ul>
+     * <li>
+     * </ul>
+     */
+    @SneakyThrows
+    private Behavior<Message> onSetMultiBlockSelectingMode(SetMultiBlockSelectingModeMessage m) {
+        log.trace("onSetMultiBlockSelectingMode {}", m);
+        is.selectBlockState.setMultiSelectEnabled(m.enabled);
+        return Behaviors.same();
+    }
+
+    /**
      * Returns a behavior for the messages:
      *
      * <ul>
@@ -794,6 +807,7 @@ public class TerrainActor {
                 .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
                 .onMessage(MapCursorUpdateMessage.class, this::onMapCursorUpdate)//
+                .onMessage(SetMultiBlockSelectingModeMessage.class, this::onSetMultiBlockSelectingMode)//
         ;
     }
 }

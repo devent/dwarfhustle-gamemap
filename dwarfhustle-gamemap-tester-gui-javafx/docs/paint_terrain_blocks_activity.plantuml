@@ -7,8 +7,14 @@ group Selection
 :User select one or more blocks;
 :User ends selecting blocks;
 end group
-if (User press button "Material") then
+if (User press "Material" button?) then (yes)
 :Selected blocks changed to Material;
+:Remove selection;
+(no) elseif (User press "Objects" button?) then (yes)
+:Close materials buttons;
+(no) elseif (User press any other button?) then (yes)
+:Close materials buttons;
+:Remove selection;
 endif
 end
 @enduml

@@ -15,5 +15,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class MaterialSetTriggeredMessage extends GuiMessage {
 
+    public final String type;
+
     public final String material;
+
 }

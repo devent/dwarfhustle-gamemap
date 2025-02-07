@@ -19,7 +19,7 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcZ;
-import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.translateIndex;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.chunkIndex2MapIndex;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
@@ -327,7 +327,7 @@ public class ObjectsRenderActor {
     }
 
     private void putMapBlock(GameMap gm, MapChunk chunk, int index) {
-        final int thatIndex = translateIndex(index, chunk, gm);
+        final int thatIndex = chunkIndex2MapIndex(index, chunk, gm);
         blocksIndices.add(thatIndex);
     }
 

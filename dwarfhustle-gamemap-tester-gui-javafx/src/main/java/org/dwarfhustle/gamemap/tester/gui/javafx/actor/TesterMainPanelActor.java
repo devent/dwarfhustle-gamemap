@@ -24,10 +24,12 @@ import static org.dwarfhustle.gamemap.tester.gui.javafx.actor.AdditionalCss.ADDI
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.StartPaintTerrainMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.StopPaintTerrainMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
-import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialSetTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenMessage;
@@ -143,6 +145,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private ObjectsGetter og;
 
     private ObjectsSetter os;
+
+    private Optional<ActorRef<Message>> paintTerrainActor = Optional.empty();
 
     @SneakyThrows
     @Override
@@ -279,6 +283,14 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         log.debug("onMaterialsButtonsOpenTriggered {}", m);
         actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
         actor.tell(new MaterialsButtonsOpenMessage(initial.controller.testerButtonsBox));
+        PaintTerrainActor.create(injector, Duration.ofSeconds(1)).whenComplete((res, ex) -> {
+            if (ex != null) {
+                log.error("PaintTerrainActor", ex);
+            } else {
+                paintTerrainActor = Optional.of(res);
+                res.tell(new StartPaintTerrainMessage());
+            }
+        });
         return Behaviors.same();
     }
 
@@ -287,6 +299,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onMaterialsButtonsCloseTriggered(MaterialsButtonsCloseTriggeredMessage m) {
         log.debug("onMaterialsButtonsCloseTriggered {}", m);
+        paintTerrainActor.ifPresent(a -> a.tell(new StopPaintTerrainMessage()));
+        paintTerrainActor = Optional.empty();
         actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
         return Behaviors.same();
     }
@@ -298,6 +312,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         log.debug("onObjectsButtonsOpenTriggered {}", m);
         actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
         actor.tell(new ObjectsButtonsOpenMessage(initial.controller.testerButtonsBox));
+        paintTerrainActor.ifPresent(a -> a.tell(new StopPaintTerrainMessage()));
+        paintTerrainActor = Optional.empty();
         return Behaviors.same();
     }
 
@@ -307,16 +323,6 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Behavior<Message> onObjectsButtonsCloseTriggered(ObjectsButtonsCloseTriggeredMessage m) {
         log.debug("onObjectsButtonsCloseTriggered {}", m);
         actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
-        return Behaviors.same();
-    }
-
-    /**
-     * Processing {@link MaterialSetTriggeredMessage}.
-     */
-    private Behavior<Message> onMaterialSetTriggered(MaterialSetTriggeredMessage m) {
-        log.debug("onMaterialSetTriggered {}", m);
-        // actor.tell(new
-        // ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
         return Behaviors.same();
     }
 
@@ -334,7 +340,6 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
                 .onMessage(MaterialsButtonsCloseTriggeredMessage.class, this::onMaterialsButtonsCloseTriggered)//
                 .onMessage(ObjectsButtonsOpenTriggeredMessage.class, this::onObjectsButtonsOpenTriggered)//
                 .onMessage(ObjectsButtonsCloseTriggeredMessage.class, this::onObjectsButtonsCloseTriggered)//
-                .onMessage(MaterialSetTriggeredMessage.class, this::onMaterialSetTriggered)//
         ;
     }
 

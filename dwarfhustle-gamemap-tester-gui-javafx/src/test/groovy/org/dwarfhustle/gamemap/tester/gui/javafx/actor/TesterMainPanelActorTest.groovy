@@ -1,7 +1,6 @@
 package org.dwarfhustle.gamemap.tester.gui.javafx.actor
 
 import static java.time.Duration.ofSeconds
-import static java.util.concurrent.CompletableFuture.supplyAsync
 
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
@@ -88,7 +87,7 @@ class TesterMainPanelActorTest {
         def og = { type, key -> } as ObjectsGetter
         def panelActor
         app.start()
-        TesterMainPanelActor.create(injector, ofSeconds(1), supplyAsync({ og })).whenComplete({ it, ex ->
+        TesterMainPanelActor.create(injector, ofSeconds(1)).whenComplete({ it, ex ->
             panelActor = it
         } ).get()
         def result = AskPattern.ask(panelActor, {replyTo ->
