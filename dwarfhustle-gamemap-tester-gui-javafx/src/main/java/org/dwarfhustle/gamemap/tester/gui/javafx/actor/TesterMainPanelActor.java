@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectInsertActor.StartInsertObjectMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectInsertActor.StopInsertObjectMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.StartPaintTerrainMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.StopPaintTerrainMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
@@ -147,6 +149,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private ObjectsSetter os;
 
     private Optional<ActorRef<Message>> paintTerrainActor = Optional.empty();
+
+    private Optional<ActorRef<Message>> objectInsertActor = Optional.empty();
 
     @SneakyThrows
     @Override
@@ -283,14 +287,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         log.debug("onMaterialsButtonsOpenTriggered {}", m);
         actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
         actor.tell(new MaterialsButtonsOpenMessage(initial.controller.testerButtonsBox));
-        PaintTerrainActor.create(injector, Duration.ofSeconds(1)).whenComplete((res, ex) -> {
-            if (ex != null) {
-                log.error("PaintTerrainActor", ex);
-            } else {
-                paintTerrainActor = Optional.of(res);
-                res.tell(new StartPaintTerrainMessage());
-            }
-        });
+        stopObjectInsertActor();
+        createPaintTerrainActor();
         return Behaviors.same();
     }
 
@@ -299,9 +297,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onMaterialsButtonsCloseTriggered(MaterialsButtonsCloseTriggeredMessage m) {
         log.debug("onMaterialsButtonsCloseTriggered {}", m);
-        paintTerrainActor.ifPresent(a -> a.tell(new StopPaintTerrainMessage()));
-        paintTerrainActor = Optional.empty();
         actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        stopPaintTerrainActor();
         return Behaviors.same();
     }
 
@@ -312,8 +309,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         log.debug("onObjectsButtonsOpenTriggered {}", m);
         actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
         actor.tell(new ObjectsButtonsOpenMessage(initial.controller.testerButtonsBox));
-        paintTerrainActor.ifPresent(a -> a.tell(new StopPaintTerrainMessage()));
-        paintTerrainActor = Optional.empty();
+        stopPaintTerrainActor();
+        createObjectInsertActor();
         return Behaviors.same();
     }
 
@@ -323,7 +320,40 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Behavior<Message> onObjectsButtonsCloseTriggered(ObjectsButtonsCloseTriggeredMessage m) {
         log.debug("onObjectsButtonsCloseTriggered {}", m);
         actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        stopObjectInsertActor();
         return Behaviors.same();
+    }
+
+    private void createPaintTerrainActor() {
+        PaintTerrainActor.create(injector, Duration.ofSeconds(1)).whenComplete((res, ex) -> {
+            if (ex != null) {
+                log.error("PaintTerrainActor", ex);
+            } else {
+                paintTerrainActor = Optional.of(res);
+                res.tell(new StartPaintTerrainMessage());
+            }
+        });
+    }
+
+    private void stopPaintTerrainActor() {
+        paintTerrainActor.ifPresent(a -> a.tell(new StopPaintTerrainMessage()));
+        paintTerrainActor = Optional.empty();
+    }
+
+    private void createObjectInsertActor() {
+        ObjectInsertActor.create(injector, Duration.ofSeconds(1)).whenComplete((res, ex) -> {
+            if (ex != null) {
+                log.error("ObjectInsertActor", ex);
+            } else {
+                objectInsertActor = Optional.of(res);
+                res.tell(new StartInsertObjectMessage());
+            }
+        });
+    }
+
+    private void stopObjectInsertActor() {
+        objectInsertActor.ifPresent(a -> a.tell(new StopInsertObjectMessage()));
+        objectInsertActor = Optional.empty();
     }
 
     private void saveGameMap(GameMap gm) {

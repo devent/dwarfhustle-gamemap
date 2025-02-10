@@ -20,6 +20,7 @@ package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 import java.util.Map;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.MaterialsButtonsActor.MaterialsButtonsActorFactory;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectInsertActor.ObjectInsertActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectsButtonsActor.ObjectsButtonsActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.PaintTerrainActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterMainPanelActor.TesterMainPanelActorFactory;
@@ -46,6 +47,7 @@ import com.google.inject.name.Names;
  * @see TesterKeyMappingProvider
  * @see JmeMappingsProvider
  * @see PaintTerrainActorFactory
+ * @see ObjectInsertActorFactory
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule {
@@ -69,6 +71,8 @@ public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule
         }).annotatedWith(Names.named("jmeMappings")).toProvider(JmeMappingsProvider.class).asEagerSingleton();
         install(new FactoryModuleBuilder().implement(PaintTerrainActor.class, PaintTerrainActor.class)
                 .build(PaintTerrainActorFactory.class));
+        install(new FactoryModuleBuilder().implement(ObjectInsertActor.class, ObjectInsertActor.class)
+                .build(ObjectInsertActorFactory.class));
     }
 
 }

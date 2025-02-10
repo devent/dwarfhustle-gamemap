@@ -73,7 +73,6 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.jme3.app.Application;
 import com.jme3.app.DebugKeysAppState;
 import com.jme3.app.SimpleApplication;
-import com.jme3.app.StatsAppState;
 import com.jme3.app.state.ConstantVerifierState;
 import com.jme3.asset.AssetManager;
 import com.jme3.input.InputManager;
@@ -133,8 +132,9 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     protected MapObjectsLmbdStorage moStorage;
 
     public AbstractTerrainApp() {
-        super(new StatsAppState(), new ConstantVerifierState(), new DebugKeysAppState()
+        super(new ConstantVerifierState(), new DebugKeysAppState()
         // , new FlyCamAppState()
+        // , new StatsAppState()
         );
         this.resetCameraState = new ResetCameraState();
         getStateManager().attach(resetCameraState);

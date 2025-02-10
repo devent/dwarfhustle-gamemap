@@ -51,6 +51,7 @@ import com.jme3.util.TempVars;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -101,6 +102,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private boolean multiSelectEnabled = false;
 
+    private boolean singleSelectEnabled;
+
     @Inject
     public TerrainSelectBlockState() {
         super(TerrainSelectBlockState.class.getSimpleName());
@@ -123,9 +126,16 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         this.onSelectSet = onSelectSet;
     }
 
-    public void setMultiSelectEnabled(boolean multiSelectEnabled) {
-        this.multiSelectEnabled = multiSelectEnabled;
-        if (!multiSelectEnabled) {
+    public void setMultiSelectEnabled(boolean enabled) {
+        this.multiSelectEnabled = enabled;
+        if (!enabled) {
+            this.selecting = false;
+        }
+    }
+
+    public void setSingleSelectEnabled(boolean enabled) {
+        this.singleSelectEnabled = enabled;
+        if (!enabled) {
             this.selecting = false;
         }
     }
@@ -178,16 +188,22 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     public void onAction(String name, boolean isPressed, float tpf) {
         switch (name) {
         case LEFT_MOUSE_BUTTON_MAPPING:
-            if (multiSelectEnabled && isPressed && !selecting) {
+            if (isPressed && !selecting) {
                 this.selecting = true;
                 this.selectStartMouse.x = mouse.x;
                 this.selectStartMouse.y = mouse.y;
+                if (singleSelectEnabled) {
+                    this.selecting = false;
+                    collectSingleSelectedBlocks();
+                }
             }
-            if (multiSelectEnabled && !isPressed && selecting) {
+            if (!isPressed && selecting) {
                 this.selecting = false;
                 this.selectEndMouse.x = mouse.x;
                 this.selectEndMouse.y = mouse.y;
-                collectSelectedBlocks();
+                if (multiSelectEnabled) {
+                    collectMultiSelectedBlocks();
+                }
             }
             break;
         default:
@@ -234,7 +250,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
     }
 
     @SneakyThrows
-    private void collectSelectedBlocks() {
+    private void collectMultiSelectedBlocks() {
         final var gm = onRetrieveGameMap.get();
         final var startMouse = new Vector2f(Math.min(selectStartMouse.x, selectEndMouse.x),
                 Math.min(selectStartMouse.y, selectEndMouse.y));
@@ -252,6 +268,22 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         }));
         taskStart.get();
         taskEnd.get();
+        onSelectSet.accept(selectStartCursor, selectEndCursor);
+    }
+
+    @SneakyThrows
+    private void collectSingleSelectedBlocks() {
+        val gm = onRetrieveGameMap.get();
+        val startMouse = new Vector2f(selectStartMouse.x, selectStartMouse.y);
+        var taskStart = pool.submit(new FindBlockUnderMouseAction(gm, startMouse, (c) -> {
+            selectStartCursor.x = c.x;
+            selectStartCursor.y = c.y;
+            selectStartCursor.z = c.z;
+            selectEndCursor.x = c.x;
+            selectEndCursor.y = c.y;
+            selectEndCursor.z = c.z;
+        }));
+        taskStart.get();
         onSelectSet.accept(selectStartCursor, selectEndCursor);
     }
 

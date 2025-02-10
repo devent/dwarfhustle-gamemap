@@ -1,46 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.Tooltip?>
-<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="objectsBox" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController">
+<Pane fx:id="objectsBox" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController">
    <children>
-      <TabPane fx:id="objectsTabPane" side="BOTTOM" styleClass="testerTabPane" tabClosingPolicy="UNAVAILABLE">
-        <tabs>
-          <Tab fx:id="blockTab" text="Block">
-               <content>
-                  <FlowPane fx:id="blockPane" minHeight="-Infinity" minWidth="-Infinity" />
-               </content>
-               <tooltip>
-                  <Tooltip text="Terrain Block Types" />
-               </tooltip></Tab>
-          <Tab fx:id="grassBlock" text="Grass">
-               <content>
-                  <FlowPane fx:id="grassPane" minHeight="-Infinity" minWidth="-Infinity" />
-               </content>
-               <tooltip>
-                  <Tooltip text="Grasses" />
-               </tooltip></Tab>
-            <Tab fx:id="shrubTab" text="Shrub">
-               <content>
-                  <FlowPane fx:id="shrubPane" minHeight="-Infinity" minWidth="-Infinity" />
-               </content>
-               <tooltip>
-                  <Tooltip text="Shrubs" />
-               </tooltip>
-            </Tab>
-            <Tab fx:id="treeTab" text="Tree">
-               <content>
-                  <FlowPane fx:id="treePane" minHeight="-Infinity" minWidth="-Infinity" />
-               </content>
-               <tooltip>
-                  <Tooltip text="Trees" />
-               </tooltip>
-            </Tab>
-        </tabs>
-      </TabPane>
+      <VBox>
+         <children>
+            <TabPane fx:id="objectsTabPane" side="BOTTOM" styleClass="testerTabPane" tabClosingPolicy="UNAVAILABLE">
+              <tabs>
+                <Tab fx:id="blockTab" text="Block">
+                     <tooltip>
+                        <Tooltip text="Terrain Block Types" />
+                     </tooltip>
+                     <content>
+                              <ListView fx:id="blockList" prefHeight="200.0" prefWidth="200.0" />
+                     </content>
+                  </Tab>
+                <Tab fx:id="grassBlock" text="Grass">
+                     <tooltip>
+                        <Tooltip text="Grasses" />
+                     </tooltip>
+                     <content>
+                              <ListView fx:id="grassList" prefHeight="200.0" prefWidth="200.0" />
+                     </content>
+                  </Tab>
+                  <Tab fx:id="shrubTab" text="Shrub">
+                     <tooltip>
+                        <Tooltip text="Shrubs" />
+                     </tooltip>
+                     <content>
+                              <ListView fx:id="shrubList" prefHeight="200.0" prefWidth="200.0" />
+                     </content>
+                  </Tab>
+                  <Tab fx:id="treeTab" text="Tree">
+                     <tooltip>
+                        <Tooltip text="Trees" />
+                     </tooltip>
+                     <content>
+                              <ListView fx:id="treeList" prefHeight="200.0" prefWidth="200.0" />
+                     </content>
+                  </Tab>
+              </tabs>
+            </TabPane>
+         </children>
+      </VBox>
    </children>
-</VBox>
+</Pane>

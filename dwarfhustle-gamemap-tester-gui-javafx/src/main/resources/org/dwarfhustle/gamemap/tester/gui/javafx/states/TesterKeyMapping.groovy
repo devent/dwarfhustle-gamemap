@@ -7,6 +7,7 @@ import static javafx.scene.input.KeyCombination.*
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialSetTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenTriggeredMessage
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectSetTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsCloseTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsOpenTriggeredMessage
 
@@ -14,6 +15,10 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMappingMap
+import com.anrisoftware.dwarfhustle.model.api.map.BlockObject
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeGrass
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTree
 import com.jme3.input.controls.KeyTrigger
 
 import javafx.scene.input.KeyCodeCombination
@@ -93,5 +98,10 @@ m.SANDYCLAYLOAM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("To
 m.PEAT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Topsoil", "Peat"), keyCode: empty(), keyTrigger: empty()]
 m.LOAMYSAND_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Topsoil", "Loamy-Sand"), keyCode: empty(), keyTrigger: empty()]
 m.LOAM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Topsoil", "Loam"), keyCode: empty(), keyTrigger: empty()]
+
+m.BLOCK_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(BlockObject.TYPE), keyCode: empty(), keyTrigger: empty()]
+m.GRASS_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeGrass.TYPE), keyCode: empty(), keyTrigger: empty()]
+m.SHRUB_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeShrub.TYPE), keyCode: empty(), keyTrigger: empty()]
+m.TREE_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeTree.TYPE), keyCode: empty(), keyTrigger: empty()]
 
 m

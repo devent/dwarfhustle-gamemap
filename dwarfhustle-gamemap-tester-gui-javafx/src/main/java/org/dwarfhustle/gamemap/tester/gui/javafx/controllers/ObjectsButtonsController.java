@@ -18,10 +18,15 @@
 package org.dwarfhustle.gamemap.tester.gui.javafx.controllers;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.getImageView;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.DescribedAs.describedAs;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.eclipse.collections.api.factory.Maps;
@@ -34,9 +39,8 @@ import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 
 import javafx.fxml.FXML;
-import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.Pane;
@@ -61,45 +65,42 @@ public class ObjectsButtonsController {
     @FXML
     public Tab blockTab;
     @FXML
-    public Pane blockPane;
+    public ListView<String> blockList;
     @FXML
     public Tab grassTab;
     @FXML
-    public Pane grassPane;
+    public ListView<String> grassList;
     @FXML
     public Tab shrubTab;
     @FXML
-    public Pane shrubPane;
+    public ListView<String> shrubList;
     @FXML
     public Tab treeTab;
     @FXML
-    public Pane treePane;
+    public ListView<String> treeList;
 
-    private final Map<String, Pane> tabPanes = Maps.mutable.empty();
+    private final Map<String, ListView<String>> tabListviews = Maps.mutable.empty();
+
+    public Optional<String> selectedObject = Optional.empty();
 
     @FXML
     private void initialize() {
-        tabPanes.put("block", blockPane);
-        tabPanes.put("grass", grassPane);
-        tabPanes.put("shrub", shrubPane);
-        tabPanes.put("tree", treePane);
+        tabListviews.put("block", blockList);
+        tabListviews.put("grass", grassList);
+        tabListviews.put("shrub", shrubList);
+        tabListviews.put("tree", treeList);
     }
 
-    public void createButtons(Map<String, List<String>> tabsButtons) {
+    public void setupObjects(Map<String, List<String>> tabsButtons) {
         for (var entry : tabsButtons.entrySet()) {
-            createButtons(tabPanes.get(entry.getKey()), entry.getValue());
+            createObjects(tabListviews.get(entry.getKey()), entry.getValue());
         }
     }
 
-    private void createButtons(Pane pane, List<String> names) {
+    private void createObjects(ListView<String> listView, List<String> names) {
         for (String name : names) {
-            pane.getChildren().add(createButton(name));
+            listView.getItems().add(name);
         }
-    }
-
-    private Node createButton(String name) {
-        var button = new Button(name);
-        return button;
     }
 
     public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize) {
@@ -111,20 +112,38 @@ public class ObjectsButtonsController {
     }
 
     public void initListeners(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
+        setActions(blockList, "BLOCK_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(grassList, "GRASS_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(shrubList, "SHRUB_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(treeList, "TREE_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
     }
 
-    private void setButtonAction(ButtonBase button, String name, GlobalKeys globalKeys,
+    private void setActions(ListView<String> list, String name, GlobalKeys globalKeys,
             Map<String, KeyMapping> keyMappings) {
-        button.setOnAction((e) -> {
-            globalKeys.runAction(keyMappings.get(name));
+        assertThat(keyMappings.get(name), is(describedAs("keyMappings %0", notNullValue(), name)));
+        list.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            if (nv != null) {
+                this.selectedObject = Optional.of(nv);
+                globalKeys.runAction(keyMappings.get(name));
+            }
         });
     }
 
     public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
-        JavaFxUtil.forEachController(this, TabPane.class, (c) -> {
+        JavaFxUtil.forEachController(this, TabPane.class, c -> {
             c.setOnMouseEntered(e -> consumer.accept(true));
             c.setOnMouseExited(e -> consumer.accept(false));
         });
+    }
+
+    public void setSelectedObject(boolean b) {
+        if (!b) {
+            blockList.getSelectionModel().clearSelection();
+            grassList.getSelectionModel().clearSelection();
+            shrubList.getSelectionModel().clearSelection();
+            treeList.getSelectionModel().clearSelection();
+            this.selectedObject = Optional.empty();
+        }
     }
 
 }

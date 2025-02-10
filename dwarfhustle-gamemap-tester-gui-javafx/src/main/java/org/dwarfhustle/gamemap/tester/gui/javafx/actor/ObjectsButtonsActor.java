@@ -25,13 +25,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectSetTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsCloseMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsOpenMessage;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.ObjectTypeNameSetMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelActorCreator;
@@ -44,7 +47,9 @@ import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Grass;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Shrub;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Tree;
@@ -53,6 +58,7 @@ import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
+import com.jayfella.jme.jfx.JavaFxUI;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -148,35 +154,59 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
         return Behaviors.same();
     }
 
+    /**
+     * Processing {@link ObjectSetTriggeredMessage}.
+     */
+    private Behavior<Message> onObjectSetTriggered(ObjectSetTriggeredMessage m) {
+        log.debug("onObjectSetTriggered {}", m);
+        runFxThread(() -> {
+            if (controller.selectedObject.isPresent()) {
+                actor.tell(new ObjectTypeNameSetMessage(m.type, controller.selectedObject.get()));
+                controller.setSelectedObject(false);
+            }
+        });
+        return Behaviors.same();
+    }
+
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         var kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
-        Map<String, List<String>> tabsButtons = Maps.mutable.empty();
+        Map<String, List<String>> typeObjects = Maps.mutable.empty();
         final var c = initial.controller;
         this.controller = c;
-        collectObjects(tabsButtons, kg, "grass", Grass.OBJECT_TYPE);
-        collectObjects(tabsButtons, kg, "shrub", Shrub.OBJECT_TYPE);
-        collectObjects(tabsButtons, kg, "tree", Tree.OBJECT_TYPE);
         runFxThread(() -> {
-            c.createButtons(tabsButtons);
+            collectObjects(typeObjects, kg, "block", BlockObject.OBJECT_TYPE,
+                    ko -> ko.getName().equalsIgnoreCase("block-normal") || ko.getName().contains("ramp"));
+            collectObjects(typeObjects, kg, "grass", Grass.OBJECT_TYPE);
+            collectObjects(typeObjects, kg, "shrub", Shrub.OBJECT_TYPE);
+            collectObjects(typeObjects, kg, "tree", Tree.OBJECT_TYPE);
+            c.setupObjects(typeObjects);
             c.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
             c.initListeners(globalKeys, keyMappings);
-            c.setOnMouseEnteredGui((entered) -> {
+            c.setOnMouseEnteredGui(entered -> {
                 gs.get().mouseEnteredGui.set(entered);
             });
+            double width = JavaFxUI.getInstance().getScene().getWidth();
+            c.objectsBox.requestLayout();
         });
         return super.getBehaviorAfterAttachGui()//
                 .onMessage(ObjectsButtonsOpenMessage.class, this::onObjectsButtonsOpen)//
                 .onMessage(ObjectsButtonsCloseMessage.class, this::onObjectsButtonsClose)//
+                .onMessage(ObjectSetTriggeredMessage.class, this::onObjectSetTriggered)//
         ;
     }
 
-    private void collectObjects(Map<String, List<String>> tabsButtons, KnowledgeGetter kg, String name, int type) {
+    private void collectObjects(Map<String, List<String>> typeObjects, KnowledgeGetter kg, String name, int type) {
+        collectObjects(typeObjects, kg, name, type, ko -> true);
+    }
+
+    private void collectObjects(Map<String, List<String>> typeObjects, KnowledgeGetter kg, String name, int type,
+            Predicate<KnowledgeObject> filter) {
         var objects = kg.get(type);
-        List<String> buttons = Lists.mutable.withInitialCapacity(objects.objects.size());
-        tabsButtons.put(name, buttons);
+        List<String> objectNames = Lists.mutable.withInitialCapacity(objects.objects.size());
+        typeObjects.put(name, objectNames);
         for (var ko : objects.objects) {
-            buttons.add(ko.name);
+            objectNames.add(ko.name);
         }
     }
 

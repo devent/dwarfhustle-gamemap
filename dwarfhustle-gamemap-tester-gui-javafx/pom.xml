@@ -59,6 +59,10 @@
             <groupId>com.anrisoftware.dwarfhustle</groupId>
             <artifactId>dwarfhustle-model-knowledge</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.anrisoftware.dwarfhustle</groupId>
+            <artifactId>dwarfhustle-model-objects</artifactId>
+        </dependency>
 	</dependencies>
 
 </project>

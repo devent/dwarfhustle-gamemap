@@ -75,6 +75,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMes
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMultiBlockSelectingModeMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSingleBlockSelectingModeMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ModelCacheObject;
@@ -85,7 +86,6 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.Block;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
@@ -441,10 +441,11 @@ public class TerrainActor {
                 gm0.clearSelectedBlocks();
                 for (int x = s.getX(); x <= e.getX(); x++) {
                     for (int y = e.getY(); y <= s.getY(); y++) {
-                        final int index = GameBlockPos.calcIndex(gm0, x, y, s.getZ());
+                        final int index = calcIndex(gm0, x, y, s.getZ());
                         gm0.addSelectedBlock(index);
                     }
                 }
+                setGameMap(is.os, gm0);
             });
             is.selectBlockState.initKeys();
         });
@@ -527,7 +528,7 @@ public class TerrainActor {
     private void putMaterialKey(GameMap gm, MapChunk chunk, int index, MutableMultimap<MaterialKey, Integer> blocks,
             MutableMultimap<MaterialKey, Integer> ceilings) {
         final int x = calcX(index, chunk), y = calcY(index, chunk), z = calcZ(index, chunk);
-        // if (x == 13 && y == 14 && z == 10) {
+//        if (x == 12 && y == 10 && z == 10) {
         // System.out.println("TerrainActor.putMaterialKey()"); // TODO
         // }
         final int offset = calcOff(index);
@@ -782,14 +783,22 @@ public class TerrainActor {
     }
 
     /**
-     * <ul>
-     * <li>
-     * </ul>
+     * @see SetMultiBlockSelectingModeMessage
      */
     @SneakyThrows
     private Behavior<Message> onSetMultiBlockSelectingMode(SetMultiBlockSelectingModeMessage m) {
         log.trace("onSetMultiBlockSelectingMode {}", m);
         is.selectBlockState.setMultiSelectEnabled(m.enabled);
+        return Behaviors.same();
+    }
+
+    /**
+     * @see SetSingleBlockSelectingModeMessage
+     */
+    @SneakyThrows
+    private Behavior<Message> onSetSingleBlockSelectingMode(SetSingleBlockSelectingModeMessage m) {
+        log.trace("onSetSingleBlockSelectingMode {}", m);
+        is.selectBlockState.setSingleSelectEnabled(m.enabled);
         return Behaviors.same();
     }
 
@@ -808,6 +817,7 @@ public class TerrainActor {
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
                 .onMessage(MapCursorUpdateMessage.class, this::onMapCursorUpdate)//
                 .onMessage(SetMultiBlockSelectingModeMessage.class, this::onSetMultiBlockSelectingMode)//
+                .onMessage(SetSingleBlockSelectingModeMessage.class, this::onSetSingleBlockSelectingMode)//
         ;
     }
 }
