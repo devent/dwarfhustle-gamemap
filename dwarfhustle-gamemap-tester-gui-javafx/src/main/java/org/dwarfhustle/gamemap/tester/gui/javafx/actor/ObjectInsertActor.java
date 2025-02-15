@@ -35,7 +35,7 @@ import java.util.concurrent.CompletionStage;
 import org.eclipse.collections.api.factory.primitive.IntLists;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.ObjectTypeNameSetMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSingleBlockSelectingModeMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMultiBlockSelectingModeMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -239,7 +239,7 @@ public class ObjectInsertActor {
      */
     private Behavior<Message> onStartInsertObject(StartInsertObjectMessage m) {
         log.trace("onStartInsertObject");
-        actor.tell(new SetSingleBlockSelectingModeMessage(true));
+        actor.tell(new SetMultiBlockSelectingModeMessage(true));
         return Behaviors.same();
     }
 
@@ -248,7 +248,7 @@ public class ObjectInsertActor {
     */
     private Behavior<Message> onStopInsertObject(StopInsertObjectMessage m) {
         log.trace("onStopInsertObject");
-        actor.tell(new SetSingleBlockSelectingModeMessage(false));
+        actor.tell(new SetMultiBlockSelectingModeMessage(false));
         return Behaviors.stopped();
     }
 
@@ -259,17 +259,19 @@ public class ObjectInsertActor {
         log.debug("onObjectTypeNameSet {}", m);
         val gm = getGameMap(is.og, gs.get().currentMap.get());
         val selected = IntLists.immutable.ofAll(gm.getSelectedBlocks());
-        final int index = selected.getFirst();
         gm.clearSelectedBlocks();
         setGameMap(is.os, gm);
-        final int x = calcX(index, gm.getWidth(), 0), y = calcY(index, gm.getWidth(), 0),
-                z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
-        val pos = new GameBlockPos(x, y, z);
+        val root = getChunk(is.cg, 0);
         askKnowledgeObjects(actor.getActorSystem(), KNOWLEDGE_GET_TIMEOUT, m.type).whenComplete((list, ex) -> {
-            val ko = list.detect(_ko -> _ko.name.equalsIgnoreCase(m.name));
-            var root = getChunk(is.cg, 0);
-            var mb = findBlock(root, pos, is.cg);
-            actor.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm.getId(), mb.getParent(), ko, pos));
+            val ko = list.detect(k -> k.name.equalsIgnoreCase(m.name));
+            for (final var it = selected.intIterator(); it.hasNext();) {
+                final int index = it.next();
+                final int x = calcX(index, gm.getWidth(), 0), y = calcY(index, gm.getWidth(), 0),
+                        z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
+                val pos = new GameBlockPos(x, y, z);
+                val mb = findBlock(root, pos, is.cg);
+                actor.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm.getId(), mb.getParent(), ko, pos));
+            }
         });
         return Behaviors.same();
     }
