@@ -4,6 +4,8 @@ import static java.util.Optional.*
 import static javafx.scene.input.KeyCode.*
 import static javafx.scene.input.KeyCombination.*
 
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.DeleteButtonsCloseTriggeredMessage
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.DeleteButtonsOpenTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialSetTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseTriggeredMessage
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenTriggeredMessage
@@ -35,18 +37,21 @@ m.CLOSE_MATERIALS_BUTTONS_MAPPING = [message: new MaterialsButtonsCloseTriggered
 m.OPEN_OBJECTS_BUTTONS_MAPPING = [message: new ObjectsButtonsOpenTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
 m.CLOSE_OBJECTS_BUTTONS_MAPPING = [message: new ObjectsButtonsCloseTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
 
-m.CLAY_DEFAULT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("clay", "clay"), keyCode: empty(), keyTrigger: empty()]
-m.CLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("clay", "clay"), keyCode: empty(), keyTrigger: empty()]
-m.CLAYLOAM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("clay", "Clay-Loam"), keyCode: empty(), keyTrigger: empty()]
-m.FIRECLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("clay", "Fire-Clay"), keyCode: empty(), keyTrigger: empty()]
-m.SANDYCLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("clay", "Sandy-Clay"), keyCode: empty(), keyTrigger: empty()]
-m.SILTYCLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("clay", "Silty-Clay"), keyCode: empty(), keyTrigger: empty()]
-m.OXYGEN_DEFAULT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("gas", "Oxygen"), keyCode: empty(), keyTrigger: empty()]
-m.SO2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("gas", "Sulfur-Dioxide"), keyCode: empty(), keyTrigger: empty()]
-m.CO2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("gas", "Carbon-Dioxide"), keyCode: empty(), keyTrigger: empty()]
-m.POLLUTED_O2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("gas", "Polluted-Oxygen"), keyCode: empty(), keyTrigger: empty()]
-m.O2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("gas", "Oxygen"), keyCode: empty(), keyTrigger: empty()]
-m.VACUUM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("gas", "Vacuum"), keyCode: empty(), keyTrigger: empty()]
+m.OPEN_DELETE_BUTTONS_MAPPING = [message: new DeleteButtonsOpenTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
+m.CLOSE_DELETE_BUTTONS_MAPPING = [message: new DeleteButtonsCloseTriggeredMessage(), keyCode: empty(), keyTrigger: empty()]
+
+m.CLAY_DEFAULT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Clay", "Clay"), keyCode: empty(), keyTrigger: empty()]
+m.CLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Clay", "Clay"), keyCode: empty(), keyTrigger: empty()]
+m.CLAYLOAM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Clay", "Clay-Loam"), keyCode: empty(), keyTrigger: empty()]
+m.FIRECLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Clay", "Fire-Clay"), keyCode: empty(), keyTrigger: empty()]
+m.SANDYCLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Clay", "Sandy-Clay"), keyCode: empty(), keyTrigger: empty()]
+m.SILTYCLAY_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Clay", "Silty-Clay"), keyCode: empty(), keyTrigger: empty()]
+m.OXYGEN_DEFAULT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Gas", "Oxygen"), keyCode: empty(), keyTrigger: empty()]
+m.SO2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Gas", "Sulfur-Dioxide"), keyCode: empty(), keyTrigger: empty()]
+m.CO2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Gas", "Carbon-Dioxide"), keyCode: empty(), keyTrigger: empty()]
+m.POLLUTED_O2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Gas", "Polluted-Oxygen"), keyCode: empty(), keyTrigger: empty()]
+m.O2_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Gas", "Oxygen"), keyCode: empty(), keyTrigger: empty()]
+m.VACUUM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Gas", "Vacuum"), keyCode: empty(), keyTrigger: empty()]
 m.EXTRUSIVE_DEFAULT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Igneous-Extrusive", "Andesite"), keyCode: empty(), keyTrigger: empty()]
 m.ANDESITE_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Igneous-Extrusive", "andesite"), keyCode: empty(), keyTrigger: empty()]
 m.BASALT_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Igneous-Extrusive", "basalt"), keyCode: empty(), keyTrigger: empty()]

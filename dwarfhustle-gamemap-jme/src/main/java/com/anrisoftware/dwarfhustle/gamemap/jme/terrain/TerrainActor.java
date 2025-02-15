@@ -75,6 +75,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMes
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMultiBlockSelectingModeMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSingleBlockSelectingFinishedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSingleBlockSelectingModeMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -446,6 +447,7 @@ public class TerrainActor {
                     }
                 }
                 setGameMap(is.os, gm0);
+                actor.tell(new SetSingleBlockSelectingFinishedMessage());
             });
             is.selectBlockState.initKeys();
         });

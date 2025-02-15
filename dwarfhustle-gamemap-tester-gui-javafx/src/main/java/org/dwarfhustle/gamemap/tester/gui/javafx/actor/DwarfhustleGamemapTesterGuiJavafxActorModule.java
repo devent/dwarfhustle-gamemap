@@ -20,6 +20,7 @@ package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 import java.util.Map;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.MaterialsButtonsActor.MaterialsButtonsActorFactory;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectDeleteActor.ObjectDeleteActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectInsertActor.ObjectInsertActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectsButtonsActor.ObjectsButtonsActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.PaintTerrainActorFactory;
@@ -48,6 +49,7 @@ import com.google.inject.name.Names;
  * @see JmeMappingsProvider
  * @see PaintTerrainActorFactory
  * @see ObjectInsertActorFactory
+ * @see ObjectDeleteActorFactory
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule {
@@ -73,6 +75,8 @@ public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule
                 .build(PaintTerrainActorFactory.class));
         install(new FactoryModuleBuilder().implement(ObjectInsertActor.class, ObjectInsertActor.class)
                 .build(ObjectInsertActorFactory.class));
+        install(new FactoryModuleBuilder().implement(ObjectDeleteActor.class, ObjectDeleteActor.class)
+                .build(ObjectDeleteActorFactory.class));
     }
 
 }

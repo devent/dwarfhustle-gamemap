@@ -27,11 +27,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectDeleteActor.StartDeleteObjectMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectDeleteActor.StopDeleteObjectMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectInsertActor.StartInsertObjectMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectInsertActor.StopInsertObjectMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.StartPaintTerrainMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.StopPaintTerrainMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.DeleteButtonsCloseTriggeredMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.DeleteButtonsOpenTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseTriggeredMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenMessage;
@@ -151,6 +155,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Optional<ActorRef<Message>> paintTerrainActor = Optional.empty();
 
     private Optional<ActorRef<Message>> objectInsertActor = Optional.empty();
+
+    private Optional<ActorRef<Message>> objectDeleteActor = Optional.empty();
 
     @SneakyThrows
     @Override
@@ -288,6 +294,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
         actor.tell(new MaterialsButtonsOpenMessage(initial.controller.testerButtonsBox));
         stopObjectInsertActor();
+        stopObjectDeleteActor();
         createPaintTerrainActor();
         return Behaviors.same();
     }
@@ -310,6 +317,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
         actor.tell(new ObjectsButtonsOpenMessage(initial.controller.testerButtonsBox));
         stopPaintTerrainActor();
+        stopObjectDeleteActor();
         createObjectInsertActor();
         return Behaviors.same();
     }
@@ -321,6 +329,28 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         log.debug("onObjectsButtonsCloseTriggered {}", m);
         actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
         stopObjectInsertActor();
+        return Behaviors.same();
+    }
+
+    /**
+     * Processing {@link DeleteButtonsOpenTriggeredMessage}.
+     */
+    private Behavior<Message> onDeleteButtonsOpenTriggered(DeleteButtonsOpenTriggeredMessage m) {
+        log.debug("onDeleteButtonsOpenTriggered {}", m);
+        actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        stopObjectInsertActor();
+        stopPaintTerrainActor();
+        createObjectDeleteActor();
+        return Behaviors.same();
+    }
+
+    /**
+     * Processing {@link DeleteButtonsCloseTriggeredMessage}.
+     */
+    private Behavior<Message> onDeleteButtonsCloseTriggered(DeleteButtonsCloseTriggeredMessage m) {
+        log.debug("onDeleteButtonsCloseTriggered {}", m);
+        stopObjectDeleteActor();
         return Behaviors.same();
     }
 
@@ -356,6 +386,22 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         objectInsertActor = Optional.empty();
     }
 
+    private void createObjectDeleteActor() {
+        ObjectDeleteActor.create(injector, Duration.ofSeconds(1)).whenComplete((res, ex) -> {
+            if (ex != null) {
+                log.error("ObjectDeleteActor", ex);
+            } else {
+                objectDeleteActor = Optional.of(res);
+                res.tell(new StartDeleteObjectMessage());
+            }
+        });
+    }
+
+    private void stopObjectDeleteActor() {
+        objectDeleteActor.ifPresent(a -> a.tell(new StopDeleteObjectMessage()));
+        objectDeleteActor = Optional.empty();
+    }
+
     private void saveGameMap(GameMap gm) {
         os.set(gm.getObjectType(), gm);
     }
@@ -370,6 +416,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
                 .onMessage(MaterialsButtonsCloseTriggeredMessage.class, this::onMaterialsButtonsCloseTriggered)//
                 .onMessage(ObjectsButtonsOpenTriggeredMessage.class, this::onObjectsButtonsOpenTriggered)//
                 .onMessage(ObjectsButtonsCloseTriggeredMessage.class, this::onObjectsButtonsCloseTriggered)//
+                .onMessage(DeleteButtonsOpenTriggeredMessage.class, this::onDeleteButtonsOpenTriggered)//
+                .onMessage(DeleteButtonsCloseTriggeredMessage.class, this::onDeleteButtonsCloseTriggered)//
         ;
     }
 

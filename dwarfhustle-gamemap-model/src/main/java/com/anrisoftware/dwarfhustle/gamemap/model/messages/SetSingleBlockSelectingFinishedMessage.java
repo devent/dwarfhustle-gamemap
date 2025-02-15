@@ -23,13 +23,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Message to enable or to disable single-blocks selecting mode.
+ * Message that a single-block was selected.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@ToString(callSuper = true)
 @RequiredArgsConstructor
-public class SetSingleBlockSelectingModeMessage extends Message {
+@ToString(callSuper = true)
+public class SetSingleBlockSelectingFinishedMessage extends Message {
 
-    public final boolean enabled;
 }

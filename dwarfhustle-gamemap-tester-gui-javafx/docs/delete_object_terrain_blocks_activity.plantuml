@@ -1,0 +1,13 @@
+@startuml
+start
+:User selects toggle button "Delete";
+:Start single block selection mode;
+if (User press any other button?) then (yes)
+:Remove selection;
+else (no)
+:User selects block;
+:Remove selection;
+:Delete objects from selected block;
+endif
+end
+@enduml

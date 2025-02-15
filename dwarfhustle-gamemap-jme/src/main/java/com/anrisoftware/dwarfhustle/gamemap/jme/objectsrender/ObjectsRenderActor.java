@@ -50,6 +50,7 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
@@ -356,9 +357,11 @@ public class ObjectsRenderActor {
                 if (cursorZ <= z && (cursorZ + visibleLayers - 1) > z) {
                     val mo = getMapObject(is.mg, gm, thatIndex);
                     mo.getOids().forEachKeyValue((id, type) -> {
-                        final GameMapObject go = is.og.get(type, id);
-                        if (go.isHaveModel()) {
-                            chunkids.put(go.getObjectType(), go.getId());
+                        final GameObject go = is.og.get(type, id);
+                        if (go instanceof GameMapObject gmo) {
+                            if (gmo.isHaveModel()) {
+                                chunkids.put(go.getObjectType(), go.getId());
+                            }
                         }
                         alldbids.add(go.getId());
                     });

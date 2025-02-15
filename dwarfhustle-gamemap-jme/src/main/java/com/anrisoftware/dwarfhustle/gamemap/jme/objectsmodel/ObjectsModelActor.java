@@ -69,9 +69,8 @@ import com.anrisoftware.dwarfhustle.model.knowledge.evrete.VegetationKnowledge;
 import com.anrisoftware.dwarfhustle.model.knowledge.evrete.VegetationLoadKnowledges;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage;
-import com.anrisoftware.dwarfhustle.model.objects.DeleteObjectMessage.DeleteObjectSuccessMessage;
 import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
-import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage.InsertObjectSuccessMessage;
+import com.anrisoftware.dwarfhustle.model.objects.ObjectResponseMessage;
 import com.anrisoftware.dwarfhustle.model.objects.ObjectsActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
@@ -137,13 +136,13 @@ public class ObjectsModelActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class WrappedInsertObjectResponse extends Message {
-        public final InsertObjectMessage.InsertObjectSuccessMessage res;
+        public final ObjectResponseMessage res;
     }
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class WrappedDeleteObjectResponse extends Message {
-        public final DeleteObjectMessage.DeleteObjectSuccessMessage res;
+        public final ObjectResponseMessage res;
     }
 
     /**
@@ -231,9 +230,9 @@ public class ObjectsModelActor {
 
     private InitialStateMessage is;
 
-    private ActorRef<DeleteObjectSuccessMessage> objectsDeleteAdapter;
+    private ActorRef<ObjectResponseMessage> objectsDeleteAdapter;
 
-    private ActorRef<InsertObjectSuccessMessage> objectsInsertAdapter;
+    private ActorRef<ObjectResponseMessage> objectsInsertAdapter;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -248,9 +247,9 @@ public class ObjectsModelActor {
     public Behavior<Message> start(Injector injector) {
         this.pool = new ForkJoinPool(4);
         this.askKnowledge = (timeout, type) -> askKnowledgeObjects(actor.getActorSystem(), timeout, type);
-        this.objectsInsertAdapter = context.messageAdapter(InsertObjectMessage.InsertObjectSuccessMessage.class,
+        this.objectsInsertAdapter = context.messageAdapter(ObjectResponseMessage.class,
                 WrappedInsertObjectResponse::new);
-        this.objectsDeleteAdapter = context.messageAdapter(DeleteObjectMessage.DeleteObjectSuccessMessage.class,
+        this.objectsDeleteAdapter = context.messageAdapter(ObjectResponseMessage.class,
                 WrappedDeleteObjectResponse::new);
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
@@ -382,9 +381,8 @@ public class ObjectsModelActor {
                 final String growsInto = kvv.getGrowsInto();
                 final var kgrowv = is.kg.get(KnowledgeTree.TYPE.hashCode()).objects
                         .detect((it) -> it.name.equalsIgnoreCase(growsInto));
-                final var gm = getGameMap(is.og, this.gm);
-                is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, mo, v.getId(), () -> {
-                    is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, this.gm, cid, kgrowv, v.pos, (og) -> {
+                is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, mo.getObjectType(), v.getId(), () -> {
+                    is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, cid, kgrowv, v.pos, (og) -> {
                         final var growv = (Tree) og;
                         growv.setVisible(false);
                         growv.setCanSelect(false);
@@ -413,13 +411,16 @@ public class ObjectsModelActor {
         }
     }
 
+    @SneakyThrows
     private void onUpdateModel0(UpdateTerrainMessage m) {
         final var gm = getGameMap(is.og, m.gm);
         final MutableIntObjectMap<ImmutableList<Integer>> map = IntObjectMaps.mutable
                 .ofInitialCapacity(gm.filledChunks.size());
-        gm.filledChunks.forEachKeyMultiValues((cid, indices) -> {
-            map.put(cid, Lists.immutable.ofAll(indices));
-        });
+        try (var lock = gm.acquireLockMapObjects()) {
+            gm.filledChunks.forEachKeyMultiValues((cid, indices) -> {
+                map.put(cid, Lists.immutable.ofAll(indices));
+            });
+        }
         pool.invoke(new ObjectsSeedAction(m.gm, map));
     }
 

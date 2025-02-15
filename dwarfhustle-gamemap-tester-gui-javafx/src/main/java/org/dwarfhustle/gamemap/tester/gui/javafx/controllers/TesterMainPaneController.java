@@ -87,13 +87,17 @@ public class TesterMainPaneController extends AbstractStatusController {
     @FXML
     public VBox testerButtonsBox;
 
-    public ToggleGroup testerButtons = new ToggleGroup();
+    @FXML
+    public ToggleGroup mainButtonsGroup;
 
     @FXML
     public ToggleButton paintButton;
 
     @FXML
     public ToggleButton insertButton;
+
+    @FXML
+    public ToggleButton deleteButton;
 
     @FXML
     public Button northButton;
@@ -141,8 +145,6 @@ public class TesterMainPaneController extends AbstractStatusController {
     }
 
     public void initButtons(GlobalKeys globalKeys, Map<String, KeyMapping> keyMappings) {
-        paintButton.setToggleGroup(testerButtons);
-        insertButton.setToggleGroup(testerButtons);
         quitButton.setOnAction(e -> {
             globalKeys.runAction(keyMappings.get("QUIT_MAPPING"));
         });
@@ -152,25 +154,25 @@ public class TesterMainPaneController extends AbstractStatusController {
         aboutButton.setOnAction(e -> {
             globalKeys.runAction(keyMappings.get("ABOUT_DIALOG_MAPPING"));
         });
-        testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
+        mainButtonsGroup.selectedToggleProperty().addListener((o, oval, nval) -> {
             if (nval != null && nval.isSelected()) {
                 if (nval == paintButton) {
                     globalKeys.runAction(keyMappings.get("OPEN_MATERIALS_BUTTONS_MAPPING"));
-                }
-            } else if (oval != null && !oval.isSelected()) {
-                if (oval == paintButton) {
-                    globalKeys.runAction(keyMappings.get("CLOSE_MATERIALS_BUTTONS_MAPPING"));
+                } else if (nval == insertButton) {
+                    globalKeys.runAction(keyMappings.get("OPEN_OBJECTS_BUTTONS_MAPPING"));
+                } else if (nval == deleteButton) {
+                    globalKeys.runAction(keyMappings.get("OPEN_DELETE_BUTTONS_MAPPING"));
                 }
             }
         });
-        testerButtons.selectedToggleProperty().addListener((o, oval, nval) -> {
-            if (nval != null && nval.isSelected()) {
-                if (nval == insertButton) {
-                    globalKeys.runAction(keyMappings.get("OPEN_OBJECTS_BUTTONS_MAPPING"));
-                }
-            } else if (oval != null && !oval.isSelected()) {
-                if (oval == insertButton) {
+        mainButtonsGroup.selectedToggleProperty().addListener((o, oval, nval) -> {
+            if (oval != null && !oval.isSelected()) {
+                if (oval == paintButton) {
+                    globalKeys.runAction(keyMappings.get("CLOSE_MATERIALS_BUTTONS_MAPPING"));
+                } else if (oval == insertButton) {
                     globalKeys.runAction(keyMappings.get("CLOSE_OBJECTS_BUTTONS_MAPPING"));
+                } else if (oval == deleteButton) {
+                    globalKeys.runAction(keyMappings.get("CLOSE_DELETE_BUTTONS_MAPPING"));
                 }
             }
         });
@@ -187,6 +189,12 @@ public class TesterMainPaneController extends AbstractStatusController {
             consumer.accept(true);
         });
         insertButton.setOnMouseExited(e -> {
+            consumer.accept(false);
+        });
+        deleteButton.setOnMouseEntered(e -> {
+            consumer.accept(true);
+        });
+        deleteButton.setOnMouseExited(e -> {
             consumer.accept(false);
         });
     }

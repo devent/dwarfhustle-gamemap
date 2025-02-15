@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollBar?>
 <?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -69,8 +70,12 @@
                <children>
                   <HBox alignment="BOTTOM_LEFT" prefWidth="200.0">
                      <children>
-                        <ToggleButton fx:id="paintButton" mnemonicParsing="false" text="Paint" />
-                        <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" />
+                        <ToggleButton fx:id="paintButton" mnemonicParsing="false" text="Paint">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="mainButtonsGroup" />
+                           </toggleGroup></ToggleButton>
+                        <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" toggleGroup="$mainButtonsGroup" />
+                        <ToggleButton fx:id="deleteButton" mnemonicParsing="false" text="Delete" toggleGroup="$mainButtonsGroup" />
                         <Region HBox.hgrow="ALWAYS" />
                         <GridPane>
                           <columnConstraints>
