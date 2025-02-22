@@ -21,6 +21,7 @@ import com.anrisoftware.dwarfhustle.model.api.map.BlockObject
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeGrass
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTree
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling
 import com.jme3.input.controls.KeyTrigger
 
 import javafx.scene.input.KeyCodeCombination
@@ -107,6 +108,6 @@ m.LOAM_MATERIAL_MAPPING = [message: new MaterialSetTriggeredMessage("Topsoil", "
 m.BLOCK_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(BlockObject.TYPE), keyCode: empty(), keyTrigger: empty()]
 m.GRASS_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeGrass.TYPE), keyCode: empty(), keyTrigger: empty()]
 m.SHRUB_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeShrub.TYPE), keyCode: empty(), keyTrigger: empty()]
-m.TREE_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeTree.TYPE), keyCode: empty(), keyTrigger: empty()]
+m.TREE_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeTreeSapling.TYPE), keyCode: empty(), keyTrigger: empty()]
 
 m

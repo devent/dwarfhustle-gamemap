@@ -88,7 +88,7 @@ public class ObjectsButtonsController {
         tabListviews.put("block", blockList);
         tabListviews.put("grass", grassList);
         tabListviews.put("shrub", shrubList);
-        tabListviews.put("tree", treeList);
+        tabListviews.put("sapling", treeList);
     }
 
     public void setupObjects(Map<String, List<String>> tabsButtons) {

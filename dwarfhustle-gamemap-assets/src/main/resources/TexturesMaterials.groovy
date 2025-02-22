@@ -103,6 +103,13 @@ rid["CARROT"] = 1024
 rid["WHEAT"] = 1022
 rid["MEADOW-GRASS"] = 1021
 
+// Shrub
+rid["BLUEBERRIES"] = 1028
+
+// Tree-Sapling
+rid["BIRCH-SAPLING"] = 1039
+rid["PINE-SAPLING"] = 1031
+
 rid["FOCUSED-BLOCK"] = 0xfffc
 rid["SELECTED-BLOCK"] = 0xfffd
 rid["UNDISCOVERED"] = 0xfffe
@@ -197,6 +204,10 @@ m["Grass"].frames rid: rid["MEADOW-GRASS"], x: 0*w, y: 3*h, w: w, h: h, ww: ww, 
 m["Grass"].frames rid: rid["WHEAT"],        x: 0*w, y: 2*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 m["Grass"].frames rid: rid["RED-POPPY"],    x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 m["Grass"].frames rid: rid["DAISY"],        x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+
+m["Tree-Sapling"].image = "Textures/Tiles/tree-sapling-map.png"
+m["Tree-Sapling"].frames rid: rid["BIRCH-SAPLING"], x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
+m["Tree-Sapling"].frames rid: rid["PINE-SAPLING"] , x: 0*w, y: 0*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f
 
 m.Other.image = "Textures/Tiles/other-map.png"
 m.Other.frames rid: rid["UNDISCOVERED"],          x: 0*w, y: 1*h, w: w, h: h, ww: ww, hh: hh, color: white, transparent: false, glossiness: 0f, metallic: 0f, roughness: 1f

@@ -51,8 +51,8 @@ import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Grass;
+import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Shrub;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.Tree;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
@@ -179,7 +179,7 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
                     ko -> ko.getName().equalsIgnoreCase("block-normal") || ko.getName().contains("ramp"));
             collectObjects(typeObjects, kg, "grass", Grass.OBJECT_TYPE);
             collectObjects(typeObjects, kg, "shrub", Shrub.OBJECT_TYPE);
-            collectObjects(typeObjects, kg, "tree", Tree.OBJECT_TYPE);
+            collectObjects(typeObjects, kg, "sapling", KnowledgeTreeSapling.OBJECT_TYPE);
             c.setupObjects(typeObjects);
             c.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
             c.initListeners(globalKeys, keyMappings);
