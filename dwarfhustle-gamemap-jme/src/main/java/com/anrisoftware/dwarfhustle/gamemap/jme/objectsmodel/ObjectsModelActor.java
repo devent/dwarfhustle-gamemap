@@ -362,7 +362,7 @@ public class ObjectsModelActor {
             final var oid = object.getOid();
             final var k = is.kg.get(oid);
             for (final var kv : k.objects) {
-                if (kv.kid == object.kid) {
+                if (kv.kid == object.getKid()) {
                     if (object.getObjectType() == TreeSapling.OBJECT_TYPE) {
                         runTreeSapling(mo, kv, (Vegetation) object);
                     } else if (object.getObjectType() == Tree.OBJECT_TYPE) {
@@ -382,7 +382,7 @@ public class ObjectsModelActor {
                 final var kgrowv = is.kg.get(KnowledgeTree.TYPE.hashCode()).objects
                         .detect((it) -> it.name.equalsIgnoreCase(growsInto));
                 is.oa.tell(new DeleteObjectMessage<>(objectsDeleteAdapter, gm, mo.getObjectType(), v.getId(), () -> {
-                    is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, cid, kgrowv, v.pos, (og) -> {
+                    is.oa.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm, cid, kgrowv, v.getPos(), (og) -> {
                         final var growv = (Tree) og;
                         growv.setVisible(false);
                         growv.setCanSelect(false);

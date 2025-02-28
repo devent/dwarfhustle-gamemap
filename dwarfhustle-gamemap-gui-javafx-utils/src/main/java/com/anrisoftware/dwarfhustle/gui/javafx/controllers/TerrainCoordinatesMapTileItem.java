@@ -17,19 +17,38 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import lombok.ToString;
 
 /**
- * Item on the map tile.
+ * The terrain.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface MapTileItem {
+@ToString
+public class TerrainCoordinatesMapTileItem extends TerrainMapTileItem {
 
-    void setTitle(Label label);
+    public TerrainCoordinatesMapTileItem(MapBlock mb, KnowledgeGetter kg, ObjectsGetter cg) {
+        super(mb, kg, cg);
+    }
 
-    void setInfo(VBox vox);
+    @Override
+    public void setInfo(VBox box) {
+        box.getChildren().clear();
+        box.getChildren().add(
+                new Label("\u2022\u2002" + mb.getPos().getX() + "/" + mb.getPos().getY() + "/" + mb.getPos().getZ()));
+        box.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+    }
 
-    int getType();
+    @Override
+    public int getType() {
+        return BlockMaterial.OBJECT_TYPE;
+    }
 }

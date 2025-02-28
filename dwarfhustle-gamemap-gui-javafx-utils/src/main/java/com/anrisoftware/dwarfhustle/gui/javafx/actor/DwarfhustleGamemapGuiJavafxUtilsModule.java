@@ -17,11 +17,26 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.actor;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+
+import java.util.ServiceLoader;
+
+import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
+import org.eclipse.collections.api.map.primitive.IntObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
+
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelActorFactory;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
+
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 /**
  *
@@ -30,10 +45,33 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
  */
 public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
 
+    private final IntObjectMap<GameMapObjectItem> gameMapObjectItems;
+
+    public DwarfhustleGamemapGuiJavafxUtilsModule() {
+        this.gameMapObjectItems = loadGameMapObjectItem();
+    }
+
     @Override
     protected void configure() {
-		install(new FactoryModuleBuilder()
-				.implement(new TypeLiteral<AbstractPaneActor<? extends InfoPaneController>>() {
-				}, InfoPanelActor.class).build(InfoPanelActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends InfoPaneController>>() {
+                }, InfoPanelActor.class).build(InfoPanelActorFactory.class));
     }
+
+    private IntObjectMap<GameMapObjectItem> loadGameMapObjectItem() {
+        MutableIntObjectMap<GameMapObjectItem> map = IntObjectMaps.mutable.empty();
+        for (final var s : ServiceLoader.load(GameMapObjectItem.class)) {
+            map.put(s.getType(), s);
+        }
+        assertThat("GameMapObjectItem(s)", map.size(), is(greaterThan(0)));
+        return map;
+    }
+
+    @Singleton
+    @Provides
+    @Named("gameMapObjectItems")
+    public IntObjectMap<GameMapObjectItem> getGameMapObjectItems() {
+        return gameMapObjectItems;
+    }
+
 }

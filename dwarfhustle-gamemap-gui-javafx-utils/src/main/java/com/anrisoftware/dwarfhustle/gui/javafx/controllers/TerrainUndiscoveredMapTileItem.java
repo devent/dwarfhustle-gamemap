@@ -17,32 +17,43 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import javafx.fxml.FXML;
+import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
+import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import lombok.ToString;
 
 /**
- * Controller for {@code map_tile_item_widget_ui.fxml}
+ * The undiscovered terrain.
  *
- * @author Erwin Müller
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class MapTileItemWidgetController {
+@ToString
+public class TerrainUndiscoveredMapTileItem implements MapTileItem {
 
-    @FXML
-    public BorderPane objectInfoPane;
+    private final MapBlock mb;
 
-    @FXML
-    public Label objectInfoTitle;
+    public TerrainUndiscoveredMapTileItem(MapBlock mb) {
+        this.mb = mb;
+    }
 
-    @FXML
-    public VBox objectInfoBox;
+    @Override
+    public void setTitle(Label label) {
+        label.setText("Undiscovered");
+    }
 
-    public void setup(MapTileItem item) {
-        item.setTitle(objectInfoTitle);
-        item.setInfo(objectInfoBox);
-        objectInfoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        objectInfoPane.autosize();
+    @Override
+    public void setInfo(VBox box) {
+        box.getChildren().clear();
+        box.getChildren()
+                .add(new Label("\u2022" + mb.getPos().getX() + "/" + mb.getPos().getY() + "/" + mb.getPos().getZ()));
+        box.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+    }
+
+    @Override
+    public int getType() {
+        return BlockMaterial.OBJECT_TYPE;
     }
 }

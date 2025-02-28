@@ -32,6 +32,7 @@ import java.util.concurrent.CompletionStage;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.primitive.IntObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
@@ -40,20 +41,25 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessag
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.TerrainMapTileItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.TerrainUndiscoveredMapTileItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.map.Block;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
@@ -65,8 +71,10 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -103,6 +111,10 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     @Inject
     private GameSettingsProvider gs;
 
+    @Inject
+    @Named("gameMapObjectItems")
+    private IntObjectMap<GameMapObjectItem> gameMapObjectItems;
+
     private Texts texts;
 
     private InfoPaneController controller;
@@ -117,7 +129,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     private long currentMap;
 
-    private final GameBlockPos oldCursor = new GameBlockPos();
+    private KnowledgeGetter kg;
 
     @Inject
     public void setTextsFactory(TextsFactory texts) {
@@ -129,6 +141,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
         this.cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
         this.mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+        this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
         this.controller = initial.controller;
         this.currentMap = gs.get().currentMap.get();
         gs.get().currentMap.addListener((o, ov, nv) -> {
@@ -231,22 +244,35 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         pane.setLayoutY(e.getSceneY() + 20);
     }
 
+    @SneakyThrows
     private void updateInfoPane() {
         final var gm = getGameMap(og, currentMap);
-        // if (oldCursor.equals(gm.getCursor())) {
-        // return;
-        // }
-        final var chunk = getChunk(cg, 0);
         final MutableList<MapTileItem> items = Lists.mutable.empty();
-        final var mb = findBlock(chunk, gm.getCursor(), cg);
-        items.add(new MapTileItem(mb));
-        if (gm.isFilledBlock(mb)) {
-            final var mo = getMapObject(mg, gm, mb.getPos());
-            mo.getOids().forEachKeyValue((id, type) -> {
-                final GameMapObject go = og.get(type, id);
-                // System.out.println("InfoPanelActor " +go); // TODO
-                items.add(new MapTileItem(go));
-            });
+        try (final var lock = gm.acquireLockMapObjects()) {
+            final var chunk = getChunk(cg, 0);
+            final var mb = findBlock(chunk, gm.getCursor(), cg);
+            if (!mb.isDiscovered()) {
+                items.add(new TerrainUndiscoveredMapTileItem(mb));
+            } else {
+                items.add(new TerrainMapTileItem(mb, kg, cg));
+                if (mb.isEmpty()) {
+                    final var mbdown = findBlock(chunk, gm.getCursor().addZ(1), cg);
+                    items.add(new TerrainMapTileItem(mbdown, kg, cg));
+                }
+                if (gm.isFilledBlock(mb)) {
+                    final var mo = getMapObject(mg, gm, mb.getPos());
+                    mo.getOids().forEachKeyValue((id, type) -> {
+                        if (type == Block.OBJECT_TYPE) {
+                            return;
+                        }
+                        final GameMapObject go = og.get(type, id);
+                        var objectItem = gameMapObjectItems.get(type);
+                        if (objectItem != null) {
+                            items.add(objectItem.create(go, kg));
+                        }
+                    });
+                }
+            }
         }
         runFxThread(() -> {
             if (controller.items != null) {

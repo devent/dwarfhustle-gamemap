@@ -8,13 +8,13 @@ import groovy.util.ScriptException;
 
 /**
  * Provides the {@link KeyMappingMap} from {@code TesterKeyMapping.groovy.}
- * 
+ *
  * @author Erwin Müller <erwin@muellerpublic.de>
  */
 public class TesterKeyMappingProvider extends AbstractKeyMappingProvider {
 
-	public TesterKeyMappingProvider() throws ResourceException, ScriptException {
-		super(TesterKeyMappingProvider.class.getResource("TesterKeyMapping.groovy"), "TesterKeyMapping.groovy");
-	}
+    public TesterKeyMappingProvider() throws ResourceException, ScriptException {
+        super(TesterKeyMappingProvider.class.getResource("TesterKeyMapping.groovy"), "TesterKeyMapping.groovy");
+    }
 
 }

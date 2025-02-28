@@ -199,7 +199,7 @@ public abstract class AbstractPaneActor<T> {
     /**
      * Ignores the message.
      */
-    private Behavior<Message> onIgnore(Message m) {
+    private Behavior<Message> onIgnore(Object m) {
         return Behaviors.same();
     }
 
@@ -220,12 +220,14 @@ public abstract class AbstractPaneActor<T> {
      * Throws setup errors.
      */
     @SneakyThrows
-    private Behavior<Message> onSetupUiError(SetupUiErrorMessage m) {
+    private Behavior<Message> onSetupUiError(Object mo) {
+        SetupUiErrorMessage m = (SetupUiErrorMessage) mo;
         log.error("onSetupUiError", m);
         throw m.cause;
     }
 
-    private Behavior<Message> stashOtherCommand(Message m) {
+    private Behavior<Message> stashOtherCommand(Object mo) {
+        Message m = (Message) mo;
         log.debug("stashOtherCommand: {}", m);
         try {
             buffer.stash(m);

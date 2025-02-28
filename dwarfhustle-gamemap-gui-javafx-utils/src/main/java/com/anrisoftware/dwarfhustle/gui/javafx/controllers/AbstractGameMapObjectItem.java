@@ -17,32 +17,27 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
- * Controller for {@code map_tile_item_widget_ui.fxml}
+ * @see GameMapObject
  *
- * @author Erwin Müller
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public class MapTileItemWidgetController {
+@ToString
+@NoArgsConstructor
+public abstract class AbstractGameMapObjectItem implements MapTileItem, GameMapObjectItem {
 
-    @FXML
-    public BorderPane objectInfoPane;
+    protected GameMapObject go;
 
-    @FXML
-    public Label objectInfoTitle;
+    protected KnowledgeGetter kg;
 
-    @FXML
-    public VBox objectInfoBox;
-
-    public void setup(MapTileItem item) {
-        item.setTitle(objectInfoTitle);
-        item.setInfo(objectInfoBox);
-        objectInfoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        objectInfoPane.autosize();
+    public AbstractGameMapObjectItem(GameMapObject go, KnowledgeGetter kg) {
+        this.go = go;
+        this.kg = kg;
     }
 }

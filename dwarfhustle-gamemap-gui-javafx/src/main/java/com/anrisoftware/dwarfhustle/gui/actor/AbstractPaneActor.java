@@ -34,9 +34,9 @@ import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControll
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InitialStateMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
-import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.MainPanelState;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.PanelComponent;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -225,7 +225,8 @@ public abstract class AbstractPaneActor<T> {
      * Throws setup errors.
      */
     @SneakyThrows
-    private Behavior<Message> onSetupUiError(SetupUiErrorMessage m) {
+    private Behavior<Message> onSetupUiError(Object mo) {
+        SetupUiErrorMessage m = (SetupUiErrorMessage) mo;
         log.error("onSetupUiError", m);
         throw m.cause;
     }

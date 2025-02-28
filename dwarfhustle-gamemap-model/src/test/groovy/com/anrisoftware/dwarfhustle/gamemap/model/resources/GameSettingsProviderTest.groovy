@@ -43,8 +43,8 @@ class GameSettingsProviderTest {
                     return gs
                 }, """---
 locale: "en_US"
-gameTickDuration: 0.100000000
-terrainUpdateDuration: 0.050000000
+gameTickDuration: 0.025000000
+terrainUpdateDuration: 0.100000000
 windowFullscreen: false
 windowWidth: 1024
 windowHeight: 768
