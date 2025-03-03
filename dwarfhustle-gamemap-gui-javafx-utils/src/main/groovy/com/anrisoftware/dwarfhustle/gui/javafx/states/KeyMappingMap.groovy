@@ -17,44 +17,43 @@ import javafx.scene.input.KeyCodeCombination
 @ToString
 class KeyMappingMap {
 
-	public Map<String, KeyMapping> data = [:]
+    public Map<String, KeyMapping> data = [:]
 
-	void setProperty(String name, Object value) {
-		if (data[name] == null) {
-			data[name] = new KeyMapping()
-			data[name].name = name
-		}
-		data[name].set(value)
-	}
+    void setProperty(String name, Object value) {
+        if (data[name] == null) {
+            data[name] = new KeyMapping()
+            data[name].name = name
+        }
+        data[name].set(value)
+    }
 
-	def propertyMissing(String name) {
-		if (data[name] == null) {
-			data[name] = new KeyMapping()
-			data[name].name = name
-		}
-		return data[name]
-	}
+    def propertyMissing(String name) {
+        if (data[name] == null) {
+            data[name] = new KeyMapping()
+            data[name].name = name
+        }
+        return data[name]
+    }
 }
 
 /**
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@ToString
+@ToString(includeFields = true)
 class KeyMapping {
 
-	public String name;
+    public String name;
 
-	public Optional<KeyCodeCombination> code;
+    public Optional<KeyCodeCombination> code;
 
-	public Optional<KeyTrigger> trigger;
+    public Optional<KeyTrigger> trigger;
 
-	public GuiMessage message;
+    public GuiMessage message;
 
-	def set(Map args) {
-		name = args.get("name")
-		code = args.getOrDefault("code", empty())
-		trigger = args.getOrDefault("trigger", empty())
-		message = args.get("message")
-	}
+    def set(Map args) {
+        code = args.getOrDefault("code", empty())
+        trigger = args.getOrDefault("trigger", empty())
+        message = args.get("message")
+    }
 }

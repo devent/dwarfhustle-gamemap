@@ -21,20 +21,17 @@ import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThre
 import static org.dwarfhustle.gamemap.tester.gui.javafx.actor.AdditionalCss.ADDITIONAL_CSS;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Predicate;
 
-import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController;
-import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectSetTriggeredMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TimeButtonsController;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsCloseMessage;
 import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsOpenMessage;
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.ObjectTypeNameSetMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelActorCreator;
@@ -44,21 +41,12 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
-import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.Grass;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.Shrub;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
-import com.jayfella.jme.jfx.JavaFxUI;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -70,17 +58,17 @@ import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Objects buttons loaded from {@code tester_objects_buttons.fxml}.
+ * Time buttons loaded from {@code tester_time_buttons.fxml}.
  *
  * @author Erwin Müller
  */
 @Slf4j
-public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsController> {
+public class TimeButtonsActor extends AbstractPaneActor<TimeButtonsController> {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-            ObjectsButtonsActor.class.getSimpleName());
+            TimeButtonsActor.class.getSimpleName());
 
-    public static final String NAME = ObjectsButtonsActor.class.getSimpleName();
+    public static final String NAME = TimeButtonsActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
 
@@ -93,12 +81,12 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
      *
      * @author Erwin Müller <erwin@muellerpublic.de>
      */
-    public interface ObjectsButtonsActorFactory extends AbstractPaneActorFactory<ObjectsButtonsController> {
+    public interface TimeButtonsActorFactory extends AbstractPaneActorFactory<TimeButtonsController> {
     }
 
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, ObjectsButtonsActorFactory.class,
-                "/tester_objects_buttons.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, TimeButtonsActorFactory.class,
+                "/tester_time_buttons.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
     }
 
     @Inject
@@ -119,10 +107,7 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
     @Named("AppIcons")
     private Images appIcons;
 
-    @Inject
-    private ActorSystemProvider actor;
-
-    private ObjectsButtonsController controller;
+    private TimeButtonsController controller;
 
     @Override
     protected Behavior<Message> onAttachGui(AttachGuiMessage m) {
@@ -131,12 +116,35 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
     }
 
     /**
+     * Processing {@link MaterialsButtonsOpenMessage}.
+     */
+    private Behavior<Message> onMaterialsButtonsOpen(MaterialsButtonsOpenMessage m) {
+        log.debug("onMaterialsButtonsOpen {}", m);
+        runFxThread(() -> {
+            m.testerButtonsBox.getChildren().add(0, controller.timeBox);
+            m.testerButtonsBox.requestLayout();
+        });
+        return Behaviors.same();
+    }
+
+    /**
+     * Processing {@link MaterialsButtonsCloseMessage}.
+     */
+    private Behavior<Message> onMaterialsButtonsClose(MaterialsButtonsCloseMessage m) {
+        log.debug("onMaterialsButtonsClose {}", m);
+        runFxThread(() -> {
+            m.testerButtonsBox.getChildren().remove(controller.timeBox);
+            m.testerButtonsBox.requestLayout();
+        });
+        return Behaviors.same();
+    }
+
+    /**
      * Processing {@link ObjectsButtonsOpenMessage}.
      */
     private Behavior<Message> onObjectsButtonsOpen(ObjectsButtonsOpenMessage m) {
         log.debug("onObjectsButtonsOpen {}", m);
         runFxThread(() -> {
-            m.testerButtonsBox.getChildren().add(0, controller.objectsBox);
             m.testerButtonsBox.requestLayout();
         });
         return Behaviors.same();
@@ -148,66 +156,28 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
     private Behavior<Message> onObjectsButtonsClose(ObjectsButtonsCloseMessage m) {
         log.debug("onObjectsButtonsClose {}", m);
         runFxThread(() -> {
-            m.testerButtonsBox.getChildren().remove(controller.objectsBox);
             m.testerButtonsBox.requestLayout();
-        });
-        return Behaviors.same();
-    }
-
-    /**
-     * Processing {@link ObjectSetTriggeredMessage}.
-     */
-    private Behavior<Message> onObjectSetTriggered(ObjectSetTriggeredMessage m) {
-        log.debug("onObjectSetTriggered {}", m);
-        runFxThread(() -> {
-            if (controller.selectedObject.isPresent()) {
-                actor.tell(new ObjectTypeNameSetMessage(m.type, controller.selectedObject.get()));
-                controller.setSelectedObject(false);
-            }
         });
         return Behaviors.same();
     }
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        var kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
-        Map<String, List<String>> typeObjects = Maps.mutable.empty();
         final var c = is.controller;
         this.controller = c;
         runFxThread(() -> {
-            collectObjects(typeObjects, kg, "block", BlockObject.OBJECT_TYPE,
-                    ko -> ko.getName().equalsIgnoreCase("block-normal") || ko.getName().contains("ramp"));
-            collectObjects(typeObjects, kg, "grass", Grass.OBJECT_TYPE);
-            collectObjects(typeObjects, kg, "shrub", Shrub.OBJECT_TYPE);
-            collectObjects(typeObjects, kg, "sapling", KnowledgeTreeSapling.OBJECT_TYPE);
-            c.setupObjects(typeObjects);
             c.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
             c.initListeners(globalKeys, keyMappings);
             c.setOnMouseEnteredGui(entered -> {
                 gs.get().mouseEnteredGui.set(entered);
             });
-            double width = JavaFxUI.getInstance().getScene().getWidth();
-            c.objectsBox.requestLayout();
         });
         return super.getBehaviorAfterAttachGui()//
+                .onMessage(MaterialsButtonsOpenMessage.class, this::onMaterialsButtonsOpen)//
+                .onMessage(MaterialsButtonsCloseMessage.class, this::onMaterialsButtonsClose)//
                 .onMessage(ObjectsButtonsOpenMessage.class, this::onObjectsButtonsOpen)//
                 .onMessage(ObjectsButtonsCloseMessage.class, this::onObjectsButtonsClose)//
-                .onMessage(ObjectSetTriggeredMessage.class, this::onObjectSetTriggered)//
         ;
-    }
-
-    private void collectObjects(Map<String, List<String>> typeObjects, KnowledgeGetter kg, String name, int type) {
-        collectObjects(typeObjects, kg, name, type, ko -> true);
-    }
-
-    private void collectObjects(Map<String, List<String>> typeObjects, KnowledgeGetter kg, String name, int type,
-            Predicate<KnowledgeObject> filter) {
-        var objects = kg.get(type);
-        List<String> objectNames = Lists.mutable.withInitialCapacity(objects.objects.size());
-        typeObjects.put(name, objectNames);
-        for (var ko : objects.objects) {
-            objectNames.add(ko.name);
-        }
     }
 
     @Override

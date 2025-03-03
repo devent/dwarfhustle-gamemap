@@ -60,7 +60,6 @@ public class GameTickActor {
     @RequiredArgsConstructor
     @ToString(callSuper = true)
     private static class UpdateGameTickMessage extends Message {
-        public final long tick;
     }
 
     /**
@@ -77,10 +76,8 @@ public class GameTickActor {
      */
     @SuppressWarnings("unchecked")
     public static Behavior<Message> create(Injector injector) {
-        return Behaviors.withTimers(timer -> Behaviors.setup(context -> {
-            return (Behavior<Message>) injector.getInstance(GameTickActorFactory.class).create(context, timer)
-                    .start(injector);
-        }));
+        return Behaviors.withTimers(timer -> Behaviors.setup(context -> ((Behavior<Message>) injector.getInstance(GameTickActorFactory.class).create(context, timer)
+                .start(injector))));
     }
 
     /**
@@ -121,7 +118,7 @@ public class GameTickActor {
      * </ul>
      */
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
-        timer.startTimerAtFixedRate(GAME_TICK_MESSAGE_TIMER_KEY, new UpdateGameTickMessage(tick++),
+        timer.startTimerAtFixedRate(GAME_TICK_MESSAGE_TIMER_KEY, new UpdateGameTickMessage(),
                 gs.get().gameTickDuration.get());
         return Behaviors.same();
     }
@@ -132,7 +129,7 @@ public class GameTickActor {
      * </ul>
      */
     private Behavior<Message> onUpdateGameTick(UpdateGameTickMessage m) {
-        a.tell(new GameTickMessage(m.tick));
+        a.tell(new GameTickMessage(tick++));
         return Behaviors.same();
     }
 

@@ -21,13 +21,12 @@ import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.create
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
@@ -43,6 +42,7 @@ import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.objectsrender.ObjectsRenderActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppPausedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -81,7 +81,6 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
-import akka.actor.typed.javadsl.TimerScheduler;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
@@ -96,8 +95,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ObjectsModelActor {
-
-    private static final String UPDATE_OBJECTS_MESSAGE_TIMER_KEY = "ObjectsModelActor-UpdateObjectsMessage-Timer";
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
             ObjectsModelActor.class.getSimpleName());
@@ -129,12 +126,6 @@ public class ObjectsModelActor {
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
-    private static class UpdateTerrainMessage extends Message {
-        public final long gm;
-    }
-
-    @RequiredArgsConstructor
-    @ToString(callSuper = true)
     private static class WrappedInsertObjectResponse extends Message {
         public final ObjectResponseMessage res;
     }
@@ -151,25 +142,23 @@ public class ObjectsModelActor {
      * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
     public interface ObjectsModelActorFactory {
-        ObjectsModelActor create(ActorContext<Message> context, StashBuffer<Message> stash,
-                TimerScheduler<Message> timer);
+        ObjectsModelActor create(ActorContext<Message> context, StashBuffer<Message> stash);
     }
 
     /**
      * Creates the {@link ObjectsRenderActor}.
      */
     private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
-        return Behaviors.withStash(100, stash -> Behaviors.withTimers(timer -> Behaviors.setup(context -> {
-            context.pipeToSelf(CompletableFuture.supplyAsync(() -> returnInitialState(injector, actor)),
-                    (result, cause) -> {
-                        if (cause == null) {
-                            return result;
-                        } else {
-                            return new SetupErrorMessage(cause);
-                        }
-                    });
-            return injector.getInstance(ObjectsModelActorFactory.class).create(context, stash, timer).start(injector);
-        })));
+        return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
+            context.pipeToSelf(supplyAsync(() -> returnInitialState(injector, actor)), (result, cause) -> {
+                if (cause == null) {
+                    return result;
+                } else {
+                    return new SetupErrorMessage(cause);
+                }
+            });
+            return injector.getInstance(ObjectsModelActorFactory.class).create(context, stash).start(injector);
+        }));
     }
 
     /**
@@ -207,10 +196,6 @@ public class ObjectsModelActor {
     private StashBuffer<Message> buffer;
 
     @Inject
-    @Assisted
-    private TimerScheduler<Message> timer;
-
-    @Inject
     private GameSettingsProvider gs;
 
     @Inject
@@ -220,19 +205,17 @@ public class ObjectsModelActor {
     @IdsObjects
     private IDGenerator ids;
 
-    private Optional<StartTerrainForGameMapMessage> previousStartTerrainForGameMapMessage = Optional.empty();
-
     private ForkJoinPool pool;
 
     private AskKnowledge askKnowledge;
-
-    private boolean pauseOnFocusLost;
 
     private InitialStateMessage is;
 
     private ActorRef<ObjectResponseMessage> objectsDeleteAdapter;
 
     private ActorRef<ObjectResponseMessage> objectsInsertAdapter;
+
+    private boolean startTerrainForGameMap;
 
     /**
      * Stash behavior. Returns a behavior for the messages:
@@ -284,25 +267,23 @@ public class ObjectsModelActor {
      */
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
         log.debug("onStartTerrainForGameMap {}", m);
-        previousStartTerrainForGameMapMessage = Optional.of(m);
-        Duration interval = gs.get().gameTickDuration.get();
-        interval = Duration.ofMillis(1000);
-        timer.startTimerAtFixedRate(UPDATE_OBJECTS_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm), interval);
-        pauseOnFocusLost = false;
+        this.startTerrainForGameMap = true;
         return Behaviors.same();
     }
 
     /**
-     * Reacts to the {@link UpdateTerrainMessage} message.
+     * Reacts to the {@link GameTickMessage} message.
      */
-    private Behavior<Message> onUpdateModel(UpdateTerrainMessage m) {
+    private Behavior<Message> onUpdateModel(GameTickMessage m) {
         // long oldtime = System.currentTimeMillis();
-        try {
-            onUpdateModel0(m);
-        } catch (final Exception e) {
-            log.error("", e);
+        if (startTerrainForGameMap) {
+            try {
+                onUpdateModel0(m);
+            } catch (final Exception e) {
+                log.error("", e);
+            }
+            // log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
         }
-        // log.trace("updateModel done in {}", System.currentTimeMillis() - oldtime);
         return Behaviors.same();
     }
 
@@ -394,7 +375,7 @@ public class ObjectsModelActor {
 
         @SneakyThrows
         private void runTree(KnowledgeObject kv, Vegetation v) {
-            v.setGrowth(v.getGrowth() + 0.001f);
+            v.setGrowth(v.getGrowth() + 0.00001f);
             is.os.set(v.getObjectType(), v);
             if (v.getGrowth() > 1.0f) {
                 v.setGrowth(0.0f);
@@ -412,8 +393,9 @@ public class ObjectsModelActor {
     }
 
     @SneakyThrows
-    private void onUpdateModel0(UpdateTerrainMessage m) {
-        final var gm = getGameMap(is.og, m.gm);
+    private void onUpdateModel0(GameTickMessage m) {
+        long gmid = gs.get().currentMap.get();
+        final var gm = getGameMap(is.og, gmid);
         final MutableIntObjectMap<ImmutableList<Integer>> map = IntObjectMaps.mutable
                 .ofInitialCapacity(gm.filledChunks.size());
         try (var lock = gm.acquireLockMapObjects()) {
@@ -421,7 +403,7 @@ public class ObjectsModelActor {
                 map.put(cid, Lists.immutable.ofAll(indices));
             });
         }
-        pool.invoke(new ObjectsSeedAction(m.gm, map));
+        pool.invoke(new ObjectsSeedAction(gmid, map));
     }
 
     /**
@@ -431,13 +413,6 @@ public class ObjectsModelActor {
      */
     private Behavior<Message> onAppPaused(AppPausedMessage m) {
         log.debug("onAppPaused {}", m);
-        if (pauseOnFocusLost) {
-            if (m.paused) {
-                timer.cancel(UPDATE_OBJECTS_MESSAGE_TIMER_KEY);
-            } else {
-                previousStartTerrainForGameMapMessage.ifPresent(this::onStartTerrainForGameMap);
-            }
-        }
         return Behaviors.same();
     }
 
@@ -448,7 +423,6 @@ public class ObjectsModelActor {
      */
     private Behavior<Message> onShutdown(ShutdownMessage m) {
         log.debug("onShutdown {}", m);
-        timer.cancelAll();
         pool.shutdown();
         return Behaviors.stopped();
     }
@@ -464,7 +438,7 @@ public class ObjectsModelActor {
         return Behaviors.receive(Message.class)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
-                .onMessage(UpdateTerrainMessage.class, this::onUpdateModel)//
+                .onMessage(GameTickMessage.class, this::onUpdateModel)//
                 .onMessage(AppPausedMessage.class, this::onAppPaused)//
                 .onMessage(WrappedInsertObjectResponse.class, m -> Behaviors.same())//
                 .onMessage(WrappedDeleteObjectResponse.class, m -> Behaviors.same())//

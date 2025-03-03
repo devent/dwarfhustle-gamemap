@@ -27,6 +27,7 @@ import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor.GameTimeSpeedActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
@@ -39,7 +40,8 @@ import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
 /**
- *
+ * @see GameTimeSpeedActorFactory
+ * @see InfoPanelActorFactory
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -56,6 +58,8 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
         install(new FactoryModuleBuilder()
                 .implement(new TypeLiteral<AbstractPaneActor<? extends InfoPaneController>>() {
                 }, InfoPanelActor.class).build(InfoPanelActorFactory.class));
+        install(new FactoryModuleBuilder().implement(GameTimeSpeedActor.class, GameTimeSpeedActor.class)
+                .build(GameTimeSpeedActorFactory.class));
     }
 
     private IntObjectMap<GameMapObjectItem> loadGameMapObjectItem() {

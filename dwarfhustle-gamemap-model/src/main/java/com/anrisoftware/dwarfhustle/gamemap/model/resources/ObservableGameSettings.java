@@ -37,6 +37,7 @@ import javafx.beans.property.adapter.JavaBeanBooleanPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanDoublePropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanFloatPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanIntegerPropertyBuilder;
+import javafx.beans.property.adapter.JavaBeanLongPropertyBuilder;
 import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -63,9 +64,15 @@ public class ObservableGameSettings {
         public Locale locale = Locale.US;
 
         @JsonIgnore
-        public DateTimeFormatter gameTimeFormat = DateTimeFormatter.ISO_TIME;
+        public DateTimeFormatter gameTimeFormat = DateTimeFormatter.ofPattern("yyyy MMMM dd - HH:mm");
 
-        public Duration gameTickDuration = Duration.ofMillis(25);
+        public Duration gameTickDuration = Duration.ofMillis(250);
+
+        public long gameSpeedCurrentAmountToAddMillis = 2000;
+
+        public long gameSpeedNormalAmountToAddMillis = 2000;
+
+        public long gameSpeedFastAmountToAddMillis = 15000;
 
         public Duration terrainUpdateDuration = Duration.ofMillis(100);
 
@@ -121,6 +128,12 @@ public class ObservableGameSettings {
 
     public final ObjectProperty<Duration> gameTickDuration;
 
+    public final LongProperty gameSpeedCurrentAmountToAddMillis;
+
+    public final LongProperty gameSpeedNormalAmountToAddMillis;
+
+    public final LongProperty gameSpeedFastAmountToAddMillis;
+
     public final ObjectProperty<Duration> terrainUpdateDuration;
 
     public final BooleanProperty windowFullscreen;
@@ -155,6 +168,12 @@ public class ObservableGameSettings {
         this.locale = JavaBeanObjectPropertyBuilder.create().bean(p).name("locale").build();
         this.gameTimeFormat = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTimeFormat").build();
         this.gameTickDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTickDuration").build();
+        this.gameSpeedCurrentAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
+                .name("gameSpeedCurrentAmountToAddMillis").build();
+        this.gameSpeedNormalAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
+                .name("gameSpeedNormalAmountToAddMillis").build();
+        this.gameSpeedFastAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
+                .name("gameSpeedFastAmountToAddMillis").build();
         this.terrainUpdateDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("terrainUpdateDuration")
                 .build();
         this.windowFullscreen = JavaBeanBooleanPropertyBuilder.create().bean(p).name("windowFullscreen").build();
@@ -177,6 +196,9 @@ public class ObservableGameSettings {
         locale.set(other.locale);
         gameTimeFormat.set(other.gameTimeFormat);
         gameTickDuration.set(other.gameTickDuration);
+        gameSpeedCurrentAmountToAddMillis.set(other.gameSpeedCurrentAmountToAddMillis);
+        gameSpeedNormalAmountToAddMillis.set(other.gameSpeedNormalAmountToAddMillis);
+        gameSpeedFastAmountToAddMillis.set(other.gameSpeedFastAmountToAddMillis);
         terrainUpdateDuration.set(other.terrainUpdateDuration);
         windowFullscreen.set(other.windowFullscreen);
         windowWidth.set(other.windowWidth);

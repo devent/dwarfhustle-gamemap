@@ -142,20 +142,20 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         this.cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
         this.mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
         this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
-        this.controller = initial.controller;
+        this.controller = is.controller;
         this.currentMap = gs.get().currentMap.get();
         gs.get().currentMap.addListener((o, ov, nv) -> {
             currentMap = nv.longValue();
         });
         runFxThread(() -> {
-            final var controller = initial.controller;
+            final var controller = is.controller;
         });
         final var builder = injector.getInstance(PanelControllerBuild.class);
         builder.<MapTileItemWidgetController>loadFxml(injector, context.getExecutionContext(),
                 "/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
                     if (err == null) {
                         mapTileItemWidget = res;
-                        final var controller = initial.controller;
+                        final var controller = is.controller;
                         controller.setup();
                     }
                 });
@@ -191,7 +191,8 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         return Behaviors.same();
     }
 
-    private Behavior<Message> onGameTick(GameTickMessage m) {
+    @Override
+    protected Behavior<Message> onGameTick(GameTickMessage m) {
         // log.trace("onGameTick {}", m);
         updateInfoPane();
         return Behaviors.same();
@@ -219,7 +220,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     @Override
     protected void setupUi() {
-        final var pane = initial.root;
+        final var pane = is.root;
         final var p = MouseInfo.getPointerInfo().getLocation();
         pane.setLayoutX(p.x);
         pane.setLayoutY(p.y);
@@ -239,7 +240,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     }
 
     private void onMouseMoved(MouseEvent e) {
-        final var pane = initial.root;
+        final var pane = is.root;
         pane.setLayoutX(e.getSceneX() + 20);
         pane.setLayoutY(e.getSceneY() + 20);
     }

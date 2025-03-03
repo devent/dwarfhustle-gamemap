@@ -29,6 +29,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerInitializeFxBuild;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
@@ -182,9 +183,11 @@ public abstract class AbstractPaneActor<T> {
     @Inject
     protected Engine engine;
 
-    protected InitialStateMessage<T> initial;
+    protected InitialStateMessage<T> is;
 
     protected Injector injector;
+
+    protected long currentMap = -1;
 
     public Behavior<Message> start(Injector injector) {
         this.injector = injector;
@@ -208,8 +211,8 @@ public abstract class AbstractPaneActor<T> {
      */
     private Behavior<Message> onInitialState(InitialStateMessage<T> m) {
         log.debug("onInitialState");
-        this.initial = m;
-        initial.actors.forEachValue(a -> a.tell(m));
+        this.is = m;
+        is.actors.forEachValue(a -> a.tell(m));
         return buffer.unstashAll(Behaviors.receive(Message.class)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(AttachGuiMessage.class, this::onAttachGui)//
@@ -247,7 +250,7 @@ public abstract class AbstractPaneActor<T> {
         log.debug("onAttachGui {}", m);
         runFxThread(() -> {
             setupUi();
-            initial.actors.forEachValue(a -> a.tell(m));
+            is.actors.forEachValue(a -> a.tell(m));
         });
         app.enqueue(() -> {
             attachPaneState();
@@ -270,11 +273,13 @@ public abstract class AbstractPaneActor<T> {
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
                 .onMessage(GameQuitMessage.class, this::onGameQuit)//
                 .onMessage(MainWindowResizedMessage.class, this::onMainWindowResized)//
+                .onMessage(GameTickMessage.class, this::onGameTick)//
+                .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
         ;
     }
 
     protected void setupUi() {
-        var pane = initial.root;
+        var pane = is.root;
         pane.setPrefSize(app.getCamera().getWidth(), app.getCamera().getHeight());
         JavaFxUI.getInstance().attachChild(pane);
     }
@@ -290,13 +295,32 @@ public abstract class AbstractPaneActor<T> {
         runFxThread(() -> {
             // JavaFxUI.getInstance().getJmeFxContainer().initial.root.setMinSize(m.width,
             // m.height);
-            initial.root.setPrefSize(m.width, m.height);
-            initial.root.setMaxSize(m.width, m.height);
-            initial.root.layout();
-            initial.root.requestLayout();
-            initial.root.resize(m.width, m.height);
+            is.root.setPrefSize(m.width, m.height);
+            is.root.setMaxSize(m.width, m.height);
+            is.root.layout();
+            is.root.requestLayout();
+            is.root.resize(m.width, m.height);
         });
         return Behaviors.same();
+    }
+
+    /**
+     * @see GameTickMessage
+     */
+    protected Behavior<Message> onGameTick(GameTickMessage m) {
+        // log.trace("onGameTick {}", m);
+        updateGameTime();
+        return Behaviors.same();
+    }
+
+    protected Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
+        log.trace("onStartTerrainForGameMap {}", m);
+        this.currentMap = m.gm;
+        return Behaviors.same();
+    }
+
+    protected void updateGameTime() {
+        // should be implemented by subclass
     }
 
 }

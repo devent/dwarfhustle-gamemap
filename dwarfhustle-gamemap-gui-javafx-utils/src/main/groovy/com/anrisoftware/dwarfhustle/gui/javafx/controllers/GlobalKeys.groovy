@@ -40,102 +40,102 @@ import javafx.scene.input.KeyCombination.ModifierValue
 @Slf4j
 class GlobalKeys implements ActionListener {
 
-	InputManager inputManager
+    InputManager inputManager
 
-	@Inject
-	ActorSystemProvider actor
+    @Inject
+    ActorSystemProvider actor
 
-	@Inject
-	@Named("keyMappings")
-	Map<String, KeyMapping> keyMappings;
+    @Inject
+    @Named("keyMappings")
+    Map<String, KeyMapping> keyMappings;
 
-	@Inject
-	@Named("jmeMappings")
-	Map<String, JmeMapping> jmeMappings;
+    @Inject
+    @Named("jmeMappings")
+    Map<String, JmeMapping> jmeMappings;
 
-	boolean controlDown = false
+    boolean controlDown = false
 
-	void setup(JavaFxUI instance, InputManager inputManager) {
-		this.inputManager = inputManager
-		setupControls(instance.scene)
-		initKeys(inputManager)
-	}
+    void setup(JavaFxUI instance, InputManager inputManager) {
+        this.inputManager = inputManager
+        setupControls(instance.scene)
+        initKeys(inputManager)
+    }
 
-	void remove(KeyMapping mapping, JmeMapping jmeMapping) {
-		runFxThread {
-			def acc = JavaFxUI.getInstance().scene.accelerators
-			acc.remove(mapping.code)
-		}
-		runInJmeThread {
-			inputManager.deleteMapping(mapping.name)
-		}
-		if (jmeMapping) {
-			runInJmeThread {
-				inputManager.deleteMapping(jmeMapping.name)
-			}
-		}
-	}
+    void remove(KeyMapping mapping, JmeMapping jmeMapping) {
+        runFxThread {
+            def acc = JavaFxUI.getInstance().scene.accelerators
+            acc.remove(mapping.code)
+        }
+        runInJmeThread {
+            inputManager.deleteMapping(mapping.name)
+        }
+        if (jmeMapping) {
+            runInJmeThread {
+                inputManager.deleteMapping(jmeMapping.name)
+            }
+        }
+    }
 
-	void add(KeyMapping mapping, JmeMapping jmeMapping) {
-		runFxThread {
-			def acc = JavaFxUI.getInstance().scene.accelerators
-			acc.put mapping.code, { runInJmeThread({ runAction(mapping) }) }
-		}
-		runInJmeThread {
-			inputManager.addMapping(mapping.name, mapping.trigger)
-		}
-		if (jmeMapping) {
-			runInJmeThread {
-				inputManager.addMapping(jmeMapping.name, jmeMapping.trigger)
-			}
-		}
-	}
+    void add(KeyMapping mapping, JmeMapping jmeMapping) {
+        runFxThread {
+            def acc = JavaFxUI.getInstance().scene.accelerators
+            acc.put mapping.code, { runInJmeThread({ runAction(mapping) }) }
+        }
+        runInJmeThread {
+            inputManager.addMapping(mapping.name, mapping.trigger)
+        }
+        if (jmeMapping) {
+            runInJmeThread {
+                inputManager.addMapping(jmeMapping.name, jmeMapping.trigger)
+            }
+        }
+    }
 
-	void setupControls(Scene scene) {
-		def acc = scene.accelerators
-		keyMappings.values().find { it.code.present }.each { m ->
-			acc.put m.code.get(), { runInJmeThread({ runAction(m) }) }
-		}
-	}
+    void setupControls(Scene scene) {
+        def acc = scene.accelerators
+        keyMappings.values().find { it.code.present }.each { m ->
+            acc.put m.code.get(), { runInJmeThread({ runAction(m) }) }
+        }
+    }
 
-	void initKeys(InputManager inputManager) {
-		inputManager.addListener(this, keyMappings.values().findAll { it.trigger.present }.inject([]) { l, v ->
-			inputManager.addMapping(v.name, v.trigger.get())
-			l << v.name
-		} as String[])
-		inputManager.addListener(this, jmeMappings.values().inject([]) { l, v ->
-			inputManager.addMapping(v.name, v.trigger)
-			l << v.name
-		} as String[])
-	}
+    void initKeys(InputManager inputManager) {
+        inputManager.addListener(this, keyMappings.values().findAll { it.trigger.present }.inject([]) { l, v ->
+            inputManager.addMapping(v.name, v.trigger.get())
+            l << v.name
+        } as String[])
+        inputManager.addListener(this, jmeMappings.values().inject([]) { l, v ->
+            inputManager.addMapping(v.name, v.trigger)
+            l << v.name
+        } as String[])
+    }
 
-	@Override
-	void onAction(String name, boolean isPressed, float tpf) {
-		switch (name) {
-			case JmeMapping.CONTROL_MAPPING.name:
-				controlDown = isPressed
-				return
-		}
-		if (!isPressed) {
-			return
-		}
-		def mapping = keyMappings[name]
-		def code = mapping.code
-		if (code.present) {
-			if (code.get().control != ModifierValue.ANY) {
-				if (code.get().control == ModifierValue.DOWN && !controlDown) {
-					return;
-				}
-				if (code.get().control == ModifierValue.UP && controlDown) {
-					return;
-				}
-			}
-		}
-		runAction(mapping)
-	}
+    @Override
+    void onAction(String name, boolean isPressed, float tpf) {
+        switch (name) {
+            case JmeMapping.CONTROL_MAPPING.name:
+                controlDown = isPressed
+                return
+        }
+        if (!isPressed) {
+            return
+        }
+        def mapping = keyMappings[name]
+        def code = mapping.code
+        if (code.present) {
+            if (code.get().control != ModifierValue.ANY) {
+                if (code.get().control == ModifierValue.DOWN && !controlDown) {
+                    return;
+                }
+                if (code.get().control == ModifierValue.UP && controlDown) {
+                    return;
+                }
+            }
+        }
+        runAction(mapping)
+    }
 
-	void runAction(KeyMapping mapping) {
-		log.debug("Post message: {}", mapping.message);
-		actor.get().tell(mapping.message);
-	}
+    void runAction(KeyMapping mapping) {
+        log.debug("Post message: {}", mapping.message);
+        actor.get().tell(mapping.message);
+    }
 }

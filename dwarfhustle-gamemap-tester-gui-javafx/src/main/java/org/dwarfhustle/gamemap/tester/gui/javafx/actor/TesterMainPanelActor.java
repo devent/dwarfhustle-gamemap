@@ -18,6 +18,8 @@
 package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
+import static com.anrisoftware.dwarfhustle.model.api.objects.WorldMap.getWorldMap;
 import static java.time.Duration.ofSeconds;
 import static org.dwarfhustle.gamemap.tester.gui.javafx.actor.AdditionalCss.ADDITIONAL_CSS;
 
@@ -50,6 +52,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapCursorUpdateMessag
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelActorCreator;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
@@ -57,6 +60,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameSpeedTogglePauseTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
@@ -83,6 +87,7 @@ import jakarta.inject.Named;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -163,7 +168,10 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
         this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
         this.os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-        TesterStatusActor.create(injector, ofSeconds(1), initial.controller).whenComplete((v, err) -> {
+        GameTimeSpeedActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
+            log.debug("GameTimeSpeedActor {} {}", v, err);
+        });
+        TesterStatusActor.create(injector, ofSeconds(1), is.controller).whenComplete((v, err) -> {
             log.debug("TesterStatusActor {} {}", v, err);
         });
         InfoPanelActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
@@ -185,9 +193,11 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
             }
         });
         runFxThread(() -> {
-            var controller = initial.controller;
+            var controller = is.controller;
             controller.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
             controller.initButtons(globalKeys, keyMappings);
+            controller.initGameSpeedButtons(gs.get().gameSpeedCurrentAmountToAddMillis.get(),
+                    gs.get().gameSpeedNormalAmountToAddMillis.get(), gs.get().gameSpeedFastAmountToAddMillis.get());
             controller.setOnMouseEnteredGui((entered) -> {
                 gs.get().mouseEnteredGui.set(entered);
             });
@@ -241,7 +251,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     }
 
     private void forwardMessage(Message m) {
-        initial.actors.forEach(a -> {
+        is.actors.forEach(a -> {
             a.tell(m);
         });
     }
@@ -259,7 +269,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.debug("onSetGameMap {}", m);
         runFxThread(() -> {
-            var controller = initial.controller;
+            var controller = is.controller;
             var gm = GameMap.getGameMap(og, m.gm);
             var wm = WorldMap.getWorldMap(og, gm.world);
             controller.setMap(wm, gm);
@@ -281,7 +291,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Behavior<Message> onMapCursorUpdate(MapCursorUpdateMessage m) {
         log.debug("onMapCursorUpdate {}", m);
         runFxThread(() -> {
-            initial.controller.updateMapCursor(m.cursor);
+            is.controller.updateMapCursor(m.cursor);
         });
         return Behaviors.same();
     }
@@ -291,8 +301,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onMaterialsButtonsOpenTriggered(MaterialsButtonsOpenTriggeredMessage m) {
         log.debug("onMaterialsButtonsOpenTriggered {}", m);
-        actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
-        actor.tell(new MaterialsButtonsOpenMessage(initial.controller.testerButtonsBox));
+        actor.tell(new ObjectsButtonsCloseMessage(is.controller.testerButtonsBox));
+        actor.tell(new MaterialsButtonsOpenMessage(is.controller.testerButtonsBox));
         stopObjectInsertActor();
         stopObjectDeleteActor();
         createPaintTerrainActor();
@@ -304,7 +314,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onMaterialsButtonsCloseTriggered(MaterialsButtonsCloseTriggeredMessage m) {
         log.debug("onMaterialsButtonsCloseTriggered {}", m);
-        actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        actor.tell(new MaterialsButtonsCloseMessage(is.controller.testerButtonsBox));
         stopPaintTerrainActor();
         return Behaviors.same();
     }
@@ -314,8 +324,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onObjectsButtonsOpenTriggered(ObjectsButtonsOpenTriggeredMessage m) {
         log.debug("onObjectsButtonsOpenTriggered {}", m);
-        actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
-        actor.tell(new ObjectsButtonsOpenMessage(initial.controller.testerButtonsBox));
+        actor.tell(new MaterialsButtonsCloseMessage(is.controller.testerButtonsBox));
+        actor.tell(new ObjectsButtonsOpenMessage(is.controller.testerButtonsBox));
         stopPaintTerrainActor();
         stopObjectDeleteActor();
         createObjectInsertActor();
@@ -327,7 +337,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onObjectsButtonsCloseTriggered(ObjectsButtonsCloseTriggeredMessage m) {
         log.debug("onObjectsButtonsCloseTriggered {}", m);
-        actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        actor.tell(new ObjectsButtonsCloseMessage(is.controller.testerButtonsBox));
         stopObjectInsertActor();
         return Behaviors.same();
     }
@@ -337,8 +347,8 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
      */
     private Behavior<Message> onDeleteButtonsOpenTriggered(DeleteButtonsOpenTriggeredMessage m) {
         log.debug("onDeleteButtonsOpenTriggered {}", m);
-        actor.tell(new ObjectsButtonsCloseMessage(initial.controller.testerButtonsBox));
-        actor.tell(new MaterialsButtonsCloseMessage(initial.controller.testerButtonsBox));
+        actor.tell(new ObjectsButtonsCloseMessage(is.controller.testerButtonsBox));
+        actor.tell(new MaterialsButtonsCloseMessage(is.controller.testerButtonsBox));
         stopObjectInsertActor();
         stopPaintTerrainActor();
         createObjectDeleteActor();
@@ -351,6 +361,18 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
     private Behavior<Message> onDeleteButtonsCloseTriggered(DeleteButtonsCloseTriggeredMessage m) {
         log.debug("onDeleteButtonsCloseTriggered {}", m);
         stopObjectDeleteActor();
+        return Behaviors.same();
+    }
+
+    /**
+     * Processing {@link GameSpeedTogglePauseTriggeredMessage}.
+     */
+    private Behavior<Message> onGameSpeedTogglePauseTriggered(GameSpeedTogglePauseTriggeredMessage m) {
+        log.debug("onGameSpeedTogglePauseTriggered {}", m);
+        runFxThread(() -> {
+            var c = is.controller;
+            c.toggleGameSpeedPauseButton();
+        });
         return Behaviors.same();
     }
 
@@ -418,7 +440,19 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
                 .onMessage(ObjectsButtonsCloseTriggeredMessage.class, this::onObjectsButtonsCloseTriggered)//
                 .onMessage(DeleteButtonsOpenTriggeredMessage.class, this::onDeleteButtonsOpenTriggered)//
                 .onMessage(DeleteButtonsCloseTriggeredMessage.class, this::onDeleteButtonsCloseTriggered)//
+                .onMessage(GameSpeedTogglePauseTriggeredMessage.class, this::onGameSpeedTogglePauseTriggered)//
         ;
     }
 
+    @Override
+    protected void updateGameTime() {
+        if (currentMap != -1) {
+            runFxThread(() -> {
+                val gm = getGameMap(og, currentMap);
+                val wm = getWorldMap(og, gm.getWorld());
+                is.controller.setMap(wm, gm);
+                System.out.println("TesterMainPanelActor " + wm.getTime()); // TODO
+            });
+        }
+    }
 }

@@ -163,7 +163,7 @@ public class MaterialsButtonsActor extends AbstractPaneActor<MaterialsButtonsCon
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        final var c = initial.controller;
+        final var c = is.controller;
         this.controller = c;
         runFxThread(() -> {
             c.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);

@@ -42,6 +42,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollBar;
+import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
@@ -108,6 +109,18 @@ public class TesterMainPaneController extends AbstractStatusController {
     @FXML
     public Button eastButton;
 
+    @FXML
+    public ToggleGroup gameSpeedGroup;
+
+    @FXML
+    public ToggleButton gameSpeedPauseButton;
+
+    @FXML
+    public ToggleButton gameSpeedNormalButton;
+
+    @FXML
+    public ToggleButton gameSpeedFastButton;
+
     private Locale locale;
 
     private Texts texts;
@@ -118,6 +131,8 @@ public class TesterMainPaneController extends AbstractStatusController {
 
     @Inject
     private GameSettingsProvider gs;
+
+    private Toggle gameSpeedLastSelectedButton;
 
     public void updateLocale(Locale locale, Texts texts, Images images, IconSize iconSize) {
         this.locale = locale;
@@ -163,9 +178,8 @@ public class TesterMainPaneController extends AbstractStatusController {
                 } else if (nval == deleteButton) {
                     globalKeys.runAction(keyMappings.get("OPEN_DELETE_BUTTONS_MAPPING"));
                 }
+                return;
             }
-        });
-        mainButtonsGroup.selectedToggleProperty().addListener((o, oval, nval) -> {
             if (oval != null && !oval.isSelected()) {
                 if (oval == paintButton) {
                     globalKeys.runAction(keyMappings.get("CLOSE_MATERIALS_BUTTONS_MAPPING"));
@@ -174,6 +188,22 @@ public class TesterMainPaneController extends AbstractStatusController {
                 } else if (oval == deleteButton) {
                     globalKeys.runAction(keyMappings.get("CLOSE_DELETE_BUTTONS_MAPPING"));
                 }
+            }
+        });
+        gameSpeedGroup.selectedToggleProperty().addListener((o, oval, nval) -> {
+            if (nval == null) {
+                oval.setSelected(true);
+            } else if (nval != null && nval.isSelected()) {
+                if (nval == gameSpeedPauseButton) {
+                    globalKeys.runAction(keyMappings.get("GAME_SPEED_PAUSE_MAPPING"));
+                } else if (nval == gameSpeedNormalButton) {
+                    globalKeys.runAction(keyMappings.get("GAME_SPEED_NORMAL_MAPPING"));
+                    gameSpeedLastSelectedButton = gameSpeedNormalButton;
+                } else if (nval == gameSpeedFastButton) {
+                    globalKeys.runAction(keyMappings.get("GAME_SPEED_FAST_MAPPING"));
+                    gameSpeedLastSelectedButton = gameSpeedFastButton;
+                }
+                return;
             }
         });
     }
@@ -213,6 +243,12 @@ public class TesterMainPaneController extends AbstractStatusController {
         westButton.setText(null);
         eastButton.setGraphic(getImageView(images, "buttons_east", locale, iconSize));
         eastButton.setText(null);
+        gameSpeedPauseButton.setGraphic(getImageView(images, "gameSpeedPauseButton", locale, iconSize));
+        gameSpeedPauseButton.setText(null);
+        gameSpeedNormalButton.setGraphic(getImageView(images, "gameSpeedNormalButton", locale, iconSize));
+        gameSpeedNormalButton.setText(null);
+        gameSpeedFastButton.setGraphic(getImageView(images, "gameSpeedFastButton", locale, iconSize));
+        gameSpeedFastButton.setText(null);
     }
 
     public void setMap(WorldMap wm, GameMap gm) {
@@ -232,5 +268,26 @@ public class TesterMainPaneController extends AbstractStatusController {
     @Override
     public Label getStatusLabel() {
         return statusLabel;
+    }
+
+    public void initGameSpeedButtons(long gameSpeedCurrent, long gameSpeedNormal, long gameSpeedFast) {
+        if (gameSpeedCurrent == 0) {
+            gameSpeedGroup.selectToggle(gameSpeedPauseButton);
+        } else if (gameSpeedCurrent == gameSpeedNormal) {
+            gameSpeedGroup.selectToggle(gameSpeedNormalButton);
+            gameSpeedLastSelectedButton = gameSpeedNormalButton;
+        } else if (gameSpeedCurrent == gameSpeedFast) {
+            gameSpeedGroup.selectToggle(gameSpeedFastButton);
+            gameSpeedLastSelectedButton = gameSpeedFastButton;
+        }
+    }
+
+    public void toggleGameSpeedPauseButton() {
+        if (gameSpeedGroup.getSelectedToggle() == gameSpeedPauseButton) {
+            gameSpeedGroup.selectToggle(gameSpeedLastSelectedButton);
+        } else {
+            gameSpeedLastSelectedButton = gameSpeedGroup.getSelectedToggle();
+            gameSpeedGroup.selectToggle(gameSpeedPauseButton);
+        }
     }
 }

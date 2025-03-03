@@ -23,10 +23,10 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.chunkI
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 import static com.anrisoftware.dwarfhustle.model.api.objects.MapChunk.getChunk;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.collections.api.factory.primitive.IntSets;
@@ -149,14 +149,13 @@ public class ObjectsRenderActor {
      */
     private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
         return Behaviors.withTimers(timer -> Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            context.pipeToSelf(CompletableFuture.supplyAsync(() -> returnInitialState(injector, actor)),
-                    (result, cause) -> {
-                        if (cause == null) {
-                            return result;
-                        } else {
-                            return new SetupErrorMessage(cause);
-                        }
-                    });
+            context.pipeToSelf(supplyAsync(() -> returnInitialState(injector, actor)), (result, cause) -> {
+                if (cause == null) {
+                    return result;
+                } else {
+                    return new SetupErrorMessage(cause);
+                }
+            });
             return injector.getInstance(ObjectsRenderActorFactory.class).create(context, stash, timer).start(injector);
         })));
     }

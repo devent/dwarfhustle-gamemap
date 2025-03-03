@@ -20,7 +20,6 @@ package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 import static akka.actor.typed.javadsl.AskPattern.ask;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.RetrieveKnowledgesMessage.askRetrieveKnowledges;
 import static java.time.Duration.ofSeconds;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
@@ -30,6 +29,7 @@ import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.DwarfhustleGamemapJmeAppModule;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTickActor;
+import com.anrisoftware.dwarfhustle.gamemap.jme.app.GameTimeActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.MaterialAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.app.ModelsAssetsCacheActor;
 import com.anrisoftware.dwarfhustle.gamemap.jme.lights.DwarfhustleGamemapJmeLightsModule;
@@ -251,6 +251,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createTerrain();
         createSun();
         createGameTick();
+        createGameTime();
         createTerrainTestKeys();
         loadMapObjects();
         storeGameMap();
@@ -258,7 +259,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     @SneakyThrows
     protected void storeGameMap() {
-        var gs = actor.getObjectSetterAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(15, SECONDS);
+        var gs = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
         gs.set(GameMap.OBJECT_TYPE, gm);
     }
 
@@ -363,6 +364,17 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
                 actor.tell(new AppErrorMessage(ex));
             } else {
                 log.debug("GameTickActor created");
+            }
+        });
+    }
+
+    private void createGameTime() {
+        GameTimeActor.create(injector, CREATE_ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("GameTimeActor.create", ex);
+                actor.tell(new AppErrorMessage(ex));
+            } else {
+                log.debug("GameTimeActor created");
             }
         });
     }

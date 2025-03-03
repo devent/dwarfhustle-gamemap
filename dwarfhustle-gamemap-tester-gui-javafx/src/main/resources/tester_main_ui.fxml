@@ -27,7 +27,7 @@
         </VBox>
     </bottom>
    <top>
-              <GridPane id="topPanel" hgap="10.0" prefHeight="32.0" prefWidth="1297.0" BorderPane.alignment="CENTER">
+              <GridPane id="topPanel" hgap="10.0" prefWidth="1297.0" BorderPane.alignment="CENTER">
                   <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
                       <ColumnConstraints hgrow="SOMETIMES" percentWidth="80.0" />
@@ -35,6 +35,7 @@
                   </columnConstraints>
                   <rowConstraints>
                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                   </rowConstraints>
                   <children>
                       <Label id="fortressNameLabel" fx:id="fortressNameLabel" text="Fortress-Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="ALWAYS" GridPane.valignment="CENTER" />
@@ -44,6 +45,17 @@
                   <Button id="settingsButton" fx:id="settingsButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="S" />
                   <Button id="aboutButton" fx:id="aboutButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="H" />
                   <Button id="quitButton" fx:id="quitButton" ellipsisString="ffffffffffff" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" />
+               </children>
+            </HBox>
+            <HBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+               <children>
+                  <ToggleButton fx:id="gameSpeedPauseButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="P">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="gameSpeedGroup" />
+                     </toggleGroup>
+                  </ToggleButton>
+                  <ToggleButton fx:id="gameSpeedNormalButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="&gt;" toggleGroup="$gameSpeedGroup" />
+                  <ToggleButton fx:id="gameSpeedFastButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="&gt;&gt;" toggleGroup="$gameSpeedGroup" />
                </children>
             </HBox>
                   </children>
@@ -76,6 +88,7 @@
                            </toggleGroup></ToggleButton>
                         <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" toggleGroup="$mainButtonsGroup" />
                         <ToggleButton fx:id="deleteButton" mnemonicParsing="false" text="Delete" toggleGroup="$mainButtonsGroup" />
+                        <ToggleButton fx:id="timeButton" mnemonicParsing="false" text="Time" />
                         <Region HBox.hgrow="ALWAYS" />
                         <GridPane>
                           <columnConstraints>
