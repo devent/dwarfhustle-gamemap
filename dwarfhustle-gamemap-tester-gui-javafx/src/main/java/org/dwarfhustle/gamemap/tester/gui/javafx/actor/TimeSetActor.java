@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gamemap.jme.app;
+package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
@@ -23,15 +23,11 @@ import static com.anrisoftware.dwarfhustle.model.api.objects.WorldMap.getWorldMa
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
 import java.util.concurrent.CompletionStage;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
-import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
@@ -45,35 +41,28 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.StashBuffer;
+import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Updates the game time on {@link GameTickMessage}.
- *
+ * @see SetTimeSetMessage
+ * @see StopTimeSetMessage
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Slf4j
-public class GameTimeActor {
+public class TimeSetActor {
 
-    public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, GameTimeActor.class.getSimpleName());
+    public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, TimeSetActor.class.getSimpleName());
 
-    public static final String NAME = GameTimeActor.class.getSimpleName();
+    public static final String NAME = TimeSetActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
-
-    /**
-     * Factory to create {@link GameTimeActor}.
-     *
-     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
-     */
-    public interface GameTimeActorFactory {
-        GameTimeActor create(ActorContext<Message> context, StashBuffer<Message> buffer);
-    }
 
     @RequiredArgsConstructor
     @ToString(callSuper = true)
@@ -89,34 +78,63 @@ public class GameTimeActor {
     }
 
     /**
-     * Creates the {@link GameTimeActor}.
+     * Sets the time message.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
      */
-    public static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
+    @RequiredArgsConstructor
+    public static class SetTimeSetMessage extends Message {
+
+        public final long gm;
+
+        public final LocalDateTime time;
+    }
+
+    /**
+     * Stops time set message.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    public static class StopTimeSetMessage extends Message {
+    }
+
+    /**
+     * Factory to create {@link TimeSetActor}.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    public interface TimeSetActorFactory {
+        TimeSetActor create(ActorContext<Message> context, StashBuffer<Message> stash);
+    }
+
+    /**
+     * Creates the {@link TimeSetActor}.
+     */
+    private static Behavior<Message> create(Injector injector, ActorSystemProvider actor) {
         return Behaviors.withStash(100, stash -> Behaviors.setup(context -> {
-            context.pipeToSelf(supplyAsync(() -> returnInitialState(injector, actor)), (result, cause) -> {
+            context.pipeToSelf(supplyAsync(() -> setupActor(injector, actor)), (result, cause) -> {
                 if (cause == null) {
                     return result;
                 } else {
                     return new SetupErrorMessage(cause);
                 }
             });
-            return injector.getInstance(GameTimeActorFactory.class).create(context, stash).start(injector);
+            return injector.getInstance(TimeSetActorFactory.class).create(context, stash).start(injector);
         }));
     }
 
     /**
-     * Creates the {@link GameTimeActor}.
+     * Creates the {@link TimeSetActor}.
      */
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        val actor = injector.getInstance(ActorSystemProvider.class);
-        val system = actor.getActorSystem();
-        return createNamedActor(system, timeout, ID, KEY, NAME, create(injector, actor));
+        final var actor = injector.getInstance(ActorSystemProvider.class);
+        return createNamedActor(actor.getActorSystem(), timeout, ID, KEY, NAME, create(injector, actor));
     }
 
-    private static Message returnInitialState(Injector injector, ActorSystemProvider actor) {
+    private static Message setupActor(Injector injector, ActorSystemProvider actor) {
         try {
-            val og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
-            val os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+            final var os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
             return new InitialStateMessage(og, os);
         } catch (final Exception ex) {
             return new SetupErrorMessage(ex);
@@ -131,18 +149,18 @@ public class GameTimeActor {
     @Assisted
     private StashBuffer<Message> buffer;
 
-    @Inject
-    private GameSettingsProvider gs;
-
-    private long currentMap = -1;
-
     private InitialStateMessage is;
 
     /**
-     * @see InitialStateMessage
-     * @see SetupErrorMessage
-     * @see Message
+     * Stash behavior. Returns a behavior for the messages:
+     *
+     * <ul>
+     * <li>{@link InitialStateMessage}
+     * <li>{@link SetupErrorMessage}
+     * <li>{@link Message}
+     * </ul>
      */
+    @SneakyThrows
     public Behavior<Message> start(Injector injector) {
         return Behaviors.receive(Message.class)//
                 .onMessage(InitialStateMessage.class, this::onInitialState)//
@@ -152,13 +170,17 @@ public class GameTimeActor {
     }
 
     private Behavior<Message> stashOtherCommand(Message m) {
-        log.debug("stashOtherCommand: {}", m);
-        buffer.stash(m);
+        log.trace("stashOtherCommand: {}", m);
+        try {
+            buffer.stash(m);
+        } catch (final StashOverflowException e) {
+            log.error("stashOtherCommand", e);
+        }
         return Behaviors.same();
     }
 
     private Behavior<Message> onSetupError(SetupErrorMessage m) {
-        log.debug("onSetupError: {}", m);
+        log.trace("onSetupError: {}", m);
         return Behaviors.stopped();
     }
 
@@ -166,50 +188,42 @@ public class GameTimeActor {
      * Returns a behavior for the messages from {@link #getInitialBehavior()}
      */
     private Behavior<Message> onInitialState(InitialStateMessage m) {
-        log.debug("onInitialState");
+        log.trace("onInitialState");
         this.is = m;
         return buffer.unstashAll(getInitialBehavior()//
                 .build());
     }
 
     /**
-     * @see StartTerrainForGameMapMessage
+     *
      */
-    private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
-        log.debug("onStartTerrainForGameMap {}", m);
-        this.currentMap = m.gm;
+    private Behavior<Message> onSetTimeSet(SetTimeSetMessage m) {
+        log.trace("onSetTimeSet");
+        val gm = getGameMap(is.og, m.gm);
+        val wm = getWorldMap(is.og, gm.getWorld());
+        wm.setTime(m.time);
+        is.os.set(WorldMap.OBJECT_TYPE, wm);
         return Behaviors.same();
     }
 
     /**
-     * @see GameTickMessage
-     */
-    private Behavior<Message> onGameTick(GameTickMessage m) {
-        if (currentMap != -1 && !gs.get().gameTickPaused.get()) {
-            val gm = getGameMap(is.og, currentMap);
-            val wm = getWorldMap(is.og, gm.getWorld());
-            wm.setTime(wm.getTime().plus(gs.get().gameSpeedAmountToAddMillis.get(), ChronoUnit.MILLIS));
-            is.os.set(WorldMap.OBJECT_TYPE, wm);
-        }
-        return Behaviors.same();
-    }
-
-    /**
-     * @see ShutdownMessage
-     */
-    private Behavior<Message> onShutdown(ShutdownMessage m) {
+    *
+    */
+    private Behavior<Message> onStopTimeSet(StopTimeSetMessage m) {
+        log.trace("onStopTimeSet");
         return Behaviors.stopped();
     }
 
     /**
-     * {@see ShutdownMessage}
+     * <ul>
+     * <li>{@link SetTimeSetMessage}
+     * <li>{@link StopTimeSetMessage}
+     * </ul>
      */
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
-                .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
-                .onMessage(GameTickMessage.class, this::onGameTick)//
-                .onMessage(ShutdownMessage.class, this::onShutdown)//
+                .onMessage(SetTimeSetMessage.class, this::onSetTimeSet)//
+                .onMessage(StopTimeSetMessage.class, this::onStopTimeSet)//
         ;
     }
-
 }

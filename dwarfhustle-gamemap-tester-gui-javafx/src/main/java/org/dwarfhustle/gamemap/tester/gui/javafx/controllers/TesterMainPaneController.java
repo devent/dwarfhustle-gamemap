@@ -101,6 +101,9 @@ public class TesterMainPaneController extends AbstractStatusController {
     public ToggleButton deleteButton;
 
     @FXML
+    public ToggleButton timeButton;
+
+    @FXML
     public Button northButton;
     @FXML
     public Button westButton;
@@ -177,6 +180,8 @@ public class TesterMainPaneController extends AbstractStatusController {
                     globalKeys.runAction(keyMappings.get("OPEN_OBJECTS_BUTTONS_MAPPING"));
                 } else if (nval == deleteButton) {
                     globalKeys.runAction(keyMappings.get("OPEN_DELETE_BUTTONS_MAPPING"));
+                } else if (nval == timeButton) {
+                    globalKeys.runAction(keyMappings.get("OPEN_TIME_BUTTONS_MAPPING"));
                 }
                 return;
             }
@@ -187,6 +192,8 @@ public class TesterMainPaneController extends AbstractStatusController {
                     globalKeys.runAction(keyMappings.get("CLOSE_OBJECTS_BUTTONS_MAPPING"));
                 } else if (oval == deleteButton) {
                     globalKeys.runAction(keyMappings.get("CLOSE_DELETE_BUTTONS_MAPPING"));
+                } else if (oval == timeButton) {
+                    globalKeys.runAction(keyMappings.get("CLOSE_TIME_BUTTONS_MAPPING"));
                 }
             }
         });
@@ -270,8 +277,9 @@ public class TesterMainPaneController extends AbstractStatusController {
         return statusLabel;
     }
 
-    public void initGameSpeedButtons(long gameSpeedCurrent, long gameSpeedNormal, long gameSpeedFast) {
-        if (gameSpeedCurrent == 0) {
+    public void initGameSpeedButtons(boolean gamePaused, long gameSpeedCurrent, long gameSpeedNormal,
+            long gameSpeedFast) {
+        if (gamePaused) {
             gameSpeedGroup.selectToggle(gameSpeedPauseButton);
         } else if (gameSpeedCurrent == gameSpeedNormal) {
             gameSpeedGroup.selectToggle(gameSpeedNormalButton);

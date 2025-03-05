@@ -18,18 +18,21 @@
 package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
+import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
+import static com.anrisoftware.dwarfhustle.model.api.objects.WorldMap.getWorldMap;
 import static org.dwarfhustle.gamemap.tester.gui.javafx.actor.AdditionalCss.ADDITIONAL_CSS;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TimeButtonsController;
-import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsCloseMessage;
-import org.dwarfhustle.gamemap.tester.gui.javafx.messages.MaterialsButtonsOpenMessage;
-import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsCloseMessage;
-import org.dwarfhustle.gamemap.tester.gui.javafx.messages.ObjectsButtonsOpenMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.TimeButtonsCloseMessage;
+import org.dwarfhustle.gamemap.tester.gui.javafx.messages.TimeButtonsOpenMessage;
 import org.eclipse.collections.api.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
@@ -41,8 +44,13 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -55,6 +63,7 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -107,19 +116,41 @@ public class TimeButtonsActor extends AbstractPaneActor<TimeButtonsController> {
     @Named("AppIcons")
     private Images appIcons;
 
+    @Inject
+    private ActorSystemProvider actor;
+
     private TimeButtonsController controller;
 
+    private ObjectsGetter og;
+
+    private ObjectsSetter os;
+
+    /**
+     * @see AttachGuiMessage
+     */
     @Override
     protected Behavior<Message> onAttachGui(AttachGuiMessage m) {
         log.debug("onAttachGui {}", m);
+        this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+        this.os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
         return getBehaviorAfterAttachGui().build();
     }
 
+    @Override
+    protected void currentMapSetup() {
+        runFxThread(() -> {
+            val gm = getGameMap(og, currentMap);
+            val wm = getWorldMap(og, gm.getWorld());
+            is.controller.setTime(wm, gm, gs);
+            is.controller.setSaveTime(TimeButtonsActor.this::saveTime);
+        });
+    }
+
     /**
-     * Processing {@link MaterialsButtonsOpenMessage}.
+     * Processing {@link TimeButtonsOpenMessage}.
      */
-    private Behavior<Message> onMaterialsButtonsOpen(MaterialsButtonsOpenMessage m) {
-        log.debug("onMaterialsButtonsOpen {}", m);
+    private Behavior<Message> onTimeButtonsOpen(TimeButtonsOpenMessage m) {
+        log.debug("onTimeButtonsOpen {}", m);
         runFxThread(() -> {
             m.testerButtonsBox.getChildren().add(0, controller.timeBox);
             m.testerButtonsBox.requestLayout();
@@ -128,34 +159,12 @@ public class TimeButtonsActor extends AbstractPaneActor<TimeButtonsController> {
     }
 
     /**
-     * Processing {@link MaterialsButtonsCloseMessage}.
+     * Processing {@link TimeButtonsCloseMessage}.
      */
-    private Behavior<Message> onMaterialsButtonsClose(MaterialsButtonsCloseMessage m) {
-        log.debug("onMaterialsButtonsClose {}", m);
+    private Behavior<Message> onTimeButtonsClose(TimeButtonsCloseMessage m) {
+        log.debug("onTimeButtonsClose {}", m);
         runFxThread(() -> {
             m.testerButtonsBox.getChildren().remove(controller.timeBox);
-            m.testerButtonsBox.requestLayout();
-        });
-        return Behaviors.same();
-    }
-
-    /**
-     * Processing {@link ObjectsButtonsOpenMessage}.
-     */
-    private Behavior<Message> onObjectsButtonsOpen(ObjectsButtonsOpenMessage m) {
-        log.debug("onObjectsButtonsOpen {}", m);
-        runFxThread(() -> {
-            m.testerButtonsBox.requestLayout();
-        });
-        return Behaviors.same();
-    }
-
-    /**
-     * Processing {@link ObjectsButtonsCloseMessage}.
-     */
-    private Behavior<Message> onObjectsButtonsClose(ObjectsButtonsCloseMessage m) {
-        log.debug("onObjectsButtonsClose {}", m);
-        runFxThread(() -> {
             m.testerButtonsBox.requestLayout();
         });
         return Behaviors.same();
@@ -173,10 +182,8 @@ public class TimeButtonsActor extends AbstractPaneActor<TimeButtonsController> {
             });
         });
         return super.getBehaviorAfterAttachGui()//
-                .onMessage(MaterialsButtonsOpenMessage.class, this::onMaterialsButtonsOpen)//
-                .onMessage(MaterialsButtonsCloseMessage.class, this::onMaterialsButtonsClose)//
-                .onMessage(ObjectsButtonsOpenMessage.class, this::onObjectsButtonsOpen)//
-                .onMessage(ObjectsButtonsCloseMessage.class, this::onObjectsButtonsClose)//
+                .onMessage(TimeButtonsOpenMessage.class, this::onTimeButtonsOpen)//
+                .onMessage(TimeButtonsCloseMessage.class, this::onTimeButtonsClose)//
         ;
     }
 
@@ -193,5 +200,12 @@ public class TimeButtonsActor extends AbstractPaneActor<TimeButtonsController> {
     @Override
     protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
         return Behaviors.same();
+    }
+
+    private void saveTime(ZonedDateTime time) {
+        val gm = getGameMap(og, currentMap);
+        val wm = getWorldMap(og, gm.getWorld());
+        wm.setTime(LocalDateTime.ofInstant(time.toInstant(), ZoneId.of("UTC+00:00")));
+        os.set(WorldMap.OBJECT_TYPE, wm);
     }
 }

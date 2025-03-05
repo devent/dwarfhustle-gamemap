@@ -6,13 +6,14 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<Pane fx:id="timeBox" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController">
+<Pane fx:id="timeBox" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TimeButtonsController">
    <children>
       <VBox>
          <children>
-            <HBox prefHeight="100.0" prefWidth="200.0">
+            <HBox>
                <children>
-                  <TextField fx:id="timeText" />
+                  <TextField fx:id="dateText" minWidth="200.0" prefWidth="200.0" />
+                  <TextField fx:id="timeText" minWidth="200.0" prefWidth="200.0" />
                   <Button fx:id="timeSetButton" mnemonicParsing="false" text="Set" />
                </children>
             </HBox>

@@ -88,7 +88,7 @@
                            </toggleGroup></ToggleButton>
                         <ToggleButton fx:id="insertButton" mnemonicParsing="false" text="Insert" toggleGroup="$mainButtonsGroup" />
                         <ToggleButton fx:id="deleteButton" mnemonicParsing="false" text="Delete" toggleGroup="$mainButtonsGroup" />
-                        <ToggleButton fx:id="timeButton" mnemonicParsing="false" text="Time" />
+                        <ToggleButton fx:id="timeButton" mnemonicParsing="false" text="Time" toggleGroup="$mainButtonsGroup" />
                         <Region HBox.hgrow="ALWAYS" />
                         <GridPane>
                           <columnConstraints>

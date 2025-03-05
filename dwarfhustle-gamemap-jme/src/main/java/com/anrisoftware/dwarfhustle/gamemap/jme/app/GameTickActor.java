@@ -23,6 +23,8 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameSpeedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameSpeedPauseMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -41,12 +43,14 @@ import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Starts and stops the periodically sending of the {@link GameTickMessage}.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
+@Slf4j
 public class GameTickActor {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class, GameTickActor.class.getSimpleName());
@@ -76,8 +80,8 @@ public class GameTickActor {
      */
     @SuppressWarnings("unchecked")
     public static Behavior<Message> create(Injector injector) {
-        return Behaviors.withTimers(timer -> Behaviors.setup(context -> ((Behavior<Message>) injector.getInstance(GameTickActorFactory.class).create(context, timer)
-                .start(injector))));
+        return Behaviors.withTimers(timer -> Behaviors.setup(context -> ((Behavior<Message>) injector
+                .getInstance(GameTickActorFactory.class).create(context, timer).start(injector))));
     }
 
     /**
@@ -104,6 +108,8 @@ public class GameTickActor {
 
     private long tick = 0;
 
+    private boolean gameTickTimerSet = false;
+
     /**
      * @return {@link Behavior} from {@link #getInitialBehavior()}
      */
@@ -118,8 +124,32 @@ public class GameTickActor {
      * </ul>
      */
     private Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
-        timer.startTimerAtFixedRate(GAME_TICK_MESSAGE_TIMER_KEY, new UpdateGameTickMessage(),
-                gs.get().gameTickDuration.get());
+        log.trace("onStartTerrainForGameMap {}", m);
+        createGameTickTimer();
+        return Behaviors.same();
+    }
+
+    /**
+     * @see SetGameSpeedPauseMessage
+     */
+    private Behavior<Message> onSetGameSpeedPause(SetGameSpeedPauseMessage m) {
+        log.trace("onSetGameSpeedPause {}", m);
+        if (m.pause && gameTickTimerSet) {
+            timer.cancelAll();
+            this.gameTickTimerSet = false;
+        } else if (!m.pause && !gameTickTimerSet) {
+            createGameTickTimer();
+        }
+        return Behaviors.same();
+    }
+
+    /**
+     * @see SetGameSpeedMessage
+     */
+    private Behavior<Message> onSetGameSpeed(SetGameSpeedMessage m) {
+        log.trace("onSetGameSpeed {}", m);
+        timer.cancelAll();
+        createGameTickTimer();
         return Behaviors.same();
     }
 
@@ -153,9 +183,17 @@ public class GameTickActor {
     private BehaviorBuilder<Message> getInitialBehavior() {
         return Behaviors.receive(Message.class)//
                 .onMessage(StartTerrainForGameMapMessage.class, this::onStartTerrainForGameMap)//
+                .onMessage(SetGameSpeedPauseMessage.class, this::onSetGameSpeedPause)//
+                .onMessage(SetGameSpeedMessage.class, this::onSetGameSpeed)//
                 .onMessage(UpdateGameTickMessage.class, this::onUpdateGameTick)//
                 .onMessage(ShutdownMessage.class, this::onShutdown)//
         ;
+    }
+
+    private void createGameTickTimer() {
+        timer.startTimerAtFixedRate(GAME_TICK_MESSAGE_TIMER_KEY, new UpdateGameTickMessage(),
+                gs.get().gameTickDuration.get());
+        this.gameTickTimerSet = true;
     }
 
 }

@@ -68,11 +68,13 @@ public class ObservableGameSettings {
 
         public Duration gameTickDuration = Duration.ofMillis(250);
 
-        public long gameSpeedCurrentAmountToAddMillis = 2000;
+        public boolean gameTickPaused = false;
 
-        public long gameSpeedNormalAmountToAddMillis = 2000;
+        public long gameSpeedAmountToAddMillis = 2000;
 
-        public long gameSpeedFastAmountToAddMillis = 15000;
+        public Duration gameTickNormalDuration = Duration.ofMillis(250);
+
+        public Duration gameTickFastDuration = Duration.ofMillis(125);
 
         public Duration terrainUpdateDuration = Duration.ofMillis(100);
 
@@ -128,11 +130,13 @@ public class ObservableGameSettings {
 
     public final ObjectProperty<Duration> gameTickDuration;
 
-    public final LongProperty gameSpeedCurrentAmountToAddMillis;
+    public final BooleanProperty gameTickPaused;
 
-    public final LongProperty gameSpeedNormalAmountToAddMillis;
+    public final LongProperty gameSpeedAmountToAddMillis;
 
-    public final LongProperty gameSpeedFastAmountToAddMillis;
+    public final ObjectProperty<Duration> gameTickNormalDuration;
+
+    public final ObjectProperty<Duration> gameTickFastDuration;
 
     public final ObjectProperty<Duration> terrainUpdateDuration;
 
@@ -168,12 +172,12 @@ public class ObservableGameSettings {
         this.locale = JavaBeanObjectPropertyBuilder.create().bean(p).name("locale").build();
         this.gameTimeFormat = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTimeFormat").build();
         this.gameTickDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTickDuration").build();
-        this.gameSpeedCurrentAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
-                .name("gameSpeedCurrentAmountToAddMillis").build();
-        this.gameSpeedNormalAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
-                .name("gameSpeedNormalAmountToAddMillis").build();
-        this.gameSpeedFastAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
-                .name("gameSpeedFastAmountToAddMillis").build();
+        this.gameTickPaused = JavaBeanBooleanPropertyBuilder.create().bean(p).name("gameTickPaused").build();
+        this.gameSpeedAmountToAddMillis = JavaBeanLongPropertyBuilder.create().bean(p)
+                .name("gameSpeedAmountToAddMillis").build();
+        this.gameTickNormalDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTickNormalDuration")
+                .build();
+        this.gameTickFastDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("gameTickFastDuration").build();
         this.terrainUpdateDuration = JavaBeanObjectPropertyBuilder.create().bean(p).name("terrainUpdateDuration")
                 .build();
         this.windowFullscreen = JavaBeanBooleanPropertyBuilder.create().bean(p).name("windowFullscreen").build();
@@ -196,9 +200,10 @@ public class ObservableGameSettings {
         locale.set(other.locale);
         gameTimeFormat.set(other.gameTimeFormat);
         gameTickDuration.set(other.gameTickDuration);
-        gameSpeedCurrentAmountToAddMillis.set(other.gameSpeedCurrentAmountToAddMillis);
-        gameSpeedNormalAmountToAddMillis.set(other.gameSpeedNormalAmountToAddMillis);
-        gameSpeedFastAmountToAddMillis.set(other.gameSpeedFastAmountToAddMillis);
+        gameTickPaused.set(other.gameTickPaused);
+        gameSpeedAmountToAddMillis.set(other.gameSpeedAmountToAddMillis);
+        gameTickNormalDuration.set(other.gameTickNormalDuration);
+        gameTickFastDuration.set(other.gameTickFastDuration);
         terrainUpdateDuration.set(other.terrainUpdateDuration);
         windowFullscreen.set(other.windowFullscreen);
         windowWidth.set(other.windowWidth);

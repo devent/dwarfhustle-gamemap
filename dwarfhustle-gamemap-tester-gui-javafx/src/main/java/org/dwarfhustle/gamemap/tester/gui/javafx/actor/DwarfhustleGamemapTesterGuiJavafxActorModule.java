@@ -26,9 +26,12 @@ import org.dwarfhustle.gamemap.tester.gui.javafx.actor.ObjectsButtonsActor.Objec
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.PaintTerrainActor.PaintTerrainActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterMainPanelActor.TesterMainPanelActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TesterStatusActor.TesterStatusActorFactory;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TimeButtonsActor.TimeButtonsActorFactory;
+import org.dwarfhustle.gamemap.tester.gui.javafx.actor.TimeSetActor.TimeSetActorFactory;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.MaterialsButtonsController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.ObjectsButtonsController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TesterMainPaneController;
+import org.dwarfhustle.gamemap.tester.gui.javafx.controllers.TimeButtonsController;
 import org.dwarfhustle.gamemap.tester.gui.javafx.states.TesterKeyMappingProvider;
 
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
@@ -50,6 +53,8 @@ import com.google.inject.name.Names;
  * @see PaintTerrainActorFactory
  * @see ObjectInsertActorFactory
  * @see ObjectDeleteActorFactory
+ * @see TimeButtonsActorFactory
+ * @see TimeSetActorFactory
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule {
@@ -67,6 +72,9 @@ public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule
         install(new FactoryModuleBuilder()
                 .implement(new TypeLiteral<AbstractPaneActor<? extends ObjectsButtonsController>>() {
                 }, ObjectsButtonsActor.class).build(ObjectsButtonsActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends TimeButtonsController>>() {
+                }, TimeButtonsActor.class).build(TimeButtonsActorFactory.class));
         bind(new TypeLiteral<Map<String, KeyMapping>>() {
         }).annotatedWith(Names.named("keyMappings")).toProvider(TesterKeyMappingProvider.class).asEagerSingleton();
         bind(new TypeLiteral<Map<String, JmeMapping>>() {
@@ -77,6 +85,8 @@ public class DwarfhustleGamemapTesterGuiJavafxActorModule extends AbstractModule
                 .build(ObjectInsertActorFactory.class));
         install(new FactoryModuleBuilder().implement(ObjectDeleteActor.class, ObjectDeleteActor.class)
                 .build(ObjectDeleteActorFactory.class));
+        install(new FactoryModuleBuilder().implement(TimeSetActor.class, TimeSetActor.class)
+                .build(TimeSetActorFactory.class));
     }
 
 }

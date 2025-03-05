@@ -316,7 +316,12 @@ public abstract class AbstractPaneActor<T> {
     protected Behavior<Message> onStartTerrainForGameMap(StartTerrainForGameMapMessage m) {
         log.trace("onStartTerrainForGameMap {}", m);
         this.currentMap = m.gm;
+        currentMapSetup();
         return Behaviors.same();
+    }
+
+    protected void currentMapSetup() {
+        // should be implemented by subclass
     }
 
     protected void updateGameTime() {

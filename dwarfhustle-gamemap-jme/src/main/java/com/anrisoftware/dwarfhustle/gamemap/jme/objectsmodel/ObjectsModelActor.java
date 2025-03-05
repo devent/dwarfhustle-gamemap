@@ -355,10 +355,10 @@ public class ObjectsModelActor {
 
         @SneakyThrows
         private void runTreeSapling(MapObject mo, KnowledgeObject kv, Vegetation v) {
-            v.setGrowth(v.getGrowth() + 0.001f);
+            final var kvv = (KnowledgeTreeSapling) kv.getAsType();
+            v.setGrowth(v.getGrowth() + kvv.getGrowingSpeed());
             is.os.set(v.getObjectType(), v);
             if (v.getGrowth() > 1.0f) {
-                final var kvv = (KnowledgeTreeSapling) kv.getAsType();
                 final String growsInto = kvv.getGrowsInto();
                 final var kgrowv = is.kg.get(KnowledgeTree.TYPE.hashCode()).objects
                         .detect((it) -> it.name.equalsIgnoreCase(growsInto));

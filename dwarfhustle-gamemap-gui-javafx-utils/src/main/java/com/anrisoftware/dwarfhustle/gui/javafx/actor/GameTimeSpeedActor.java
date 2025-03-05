@@ -22,6 +22,8 @@ import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.create
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameSpeedMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetGameSpeedPauseMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameSpeedFastTriggeredMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameSpeedNormalTriggeredMessage;
@@ -93,13 +95,13 @@ public class GameTimeSpeedActor {
     @Inject
     private GameSettingsProvider gs;
 
-    private long previousGameSpeed;
+    @Inject
+    private ActorSystemProvider actor;
 
     /**
      *
      */
     public Behavior<Message> start(Injector injector) {
-        this.previousGameSpeed = gs.get().gameSpeedCurrentAmountToAddMillis.get();
         return getInitialBehavior()//
                 .build();
     }
@@ -109,7 +111,8 @@ public class GameTimeSpeedActor {
      */
     private Behavior<Message> onGameSpeedPauseTriggered(GameSpeedPauseTriggeredMessage m) {
         log.trace("onGameSpeedPauseTriggered {}", m);
-        gs.get().gameSpeedCurrentAmountToAddMillis.set(0);
+        gs.get().gameTickPaused.set(true);
+        actor.tell(new SetGameSpeedPauseMessage(true));
         return Behaviors.same();
     }
 
@@ -118,7 +121,9 @@ public class GameTimeSpeedActor {
      */
     private Behavior<Message> onGameSpeedNormalTriggered(GameSpeedNormalTriggeredMessage m) {
         log.trace("onGameSpeedNormalTriggered {}", m);
-        gs.get().gameSpeedCurrentAmountToAddMillis.set(gs.get().gameSpeedNormalAmountToAddMillis.get());
+        gs.get().gameTickPaused.set(false);
+        gs.get().gameTickDuration.set(gs.get().gameTickNormalDuration.get());
+        actor.tell(new SetGameSpeedMessage(true));
         return Behaviors.same();
     }
 
@@ -127,7 +132,9 @@ public class GameTimeSpeedActor {
      */
     private Behavior<Message> onGameSpeedFastTriggered(GameSpeedFastTriggeredMessage m) {
         log.trace("onGameSpeedFastTriggered {}", m);
-        gs.get().gameSpeedCurrentAmountToAddMillis.set(gs.get().gameSpeedFastAmountToAddMillis.get());
+        gs.get().gameTickPaused.set(false);
+        gs.get().gameTickDuration.set(gs.get().gameTickFastDuration.get());
+        actor.tell(new SetGameSpeedMessage(false));
         return Behaviors.same();
     }
 
@@ -136,11 +143,12 @@ public class GameTimeSpeedActor {
      */
     private Behavior<Message> onGameSpeedTogglePauseTriggered(GameSpeedTogglePauseTriggeredMessage m) {
         log.trace("onGameSpeedTogglePauseTriggered {}", m);
-        if (gs.get().gameSpeedCurrentAmountToAddMillis.get() == 0) {
-            gs.get().gameSpeedCurrentAmountToAddMillis.set(previousGameSpeed);
+        if (gs.get().gameTickPaused.get()) {
+            gs.get().gameTickPaused.set(false);
+            actor.tell(new SetGameSpeedPauseMessage(false));
         } else {
-            this.previousGameSpeed = gs.get().gameSpeedCurrentAmountToAddMillis.get();
-            gs.get().gameSpeedCurrentAmountToAddMillis.set(0);
+            gs.get().gameTickPaused.set(true);
+            actor.tell(new SetGameSpeedPauseMessage(true));
         }
         return Behaviors.same();
     }
