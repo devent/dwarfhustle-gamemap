@@ -1,5 +1,5 @@
 /*
- * dwarfhustle-gamemap-gui-javafx - GUI in Javafx.
+ * dwarfhustle-gamemap-tester-gui-javafx - Game map.
  * Copyright © 2023 Erwin Müller (erwin.mueller@anrisoftware.com)
  *
  * This program is free software: you can redistribute it and/or modify
