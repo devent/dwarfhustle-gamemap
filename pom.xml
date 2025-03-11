@@ -24,10 +24,10 @@
 	<parent>
 		<groupId>com.anrisoftware.dwarfhustle</groupId>
 		<artifactId>dwarfhustle-parent</artifactId>
-		<version>0.0.2</version>
+		<version>0.0.3-SNAPSHOT</version>
 	</parent>
 	<artifactId>dwarfhustle-gamemap</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Dwarf Hustle Game Map</name>
 	<description>Game map.</description>
@@ -36,7 +36,7 @@
 		<globalpom.custom.home>https://project.anrisoftware.com/projects/dwarfhustle-model</globalpom.custom.home>
 		<license.custom.license.template>src/main/resources/AGPL-3.txt</license.custom.license.template>
 		<!-- Versions -->
-		<dwarfhustle.custom.model.version>0.0.2</dwarfhustle.custom.model.version>
+		<dwarfhustle.custom.model.version>0.0.3-SNAPSHOT</dwarfhustle.custom.model.version>
 	</properties>
 	<licenses>
 		<license>
