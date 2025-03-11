@@ -39,12 +39,13 @@ public abstract class AbstractVegetationItem extends AbstractGameMapObjectItem {
     public AbstractVegetationItem() {
     }
 
-    public AbstractVegetationItem(GameMapObject go, KnowledgeGetter kg) {
-        super(go, kg);
+    public AbstractVegetationItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        super(go, kg, selected);
     }
 
     @Override
     public void setInfo(VBox box) {
+        super.setInfo(box);
         if (go instanceof Vegetation v) {
             var format = DecimalFormat.getInstance(Locale.ENGLISH);
             box.getChildren().clear();

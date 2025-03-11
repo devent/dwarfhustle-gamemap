@@ -10,7 +10,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
  */
 public interface GameMapObjectItem {
 
-    AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg);
+    AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg, boolean selected);
 
     int getType();
 }

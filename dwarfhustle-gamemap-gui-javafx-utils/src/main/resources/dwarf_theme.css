@@ -362,6 +362,11 @@
     -fx-border-width: 0;
 }
 
+.objectInfoPaneSelected {
+    -fx-background-color: special2;
+    -fx-border-width: 0;
+}
+
 .objectInfoBox {
     -fx-background-color: transparent;
     -fx-text-fill: neutral5;

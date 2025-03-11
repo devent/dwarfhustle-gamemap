@@ -43,7 +43,11 @@ class GameSettingsProviderTest {
                     return gs
                 }, """---
 locale: "en_US"
-gameTickDuration: 0.025000000
+gameTickDuration: 0.250000000
+gameTickPaused: false
+gameSpeedAmountToAddMillis: 2000
+gameTickNormalDuration: 0.250000000
+gameTickFastDuration: 0.125000000
 terrainUpdateDuration: 0.100000000
 windowFullscreen: false
 windowWidth: 1024

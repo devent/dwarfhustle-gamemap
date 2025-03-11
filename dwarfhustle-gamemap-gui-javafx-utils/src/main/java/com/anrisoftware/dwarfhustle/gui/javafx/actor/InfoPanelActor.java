@@ -39,6 +39,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCurs
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectItem;
@@ -198,6 +199,12 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         return Behaviors.same();
     }
 
+    private Behavior<Message> onSetSelectedObject(SetSelectedObjectMessage m) {
+        log.trace("onSetSelectedObject {}", m);
+        updateInfoPane();
+        return Behaviors.same();
+    }
+
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
                 .onMessage(MouseEnteredGuiMessage.class, this::onMouseEnteredGui)//
@@ -205,6 +212,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
                 .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
                 .onMessage(MapTileEmptyUnderCursorMessage.class, this::onMapTileEmptyUnderCursor)//
                 .onMessage(GameTickMessage.class, this::onGameTick)//
+                .onMessage(SetSelectedObjectMessage.class, this::onSetSelectedObject)//
         ;
     }
 
@@ -267,9 +275,10 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
                             return;
                         }
                         final GameMapObject go = og.get(type, id);
+                        final boolean selected = go.getId() == gm.getSelectedObject();
                         var objectItem = gameMapObjectItems.get(type);
                         if (objectItem != null) {
-                            items.add(objectItem.create(go, kg));
+                            items.add(objectItem.create(go, kg, selected));
                         }
                     });
                 }

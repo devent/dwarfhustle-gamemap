@@ -39,8 +39,8 @@ public class GrassVegetationItem extends AbstractVegetationItem {
     public GrassVegetationItem() {
     }
 
-    public GrassVegetationItem(GameMapObject go, KnowledgeGetter kg) {
-        super(go, kg);
+    public GrassVegetationItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        super(go, kg, selected);
     }
 
     @Override
@@ -56,8 +56,8 @@ public class GrassVegetationItem extends AbstractVegetationItem {
     }
 
     @Override
-    public AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg) {
-        return new GrassVegetationItem(go, kg);
+    public AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        return new GrassVegetationItem(go, kg, selected);
     }
 
     @Override

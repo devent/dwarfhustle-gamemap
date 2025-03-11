@@ -39,6 +39,7 @@ import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.getPr
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapBlockBuffer.isProp;
 import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.getNeighborUp;
 import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
+import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.setMapObject;
 import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeIdByName;
 import static java.time.Duration.ofSeconds;
 
@@ -61,6 +62,7 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
+import org.eclipse.collections.api.set.primitive.LongSet;
 import org.eclipse.collections.api.tuple.primitive.LongIntPair;
 import org.eclipse.collections.impl.factory.Multimaps;
 
@@ -75,6 +77,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMes
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMultiBlockSelectingModeMessage;
+import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSingleBlockSelectingFinishedMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSingleBlockSelectingModeMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.StartTerrainForGameMapMessage;
@@ -87,6 +90,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.Block;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
@@ -449,6 +453,9 @@ public class TerrainActor {
                 setGameMap(is.os, gm0);
                 actor.tell(new SetSingleBlockSelectingFinishedMessage());
             });
+            is.selectBlockState.setOnSelectObject(pos -> {
+                toggleSelectedObject(m.gm, pos);
+            });
             is.selectBlockState.initKeys();
         });
         gs.get().mouseEnteredGui.addListener((o, oldv, newv) -> {
@@ -461,6 +468,30 @@ public class TerrainActor {
         timer.startTimerAtFixedRate(UPDATE_TERRAIN_MESSAGE_TIMER_KEY, new UpdateTerrainMessage(m.gm),
                 gs.get().terrainUpdateDuration.get());
         return Behaviors.same();
+    }
+
+    @SneakyThrows
+    private void toggleSelectedObject(long gmid, GameBlockPos pos) {
+        final var gm = getGameMap(is.og, gmid);
+        try (val lock = gm.acquireLockMapObjects()) {
+            val index = GameBlockPos.calcIndex(gm, pos);
+            if (!gm.getFilledBlocks().containsKey(index)) {
+                return;
+            }
+            val mo = MapObject.getMapObject(is.mg, gm, pos);
+            LongSet ids = mo.getOids().keySet();
+            long previousSelected = gm.getSelectedObject();
+            for (final var it = ids.longIterator(); it.hasNext();) {
+                long next = it.next();
+                int type = mo.getOids().get(next);
+                if (type != Block.OBJECT_TYPE && previousSelected != next) {
+                    gm.setSelectedObject(next);
+                    setGameMap(is.os, gm);
+                    actor.tell(new SetSelectedObjectMessage(gmid, next));
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -581,22 +612,25 @@ public class TerrainActor {
         }
     }
 
+    @SneakyThrows
     private Long[] findObjects(Long[] objects, GameMap gm, MapChunk chunk, int index, int upZ) {
         if (upZ < 0) {
             return objects;
         }
         final var mapIndexUp = calcIndex(gm, calcX(index, chunk), calcY(index, chunk), upZ);
-        final var count = gm.getFilledBlocks().get(mapIndexUp);
-        if (count != null && count.get() > 0) {
-            final var mo = getMapObject(is.mg, gm, mapIndexUp);
-            var i = 0;
-            for (final LongIntPair pair : mo.getOids().keyValuesView()) {
-                final GameMapObject go = is.og.get(pair.getTwo(), pair.getOne());
-                if (go.isHaveTex()) {
-                    objects[i++] = kid2Id(go.getKid());
-                }
-                if (i == objects.length) {
-                    break;
+        try (val lock = gm.acquireLockMapObjects()) {
+            final var count = gm.getFilledBlocks().get(mapIndexUp);
+            if (count != null && count.get() > 0) {
+                final var mo = getMapObject(is.mg, gm, mapIndexUp);
+                var i = 0;
+                for (final LongIntPair pair : mo.getOids().keyValuesView()) {
+                    final GameMapObject go = is.og.get(pair.getTwo(), pair.getOne());
+                    if (go.isHaveTex()) {
+                        objects[i++] = kid2Id(go.getKid());
+                    }
+                    if (i == objects.length) {
+                        break;
+                    }
                 }
             }
         }
@@ -761,24 +795,25 @@ public class TerrainActor {
     @SneakyThrows
     private Behavior<Message> onMapCursorUpdate(MapCursorUpdateMessage m) {
         log.trace("onMapCursorUpdate {}", m);
-        final var gm = getGameMap(is.og, gs.get().currentMap.get());
+        val gm = getGameMap(is.og, gs.get().currentMap.get());
         try (val lock = gm.acquireLockMapObjects()) {
             final Block block = is.og.get(Block.OBJECT_TYPE, gm.getCursorObject());
-            final var mo = getMapObject(is.mg, gm, block.getPos());
+            val mo = getMapObject(is.mg, gm, block.getPos());
             if (mo.removeObject(block.getId())) {
-                is.ms.set(MapObject.OBJECT_TYPE, mo);
+                setMapObject(is.ms, mo);
                 if (mo.isEmpty()) {
                     gm.removeFilledBlock(mo.getCid(), mo.getIndex());
-                    is.os.set(GameMap.OBJECT_TYPE, gm);
+                    setGameMap(is.os, gm);
+                    is.ms.remove(MapObject.OBJECT_TYPE, mo);
                 }
             }
             block.setPos(m.cursor);
             is.os.set(Block.OBJECT_TYPE, block);
-            final var monew = getMapObject(is.mg, gm, block.getPos());
+            val monew = getMapObject(is.mg, gm, block.getPos());
             if (monew.addObject(Block.OBJECT_TYPE, block.getId())) {
-                is.ms.set(MapObject.OBJECT_TYPE, monew);
+                setMapObject(is.ms, monew);
                 gm.addFilledBlock(monew.getCid(), monew.getIndex());
-                is.os.set(GameMap.OBJECT_TYPE, gm);
+                setGameMap(is.os, gm);
             }
         }
         return Behaviors.same();

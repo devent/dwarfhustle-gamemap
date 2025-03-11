@@ -62,23 +62,17 @@
               </GridPane>
    </top>
    <center>
-      <GridPane BorderPane.alignment="CENTER">
+      <GridPane fx:id="mainPanelGrid" BorderPane.alignment="CENTER">
          <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-            <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="-Infinity" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="60.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="40.0" prefWidth="100.0" />
          </columnConstraints>
          <rowConstraints>
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
          </rowConstraints>
          <children>
-            <StackPane id="levelPane" alignment="CENTER_RIGHT" GridPane.columnIndex="1" GridPane.rowSpan="2">
-               <children>
-                  <ScrollBar id="levelBar" fx:id="levelBar" orientation="VERTICAL" />
-                  <Label id="levelLabel" fx:id="levelLabel" text="0" />
-               </children>
-            </StackPane>
-            <VBox fx:id="testerButtonsBox" alignment="BOTTOM_LEFT" prefWidth="100.0" styleClass="mainPanel" GridPane.rowSpan="2">
+            <VBox fx:id="testerButtonsBox" alignment="BOTTOM_LEFT" prefWidth="100.0" styleClass="mainPanel" GridPane.columnSpan="3" GridPane.rowSpan="2">
                <children>
                   <HBox alignment="BOTTOM_LEFT" prefWidth="200.0">
                      <children>
@@ -113,4 +107,12 @@
          </children>
       </GridPane>
    </center>
+   <right>
+      <StackPane id="levelPane" alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
+         <children>
+            <ScrollBar id="levelBar" fx:id="levelBar" orientation="VERTICAL" />
+            <Label id="levelLabel" fx:id="levelLabel" text="0" StackPane.alignment="CENTER" />
+         </children>
+      </StackPane>
+   </right>
 </BorderPane>

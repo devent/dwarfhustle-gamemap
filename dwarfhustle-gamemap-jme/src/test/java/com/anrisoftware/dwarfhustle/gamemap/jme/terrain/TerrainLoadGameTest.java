@@ -66,6 +66,7 @@ import com.google.inject.Guice;
 
 import jakarta.inject.Inject;
 import lombok.SneakyThrows;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -224,9 +225,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
     @Override
     protected void loadMapObjects() {
         try (final var pool = new ForkJoinPool(4)) {
-            final var root = getChunk(chunksStorage, 0);
-            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, LOAD_MAP_OBJECTS_TIMEOUT, gm, 0, 0, 0,
-                    gm.getWidth(), gm.getHeight(), gm.getDepth()));
+            val mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            val ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
+            val root = getChunk(chunksStorage, 0);
+            pool.invoke(new LoadMapObjectsAction(root, chunksStorage, moStorage, mg, ms, LOAD_MAP_OBJECTS_TIMEOUT, gm,
+                    0, 0, 0, gm.getWidth(), gm.getHeight(), gm.getDepth()));
         }
     }
 

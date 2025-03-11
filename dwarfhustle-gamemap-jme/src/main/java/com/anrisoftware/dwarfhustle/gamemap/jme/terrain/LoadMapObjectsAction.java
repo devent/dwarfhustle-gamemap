@@ -18,7 +18,7 @@
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
-import static com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer.findChunk;
+import static com.anrisoftware.dwarfhustle.model.db.cache.MapObject.getMapObject;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -32,9 +32,12 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapObjectsStorage;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.db.cache.MapObject;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.val;
 
 /**
  * Loads {@link GameMapObject}(s) from the database and stores them in the
@@ -53,7 +56,11 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     private final MapObjectsStorage storage;
 
-    final private Duration timeout;
+    private final ObjectsGetter mg;
+
+    private final ObjectsSetter ms;
+
+    private final Duration timeout;
 
     private final GameMap gm;
 
@@ -99,7 +106,7 @@ public class LoadMapObjectsAction extends RecursiveAction {
     }
 
     private RecursiveAction create(int sx, int sy, int sz, int ex, int ey, int ez) {
-        return new LoadMapObjectsAction(root, chunks, storage, timeout, gm, sx, sy, sz, ex, ey, ez);
+        return new LoadMapObjectsAction(root, chunks, storage, mg, ms, timeout, gm, sx, sy, sz, ex, ey, ez);
     }
 
     @SneakyThrows
@@ -109,8 +116,10 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     private void addObject(long cid, int type, long id, int x, int y, int z) {
         final int index = calcIndex(gm.getWidth(), gm.getHeight(), gm.getDepth(), 0, 0, 0, x, y, z);
-        final var chunk = findChunk(root, x, y, z, chunks);
-        gm.addFilledBlock(chunk.getCid(), index);
+        val mo = getMapObject(mg, gm, index);
+        mo.addObject(type, id);
+        gm.addFilledBlock((int) cid, index);
+        ms.set(MapObject.OBJECT_TYPE, mo);
     }
 
 }

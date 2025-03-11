@@ -104,6 +104,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private boolean singleSelectEnabled;
 
+    private Consumer<GameBlockPos> onSelectObject;
+
     @Inject
     public TerrainSelectBlockState() {
         super(TerrainSelectBlockState.class.getSimpleName());
@@ -138,6 +140,10 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         if (!enabled) {
             this.selecting = false;
         }
+    }
+
+    public void setOnSelectObject(Consumer<GameBlockPos> onSelectObject) {
+        this.onSelectObject = onSelectObject;
     }
 
     @Override
@@ -192,6 +198,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
                 this.selecting = true;
                 this.selectStartMouse.x = mouse.x;
                 this.selectStartMouse.y = mouse.y;
+                onSelectObject.accept(oldCursor.clone());
                 if (singleSelectEnabled) {
                     this.selecting = false;
                     collectSingleSelectedBlocks();

@@ -20,8 +20,10 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 
+import javafx.scene.layout.VBox;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.val;
 
 /**
  * @see GameMapObject
@@ -36,8 +38,23 @@ public abstract class AbstractGameMapObjectItem implements MapTileItem, GameMapO
 
     protected KnowledgeGetter kg;
 
-    public AbstractGameMapObjectItem(GameMapObject go, KnowledgeGetter kg) {
+    protected boolean selected;
+
+    public AbstractGameMapObjectItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
         this.go = go;
         this.kg = kg;
+        this.selected = selected;
+    }
+
+    @Override
+    public void setInfo(VBox box) {
+        val parent = box.getParent();
+        if (selected) {
+            parent.getStyleClass().clear();
+            parent.getStyleClass().add("objectInfoPaneSelected");
+        } else {
+            parent.getStyleClass().clear();
+            parent.getStyleClass().add("objectInfoPane");
+        }
     }
 }

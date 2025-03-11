@@ -39,8 +39,8 @@ public class SaplingVegetationItem extends AbstractVegetationItem {
     public SaplingVegetationItem() {
     }
 
-    public SaplingVegetationItem(GameMapObject go, KnowledgeGetter kg) {
-        super(go, kg);
+    public SaplingVegetationItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        super(go, kg, selected);
     }
 
     @Override
@@ -56,8 +56,8 @@ public class SaplingVegetationItem extends AbstractVegetationItem {
     }
 
     @Override
-    public AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg) {
-        return new SaplingVegetationItem(go, kg);
+    public AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        return new SaplingVegetationItem(go, kg, selected);
     }
 
     @Override
