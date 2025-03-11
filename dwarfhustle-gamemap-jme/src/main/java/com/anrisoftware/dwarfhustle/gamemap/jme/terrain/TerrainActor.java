@@ -456,6 +456,11 @@ public class TerrainActor {
             is.selectBlockState.setOnSelectObject(pos -> {
                 toggleSelectedObject(m.gm, pos);
             });
+            is.selectBlockState.setOnSelectClear(() -> {
+                val gm0 = getGameMap(is.og, m.gm);
+                gm0.clearSelectedBlocks();
+                setGameMap(is.os, gm0);
+            });
             is.selectBlockState.initKeys();
         });
         gs.get().mouseEnteredGui.addListener((o, oldv, newv) -> {

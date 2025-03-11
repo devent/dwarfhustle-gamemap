@@ -84,6 +84,8 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
 
     private BiConsumer<GameBlockPos, GameBlockPos> onSelectSet;
 
+    private Runnable onSelectClear;
+
     private final GameBlockPos oldCursor = new GameBlockPos();
 
     private final GameBlockPos selectStartCursor = new GameBlockPos();
@@ -132,6 +134,7 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         this.multiSelectEnabled = enabled;
         if (!enabled) {
             this.selecting = false;
+            onSelectClear.run();
         }
     }
 
@@ -139,11 +142,16 @@ public class TerrainSelectBlockState extends BaseAppState implements ActionListe
         this.singleSelectEnabled = enabled;
         if (!enabled) {
             this.selecting = false;
+            onSelectClear.run();
         }
     }
 
     public void setOnSelectObject(Consumer<GameBlockPos> onSelectObject) {
         this.onSelectObject = onSelectObject;
+    }
+
+    public void setOnSelectClear(Runnable onSelectClear) {
+        this.onSelectClear = onSelectClear;
     }
 
     @Override
