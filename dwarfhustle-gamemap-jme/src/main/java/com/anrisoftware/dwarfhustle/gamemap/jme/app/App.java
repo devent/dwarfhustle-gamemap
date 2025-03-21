@@ -32,17 +32,14 @@ import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 
 import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.DebugCoordinateAxesState;
-import com.anrisoftware.dwarfhustle.gamemap.jme.terrain.TerrainActor;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gui.actor.GameMainPanelActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage.AttachGuiFinishedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.badlogic.ashley.core.Engine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -173,16 +170,6 @@ public class App extends SimpleApplication {
     }
 
     private void createPanel() {
-        GameMainPanelActor.create(injector, ofSeconds(1), actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID))
-                .whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("GameMainPanelActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("GameMainPanelActor created");
-                        attachGui(ret);
-                    }
-                });
     }
 
     @SuppressWarnings("unused")
@@ -202,18 +189,6 @@ public class App extends SimpleApplication {
     }
 
     private void createGameMap() {
-        TerrainActor.create(injector, ofSeconds(1), //
-                actor.getObjectGetterAsync(StoredObjectsJcsCacheActor.ID), //
-                actor.getObjectGetterAsync(MaterialAssetsCacheActor.ID), //
-                actor.getObjectGetterAsync(ModelsAssetsCacheActor.ID)). //
-                whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("TerrainActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("TerrainActor created");
-                    }
-                });
     }
 
     @Override

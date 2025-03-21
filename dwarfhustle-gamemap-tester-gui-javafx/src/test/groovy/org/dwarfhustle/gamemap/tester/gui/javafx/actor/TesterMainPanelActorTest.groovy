@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch
 
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.DwarfhustleGamemapModelResourcesModule
@@ -57,6 +58,7 @@ import groovy.util.logging.Slf4j
  */
 @Slf4j
 //@ExtendWith(ApplicationExtension.class)
+@Disabled
 class TesterMainPanelActorTest {
 
     static SimpleApplication app

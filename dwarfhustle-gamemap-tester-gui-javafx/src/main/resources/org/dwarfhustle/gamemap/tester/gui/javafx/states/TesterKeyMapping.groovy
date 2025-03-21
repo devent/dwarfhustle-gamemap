@@ -23,6 +23,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameSpeedTogglePauseTrig
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage.AboutDialogOpenTriggeredMessage
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.SettingsDialogOpenTriggeredMessage
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMappingMap
+import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeGrass
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub
@@ -122,5 +123,6 @@ m.BLOCK_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(BlockObj
 m.GRASS_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeGrass.TYPE), code: empty(), trigger: empty()]
 m.SHRUB_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeShrub.TYPE), code: empty(), trigger: empty()]
 m.TREE_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeTreeSapling.TYPE), code: empty(), trigger: empty()]
+m.BUILDING_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeBuilding.TYPE), code: empty(), trigger: empty()]
 
 m

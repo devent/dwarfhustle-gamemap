@@ -45,6 +45,14 @@
                               <ListView fx:id="treeList" prefHeight="200.0" prefWidth="200.0" />
                      </content>
                   </Tab>
+                  <Tab fx:id="buildingTab" text="Building">
+                     <tooltip>
+                        <Tooltip text="Buildings" />
+                     </tooltip>
+                     <content>
+                        <ListView fx:id="buildingList" prefHeight="200.0" prefWidth="200.0" />
+                     </content>
+                  </Tab>
               </tabs>
             </TabPane>
          </children>

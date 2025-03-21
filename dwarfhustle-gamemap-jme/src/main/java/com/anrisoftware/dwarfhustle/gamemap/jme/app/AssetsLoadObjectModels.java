@@ -72,6 +72,9 @@ public class AssetsLoadObjectModels {
     public void loadModelMap(MutableLongObjectMap<AssetCacheObject> cache, ModelMapData data) {
         final var mo = loadModelData(data);
         final var model = loadModel(data.model);
+        if (data.rid == 1072) {
+            System.out.println(); // TODO
+        }
         final var node = setupMesh(data, model);
         mo.model = node;
         cache.put(mo.id, mo);
@@ -79,9 +82,9 @@ public class AssetsLoadObjectModels {
 
     private Spatial setupMesh(ModelMapData data, Spatial model) {
         final var node = setupTexCoord3(data, model);
-        if (approximateEquals(data.rotation[0], 0) && approximateEquals(data.rotation[1], 0)
-                && approximateEquals(data.rotation[2], 0) && approximateEquals(data.scale[0], 0)
-                && approximateEquals(data.scale[1], 0) && approximateEquals(data.scale[2], 0)) {
+        if (approximateEquals(data.rotation[0], 0f) && approximateEquals(data.rotation[1], 0f)
+                && approximateEquals(data.rotation[2], 0f) && approximateEquals(data.scale[0], 1f)
+                && approximateEquals(data.scale[1], 1f) && approximateEquals(data.scale[2], 1f)) {
             return node;
         }
         for (final var child : node.getChildren()) {
@@ -95,6 +98,7 @@ public class AssetsLoadObjectModels {
     private Node setupTexCoord3(ModelMapData data, Spatial model) {
         final var oldnode = (Node) model;
         final var node = new Node("model-" + data.rid);
+        node.setLocalTransform(oldnode.getLocalTransform());
         for (final var child : oldnode.getChildren()) {
             final var geo = (Geometry) child;
             final var mesh = geo.getMesh().deepClone();

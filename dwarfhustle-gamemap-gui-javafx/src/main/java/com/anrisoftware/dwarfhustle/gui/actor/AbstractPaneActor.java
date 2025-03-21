@@ -62,6 +62,7 @@ import javafx.application.Platform;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -204,7 +205,7 @@ public abstract class AbstractPaneActor<T> {
     /**
      * Ignores the message.
      */
-    private Behavior<Message> onIgnore(Message m) {
+    private Behavior<Message> onIgnore(Object m) {
         return Behaviors.same();
     }
 
@@ -231,7 +232,8 @@ public abstract class AbstractPaneActor<T> {
         throw m.cause;
     }
 
-    private Behavior<Message> stashOtherCommand(Message m) {
+    private Behavior<Message> stashOtherCommand(Object mo) {
+        val m = (Message) mo;
         log.debug("stashOtherCommand: {}", m);
         try {
             buffer.stash(m);

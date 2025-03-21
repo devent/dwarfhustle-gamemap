@@ -22,7 +22,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.net.URL;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -34,10 +33,8 @@ import com.anrisoftware.dwarfhustle.gamemap.model.cache.AppCachesConfig;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppCommand;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AppErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.AssetsResponseMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadModelsMessage.LoadModelsSuccessMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesErrorMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadTexturesMessage.LoadTexturesSuccessMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.LoadWorldMessage;
@@ -47,28 +44,15 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
-import com.anrisoftware.dwarfhustle.model.api.materials.Gas;
-import com.anrisoftware.dwarfhustle.model.api.materials.IgneousExtrusive;
-import com.anrisoftware.dwarfhustle.model.api.materials.IgneousIntrusive;
-import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
-import com.anrisoftware.dwarfhustle.model.api.materials.Metamorphic;
-import com.anrisoftware.dwarfhustle.model.api.materials.Sedimentary;
-import com.anrisoftware.dwarfhustle.model.api.materials.Soil;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
-import com.anrisoftware.dwarfhustle.model.api.objects.GameObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapChunk;
-import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheGetMessage;
-import com.anrisoftware.dwarfhustle.model.db.cache.CachePutMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage.CacheErrorMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeResponseMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeResponseMessage.KnowledgeResponseErrorMessage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeResponseMessage.KnowledgeResponseSuccessMessage;
-import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.jme3.app.Application;
@@ -198,8 +182,7 @@ public class AppActor {
         createModelsAssetsCacheActor(injector, actor);
         createSunActor(injector, actor);
         return new InitialStateMessage(
-                actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(30, SECONDS),
-                actor.getActorAsync(OrientDbActor.ID).toCompletableFuture().get(30, SECONDS));
+                actor.getActorAsync(StoredObjectsJcsCacheActor.ID).toCompletableFuture().get(30, SECONDS), null);
     }
 
     private static void createSunActor(Injector injector, ActorSystemProvider actor) {
@@ -215,15 +198,6 @@ public class AppActor {
     }
 
     private static void createObjectsCache(Injector injector, ActorSystemProvider actor) {
-        var task = StoredObjectsJcsCacheActor.create(injector, ACTOR_TIMEOUT,
-                actor.getObjectGetterAsync(OrientDbActor.ID));
-        task.whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("ObjectsJcsCacheActor.create", ex);
-            } else {
-                log.debug("ObjectsJcsCacheActor created");
-            }
-        });
     }
 
     private static void createMaterialAssetsCacheActor(Injector injector, ActorSystemProvider actor) {
@@ -249,45 +223,13 @@ public class AppActor {
     }
 
     private static void createDb(Injector injector, ActorSystemProvider actor, AppCommand command) {
-        OrientDbActor.create(injector, ACTOR_TIMEOUT).whenComplete((ret, ex) -> {
-            if (ex != null) {
-                log.error("OrientDbActor.create", ex);
-                actor.tell(new AppErrorMessage(ex));
-            } else {
-                log.debug("OrientDbActor created");
-                if (command.isSkipLoad()) {
-                    log.warn("Skip load is set, not loading world.");
-                    return;
-                }
-                actor.tell(new LoadWorldMessage(command.getGamedir()));
-            }
-        });
     }
 
     private static void createPowerLoom(Injector injector, ActorSystemProvider actor) {
-        PowerLoomKnowledgeActor.create(injector, ACTOR_TIMEOUT, actor.getActorAsync(KnowledgeJcsCacheActor.ID))
-                .whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("PowerLoomKnowledgeActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("PowerLoomKnowledgeActor created");
-                        createKnowledgeCache(injector, actor, ret);
-                    }
-                });
     }
 
     private static void createKnowledgeCache(Injector injector, ActorSystemProvider actor,
             ActorRef<Message> powerLoom) {
-        KnowledgeJcsCacheActor.create(injector, ACTOR_TIMEOUT, actor.getObjectGetterAsync(PowerLoomKnowledgeActor.ID))
-                .whenComplete((ret, ex) -> {
-                    if (ex != null) {
-                        log.error("KnowledgeJcsCacheActor.create", ex);
-                        actor.tell(new AppErrorMessage(ex));
-                    } else {
-                        log.debug("KnowledgeJcsCacheActor created");
-                    }
-                });
     }
 
     private static void createConsole(Injector injector, ActorSystemProvider actor) {
@@ -327,9 +269,6 @@ public class AppActor {
     private Application app;
 
     @SuppressWarnings("rawtypes")
-    private ActorRef<DbResponseMessage> dbAdapter;
-
-    @SuppressWarnings("rawtypes")
     private ActorRef<CacheResponseMessage> objectsAdapter;
 
     private ActorRef<KnowledgeResponseMessage> knowledgeAdapter;
@@ -364,7 +303,6 @@ public class AppActor {
      */
     public Behavior<Message> start(Injector injector) {
         this.injector = injector;
-        this.dbAdapter = context.messageAdapter(DbResponseMessage.class, WrappedDbResponse::new);
         this.objectsAdapter = context.messageAdapter(CacheResponseMessage.class, WrappedCacheResponse::new);
         this.knowledgeAdapter = context.messageAdapter(KnowledgeResponseMessage.class, WrappedKnowledgeResponse::new);
         this.assetsCacheAdapter = context.messageAdapter(AssetsResponseMessage.class, WrappedAssetsCacheResponse::new);
@@ -407,30 +345,10 @@ public class AppActor {
      */
     private Behavior<Message> onLoadWorld(LoadWorldMessage m) {
         log.trace("onLoadWorld {}", m);
-        actor.tell(new LoadTexturesMessage<>(assetsCacheAdapter));
-        actor.tell(new LoadModelsMessage<>(assetsCacheAdapter));
-        loadKnowledge();
-        if (command.isUseRemoteDb()) {
-            dbActor.tell(new ConnectDbRemoteMessage<>(dbAdapter, command.getDbServer(), command.getDbName(),
-                    command.getDbUser(), command.getDbPassword()));
-        } else {
-            dbActor.tell(new StartEmbeddedServerMessage<>(dbAdapter, m.dir.getAbsolutePath(), dbConfig));
-        }
         return Behaviors.same();
     }
 
     private void loadKnowledge() {
-        actor.tell(cKgM(Sedimentary.class, Sedimentary.TYPE));
-        actor.tell(cKgM(IgneousIntrusive.class, IgneousIntrusive.TYPE));
-        actor.tell(cKgM(IgneousExtrusive.class, IgneousExtrusive.TYPE));
-        actor.tell(cKgM(Metamorphic.class, Metamorphic.TYPE));
-        actor.tell(cKgM(Liquid.class, Liquid.TYPE));
-        actor.tell(cKgM(Soil.class, Soil.TYPE));
-        actor.tell(cKgM(Gas.class, Gas.TYPE));
-    }
-
-    private KnowledgeGetMessage<KnowledgeResponseMessage> cKgM(Class<? extends GameObject> typeClass, String type) {
-        return new KnowledgeGetMessage<>(knowledgeAdapter, typeClass, type);
     }
 
     /**
@@ -440,12 +358,6 @@ public class AppActor {
      */
     private Behavior<Message> onSetWorldMap(SetWorldMapMessage m) {
         log.trace("onSetWorldMap {}", m);
-        objectsActor.tell(new CachePutMessage<>(objectsAdapter, m.wm.getId(), m.wm));
-        ogs.get().currentWorld.set(m.wm);
-        dbActor.tell(new LoadObjectMessage<>(dbAdapter, GameMap.OBJECT_TYPE, db -> {
-            var query = "SELECT * from ? where objecttype = ? and objectid = ?";
-            return db.query(query, GameMap.OBJECT_TYPE, GameMap.OBJECT_TYPE, m.wm.currentMap);
-        }));
         return Behaviors.same();
     }
 
@@ -469,7 +381,6 @@ public class AppActor {
      */
     private Behavior<Message> onSetGameMap(SetGameMapMessage m) {
         log.trace("onSetGameMap {}", m);
-        objectsActor.tell(new CachePutMessage<>(objectsAdapter, m.gm.getId(), m.gm));
         return Behaviors.same();
     }
 
@@ -480,63 +391,6 @@ public class AppActor {
      */
     private Behavior<Message> onSetTimeWorld(SetTimeWorldMessage m) {
         log.trace("onSetTimeWorld {}", m);
-        ogs.get().currentWorld.get().setTime(LocalDateTime.from(ogs.get().currentWorld.get().getTime()).with(m.time));
-        return Behaviors.same();
-    }
-
-    /**
-     * Reacts to the {@link WrappedObjectsResponse} message from the objects actor.
-     * <dl>
-     * <dt>{@link LoadObjectErrorMessage}</dt>
-     * <dd>Sends the {@link AppErrorMessage} and stops the actor.</dd>
-     * <dt>{@link LoadObjectsErrorMessage}</dt>
-     * <dd>Sends the {@link AppErrorMessage} and stops the actor.</dd>
-     * <dt>{@link LoadObjectSuccessMessage}</dt>
-     * <dd>Depending on the returned game object:
-     * <dl>
-     * </dl>
-     * <dt>{@link WorldMap}</dt>
-     * <dd>Caches the world map. Sends the {@link SetWorldMapMessage} message.</dd>
-     * <dt>{@link GameMap}</dt>
-     * <dd>Caches the game map. Sends the {@link SetGameMapMessage} message. Sends
-     * the {@link LoadMapTilesMessage}.</dd>
-     * <dt>{@link MapChunk}</dt>
-     * <dd>Caches the map block. Retrieves all child map blocks from the root map
-     * block.</dd>
-     * </dl>
-     */
-    private Behavior<Message> onWrappedDbResponse(WrappedDbResponse m) {
-        log.trace("onWrappedDbResponse {}", m);
-        var response = m.response;
-        if (response instanceof DbErrorMessage<?> rm) {
-            log.error("Db error", rm);
-            actor.tell(new AppErrorMessage(rm.error));
-            return Behaviors.stopped();
-        } else if (response instanceof StartEmbeddedServerSuccessMessage) {
-            log.debug("Started embedded server");
-            var rm = (StartEmbeddedServerSuccessMessage<?>) response;
-            dbActor.tell(new ConnectDbEmbeddedMessage<>(dbAdapter, rm.server, command.getDbName(), command.getDbUser(),
-                    command.getDbPassword()));
-        } else if (response instanceof ConnectDbSuccessMessage) {
-            log.debug("Connected to server");
-            dbActor.tell(new LoadObjectMessage<>(dbAdapter, WorldMap.OBJECT_TYPE, db -> {
-                var query = "SELECT * from ? limit 1";
-                return db.query(query, WorldMap.OBJECT_TYPE);
-            }));
-        } else if (response instanceof LoadObjectSuccessMessage<?> rm) {
-            log.debug("Loaded object successfully {}", rm.go);
-            if (rm.go instanceof WorldMap wm) {
-                ogs.get().currentWorld.set(wm);
-                actor.tell(new SetWorldMapMessage(wm));
-            } else if (rm.go instanceof GameMap gm) {
-                ogs.get().currentMap.set(gm);
-                actor.tell(new SetGameMapMessage(gm));
-            }
-        } else if (response instanceof LoadObjectNotFoundMessage rm) {
-            log.error("Object not found", rm);
-            actor.tell(new AppErrorMessage(new Exception("Object not found")));
-            return Behaviors.stopped();
-        }
         return Behaviors.same();
     }
 
@@ -627,7 +481,6 @@ public class AppActor {
      * <li>{@link SetVisibleDepthLayersMessage}
      * <li>{@link SetGameMapMessage}
      * <li>{@link SetTimeWorldMessage}
-     * <li>{@link WrappedDbResponse}
      * <li>{@link WrappedCacheResponse}
      * <li>{@link WrappedAssetsCacheResponse}
      * </ul>
@@ -640,7 +493,6 @@ public class AppActor {
                 .onMessage(SetVisibleDepthLayersMessage.class, this::onSetVisibleDepthLayers)//
                 .onMessage(SetGameMapMessage.class, this::onSetGameMap)//
                 .onMessage(SetTimeWorldMessage.class, this::onSetTimeWorld)//
-                .onMessage(WrappedDbResponse.class, this::onWrappedDbResponse)//
                 .onMessage(WrappedCacheResponse.class, this::onWrappedCacheResponse)//
                 .onMessage(WrappedKnowledgeResponse.class, this::onWrappedKnowledgeResponse)//
                 .onMessage(WrappedAssetsCacheResponse.class, this::onWrappedAssetsCacheResponse)//

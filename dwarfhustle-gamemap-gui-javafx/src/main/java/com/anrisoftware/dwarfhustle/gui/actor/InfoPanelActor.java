@@ -32,7 +32,6 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMes
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
@@ -116,7 +115,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
                     if (err == null) {
                         mapTileItemWidget = res;
                         var controller = initial.controller;
-                        controller.setup(injector);
+                        // controller.setup(injector);
                     }
                 });
         return getDefaultBehavior()//
@@ -131,8 +130,8 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         p.setLastName("Shatterfeet");
         runFxThread(() -> {
             controller.items.clear();
-            controller.items.add(new MapTileItem(mt));
-            controller.items.add(new MapTileItem(p));
+            // controller.items.add(new MapTileItem(mt));
+            // controller.items.add(new MapTileItem(p));
             controller.infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             controller.infoPane.setVisible(true);
         });

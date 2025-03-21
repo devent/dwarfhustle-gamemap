@@ -78,6 +78,10 @@ public class ObjectsButtonsController {
     public Tab treeTab;
     @FXML
     public ListView<String> treeList;
+    @FXML
+    public Tab buildingTab;
+    @FXML
+    public ListView<String> buildingList;
 
     private final Map<String, ListView<String>> tabListviews = Maps.mutable.empty();
 
@@ -89,6 +93,7 @@ public class ObjectsButtonsController {
         tabListviews.put("grass", grassList);
         tabListviews.put("shrub", shrubList);
         tabListviews.put("sapling", treeList);
+        tabListviews.put("building", buildingList);
     }
 
     public void setupObjects(Map<String, List<String>> tabsButtons) {
@@ -116,6 +121,7 @@ public class ObjectsButtonsController {
         setActions(grassList, "GRASS_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
         setActions(shrubList, "SHRUB_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
         setActions(treeList, "TREE_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(buildingList, "BUILDING_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
     }
 
     private void setActions(ListView<String> list, String name, GlobalKeys globalKeys,

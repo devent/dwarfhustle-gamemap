@@ -27,10 +27,10 @@ import com.google.inject.Guice
  */
 class TesterKeyMappingsProviderTest {
 
-	@Test
-	void load_TestingKeyMappingsProvider() {
-		def injector = Guice.createInjector()
-		def mappings = injector.getInstance(TesterKeyMappingProvider)
-		assert mappings.get().size() == 2
-	}
+    @Test
+    void load_TestingKeyMappingsProvider() {
+        def injector = Guice.createInjector()
+        def mappings = injector.getInstance(TesterKeyMappingProvider)
+        assert mappings.get().size() == 82
+    }
 }
