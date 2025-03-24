@@ -17,40 +17,44 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import java.text.DecimalFormat;
-import java.util.Locale;
-
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.val;
 
 /**
- * @see Vegetation
+ * @see GameMapObject
+ *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-public abstract class AbstractVegetationItem extends AbstractGameMapObjectItem {
+@NoArgsConstructor
+public abstract class AbstractGameMapObjectInfoPaneItem implements MapTileInfoPaneItem, GameMapObjectInfoPaneItem {
 
-    public AbstractVegetationItem() {
-    }
+    protected GameMapObject go;
 
-    public AbstractVegetationItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        super(go, kg, selected);
+    protected KnowledgeGetter kg;
+
+    protected boolean selected;
+
+    public AbstractGameMapObjectInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        this.go = go;
+        this.kg = kg;
+        this.selected = selected;
     }
 
     @Override
     public void setInfo(VBox box) {
-        super.setInfo(box);
-        if (go instanceof Vegetation v) {
-            var format = DecimalFormat.getInstance(Locale.ENGLISH);
-            box.getChildren().clear();
-            box.getChildren().add(new Label("\u2022\u2002" + format.format(v.getGrowth() * 100f)));
-            box.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+        val parent = box.getParent();
+        if (selected) {
+            parent.getStyleClass().clear();
+            parent.getStyleClass().add("objectInfoPaneSelected");
+        } else {
+            parent.getStyleClass().clear();
+            parent.getStyleClass().add("objectInfoPane");
         }
     }
 }

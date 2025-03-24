@@ -33,13 +33,13 @@ import lombok.val;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-@AutoService(GameMapObjectItem.class)
-public class BuildingObjectItem extends AbstractGameMapObjectItem {
+@AutoService(GameMapObjectInfoPaneItem.class)
+public class BuildingObjectInfoPaneItem extends AbstractGameMapObjectInfoPaneItem {
 
-    public BuildingObjectItem() {
+    public BuildingObjectInfoPaneItem() {
     }
 
-    public BuildingObjectItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+    public BuildingObjectInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
         super(go, kg, selected);
     }
 
@@ -56,8 +56,8 @@ public class BuildingObjectItem extends AbstractGameMapObjectItem {
     }
 
     @Override
-    public AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        return new BuildingObjectItem(go, kg, selected);
+    public AbstractGameMapObjectInfoPaneItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        return new BuildingObjectInfoPaneItem(go, kg, selected);
     }
 
     @Override

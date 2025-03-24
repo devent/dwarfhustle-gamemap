@@ -33,13 +33,13 @@ import lombok.val;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-@AutoService(GameMapObjectItem.class)
-public class GrassVegetationItem extends AbstractVegetationItem {
+@AutoService(GameMapObjectInfoPaneItem.class)
+public class GrassInfoPaneItem extends AbstractVegetationInfoPaneItem {
 
-    public GrassVegetationItem() {
+    public GrassInfoPaneItem() {
     }
 
-    public GrassVegetationItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+    public GrassInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
         super(go, kg, selected);
     }
 
@@ -56,8 +56,8 @@ public class GrassVegetationItem extends AbstractVegetationItem {
     }
 
     @Override
-    public AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        return new GrassVegetationItem(go, kg, selected);
+    public AbstractGameMapObjectInfoPaneItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
+        return new GrassInfoPaneItem(go, kg, selected);
     }
 
     @Override

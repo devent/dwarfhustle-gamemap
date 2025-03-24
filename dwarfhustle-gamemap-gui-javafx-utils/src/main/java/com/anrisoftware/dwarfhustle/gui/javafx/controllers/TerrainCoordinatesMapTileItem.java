@@ -33,7 +33,7 @@ import lombok.ToString;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-public class TerrainCoordinatesMapTileItem extends TerrainMapTileItem {
+public class TerrainCoordinatesMapTileItem extends TerrainInfoPaneItem {
 
     public TerrainCoordinatesMapTileItem(MapBlock mb, KnowledgeGetter kg, ObjectsGetter cg) {
         super(mb, kg, cg);

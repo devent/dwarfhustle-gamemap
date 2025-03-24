@@ -485,12 +485,12 @@ public class TerrainActor {
             }
             val mo = MapObject.getMapObject(is.mg, gm, pos);
             LongSet ids = mo.getOids().keySet();
-            long previousSelected = gm.getSelectedObject();
+            long previousSelected = gm.getSelectedObjectId();
             for (final var it = ids.longIterator(); it.hasNext();) {
                 long next = it.next();
                 int type = mo.getOids().get(next);
                 if (type != Block.OBJECT_TYPE && previousSelected != next) {
-                    gm.setSelectedObject(next);
+                    gm.setSelectedObject(type, next);
                     setGameMap(is.os, gm);
                     actor.tell(new SetSelectedObjectMessage(gmid, next));
                     break;

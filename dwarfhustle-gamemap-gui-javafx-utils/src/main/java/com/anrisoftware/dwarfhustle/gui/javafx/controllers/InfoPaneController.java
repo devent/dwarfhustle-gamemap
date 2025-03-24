@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public class InfoPaneController implements ListChangeListener<MapTileItem> {
+public class InfoPaneController implements ListChangeListener<MapTileInfoPaneItem> {
 
     @FXML
     public BorderPane infoPane;
@@ -48,20 +48,20 @@ public class InfoPaneController implements ListChangeListener<MapTileItem> {
     @FXML
     public FlowPane infoBox;
 
-    public ObservableList<MapTileItem> items;
+    public ObservableList<MapTileInfoPaneItem> items;
 
-    private final MutableMap<MapTileItem, MapTileItemWidgetController> widgets = Maps.mutable.empty();
+    private final MutableMap<MapTileInfoPaneItem, MapTileItemWidgetController> widgets = Maps.mutable.empty();
 
     public void setup() {
         log.debug("setup()");
         infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        List<MapTileItem> list = Lists.mutable.empty();
+        List<MapTileInfoPaneItem> list = Lists.mutable.empty();
         this.items = FXCollections.observableList(list);
         items.addListener(this);
     }
 
     @Override
-    public void onChanged(Change<? extends MapTileItem> c) {
+    public void onChanged(Change<? extends MapTileInfoPaneItem> c) {
         while (c.next()) {
             if (c.wasPermutated()) {
                 for (int i = c.getFrom(); i < c.getTo(); ++i) {
@@ -76,14 +76,14 @@ public class InfoPaneController implements ListChangeListener<MapTileItem> {
         }
     }
 
-    private void addMapTileItemWidget(MapTileItem item) {
+    private void addMapTileItemWidget(MapTileInfoPaneItem item) {
         var widget = createWidget();
         widget.setup(item);
         infoBox.getChildren().add(widget.objectInfoPane);
         widgets.put(item, widget);
     }
 
-    private void removeMapTileItemWidget(MapTileItem item) {
+    private void removeMapTileItemWidget(MapTileInfoPaneItem item) {
         var widget = widgets.remove(item);
         infoBox.getChildren().remove(widget.objectInfoPane);
     }

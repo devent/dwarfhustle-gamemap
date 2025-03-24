@@ -25,7 +25,7 @@ import javafx.scene.layout.VBox;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface MapTileItem {
+public interface MapTileInfoPaneItem {
 
     void setTitle(Label label);
 

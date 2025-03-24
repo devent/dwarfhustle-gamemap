@@ -60,6 +60,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.AbstractPaneActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.ObjectPanelActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelActorCreator;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AboutDialogMessage;
@@ -185,6 +186,12 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         });
         InfoPanelActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
             log.debug("InfoPanelActor {} {}", v, err);
+            if (err == null) {
+                v.tell(new AttachGuiMessage(null));
+            }
+        });
+        ObjectPanelActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
+            log.debug("ObjectPanelActor {} {}", v, err);
             if (err == null) {
                 v.tell(new AttachGuiMessage(null));
             }

@@ -18,53 +18,38 @@
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
 import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import lombok.ToString;
-import lombok.val;
 
 /**
- * The terrain.
+ * The undiscovered terrain.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-public class TerrainMapTileItem implements MapTileItem {
+public class TerrainUndiscoveredInfoPaneItem implements MapTileInfoPaneItem {
 
-    protected final ObjectsGetter cg;
+    private final MapBlock mb;
 
-    protected final MapBlock mb;
-
-    protected final KnowledgeGetter kg;
-
-    public TerrainMapTileItem(MapBlock mb, KnowledgeGetter kg, ObjectsGetter cg) {
+    public TerrainUndiscoveredInfoPaneItem(MapBlock mb) {
         this.mb = mb;
-        this.kg = kg;
-        this.cg = cg;
     }
 
     @Override
     public void setTitle(Label label) {
-        val klo = kg.get(BlockMaterial.TYPE.hashCode());
-        var ko = klo.objects.detect(it -> it.getKid() == mb.getMaterial());
-        label.setText(ko.getName());
+        label.setText("Undiscovered");
     }
 
     @Override
     public void setInfo(VBox box) {
         box.getChildren().clear();
-        putItems(box);
+        box.getChildren()
+                .add(new Label("\u2022" + mb.getPos().getX() + "/" + mb.getPos().getY() + "/" + mb.getPos().getZ()));
         box.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-    }
-
-    protected void putItems(VBox box) {
-        box.getChildren().add(
-                new Label("\u2022\u2002" + mb.getPos().getX() + "/" + mb.getPos().getY() + "/" + mb.getPos().getZ()));
     }
 
     @Override

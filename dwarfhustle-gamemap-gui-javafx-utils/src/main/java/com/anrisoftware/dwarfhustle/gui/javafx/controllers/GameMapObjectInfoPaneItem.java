@@ -21,13 +21,13 @@ import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 
 /**
- * Service to create {@link AbstractGameMapObjectItem}.
+ * Service to create {@link AbstractGameMapObjectInfoPaneItem}.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface GameMapObjectItem {
+public interface GameMapObjectInfoPaneItem {
 
-    AbstractGameMapObjectItem create(GameMapObject go, KnowledgeGetter kg, boolean selected);
+    AbstractGameMapObjectInfoPaneItem create(GameMapObject go, KnowledgeGetter kg, boolean selected);
 
     int getType();
 }

@@ -29,8 +29,10 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor.GameTimeSpeedActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelActorFactory;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.ObjectPanelActor.ObjectPanelActorFactory;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
@@ -42,15 +44,16 @@ import jakarta.inject.Singleton;
 /**
  * @see GameTimeSpeedActorFactory
  * @see InfoPanelActorFactory
+ * @see ObjectPanelActorFactory
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
 
-    private final IntObjectMap<GameMapObjectItem> gameMapObjectItems;
+    private final IntObjectMap<GameMapObjectInfoPaneItem> gameMapObjectInfoPaneItems;
 
     public DwarfhustleGamemapGuiJavafxUtilsModule() {
-        this.gameMapObjectItems = loadGameMapObjectItem();
+        this.gameMapObjectInfoPaneItems = loadGameMapObjectItem();
     }
 
     @Override
@@ -58,24 +61,27 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
         install(new FactoryModuleBuilder()
                 .implement(new TypeLiteral<AbstractPaneActor<? extends InfoPaneController>>() {
                 }, InfoPanelActor.class).build(InfoPanelActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends ObjectPaneController>>() {
+                }, ObjectPanelActor.class).build(ObjectPanelActorFactory.class));
         install(new FactoryModuleBuilder().implement(GameTimeSpeedActor.class, GameTimeSpeedActor.class)
                 .build(GameTimeSpeedActorFactory.class));
     }
 
-    private IntObjectMap<GameMapObjectItem> loadGameMapObjectItem() {
-        MutableIntObjectMap<GameMapObjectItem> map = IntObjectMaps.mutable.empty();
-        for (final var s : ServiceLoader.load(GameMapObjectItem.class)) {
+    private IntObjectMap<GameMapObjectInfoPaneItem> loadGameMapObjectItem() {
+        MutableIntObjectMap<GameMapObjectInfoPaneItem> map = IntObjectMaps.mutable.empty();
+        for (final var s : ServiceLoader.load(GameMapObjectInfoPaneItem.class)) {
             map.put(s.getType(), s);
         }
-        assertThat("GameMapObjectItem(s)", map.size(), is(greaterThan(0)));
+        assertThat("GameMapObjectInfoPaneItem(s)", map.size(), is(greaterThan(0)));
         return map;
     }
 
     @Singleton
     @Provides
-    @Named("gameMapObjectItems")
-    public IntObjectMap<GameMapObjectItem> getGameMapObjectItems() {
-        return gameMapObjectItems;
+    @Named("type-gameMapObjectInfoPaneItems")
+    public IntObjectMap<GameMapObjectInfoPaneItem> getGameMapObjectInfoPaneItems() {
+        return gameMapObjectInfoPaneItems;
     }
 
 }
