@@ -45,6 +45,7 @@ import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowle
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
+import com.jayfella.jme.jfx.JavaFxUI;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -52,7 +53,9 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
-import javafx.scene.layout.Region;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import lombok.SneakyThrows;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
@@ -160,6 +163,12 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     @Override
     protected void setupUi() {
+        val container = JavaFxUI.getInstance().getJmeFxContainer();
+        val anchor = (AnchorPane) container.getRootNode().getChildren().get(0);
+        val main = (BorderPane) anchor.getChildren().filtered(n -> n.getId().equalsIgnoreCase("mainPanel")).getFirst();
+        val pane = (GridPane) main.getChildren().filtered(n -> n.getId().equalsIgnoreCase("gameMapPane")).getFirst();
+        pane.add(is.root, 1, 1, 1, 2);
+        is.root.setVisible(false);
     }
 
     @Override
@@ -178,14 +187,13 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
         val id = gm.getSelectedObjectId();
         if (id != 0) {
             val go = og.get(gm.getSelectedObjectType(), id);
-            System.out.println("updateObjectPane " + go); // TODO
         }
         runFxThread(() -> {
-            if (controller.items != null) {
-                controller.items.clear();
+            if (id != 0) {
+                is.root.setVisible(true);
+            } else {
+                is.root.setVisible(false);
             }
-            controller.objectPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-            controller.objectPane.setVisible(true);
         });
     }
 

@@ -104,15 +104,6 @@ public class TesterMainPaneController extends AbstractStatusController {
     public ToggleButton timeButton;
 
     @FXML
-    public Button northButton;
-    @FXML
-    public Button westButton;
-    @FXML
-    public Button southButton;
-    @FXML
-    public Button eastButton;
-
-    @FXML
     public ToggleGroup gameSpeedGroup;
 
     @FXML
@@ -242,14 +233,6 @@ public class TesterMainPaneController extends AbstractStatusController {
         paintButton.setText(null);
         insertButton.setGraphic(getImageView(images, "buttons_objects", locale, iconSize));
         insertButton.setText(null);
-        northButton.setGraphic(getImageView(images, "buttons_north", locale, iconSize));
-        northButton.setText(null);
-        southButton.setGraphic(getImageView(images, "buttons_south", locale, iconSize));
-        southButton.setText(null);
-        westButton.setGraphic(getImageView(images, "buttons_west", locale, iconSize));
-        westButton.setText(null);
-        eastButton.setGraphic(getImageView(images, "buttons_east", locale, iconSize));
-        eastButton.setText(null);
         gameSpeedPauseButton.setGraphic(getImageView(images, "gameSpeedPauseButton", locale, iconSize));
         gameSpeedPauseButton.setText(null);
         gameSpeedNormalButton.setGraphic(getImageView(images, "gameSpeedNormalButton", locale, iconSize));

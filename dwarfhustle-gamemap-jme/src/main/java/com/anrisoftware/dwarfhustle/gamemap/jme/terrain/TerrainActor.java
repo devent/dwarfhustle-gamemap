@@ -481,20 +481,28 @@ public class TerrainActor {
         try (val lock = gm.acquireLockMapObjects()) {
             val index = GameBlockPos.calcIndex(gm, pos);
             if (!gm.getFilledBlocks().containsKey(index)) {
+                gm.setSelectedObject(0, 0);
                 return;
             }
             val mo = MapObject.getMapObject(is.mg, gm, pos);
             LongSet ids = mo.getOids().keySet();
             long previousSelected = gm.getSelectedObjectId();
+            boolean selectSet = false;
             for (final var it = ids.longIterator(); it.hasNext();) {
                 long next = it.next();
                 int type = mo.getOids().get(next);
                 if (type != Block.OBJECT_TYPE && previousSelected != next) {
                     gm.setSelectedObject(type, next);
                     setGameMap(is.os, gm);
+                    selectSet = true;
                     actor.tell(new SetSelectedObjectMessage(gmid, next));
                     break;
                 }
+            }
+            if (!selectSet) {
+                gm.setSelectedObject(0, 0);
+                setGameMap(is.os, gm);
+                actor.tell(new SetSelectedObjectMessage(gmid, 0));
             }
         }
     }

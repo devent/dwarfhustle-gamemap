@@ -308,7 +308,7 @@
 }
 
 #gameMapPane {
-    -fx-background-color: black;
+    -fx-background-color: transparent;
 }
 
 #pauseButton {
