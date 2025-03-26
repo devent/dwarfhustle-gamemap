@@ -32,7 +32,7 @@ import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMes
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.ObservableGameSettings.GameSettings;
 import com.anrisoftware.dwarfhustle.gui.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapBlockItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
@@ -96,7 +96,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     private InfoPaneController controller;
 
-    private PanelControllerResult<MapTileItemWidgetController> mapTileItemWidget;
+    private PanelControllerResult<MapBlockItemWidgetController> mapTileItemWidget;
 
     @Inject
     public void setTextsFactory(TextsFactory texts) {
@@ -110,7 +110,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
             var controller = initial.controller;
         });
         var builder = injector.getInstance(PanelControllerBuild.class);
-        builder.<MapTileItemWidgetController>loadFxml(injector, context.getExecutionContext(),
+        builder.<MapBlockItemWidgetController>loadFxml(injector, context.getExecutionContext(),
                 "/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
                     if (err == null) {
                         mapTileItemWidget = res;

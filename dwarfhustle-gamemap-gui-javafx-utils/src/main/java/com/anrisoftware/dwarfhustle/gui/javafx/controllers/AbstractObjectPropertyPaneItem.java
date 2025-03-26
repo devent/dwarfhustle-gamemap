@@ -17,38 +17,43 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.Region;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
- * The terrain.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-public class TerrainCoordinatesMapTileItem extends TerrainInfoPaneItem {
+@NoArgsConstructor
+public abstract class AbstractObjectPropertyPaneItem implements JobPaneItem, WorkJobPaneItem {
 
-    public TerrainCoordinatesMapTileItem(MapBlock mb, KnowledgeGetter kg, ObjectsGetter cg) {
-        super(mb, kg, cg);
+    protected int type;
+
+    protected long id;
+
+    protected KnowledgeGetter kg;
+
+    protected boolean selected;
+
+    public AbstractObjectPropertyPaneItem(int type, long id, KnowledgeGetter kg, boolean selected) {
+        this.type = type;
+        this.id = id;
+        this.kg = kg;
+        this.selected = selected;
     }
 
     @Override
-    public void update(MapBlockItemWidgetController controller) {
-        super.update(controller);
-        controller.objectInfoBox.getChildren().clear();
-        controller.objectInfoBox.getChildren().add(
-                new Label("\u2022\u2002" + mb.getPos().getX() + "/" + mb.getPos().getY() + "/" + mb.getPos().getZ()));
-        controller.objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+    public void update(JobItemPaneController controller) {
+        if (selected) {
+            controller.jobItemPane.getStyleClass().clear();
+            controller.jobItemPane.getStyleClass().add("jobItemPaneSelected");
+        } else {
+            controller.jobItemPane.getStyleClass().clear();
+            controller.jobItemPane.getStyleClass().add("jobItemPaneNormal");
+        }
     }
 
-    @Override
-    public int getType() {
-        return BlockMaterial.OBJECT_TYPE;
-    }
 }

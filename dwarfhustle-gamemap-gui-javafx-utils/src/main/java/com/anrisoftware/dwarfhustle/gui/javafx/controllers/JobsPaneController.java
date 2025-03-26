@@ -28,40 +28,39 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.Region;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controller for {@code info_pane_ui.fxml}
+ * Controller for {@code work_jobs_pane_ui.fxml}
  *
  * @author Erwin Müller
  */
 @Slf4j
-public class InfoPaneController implements ListChangeListener<MapBlockInfoPaneItem> {
+public class JobsPaneController implements ListChangeListener<JobPaneItem> {
 
     @FXML
-    public BorderPane infoPane;
+    public BorderPane jobsPane;
 
     @FXML
-    public FlowPane infoBox;
+    public ListView<JobPaneItem> jobsList;
 
-    public ObservableList<MapBlockInfoPaneItem> items;
+    public ObservableList<JobPaneItem> jobItems;
 
-    private final MutableMap<MapBlockInfoPaneItem, MapBlockItemWidgetController> widgets = Maps.mutable.empty();
+    private final MutableMap<JobPaneItem, JobItemPaneController> jobItemPanel = Maps.mutable.empty();
 
     public void setup() {
         log.debug("setup()");
-        infoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        List<MapBlockInfoPaneItem> list = Lists.mutable.empty();
-        this.items = FXCollections.observableList(list);
-        items.addListener(this);
+        List<JobPaneItem> list = Lists.mutable.empty();
+        this.jobItems = FXCollections.observableList(list);
+        jobItems.addListener(this);
+        jobsList.setItems(jobItems);
     }
 
     @Override
-    public void onChanged(Change<? extends MapBlockInfoPaneItem> c) {
+    public void onChanged(Change<? extends JobPaneItem> c) {
         while (c.next()) {
             if (c.wasPermutated()) {
                 for (int i = c.getFrom(); i < c.getTo(); ++i) {
@@ -70,29 +69,29 @@ public class InfoPaneController implements ListChangeListener<MapBlockInfoPaneIt
             } else if (c.wasUpdated()) {
                 // update item
             } else {
-                c.getRemoved().forEach(this::removeMapTileItemWidget);
-                c.getAddedSubList().forEach(this::addMapTileItemWidget);
+                c.getRemoved().forEach(this::removeJobItemPane);
+                c.getAddedSubList().forEach(this::addJobItemPane);
             }
         }
     }
 
-    private void addMapTileItemWidget(MapBlockInfoPaneItem item) {
-        var widget = createWidget();
-        widget.setup(item);
-        infoBox.getChildren().add(widget.objectInfoPane);
-        widgets.put(item, widget);
+    private void addJobItemPane(JobPaneItem item) {
+        var pane = createPane();
+        item.update(pane);
+        jobItems.add(item);
+        jobItemPanel.put(item, pane);
     }
 
-    private void removeMapTileItemWidget(MapBlockInfoPaneItem item) {
-        var widget = widgets.remove(item);
-        infoBox.getChildren().remove(widget.objectInfoPane);
+    private void removeJobItemPane(JobPaneItem item) {
+        jobItemPanel.remove(item);
+        jobItems.remove(item);
     }
 
     @SneakyThrows
-    private MapBlockItemWidgetController createWidget() {
-        var loader = new FXMLLoader(getClass().getResource("/map_block_item_widget_ui.fxml"));
+    private JobItemPaneController createPane() {
+        var loader = new FXMLLoader(getClass().getResource("/work_job_item_ui.fxml"));
         loader.load();
-        MapBlockItemWidgetController c = loader.getController();
+        JobItemPaneController c = loader.getController();
         return c;
     }
 

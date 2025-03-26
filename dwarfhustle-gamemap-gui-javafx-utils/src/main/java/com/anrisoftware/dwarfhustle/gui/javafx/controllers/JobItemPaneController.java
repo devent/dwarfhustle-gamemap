@@ -17,54 +17,48 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import java.util.function.Consumer;
-
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Maps;
-
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controller for {@code object_pane_ui.fxml}
+ * Controller for {@code work_job_item_ui.fxml}
  *
  * @author Erwin Müller
  */
 @Slf4j
-public class ObjectPaneController {
+public class JobItemPaneController {
 
     @FXML
-    public BorderPane objectPane;
+    public BorderPane jobItemPane;
 
     @FXML
-    public Label objectTitleLabel;
+    public Label jobNameLabel;
 
     @FXML
-    public TabPane objectTabPane;
+    public CheckBox jobActiveBox;
 
     @FXML
-    public Tab propertiesTab;
+    public ToggleButton jobRepeatButton;
 
     @FXML
-    public ListView<ObjectPropertyItem> propertiesList;
+    public Button jobUpButton;
 
-    public ObservableList<ObjectPropertyItem> items;
+    @FXML
+    public Button jobDownButton;
 
-    private final MutableMap<ObjectPropertyItem, ObjectPropertyItemController> widgets = Maps.mutable.empty();
+    @FXML
+    public ToggleButton jobPauseButton;
+
+    @FXML
+    public Button jobCancelButton;
 
     public void setup() {
         log.debug("setup()");
-    }
-
-    public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
-        objectPane.setOnMouseEntered(e -> consumer.accept(true));
-        objectPane.setOnMouseExited(e -> consumer.accept(false));
     }
 
 }

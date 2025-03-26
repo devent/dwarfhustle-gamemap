@@ -17,14 +17,13 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Grass;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeGrass;
 import com.google.auto.service.AutoService;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.val;
 
@@ -33,31 +32,27 @@ import lombok.val;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
+@NoArgsConstructor
 @AutoService(GameMapObjectInfoPaneItem.class)
 public class GrassInfoPaneItem extends AbstractVegetationInfoPaneItem {
 
-    public GrassInfoPaneItem() {
-    }
-
-    public GrassInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        super(go, kg, selected);
+    public GrassInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected) {
+        super(type, id, og, kg, selected);
     }
 
     @Override
-    public void setTitle(Label label) {
+    public void update(MapBlockItemWidgetController controller) {
+        super.update(controller);
         val klo = kg.get(KnowledgeGrass.TYPE.hashCode());
+        Grass go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
-        label.setText(ko.getName());
+        controller.objectInfoTitle.setText(ko.getName());
     }
 
     @Override
-    public void setInfo(VBox box) {
-        super.setInfo(box);
-    }
-
-    @Override
-    public AbstractGameMapObjectInfoPaneItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        return new GrassInfoPaneItem(go, kg, selected);
+    public AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg,
+            boolean selected) {
+        return new GrassInfoPaneItem(type, id, og, kg, selected);
     }
 
     @Override

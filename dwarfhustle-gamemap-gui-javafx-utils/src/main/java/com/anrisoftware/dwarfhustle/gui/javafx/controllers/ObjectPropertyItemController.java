@@ -19,30 +19,28 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.GridPane;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controller for {@code map_tile_item_widget_ui.fxml}
+ * Controller for {@code object_property_item_ui.fxml}
  *
  * @author Erwin Müller
  */
-public class MapTileItemWidgetController {
+@Slf4j
+public class ObjectPropertyItemController {
 
     @FXML
-    public BorderPane objectInfoPane;
+    public GridPane objectPropertyItemPane;
 
     @FXML
-    public Label objectInfoTitle;
+    public Label objectPropertyName;
 
     @FXML
-    public VBox objectInfoBox;
+    public Label objectPropertyValue;
 
-    public void setup(MapTileInfoPaneItem item) {
-        item.setTitle(objectInfoTitle);
-        item.setInfo(objectInfoBox);
-        objectInfoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        objectInfoPane.autosize();
+    public void setup() {
+        log.debug("setup()");
     }
+
 }

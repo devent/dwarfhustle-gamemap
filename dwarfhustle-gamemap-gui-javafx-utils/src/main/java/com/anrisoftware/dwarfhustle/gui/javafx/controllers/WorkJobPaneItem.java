@@ -17,17 +17,17 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import com.anrisoftware.dwarfhustle.model.api.buildings.WorkJob;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
 /**
- * Service to create {@link AbstractGameMapObjectInfoPaneItem}.
+ * Service to create {@link AbstractWorkJobPaneItem}.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface GameMapObjectInfoPaneItem {
+public interface WorkJobPaneItem {
 
-    AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected);
+    AbstractWorkJobPaneItem create(WorkJob go, KnowledgeGetter kg, boolean selected);
 
     int getType();
 }

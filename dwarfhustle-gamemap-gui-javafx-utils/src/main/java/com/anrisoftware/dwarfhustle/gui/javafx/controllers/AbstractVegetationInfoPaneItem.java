@@ -20,13 +20,13 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 import java.text.DecimalFormat;
 import java.util.Locale;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Vegetation;
 
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
@@ -34,23 +34,21 @@ import lombok.ToString;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
+@NoArgsConstructor
 public abstract class AbstractVegetationInfoPaneItem extends AbstractGameMapObjectInfoPaneItem {
 
-    public AbstractVegetationInfoPaneItem() {
-    }
-
-    public AbstractVegetationInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        super(go, kg, selected);
+    public AbstractVegetationInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected) {
+        super(type, id, og, kg, selected);
     }
 
     @Override
-    public void setInfo(VBox box) {
-        super.setInfo(box);
-        if (go instanceof Vegetation v) {
-            var format = DecimalFormat.getInstance(Locale.ENGLISH);
-            box.getChildren().clear();
-            box.getChildren().add(new Label("\u2022\u2002" + format.format(v.getGrowth() * 100f)));
-            box.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
-        }
+    public void update(MapBlockItemWidgetController controller) {
+        super.update(controller);
+        Vegetation v = og.get(type, id);
+        var format = DecimalFormat.getInstance(Locale.ENGLISH);
+        controller.objectInfoBox.getChildren().clear();
+        controller.objectInfoBox.getChildren().add(new Label("\u2022\u2002" + format.format(v.getGrowth() * 100f)));
+        controller.objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
     }
+
 }

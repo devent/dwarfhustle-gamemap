@@ -17,43 +17,42 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
-import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
+import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeWorkJob;
+import com.anrisoftware.dwarfhustle.model.api.buildings.WorkJob;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.google.auto.service.AutoService;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.Region;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
- * The undiscovered terrain.
+ * @see WorkJob
+ * @see KnowledgeWorkJob
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-public class TerrainUndiscoveredInfoPaneItem implements MapBlockInfoPaneItem {
+@NoArgsConstructor
+@AutoService(WorkJobPaneItem.class)
+public class BuildingWorkJobPaneItem extends AbstractWorkJobPaneItem {
 
-    private final MapBlock mb;
-
-    public TerrainUndiscoveredInfoPaneItem(MapBlock mb) {
-        this.mb = mb;
+    public BuildingWorkJobPaneItem(WorkJob job, KnowledgeGetter kg, boolean selected) {
+        super(job, kg, selected);
     }
 
     @Override
-    public void update(MapBlockItemWidgetController controller) {
-        controller.objectInfoTitle.setText("Undiscovered");
-        controller.objectInfoBox.getChildren().clear();
-        controller.objectInfoBox.getChildren()
-                .add(new Label("\u2022" + mb.getPos().getX() + "/" + mb.getPos().getY() + "/" + mb.getPos().getZ()));
-        controller.objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+    public void update(JobItemPaneController controller) {
+        super.update(controller);
+    }
+
+    @Override
+    public AbstractWorkJobPaneItem create(WorkJob go, KnowledgeGetter kg, boolean selected) {
+        return new BuildingWorkJobPaneItem(go, kg, selected);
     }
 
     @Override
     public int getType() {
-        return BlockMaterial.OBJECT_TYPE;
+        return WorkJob.OBJECT_TYPE;
     }
 
-    @Override
-    public long getId() {
-        return 0;
-    }
 }

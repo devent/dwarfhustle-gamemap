@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<GridPane fx:id="objectPropertyItemPane" prefHeight="18.0" prefWidth="161.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItemController">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" valignment="CENTER" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <HBox alignment="CENTER" fillHeight="false" GridPane.valignment="CENTER">
+                     <children>
+                        <Label fx:id="objectPropertyName" alignment="CENTER" text="Property:" HBox.hgrow="ALWAYS" />
+                        <Separator visible="false" HBox.hgrow="ALWAYS" />
+            <Label fx:id="objectPropertyValue" text="Value" />
+                     </children>
+                  </HBox>
+   </children>
+</GridPane>

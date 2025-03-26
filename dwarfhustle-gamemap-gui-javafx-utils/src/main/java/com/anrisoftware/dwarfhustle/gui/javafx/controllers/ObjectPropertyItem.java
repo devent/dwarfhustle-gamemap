@@ -17,19 +17,17 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
-
 /**
- * Item on the map tile.
+ * Object property item.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface MapTileInfoPaneItem {
+public interface ObjectPropertyItem {
 
-    void setTitle(Label label);
-
-    void setInfo(VBox vox);
+    long getObject();
 
     int getType();
+
+    void update(ObjectPropertyItemController controller);
+
 }

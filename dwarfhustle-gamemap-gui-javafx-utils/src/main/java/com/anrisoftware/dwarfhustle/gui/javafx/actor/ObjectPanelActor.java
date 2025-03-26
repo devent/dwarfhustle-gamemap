@@ -21,7 +21,6 @@ import static com.anrisoftware.dwarfhustle.gui.javafx.actor.AdditionalCss.ADDITI
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 
-import java.awt.MouseInfo;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -29,14 +28,8 @@ import java.util.concurrent.CompletionStage;
 import org.eclipse.collections.api.factory.Maps;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapTileItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
@@ -52,7 +45,6 @@ import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowle
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
-import com.jayfella.jme.jfx.JavaFxUI;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -60,7 +52,6 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -104,8 +95,6 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     private ObjectPaneController controller;
 
-    private PanelControllerResult<MapTileItemWidgetController> mapTileItemWidget;
-
     private ObjectsGetter og;
 
     private ObjectsGetter cg;
@@ -139,34 +128,6 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
         ;
     }
 
-    private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
-        log.trace("onMapTileUnderCursor {}", m);
-        updateObjectPane();
-        return Behaviors.same();
-    }
-
-    private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
-        log.trace("onMapTileEmptyUnderCursor {}", m);
-        clearInfoPane();
-        return Behaviors.same();
-    }
-
-    private Behavior<Message> onMouseEnteredGui(MouseEnteredGuiMessage m) {
-        log.trace("onMouseEnteredGui {}", m);
-        runFxThread(() -> {
-            controller.objectPane.setVisible(false);
-        });
-        return Behaviors.same();
-    }
-
-    private Behavior<Message> onMouseExitedGui(MouseExitedGuiMessage m) {
-        log.trace("onMouseExitedGui {}", m);
-        runFxThread(() -> {
-            controller.objectPane.setVisible(true);
-        });
-        return Behaviors.same();
-    }
-
     @Override
     protected Behavior<Message> onGameTick(GameTickMessage m) {
         // log.trace("onGameTick {}", m);
@@ -182,10 +143,6 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
-                .onMessage(MouseEnteredGuiMessage.class, this::onMouseEnteredGui)//
-                .onMessage(MouseExitedGuiMessage.class, this::onMouseExitedGui)//
-                .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
-                .onMessage(MapTileEmptyUnderCursorMessage.class, this::onMapTileEmptyUnderCursor)//
                 .onMessage(GameTickMessage.class, this::onGameTick)//
                 .onMessage(SetSelectedObjectMessage.class, this::onSetSelectedObject)//
         ;
@@ -203,13 +160,6 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     @Override
     protected void setupUi() {
-        final var pane = is.root;
-        final var p = MouseInfo.getPointerInfo().getLocation();
-        pane.setLayoutX(p.x);
-        pane.setLayoutY(p.y);
-        pane.setPrefSize(100, 100);
-        JavaFxUI.getInstance().attachChild(pane);
-        JavaFxUI.getInstance().getScene().setOnMouseMoved(this::onMouseMoved);
     }
 
     @Override
@@ -220,12 +170,6 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
     @Override
     protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
         return Behaviors.same();
-    }
-
-    private void onMouseMoved(MouseEvent e) {
-        final var pane = is.root;
-        pane.setLayoutX(e.getSceneX() + 20);
-        pane.setLayoutY(e.getSceneY() + 20);
     }
 
     @SneakyThrows

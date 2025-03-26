@@ -17,14 +17,13 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.TreeSapling;
 import com.google.auto.service.AutoService;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.val;
 
@@ -33,31 +32,27 @@ import lombok.val;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
+@NoArgsConstructor
 @AutoService(GameMapObjectInfoPaneItem.class)
 public class TreeSaplingInfoPaneItem extends AbstractVegetationInfoPaneItem {
 
-    public TreeSaplingInfoPaneItem() {
-    }
-
-    public TreeSaplingInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        super(go, kg, selected);
+    public TreeSaplingInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected) {
+        super(type, id, og, kg, selected);
     }
 
     @Override
-    public void setTitle(Label label) {
+    public void update(MapBlockItemWidgetController controller) {
+        super.update(controller);
         val klo = kg.get(KnowledgeTreeSapling.TYPE.hashCode());
+        TreeSapling go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
-        label.setText(ko.getName());
+        controller.objectInfoTitle.setText(ko.getName());
     }
 
     @Override
-    public void setInfo(VBox box) {
-        super.setInfo(box);
-    }
-
-    @Override
-    public AbstractGameMapObjectInfoPaneItem create(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        return new TreeSaplingInfoPaneItem(go, kg, selected);
+    public AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg,
+            boolean selected) {
+        return new TreeSaplingInfoPaneItem(type, id, og, kg, selected);
     }
 
     @Override

@@ -34,7 +34,7 @@ import lombok.val;
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
-public class TerrainInfoPaneItem implements MapTileInfoPaneItem {
+public class TerrainInfoPaneItem implements MapBlockInfoPaneItem {
 
     protected final ObjectsGetter cg;
 
@@ -49,17 +49,13 @@ public class TerrainInfoPaneItem implements MapTileInfoPaneItem {
     }
 
     @Override
-    public void setTitle(Label label) {
+    public void update(MapBlockItemWidgetController controller) {
         val klo = kg.get(BlockMaterial.TYPE.hashCode());
         var ko = klo.objects.detect(it -> it.getKid() == mb.getMaterial());
-        label.setText(ko.getName());
-    }
-
-    @Override
-    public void setInfo(VBox box) {
-        box.getChildren().clear();
-        putItems(box);
-        box.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+        controller.objectInfoTitle.setText(ko.getName());
+        controller.objectInfoBox.getChildren().clear();
+        putItems(controller.objectInfoBox);
+        controller.objectInfoBox.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
     }
 
     protected void putItems(VBox box) {
@@ -70,5 +66,10 @@ public class TerrainInfoPaneItem implements MapTileInfoPaneItem {
     @Override
     public int getType() {
         return BlockMaterial.OBJECT_TYPE;
+    }
+
+    @Override
+    public long getId() {
+        return 0;
     }
 }

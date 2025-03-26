@@ -19,11 +19,10 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
-import javafx.scene.layout.VBox;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.val;
 
 /**
  * @see GameMapObject
@@ -32,29 +31,40 @@ import lombok.val;
  */
 @ToString
 @NoArgsConstructor
-public abstract class AbstractGameMapObjectInfoPaneItem implements MapTileInfoPaneItem, GameMapObjectInfoPaneItem {
+public abstract class AbstractGameMapObjectInfoPaneItem implements MapBlockInfoPaneItem, GameMapObjectInfoPaneItem {
 
-    protected GameMapObject go;
+    protected int type;
+
+    protected long id;
 
     protected KnowledgeGetter kg;
 
+    protected ObjectsGetter og;
+
     protected boolean selected;
 
-    public AbstractGameMapObjectInfoPaneItem(GameMapObject go, KnowledgeGetter kg, boolean selected) {
-        this.go = go;
+    public AbstractGameMapObjectInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg,
+            boolean selected) {
+        this.type = type;
+        this.id = id;
+        this.og = og;
         this.kg = kg;
         this.selected = selected;
     }
 
     @Override
-    public void setInfo(VBox box) {
-        val parent = box.getParent();
+    public void update(MapBlockItemWidgetController controller) {
         if (selected) {
-            parent.getStyleClass().clear();
-            parent.getStyleClass().add("objectInfoPaneSelected");
+            controller.objectInfoPane.getStyleClass().clear();
+            controller.objectInfoPane.getStyleClass().add("objectInfoPaneSelected");
         } else {
-            parent.getStyleClass().clear();
-            parent.getStyleClass().add("objectInfoPane");
+            controller.objectInfoPane.getStyleClass().clear();
+            controller.objectInfoPane.getStyleClass().add("objectInfoPane");
         }
+    }
+
+    @Override
+    public long getId() {
+        return id;
     }
 }

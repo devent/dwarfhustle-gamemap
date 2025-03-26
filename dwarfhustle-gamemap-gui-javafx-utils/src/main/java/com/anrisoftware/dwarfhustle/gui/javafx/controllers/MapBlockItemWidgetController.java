@@ -17,17 +17,31 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
- * Service to create {@link AbstractGameMapObjectInfoPaneItem}.
+ * Controller for {@code map_block_item_widget_ui.fxml}
  *
- * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ * @author Erwin Müller
  */
-public interface GameMapObjectInfoPaneItem {
+public class MapBlockItemWidgetController {
 
-    AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected);
+    @FXML
+    public BorderPane objectInfoPane;
 
-    int getType();
+    @FXML
+    public Label objectInfoTitle;
+
+    @FXML
+    public VBox objectInfoBox;
+
+    public void setup(MapBlockInfoPaneItem item) {
+        item.update(this);
+        objectInfoPane.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+        objectInfoPane.autosize();
+    }
 }
