@@ -17,10 +17,9 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.buildings.Building;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.google.auto.service.AutoService;
 
 import lombok.NoArgsConstructor;
@@ -38,13 +37,13 @@ public class BuildingObjectPane extends AbstractObjectPane {
 
     private BuildingJobsPaneTab jobsTab;
 
-    public BuildingObjectPane(int type, ObjectsGetter og, KnowledgeGetter kg) {
-        super(type, og, kg);
+    public BuildingObjectPane(int type, ActorSystemProvider actor) {
+        super(type, actor);
     }
 
     @Override
-    public ObjectPane create(int type, ObjectsGetter og, KnowledgeGetter kg) {
-        return new BuildingObjectPane(type, og, kg);
+    public ObjectPane create(int type, ActorSystemProvider actor) {
+        return new BuildingObjectPane(type, actor);
     }
 
     @Override

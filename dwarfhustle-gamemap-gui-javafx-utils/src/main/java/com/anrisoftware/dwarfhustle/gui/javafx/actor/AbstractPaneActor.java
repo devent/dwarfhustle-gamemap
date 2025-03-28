@@ -82,9 +82,7 @@ public abstract class AbstractPaneActor<T> {
     @RequiredArgsConstructor
     @ToString
     private static class SetupUiErrorMessage extends Message {
-
         public final Throwable cause;
-
     }
 
     private static <T> Behavior<Message> create(Injector injector,

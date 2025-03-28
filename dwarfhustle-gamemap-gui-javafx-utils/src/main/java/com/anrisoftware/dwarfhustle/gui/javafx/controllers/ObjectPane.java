@@ -17,8 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
-import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 
 /**
  * Object pane, updates the object properties tab and can add additional tabs.
@@ -27,7 +26,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
  */
 public interface ObjectPane {
 
-    ObjectPane create(int type, ObjectsGetter og, KnowledgeGetter kg);
+    ObjectPane create(int type, ActorSystemProvider actor);
 
     void update(long id, ObjectPaneController c);
 

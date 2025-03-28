@@ -184,7 +184,7 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
         val anchor = (AnchorPane) container.getRootNode().getChildren().get(0);
         val main = (BorderPane) anchor.getChildren().filtered(n -> n.getId().equalsIgnoreCase("mainPanel")).getFirst();
         val pane = (GridPane) main.getChildren().filtered(n -> n.getId().equalsIgnoreCase("gameMapPane")).getFirst();
-        is.controller.setup();
+        is.controller.setup(injector);
         pane.add(is.root, 1, 1, 1, 2);
         is.root.setVisible(false);
     }
@@ -223,7 +223,7 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
             return createdObjectPanes.getIfAbsentPut(type, () -> {
                 val go = og.get(type, id);
                 val objectPane = objectPropertiesPanes.get(go.getObjectType());
-                val p = objectPane.create(go.getObjectType(), og, kg);
+                val p = objectPane.create(go.getObjectType(), actor);
                 return p;
             });
         }

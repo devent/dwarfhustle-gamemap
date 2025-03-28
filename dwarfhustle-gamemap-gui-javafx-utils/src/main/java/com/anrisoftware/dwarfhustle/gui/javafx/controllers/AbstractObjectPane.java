@@ -18,10 +18,14 @@
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItem.LuxObjectPropertyItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItem.TempObjectPropertyItem;
+import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -41,10 +45,13 @@ public abstract class AbstractObjectPane implements ObjectPane {
 
     protected KnowledgeGetter kg;
 
-    public AbstractObjectPane(int type, ObjectsGetter og, KnowledgeGetter kg) {
+    protected ActorSystemProvider actor;
+
+    public AbstractObjectPane(int type, ActorSystemProvider actor) {
         this.type = type;
-        this.kg = kg;
-        this.og = og;
+        this.actor = actor;
+        this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
+        this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
     }
 
     @Override
@@ -60,6 +67,7 @@ public abstract class AbstractObjectPane implements ObjectPane {
         c.objectTitleLabel.setText("" + ko.getName());
         c.propertiesList.getItems().clear();
         c.propertiesList.getItems().add(new LuxObjectPropertyItem(type, id, go.getLux()));
+        c.propertiesList.getItems().add(new TempObjectPropertyItem(type, id, go.getTemp()));
     }
 
 }

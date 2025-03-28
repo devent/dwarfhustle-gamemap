@@ -29,9 +29,11 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor.GameTimeSpeedActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelActorFactory;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.JobsPanelActor.JobsPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.ObjectPanelActor.ObjectPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPane;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.google.inject.AbstractModule;
@@ -46,6 +48,7 @@ import jakarta.inject.Singleton;
  * @see GameTimeSpeedActorFactory
  * @see InfoPanelActorFactory
  * @see ObjectPanelActorFactory
+ * @see JobsPanelActorFactory
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -68,6 +71,9 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
         install(new FactoryModuleBuilder()
                 .implement(new TypeLiteral<AbstractPaneActor<? extends ObjectPaneController>>() {
                 }, ObjectPanelActor.class).build(ObjectPanelActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends JobsPaneController>>() {
+                }, JobsPanelActor.class).build(JobsPanelActorFactory.class));
         install(new FactoryModuleBuilder().implement(GameTimeSpeedActor.class, GameTimeSpeedActor.class)
                 .build(GameTimeSpeedActorFactory.class));
     }

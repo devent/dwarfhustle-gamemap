@@ -21,7 +21,6 @@ import static com.anrisoftware.dwarfhustle.gui.javafx.actor.AdditionalCss.ADDITI
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
 
-import java.awt.MouseInfo;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
@@ -30,11 +29,6 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileEmptyUnderCursorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MapTileUnderCursorMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseEnteredGuiMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.MouseExitedGuiMessage;
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
@@ -42,6 +36,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapBlockItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
@@ -54,7 +49,6 @@ import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowle
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
-import com.jayfella.jme.jfx.JavaFxUI;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -63,8 +57,10 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.control.Tab;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -85,6 +81,12 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
     private static final Map<String, PanelActorCreator> panelActors = Maps.mutable.empty();
 
     static {
+    }
+
+    @RequiredArgsConstructor
+    @ToString
+    public static class AttachJobsPanelMessage extends Message {
+        public final Tab tab;
     }
 
     public interface JobsPanelActorFactory extends AbstractPaneActorFactory<JobsPaneController> {
@@ -140,68 +142,29 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
         runFxThread(() -> {
             final var controller = is.controller;
         });
-        final var builder = injector.getInstance(PanelControllerBuild.class);
-        builder.<MapBlockItemWidgetController>loadFxml(injector, context.getExecutionContext(),
-                "/map_tile_item_widget_ui.fxml", ADDITIONAL_CSS).whenComplete((res, err) -> {
-                    if (err == null) {
-                        mapTileItemWidget = res;
-                        final var controller = is.controller;
-                        controller.setup();
-                    }
-                });
         return getDefaultBehavior()//
         ;
-    }
-
-    private Behavior<Message> onMapTileUnderCursor(MapTileUnderCursorMessage m) {
-        log.trace("onMapTileUnderCursor {}", m);
-        updateInfoPane();
-        return Behaviors.same();
-    }
-
-    private Behavior<Message> onMapTileEmptyUnderCursor(MapTileEmptyUnderCursorMessage m) {
-        log.trace("onMapTileEmptyUnderCursor {}", m);
-        clearInfoPane();
-        return Behaviors.same();
-    }
-
-    private Behavior<Message> onMouseEnteredGui(MouseEnteredGuiMessage m) {
-        log.trace("onMouseEnteredGui {}", m);
-        runFxThread(() -> {
-            // controller.infoPane.setVisible(false);
-        });
-        return Behaviors.same();
-    }
-
-    private Behavior<Message> onMouseExitedGui(MouseExitedGuiMessage m) {
-        log.trace("onMouseExitedGui {}", m);
-        runFxThread(() -> {
-            // controller.infoPane.setVisible(true);
-        });
-        return Behaviors.same();
     }
 
     @Override
     protected Behavior<Message> onGameTick(GameTickMessage m) {
         // log.trace("onGameTick {}", m);
-        updateInfoPane();
+        updatePane();
         return Behaviors.same();
     }
 
-    private Behavior<Message> onSetSelectedObject(SetSelectedObjectMessage m) {
-        log.trace("onSetSelectedObject {}", m);
-        updateInfoPane();
+    protected Behavior<Message> onAttachJobsPanel(AttachJobsPanelMessage m) {
+        log.trace("onAttachJobsPanel {}", m);
+        JavaFxUtil.runFxThread(() -> {
+            m.tab.setContent(controller.jobsPane);
+        });
         return Behaviors.same();
     }
 
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
-                .onMessage(MouseEnteredGuiMessage.class, this::onMouseEnteredGui)//
-                .onMessage(MouseExitedGuiMessage.class, this::onMouseExitedGui)//
-                .onMessage(MapTileUnderCursorMessage.class, this::onMapTileUnderCursor)//
-                .onMessage(MapTileEmptyUnderCursorMessage.class, this::onMapTileEmptyUnderCursor)//
                 .onMessage(GameTickMessage.class, this::onGameTick)//
-                .onMessage(SetSelectedObjectMessage.class, this::onSetSelectedObject)//
+                .onMessage(AttachJobsPanelMessage.class, this::onAttachJobsPanel)//
         ;
     }
 
@@ -218,12 +181,6 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
     @Override
     protected void setupUi() {
         final var pane = is.root;
-        final var p = MouseInfo.getPointerInfo().getLocation();
-        pane.setLayoutX(p.x);
-        pane.setLayoutY(p.y);
-        pane.setPrefSize(100, 100);
-        JavaFxUI.getInstance().attachChild(pane);
-        JavaFxUI.getInstance().getScene().setOnMouseMoved(this::onMouseMoved);
     }
 
     @Override
@@ -236,14 +193,8 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
         return Behaviors.same();
     }
 
-    private void onMouseMoved(MouseEvent e) {
-        final var pane = is.root;
-        pane.setLayoutX(e.getSceneX() + 20);
-        pane.setLayoutY(e.getSceneY() + 20);
-    }
-
     @SneakyThrows
-    private void updateInfoPane() {
+    private void updatePane() {
         final var gm = getGameMap(og, currentMap);
         runFxThread(() -> {
         });

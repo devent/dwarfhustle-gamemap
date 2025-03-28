@@ -20,9 +20,9 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+
+import com.google.inject.Injector;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -33,7 +33,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
-import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,15 +58,16 @@ public class ObjectPaneController {
     @FXML
     public ListView<ObjectPropertyItem> propertiesList;
 
-    public ObservableList<ObjectPaneTab<?>> objectTabs;
+    public ObservableList<ObjectPaneTab> objectTabs;
 
-    private final MutableMap<ObjectPaneTab<?>, ObjectPaneTabController> objectTabsControllers = Maps.mutable.empty();
+    private Injector injector;
 
-    public void setup() {
+    public void setup(Injector injector) {
         log.debug("setup()");
-        List<ObjectPaneTab<?>> list = Lists.mutable.empty();
+        this.injector = injector;
+        List<ObjectPaneTab> list = Lists.mutable.empty();
         this.objectTabs = FXCollections.observableList(list);
-        objectTabs.addListener((ListChangeListener<ObjectPaneTab<? extends ObjectPaneTabController>>) c -> {
+        objectTabs.addListener((ListChangeListener<ObjectPaneTab>) c -> {
             while (c.next()) {
                 if (c.wasPermutated()) {
                     for (int i = c.getFrom(); i < c.getTo(); ++i) {
@@ -88,17 +88,11 @@ public class ObjectPaneController {
         objectPane.setOnMouseExited(e -> consumer.accept(false));
     }
 
-    private void removeObjectPaneTab(ObjectPaneTab<?> objectTab) {
-        val c = objectTabsControllers.remove(objectTab);
-        objectTabPane.getTabs().remove(c.getTab());
+    private void removeObjectPaneTab(ObjectPaneTab objectTab) {
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void addObjectPaneTab(ObjectPaneTab objectTab) {
-        val c = objectTab.create();
-        objectTabPane.getTabs().add(0, c.getTab());
-        objectTab.update(c);
-        objectTabsControllers.put(objectTab, c);
+        objectTab.create(injector, objectTabPane);
     }
 
 }

@@ -49,7 +49,27 @@ public interface ObjectPropertyItem {
 
         @Override
         public String toString() {
-            return "Light " + Integer.toString(lux);
+            return "Light " + Integer.toString(lux) + " lux";
+        }
+    }
+
+    /**
+     * Shows the temperature.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @Data
+    public static class TempObjectPropertyItem implements ObjectPropertyItem {
+
+        private final int type;
+
+        private final long id;
+
+        private final int temp;
+
+        @Override
+        public String toString() {
+            return "Tempareture " + Integer.toString(temp) + " °C";
         }
     }
 }
