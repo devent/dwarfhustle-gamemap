@@ -32,6 +32,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelAct
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.ObjectPanelActor.ObjectPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPane;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -52,8 +53,11 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
 
     private final IntObjectMap<GameMapObjectInfoPaneItem> gameMapObjectInfoPaneItems;
 
+    private final IntObjectMap<ObjectPane> objectPropertiesPanes;
+
     public DwarfhustleGamemapGuiJavafxUtilsModule() {
         this.gameMapObjectInfoPaneItems = loadGameMapObjectItem();
+        this.objectPropertiesPanes = loadObjectPropertiesPanes();
     }
 
     @Override
@@ -77,11 +81,27 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
         return map;
     }
 
+    private IntObjectMap<ObjectPane> loadObjectPropertiesPanes() {
+        MutableIntObjectMap<ObjectPane> map = IntObjectMaps.mutable.empty();
+        for (final var s : ServiceLoader.load(ObjectPane.class)) {
+            map.put(s.getType(), s);
+        }
+        assertThat("ObjectPropertiesPane(s)", map.size(), is(greaterThan(0)));
+        return map;
+    }
+
     @Singleton
     @Provides
     @Named("type-gameMapObjectInfoPaneItems")
     public IntObjectMap<GameMapObjectInfoPaneItem> getGameMapObjectInfoPaneItems() {
         return gameMapObjectInfoPaneItems;
+    }
+
+    @Singleton
+    @Provides
+    @Named("type-objectPropertiesPanes")
+    public IntObjectMap<ObjectPane> getObjectPropertiesPanes() {
+        return objectPropertiesPanes;
     }
 
 }

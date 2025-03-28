@@ -17,43 +17,45 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import com.anrisoftware.dwarfhustle.model.api.buildings.Building;
+import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
+import com.google.auto.service.AutoService;
 
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.val;
 
 /**
- *
+ * @see Building
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @ToString
 @NoArgsConstructor
-public abstract class AbstractObjectPropertyPaneItem implements JobPaneItem, WorkJobPaneItem {
+@AutoService(ObjectPane.class)
+public class BuildingObjectPane extends AbstractObjectPane {
 
-    protected int type;
-
-    protected long id;
-
-    protected KnowledgeGetter kg;
-
-    protected boolean selected;
-
-    public AbstractObjectPropertyPaneItem(int type, long id, KnowledgeGetter kg, boolean selected) {
-        this.type = type;
-        this.id = id;
-        this.kg = kg;
-        this.selected = selected;
+    public BuildingObjectPane(int type, long id, ObjectsGetter og, KnowledgeGetter kg) {
+        super(type, id, og, kg);
     }
 
     @Override
-    public void update(JobItemPaneController controller) {
-        if (selected) {
-            controller.jobItemPane.getStyleClass().clear();
-            controller.jobItemPane.getStyleClass().add("jobItemPaneSelected");
-        } else {
-            controller.jobItemPane.getStyleClass().clear();
-            controller.jobItemPane.getStyleClass().add("jobItemPaneNormal");
-        }
+    public ObjectPane create(int type, long id, ObjectsGetter og, KnowledgeGetter kg) {
+        return new BuildingObjectPane(type, id, og, kg);
     }
 
+    @Override
+    public int getType() {
+        return KnowledgeBuilding.TYPE.hashCode();
+    }
+
+    @Override
+    public void update(ObjectPaneController c) {
+        super.update(c);
+        val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
+        Building go = og.get(type, id);
+        var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
+        // controller.propertiesList.it
+    }
 }

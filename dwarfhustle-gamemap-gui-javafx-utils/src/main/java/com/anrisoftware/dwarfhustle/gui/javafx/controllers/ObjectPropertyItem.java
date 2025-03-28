@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import lombok.Data;
+
 /**
  * Object property item.
  *
@@ -24,10 +26,30 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
  */
 public interface ObjectPropertyItem {
 
-    long getObject();
-
     int getType();
 
-    void update(ObjectPropertyItemController controller);
+    long getId();
 
+    @Override
+    String toString();
+
+    /**
+     * Shows the light lux.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @Data
+    public static class LuxObjectPropertyItem implements ObjectPropertyItem {
+
+        private final int type;
+
+        private final long id;
+
+        private final int lux;
+
+        @Override
+        public String toString() {
+            return "Light " + Integer.toString(lux);
+        }
+    }
 }

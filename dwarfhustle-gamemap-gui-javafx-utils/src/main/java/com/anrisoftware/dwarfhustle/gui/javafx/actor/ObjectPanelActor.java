@@ -26,10 +26,12 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.primitive.IntObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPane;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
@@ -53,6 +55,7 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
@@ -93,6 +96,10 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     @Inject
     private GameSettingsProvider gs;
+
+    @Inject
+    @Named("type-objectPropertiesPanes")
+    private IntObjectMap<ObjectPane> objectPropertiesPanes;
 
     private Texts texts;
 
@@ -187,6 +194,13 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
         val id = gm.getSelectedObjectId();
         if (id != 0) {
             val go = og.get(gm.getSelectedObjectType(), id);
+            var objectItem = objectPropertiesPanes.get(go.getObjectType());
+            if (objectItem != null) {
+                val pane = objectItem.create(go.getObjectType(), go.getId(), og, kg);
+                runFxThread(() -> {
+                    pane.update(controller);
+                });
+            }
         }
         runFxThread(() -> {
             if (id != 0) {
@@ -196,14 +210,4 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
             }
         });
     }
-
-    private void clearInfoPane() {
-        runFxThread(() -> {
-            if (controller.items != null) {
-                controller.items.clear();
-            }
-            controller.objectPane.setVisible(false);
-        });
-    }
-
 }

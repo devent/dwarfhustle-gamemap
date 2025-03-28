@@ -17,11 +17,15 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -29,6 +33,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -54,17 +59,45 @@ public class ObjectPaneController {
     @FXML
     public ListView<ObjectPropertyItem> propertiesList;
 
-    public ObservableList<ObjectPropertyItem> items;
+    public ObservableList<ObjectPaneTab> objectTabs;
 
-    private final MutableMap<ObjectPropertyItem, ObjectPropertyItemController> widgets = Maps.mutable.empty();
+    private final MutableMap<ObjectPaneTab, ObjectPaneTabController> objectTabsControllers = Maps.mutable.empty();
 
     public void setup() {
         log.debug("setup()");
+        List<ObjectPaneTab> list = Lists.mutable.empty();
+        this.objectTabs = FXCollections.observableList(list);
+        objectTabs.addListener((ListChangeListener<ObjectPaneTab>) c -> {
+            while (c.next()) {
+                if (c.wasPermutated()) {
+                    for (int i = c.getFrom(); i < c.getTo(); ++i) {
+                        // permutate
+                    }
+                } else if (c.wasUpdated()) {
+                    // update item
+                } else {
+                    c.getRemoved().forEach(this::removeObjectPaneTab);
+                    c.getAddedSubList().forEach(this::addObjectPaneTab);
+                }
+            }
+        });
     }
 
     public void setOnMouseEnteredGui(Consumer<Boolean> consumer) {
         objectPane.setOnMouseEntered(e -> consumer.accept(true));
         objectPane.setOnMouseExited(e -> consumer.accept(false));
+    }
+
+    private void removeObjectPaneTab(ObjectPaneTab objectTab) {
+        val c = objectTabsControllers.remove(objectTab);
+        objectTabPane.getTabs().remove(c.getTab());
+    }
+
+    private void addObjectPaneTab(ObjectPaneTab objectTab) {
+        val c = objectTab.create();
+        objectTabPane.getTabs().add(0, c.getTab());
+        objectTab.update(c);
+        objectTabsControllers.put(objectTab, c);
     }
 
 }

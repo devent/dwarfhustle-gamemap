@@ -17,30 +17,21 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.layout.GridPane;
-import lombok.extern.slf4j.Slf4j;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 
 /**
- * Controller for {@code object_property_item_ui.fxml}
+ * Object pane, updates the object properties tab and can add additional tabs.
  *
- * @author Erwin Müller
+ * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-@Slf4j
-public class ObjectPropertyItemController {
+public interface ObjectPane {
 
-    @FXML
-    public GridPane objectPropertyItemPane;
+    ObjectPane create(int type, long id, ObjectsGetter og, KnowledgeGetter kg);
 
-    @FXML
-    public Label objectPropertyName;
+    void update(ObjectPaneController c);
 
-    @FXML
-    public Label objectPropertyValue;
+    int getType();
 
-    public void setup() {
-        log.debug("setup()");
-    }
-
+    long getId();
 }
