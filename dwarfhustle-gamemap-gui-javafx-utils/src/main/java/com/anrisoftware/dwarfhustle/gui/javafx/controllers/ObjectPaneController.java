@@ -59,15 +59,15 @@ public class ObjectPaneController {
     @FXML
     public ListView<ObjectPropertyItem> propertiesList;
 
-    public ObservableList<ObjectPaneTab> objectTabs;
+    public ObservableList<ObjectPaneTab<?>> objectTabs;
 
-    private final MutableMap<ObjectPaneTab, ObjectPaneTabController> objectTabsControllers = Maps.mutable.empty();
+    private final MutableMap<ObjectPaneTab<?>, ObjectPaneTabController> objectTabsControllers = Maps.mutable.empty();
 
     public void setup() {
         log.debug("setup()");
-        List<ObjectPaneTab> list = Lists.mutable.empty();
+        List<ObjectPaneTab<?>> list = Lists.mutable.empty();
         this.objectTabs = FXCollections.observableList(list);
-        objectTabs.addListener((ListChangeListener<ObjectPaneTab>) c -> {
+        objectTabs.addListener((ListChangeListener<ObjectPaneTab<? extends ObjectPaneTabController>>) c -> {
             while (c.next()) {
                 if (c.wasPermutated()) {
                     for (int i = c.getFrom(); i < c.getTo(); ++i) {
@@ -88,11 +88,12 @@ public class ObjectPaneController {
         objectPane.setOnMouseExited(e -> consumer.accept(false));
     }
 
-    private void removeObjectPaneTab(ObjectPaneTab objectTab) {
+    private void removeObjectPaneTab(ObjectPaneTab<?> objectTab) {
         val c = objectTabsControllers.remove(objectTab);
         objectTabPane.getTabs().remove(c.getTab());
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void addObjectPaneTab(ObjectPaneTab objectTab) {
         val c = objectTab.create();
         objectTabPane.getTabs().add(0, c.getTab());

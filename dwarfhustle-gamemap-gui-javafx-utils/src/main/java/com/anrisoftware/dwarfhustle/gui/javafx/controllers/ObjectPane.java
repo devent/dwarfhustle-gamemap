@@ -27,11 +27,9 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
  */
 public interface ObjectPane {
 
-    ObjectPane create(int type, long id, ObjectsGetter og, KnowledgeGetter kg);
+    ObjectPane create(int type, ObjectsGetter og, KnowledgeGetter kg);
 
-    void update(ObjectPaneController c);
+    void update(long id, ObjectPaneController c);
 
     int getType();
-
-    long getId();
 }

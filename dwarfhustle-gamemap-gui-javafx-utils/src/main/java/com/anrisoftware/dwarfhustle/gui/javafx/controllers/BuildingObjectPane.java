@@ -36,13 +36,15 @@ import lombok.val;
 @AutoService(ObjectPane.class)
 public class BuildingObjectPane extends AbstractObjectPane {
 
-    public BuildingObjectPane(int type, long id, ObjectsGetter og, KnowledgeGetter kg) {
-        super(type, id, og, kg);
+    private BuildingJobsPaneTab jobsTab;
+
+    public BuildingObjectPane(int type, ObjectsGetter og, KnowledgeGetter kg) {
+        super(type, og, kg);
     }
 
     @Override
-    public ObjectPane create(int type, long id, ObjectsGetter og, KnowledgeGetter kg) {
-        return new BuildingObjectPane(type, id, og, kg);
+    public ObjectPane create(int type, ObjectsGetter og, KnowledgeGetter kg) {
+        return new BuildingObjectPane(type, og, kg);
     }
 
     @Override
@@ -51,11 +53,14 @@ public class BuildingObjectPane extends AbstractObjectPane {
     }
 
     @Override
-    public void update(ObjectPaneController c) {
-        super.update(c);
+    public void update(long id, ObjectPaneController c) {
+        super.update(id, c);
         val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
         Building go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
-        // controller.propertiesList.it
+        if (jobsTab == null) {
+            this.jobsTab = new BuildingJobsPaneTab(type, id, og, kg);
+            c.objectTabs.add(jobsTab);
+        }
     }
 }

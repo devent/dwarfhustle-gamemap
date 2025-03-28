@@ -29,6 +29,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Tab;
 import javafx.scene.layout.BorderPane;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public class JobsPaneController implements ListChangeListener<JobPaneItem> {
+public class JobsPaneController implements ObjectPaneTabController, ListChangeListener<JobPaneItem> {
 
     @FXML
     public BorderPane jobsPane;
@@ -51,8 +52,18 @@ public class JobsPaneController implements ListChangeListener<JobPaneItem> {
 
     private final MutableMap<JobPaneItem, JobItemPaneController> jobItemPanel = Maps.mutable.empty();
 
-    public void setup() {
-        log.debug("setup()");
+    private Tab tab;
+
+    @Override
+    public Tab getTab() {
+        return tab;
+    }
+
+    @FXML
+    private void initialize() {
+        log.debug("initialize");
+        this.tab = new Tab();
+        tab.setText("Jobs");
         List<JobPaneItem> list = Lists.mutable.empty();
         this.jobItems = FXCollections.observableList(list);
         jobItems.addListener(this);

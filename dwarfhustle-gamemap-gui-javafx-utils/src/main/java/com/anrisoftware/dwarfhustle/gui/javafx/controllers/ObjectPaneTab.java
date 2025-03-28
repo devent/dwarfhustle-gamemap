@@ -5,10 +5,10 @@ package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
-public interface ObjectPaneTab {
+public interface ObjectPaneTab<T extends ObjectPaneTabController> {
 
     ObjectPaneTabController create();
 
-    void update(ObjectPaneTabController c);
+    void update(T c);
 
 }

@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
+import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
@@ -38,6 +40,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
@@ -115,6 +118,12 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     private KnowledgeGetter kg;
 
+    private long oldSelectedObject = 0;
+
+    private ObjectPane currentObjectPane;
+
+    private MutableIntObjectMap<ObjectPane> createdObjectPanes;
+
     @Inject
     public void setTextsFactory(TextsFactory texts) {
         this.texts = texts.create("ObjectPanelActor_Texts");
@@ -128,6 +137,7 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
         this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
         this.controller = is.controller;
         this.currentMap = gs.get().currentMap.get();
+        this.createdObjectPanes = IntObjectMaps.mutable.empty();
         gs.get().currentMap.addListener((o, ov, nv) -> {
             currentMap = nv.longValue();
         });
@@ -174,6 +184,7 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
         val anchor = (AnchorPane) container.getRootNode().getChildren().get(0);
         val main = (BorderPane) anchor.getChildren().filtered(n -> n.getId().equalsIgnoreCase("mainPanel")).getFirst();
         val pane = (GridPane) main.getChildren().filtered(n -> n.getId().equalsIgnoreCase("gameMapPane")).getFirst();
+        is.controller.setup();
         pane.add(is.root, 1, 1, 1, 2);
         is.root.setVisible(false);
     }
@@ -192,22 +203,30 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
     private void updateObjectPane() {
         val gm = getGameMap(og, currentMap);
         val id = gm.getSelectedObjectId();
-        if (id != 0) {
-            val go = og.get(gm.getSelectedObjectType(), id);
-            var objectItem = objectPropertiesPanes.get(go.getObjectType());
-            if (objectItem != null) {
-                val pane = objectItem.create(go.getObjectType(), go.getId(), og, kg);
-                runFxThread(() -> {
-                    pane.update(controller);
-                });
-            }
+        if (oldSelectedObject != id) {
+            this.currentObjectPane = lazyCreateObjectPane(gm, id);
         }
         runFxThread(() -> {
             if (id != 0) {
+                currentObjectPane.update(id, controller);
                 is.root.setVisible(true);
             } else {
                 is.root.setVisible(false);
             }
         });
+    }
+
+    private ObjectPane lazyCreateObjectPane(final GameMap gm, final long id) {
+        this.oldSelectedObject = id;
+        if (id != 0) {
+            final int type = gm.getSelectedObjectType();
+            return createdObjectPanes.getIfAbsentPut(type, () -> {
+                val go = og.get(type, id);
+                val objectPane = objectPropertiesPanes.get(go.getObjectType());
+                val p = objectPane.create(go.getObjectType(), og, kg);
+                return p;
+            });
+        }
+        return null;
     }
 }

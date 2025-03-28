@@ -37,15 +37,12 @@ public abstract class AbstractObjectPane implements ObjectPane {
 
     protected int type;
 
-    protected long id;
-
     protected ObjectsGetter og;
 
     protected KnowledgeGetter kg;
 
-    public AbstractObjectPane(int type, long id, ObjectsGetter og, KnowledgeGetter kg) {
+    public AbstractObjectPane(int type, ObjectsGetter og, KnowledgeGetter kg) {
         this.type = type;
-        this.id = id;
         this.kg = kg;
         this.og = og;
     }
@@ -56,12 +53,7 @@ public abstract class AbstractObjectPane implements ObjectPane {
     }
 
     @Override
-    public long getId() {
-        return id;
-    }
-
-    @Override
-    public void update(ObjectPaneController c) {
+    public void update(long id, ObjectPaneController c) {
         val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
         GameMapObject go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
@@ -69,4 +61,5 @@ public abstract class AbstractObjectPane implements ObjectPane {
         c.propertiesList.getItems().clear();
         c.propertiesList.getItems().add(new LuxObjectPropertyItem(type, id, go.getLux()));
     }
+
 }

@@ -37,6 +37,7 @@ import com.jayfella.jme.jfx.JavaFxUI;
 
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Control;
 import javafx.scene.image.ImageView;
 import lombok.SneakyThrows;
@@ -134,11 +135,21 @@ public class JavaFxUtil {
      * Iterates over the fields of an object for all of sub-type of {@link Control}.
      */
     public static <T extends Control> void forEachController(Object controller, Class<T> type, Consumer<T> consumer) {
-        stream(controller.getClass().getDeclaredFields()).filter(f -> type.isAssignableFrom(f.getType()))
-                .forEach((f) -> {
-                    final var c = getControl(type, f, controller);
-                    consumer.accept(c);
-                });
+        stream(controller.getClass().getDeclaredFields()).filter(f -> type.isAssignableFrom(f.getType())).forEach(f -> {
+            final var c = getControl(type, f, controller);
+            consumer.accept(c);
+        });
+    }
+
+    /**
+     * Loads the FXML and returns the controller.
+     */
+    @SneakyThrows
+    public static <T> T loadFXML(Class<?> resourceClass, String fxmlfile) {
+        var loader = new FXMLLoader(resourceClass.getResource(fxmlfile));
+        loader.load();
+        T c = loader.getController();
+        return c;
     }
 
     @SneakyThrows
