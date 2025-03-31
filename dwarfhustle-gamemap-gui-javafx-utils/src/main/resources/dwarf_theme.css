@@ -64,7 +64,7 @@
                 derive(neutral1,-5%) 100%
             ));
     dwarf-inner-border-horizontal: linear-gradient(to right, derive(neutral1,55%), derive(neutral1,-5%));
-    -fx-font-size: 12pt;
+    -fx-font-size: 10pt;
 }
 
 .split-pane > .split-pane-divider {
@@ -87,9 +87,6 @@
     -fx-font-family: "Behrensschrift";
     -fx-background-color: transparent;
     -fx-text-fill: dark4;
-}
-
-.list-view {
 }
 
 .titleLabel {
@@ -252,6 +249,12 @@
     -fx-font-size: 8pt;
 }
 
+.dwarf-extra-small-buttons {
+    -fx-font-size: 7pt;
+    -fx-pref-height: 12px;
+    -fx-max-height: 12px;
+}
+
 #mainPanel {
     -fx-background-color: transparent;
     -fx-border-image-source: url("/Images/en/mdpi/stones-background-seamless.png");
@@ -382,6 +385,26 @@
 .objectInfoTitle {
     -fx-text-fill: neutral5;
     -fx-font-size: 100%;
+}
+
+#objectPane .tab-header-background, .objectPaneBackground {
+    -fx-background-color: neutral1;
+}
+
+#objectPaneTitle {
+    -fx-background-color: neutral7;
+    -fx-border-style: solid inside solid;
+    -fx-border-width: 1px;
+    -fx-border-color: dark4;
+    -fx-border-radius: 4;
+}
+
+.objectPaneSubTitle {
+    -fx-background-color: neutral6;
+    -fx-border-style: solid inside solid;
+    -fx-border-width: 1px;
+    -fx-border-color: dark4;
+    -fx-border-radius: 4;
 }
 
 #levelBar {

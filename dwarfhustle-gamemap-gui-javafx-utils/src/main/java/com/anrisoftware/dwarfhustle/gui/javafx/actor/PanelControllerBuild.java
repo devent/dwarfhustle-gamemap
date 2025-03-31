@@ -35,7 +35,6 @@ import com.jme3.app.Application;
 
 import jakarta.inject.Inject;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -123,7 +122,7 @@ public class PanelControllerBuild {
         initializeFx(css);
         var loader = new FXMLLoader();
         loader.setLocation(getClass().getResource(fxmlfile));
-        Pane root = loadFxml(loader, fxmlfile);
+        Region root = loadFxml(loader, fxmlfile);
         T controller = loader.getController();
         return new PanelControllerResult<>(root, controller);
     }
@@ -143,12 +142,12 @@ public class PanelControllerBuild {
     }
 
     @SneakyThrows
-    private Pane loadFxml(FXMLLoader loader, String res) {
+    private Region loadFxml(FXMLLoader loader, String res) {
         return JavaFxUtil.runFxAndWait(10, SECONDS, () -> {
             log.debug("Load FXML file {}", res);
             final var stream = getClass().getResourceAsStream(res);
             assertThat("FXML file not found", stream, notNullValue());
-            return (Pane) loader.load(stream);
+            return (Region) loader.load(stream);
         });
     }
 

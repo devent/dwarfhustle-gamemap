@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 
 import org.eclipse.collections.impl.factory.Lists;
 
+import com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs.ObjectPaneTab;
 import com.google.inject.Injector;
 
 import javafx.collections.FXCollections;
@@ -29,8 +30,6 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import lombok.extern.slf4j.Slf4j;
@@ -51,12 +50,6 @@ public class ObjectPaneController {
 
     @FXML
     public TabPane objectTabPane;
-
-    @FXML
-    public Tab propertiesTab;
-
-    @FXML
-    public ListView<ObjectPropertyItem> propertiesList;
 
     public ObservableList<ObjectPaneTab> objectTabs;
 

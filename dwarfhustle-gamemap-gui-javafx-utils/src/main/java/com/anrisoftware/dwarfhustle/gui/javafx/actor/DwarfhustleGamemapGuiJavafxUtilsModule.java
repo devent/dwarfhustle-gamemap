@@ -31,11 +31,13 @@ import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor.GameTime
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.JobsPanelActor.JobsPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.ObjectPanelActor.ObjectPanelActorFactory;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.PropertiesPanelActor.PropertiesPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPane;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.PropertiesPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.objectpanes.ObjectPane;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
@@ -49,6 +51,7 @@ import jakarta.inject.Singleton;
  * @see InfoPanelActorFactory
  * @see ObjectPanelActorFactory
  * @see JobsPanelActorFactory
+ * @see PropertiesPanelActorFactory
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -74,6 +77,9 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
         install(new FactoryModuleBuilder()
                 .implement(new TypeLiteral<AbstractPaneActor<? extends JobsPaneController>>() {
                 }, JobsPanelActor.class).build(JobsPanelActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends PropertiesPaneController>>() {
+                }, PropertiesPanelActor.class).build(PropertiesPanelActorFactory.class));
         install(new FactoryModuleBuilder().implement(GameTimeSpeedActor.class, GameTimeSpeedActor.class)
                 .build(GameTimeSpeedActorFactory.class));
     }

@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
+package com.anrisoftware.dwarfhustle.gui.javafx.objectpanes;
 
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItem.LuxObjectPropertyItem;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItem.TempObjectPropertyItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
@@ -60,14 +59,10 @@ public abstract class AbstractObjectPane implements ObjectPane {
     }
 
     @Override
-    public void update(long id, ObjectPaneController c) {
+    public void updateOnFxThread(long id, ObjectPaneController c) {
         val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
         GameMapObject go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
         c.objectTitleLabel.setText("" + ko.getName());
-        c.propertiesList.getItems().clear();
-        c.propertiesList.getItems().add(new LuxObjectPropertyItem(type, id, go.getLux()));
-        c.propertiesList.getItems().add(new TempObjectPropertyItem(type, id, go.getTemp()));
     }
-
 }

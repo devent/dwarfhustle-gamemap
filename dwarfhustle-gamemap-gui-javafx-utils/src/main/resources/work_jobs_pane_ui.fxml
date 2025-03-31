@@ -6,30 +6,29 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="jobsPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="426.0" prefWidth="358.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController">
+<BorderPane fx:id="jobsPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController">
    <center>
-      <GridPane>
+      <GridPane styleClass="objectPaneBackground">
         <columnConstraints>
-          <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+          <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" />
+            <ColumnConstraints fillWidth="false" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" />
         </columnConstraints>
         <rowConstraints>
             <RowConstraints fillHeight="false" maxHeight="-Infinity" />
           <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
         </rowConstraints>
          <children>
-            <ListView fx:id="jobsList" prefHeight="382.0" prefWidth="549.0" GridPane.rowIndex="1" />
-            <Label fx:id="jobsCurrentLabel" text="Current:" />
+            <ListView fx:id="jobsList" GridPane.columnSpan="2" GridPane.rowIndex="1" />
+            <VBox alignment="CENTER" styleClass="objectPaneSubTitle">
+               <children>
+                  <Label fx:id="jobsCurrentLabel" alignment="CENTER" text="Current:" />
+               </children>
+            </VBox>
+            <Button fx:id="jobAddButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Add New Job" GridPane.columnIndex="1" />
          </children>
       </GridPane>
    </center>
-   <bottom>
-      <HBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
-         <children>
-            <Button fx:id="jobAddButton" mnemonicParsing="false" text="Add New Job" />
-         </children>
-      </HBox>
-   </bottom>
 </BorderPane>

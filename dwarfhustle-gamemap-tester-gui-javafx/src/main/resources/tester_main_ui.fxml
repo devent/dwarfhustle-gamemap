@@ -63,13 +63,13 @@
    <center>
       <GridPane id="gameMapPane" fx:id="mainPanelGrid" BorderPane.alignment="CENTER">
          <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="60.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="40.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="100.0" />
             <ColumnConstraints />
          </columnConstraints>
          <rowConstraints>
-            <RowConstraints minHeight="10.0" percentHeight="30.0" prefHeight="30.0" vgrow="ALWAYS" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+            <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
+            <RowConstraints fillHeight="false" maxHeight="-Infinity" minHeight="100.0" vgrow="ALWAYS" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
          </rowConstraints>
          <children>

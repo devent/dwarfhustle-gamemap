@@ -1,5 +1,6 @@
-package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
+package com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs;
 
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.google.inject.Injector;
 
 import javafx.scene.control.TabPane;
@@ -12,5 +13,7 @@ import javafx.scene.control.TabPane;
 public interface ObjectPaneTab {
 
     void create(Injector injector, TabPane tabPane);
+
+    void updateOnFxThread(long id, ObjectPaneController c);
 
 }

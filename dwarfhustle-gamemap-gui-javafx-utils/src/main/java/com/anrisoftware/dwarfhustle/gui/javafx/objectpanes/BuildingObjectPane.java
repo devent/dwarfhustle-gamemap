@@ -15,8 +15,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
+package com.anrisoftware.dwarfhustle.gui.javafx.objectpanes;
 
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs.BuildingJobsPaneTab;
+import com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs.PropertiesPaneTab;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.buildings.Building;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
@@ -37,6 +40,8 @@ public class BuildingObjectPane extends AbstractObjectPane {
 
     private BuildingJobsPaneTab jobsTab;
 
+    private PropertiesPaneTab propertiesTab;
+
     public BuildingObjectPane(int type, ActorSystemProvider actor) {
         super(type, actor);
     }
@@ -52,14 +57,19 @@ public class BuildingObjectPane extends AbstractObjectPane {
     }
 
     @Override
-    public void update(long id, ObjectPaneController c) {
-        super.update(id, c);
+    public void updateOnFxThread(long id, ObjectPaneController c) {
+        super.updateOnFxThread(id, c);
         val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
         Building go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
+        if (propertiesTab == null) {
+            this.propertiesTab = new PropertiesPaneTab(type, id, og, kg);
+            c.objectTabs.add(propertiesTab);
+        }
         if (jobsTab == null) {
             this.jobsTab = new BuildingJobsPaneTab(type, id, og, kg);
             c.objectTabs.add(jobsTab);
         }
+        propertiesTab.updateOnFxThread(id, c);
     }
 }

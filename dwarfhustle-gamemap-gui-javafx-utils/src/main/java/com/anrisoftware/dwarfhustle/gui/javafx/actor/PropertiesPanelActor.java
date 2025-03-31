@@ -26,21 +26,20 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.map.primitive.IntObjectMap;
 
-import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapBlockItemWidgetController;
-import com.anrisoftware.dwarfhustle.gui.javafx.messages.ObjectPaneAttachToTabMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItem.LuxObjectPropertyItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPropertyItem.TempObjectPropertyItem;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.PropertiesPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.ObjectPaneAttachToTabMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.messages.ObjectPaneUpdateMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
@@ -57,22 +56,21 @@ import akka.actor.typed.javadsl.BehaviorBuilder;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Jobs pane.
+ * Object properties pane.
  *
  * @author Erwin Müller
  */
 @Slf4j
-public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
+public class PropertiesPanelActor extends AbstractPaneActor<PropertiesPaneController> {
 
     public static final ServiceKey<Message> KEY = ServiceKey.create(Message.class,
-            JobsPanelActor.class.getSimpleName());
+            PropertiesPanelActor.class.getSimpleName());
 
-    public static final String NAME = JobsPanelActor.class.getSimpleName();
+    public static final String NAME = PropertiesPanelActor.class.getSimpleName();
 
     public static final int ID = KEY.hashCode();
 
@@ -81,12 +79,12 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
     static {
     }
 
-    public interface JobsPanelActorFactory extends AbstractPaneActorFactory<JobsPaneController> {
+    public interface PropertiesPanelActorFactory extends AbstractPaneActorFactory<PropertiesPaneController> {
     }
 
     public static CompletionStage<ActorRef<Message>> create(Injector injector, Duration timeout) {
-        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, JobsPanelActorFactory.class,
-                "/work_jobs_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
+        return AbstractPaneActor.create(injector, timeout, ID, KEY, NAME, PropertiesPanelActorFactory.class,
+                "/object_properties_pane_ui.fxml", panelActors, PanelControllerBuild.class, ADDITIONAL_CSS);
     }
 
     @Inject
@@ -95,15 +93,9 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
     @Inject
     private GameSettingsProvider gs;
 
-    @Inject
-    @Named("type-gameMapObjectInfoPaneItems")
-    private IntObjectMap<GameMapObjectInfoPaneItem> gameMapObjectInfoPaneItems;
-
     private Texts texts;
 
-    private JobsPaneController controller;
-
-    private PanelControllerResult<MapBlockItemWidgetController> mapTileItemWidget;
+    private PropertiesPaneController c;
 
     private ObjectsGetter og;
 
@@ -126,7 +118,7 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
         this.cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
         this.mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
         this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
-        this.controller = is.controller;
+        this.c = is.controller;
         this.currentMap = gs.get().currentMap.get();
         gs.get().currentMap.addListener((o, ov, nv) -> {
             currentMap = nv.longValue();
@@ -138,24 +130,23 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
         ;
     }
 
-    @Override
-    protected Behavior<Message> onGameTick(GameTickMessage m) {
+    protected Behavior<Message> onUpdate(ObjectPaneUpdateMessage m) {
         // log.trace("onGameTick {}", m);
-        updatePane();
+        updatePane(m);
         return Behaviors.same();
     }
 
     protected Behavior<Message> onAttachPane(ObjectPaneAttachToTabMessage m) {
         log.trace("onAttachPane {}", m);
         JavaFxUtil.runFxThread(() -> {
-            m.tab.setContent(controller.jobsPane);
+            m.tab.setContent(c.objectPropertiesPane);
         });
         return Behaviors.same();
     }
 
     private BehaviorBuilder<Message> getDefaultBehavior() {
         return super.getBehaviorAfterAttachGui()//
-                .onMessage(GameTickMessage.class, this::onGameTick)//
+                .onMessage(ObjectPaneUpdateMessage.class, this::onUpdate)//
                 .onMessage(ObjectPaneAttachToTabMessage.class, this::onAttachPane)//
         ;
     }
@@ -186,9 +177,13 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
     }
 
     @SneakyThrows
-    private void updatePane() {
+    private void updatePane(ObjectPaneUpdateMessage m) {
         final var gm = getGameMap(og, currentMap);
+        final GameMapObject go = og.get(m.type, m.id);
         runFxThread(() -> {
+            c.propertiesList.getItems().clear();
+            c.propertiesList.getItems().add(new LuxObjectPropertyItem(m.type, m.id, go.getLux()));
+            c.propertiesList.getItems().add(new TempObjectPropertyItem(m.type, m.id, go.getTemp()));
         });
     }
 

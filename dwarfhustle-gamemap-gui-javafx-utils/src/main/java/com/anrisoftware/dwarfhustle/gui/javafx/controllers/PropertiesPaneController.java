@@ -17,18 +17,37 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
+import javafx.fxml.FXML;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Tab;
+import javafx.scene.layout.BorderPane;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Object pane, updates the object properties tab and can add additional tabs.
+ * Controller for {@code object_properties_pane_ui.fxml}
  *
- * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+ * @author Erwin Müller
  */
-public interface ObjectPane {
+@Slf4j
+public class PropertiesPaneController implements ObjectPaneTabController {
 
-    ObjectPane create(int type, ActorSystemProvider actor);
+    @FXML
+    public BorderPane objectPropertiesPane;
 
-    void update(long id, ObjectPaneController c);
+    @FXML
+    public ListView<ObjectPropertyItem> propertiesList;
 
-    int getType();
+    private Tab tab;
+
+    @Override
+    public Tab getTab() {
+        return tab;
+    }
+
+    @FXML
+    private void initialize() {
+        log.debug("initialize");
+        this.tab = new Tab();
+        tab.setText("Properties");
+    }
 }

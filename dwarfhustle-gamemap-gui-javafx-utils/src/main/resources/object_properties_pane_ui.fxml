@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane id="objectPropertiesPane" fx:id="objectPropertiesPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.PropertiesPaneController">
+   <center>
+      <ListView fx:id="propertiesList" BorderPane.alignment="CENTER" />
+   </center>
+</BorderPane>

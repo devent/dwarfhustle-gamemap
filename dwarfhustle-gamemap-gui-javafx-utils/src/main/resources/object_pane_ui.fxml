@@ -2,39 +2,34 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane id="infoPane" fx:id="objectPane" prefHeight="320.0" prefWidth="314.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController">
+<BorderPane id="objectPane" fx:id="objectPane" prefHeight="320.0" prefWidth="314.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController">
    <top>
-      <GridPane BorderPane.alignment="CENTER">
-         <columnConstraints>
-            <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" minWidth="10.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-         </columnConstraints>
-         <rowConstraints>
-            <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
-         </rowConstraints>
+      <VBox id="objectPaneTitle" BorderPane.alignment="CENTER">
          <children>
-            <Label fx:id="objectTitleLabel" alignment="CENTER" text="Label" />
-            <Button fx:id="objectCloseButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" GridPane.columnIndex="1" />
+            <GridPane>
+               <columnConstraints>
+                  <ColumnConstraints halignment="CENTER" hgrow="ALWAYS" minWidth="10.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Label fx:id="objectTitleLabel" alignment="CENTER" text="Label" />
+                  <Button fx:id="objectCloseButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="X" GridPane.columnIndex="1" />
+               </children>
+            </GridPane>
          </children>
-      </GridPane>
+      </VBox>
    </top>
    <center>
-      <TabPane fx:id="objectTabPane" prefHeight="259.0" prefWidth="276.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
-        <tabs>
-          <Tab fx:id="propertiesTab" text="Properties">
-               <content>
-                  <ListView fx:id="propertiesList" prefHeight="200.0" prefWidth="200.0" />
-               </content>
-          </Tab>
-        </tabs>
-      </TabPane>
+      <TabPane fx:id="objectTabPane" prefHeight="259.0" prefWidth="276.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER" />
    </center>
 </BorderPane>

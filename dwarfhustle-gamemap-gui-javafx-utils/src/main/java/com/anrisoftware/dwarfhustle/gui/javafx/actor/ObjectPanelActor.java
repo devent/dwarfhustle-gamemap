@@ -33,10 +33,10 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetSelectedObjectMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
-import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPane;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
+import com.anrisoftware.dwarfhustle.gui.javafx.objectpanes.ObjectPane;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
@@ -196,6 +196,9 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
 
     @Override
     protected Behavior<Message> onMainWindowResized(MainWindowResizedMessage m) {
+        runFxThread(() -> {
+            is.root.layout();
+        });
         return Behaviors.same();
     }
 
@@ -203,13 +206,14 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
     private void updateObjectPane() {
         val gm = getGameMap(og, currentMap);
         val id = gm.getSelectedObjectId();
-        if (oldSelectedObject != id) {
-            this.currentObjectPane = lazyCreateObjectPane(gm, id);
-        }
         runFxThread(() -> {
+            if (oldSelectedObject != id) {
+                this.currentObjectPane = lazyCreateObjectPane(gm, id);
+            }
             if (id != 0) {
-                currentObjectPane.update(id, controller);
+                currentObjectPane.updateOnFxThread(id, controller);
                 is.root.setVisible(true);
+                is.root.layout();
             } else {
                 is.root.setVisible(false);
             }
