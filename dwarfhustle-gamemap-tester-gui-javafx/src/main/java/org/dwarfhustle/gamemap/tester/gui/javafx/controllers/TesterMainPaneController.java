@@ -32,6 +32,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GlobalKeys;
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMapping;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.StringObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
@@ -63,6 +64,9 @@ public class TesterMainPaneController extends AbstractStatusController {
 
     @FXML
     public Label fortressNameLabel;
+
+    @FXML
+    public Label worldNameLabel;
 
     @FXML
     public Label gameTimeLabel;
@@ -241,9 +245,9 @@ public class TesterMainPaneController extends AbstractStatusController {
         gameSpeedFastButton.setText(null);
     }
 
-    public void setMap(WorldMap wm, GameMap gm) {
-        fortressNameLabel
-                .setText(texts.getResource("fortress_name", locale).getFormattedText(wm.getName(), gm.getName()));
+    public void setMap(WorldMap wm, StringObject wms, GameMap gm, StringObject gms) {
+        fortressNameLabel.setText(texts.getResource("fortress_name", locale).getFormattedText(gms.getS()));
+        worldNameLabel.setText(texts.getResource("world_name", locale).getFormattedText(wms.getS()));
         gameTimeLabel.setText(gs.get().gameTimeFormat.get().format(ZonedDateTime.of(wm.getTime(), gm.getTimeZone())));
         levelBar.setMin(1);
         levelBar.setMax(gm.getDepth());

@@ -339,6 +339,11 @@
     -fx-font-size: 200%;
 }
 
+#worldNameLabel {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0.5, 3.0, 3.0);
+    -fx-font-size: 150%;
+}
+
 #infoPane {
     -fx-background-color: transparent;
     -fx-border-width: 0;

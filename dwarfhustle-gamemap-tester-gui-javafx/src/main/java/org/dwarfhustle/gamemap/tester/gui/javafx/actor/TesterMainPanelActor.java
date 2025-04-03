@@ -19,7 +19,7 @@ package org.dwarfhustle.gamemap.tester.gui.javafx.actor;
 
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
-import static com.anrisoftware.dwarfhustle.model.api.objects.WorldMap.getWorldMap;
+import static com.anrisoftware.dwarfhustle.model.api.objects.StringObject.getStringObject;
 import static java.time.Duration.ofSeconds;
 import static java.time.temporal.ChronoUnit.NANOS;
 import static org.dwarfhustle.gamemap.tester.gui.javafx.actor.AdditionalCss.ADDITIONAL_CSS;
@@ -79,6 +79,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.WorldMap;
 import com.anrisoftware.dwarfhustle.model.db.cache.CacheResponseMessage;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StringObjectsJcsCacheActor;
 import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
@@ -172,12 +173,14 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
 
     private Optional<ActorRef<Message>> timeSetActor = Optional.empty();
 
+    private ObjectsGetter sg;
+
     @SneakyThrows
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
-        System.out.println("TesterMainPanelActor.getBehaviorAfterAttachGui()"); // TODO
         this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
         this.os = actor.getObjectSetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+        this.sg = actor.getObjectGetterAsyncNow(StringObjectsJcsCacheActor.ID);
         GameTimeSpeedActor.create(injector, ofSeconds(1)).whenComplete((v, err) -> {
             log.debug("GameTimeSpeedActor {} {}", v, err);
         });
@@ -293,8 +296,10 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         runFxThread(() -> {
             var controller = is.controller;
             var gm = GameMap.getGameMap(og, m.gm);
+            val gms = getStringObject(sg, gm.getName());
             var wm = WorldMap.getWorldMap(og, gm.getWorld());
-            controller.setMap(wm, gm);
+            val wms = getStringObject(sg, wm.getName());
+            controller.setMap(wm, wms, gm, gms);
             controller.initListeners(() -> gm, this::saveGameMap);
         });
         return Behaviors.same();
@@ -519,8 +524,10 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         if (currentMap != -1) {
             runFxThread(() -> {
                 val gm = getGameMap(og, currentMap);
-                val wm = getWorldMap(og, gm.getWorld());
-                is.controller.setMap(wm, gm);
+                val gms = getStringObject(sg, gm.getName());
+                var wm = WorldMap.getWorldMap(og, gm.getWorld());
+                val wms = getStringObject(sg, wm.getName());
+                is.controller.setMap(wm, wms, gm, gms);
             });
         }
     }

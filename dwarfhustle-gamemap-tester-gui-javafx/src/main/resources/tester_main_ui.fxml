@@ -57,6 +57,7 @@
                   <ToggleButton fx:id="gameSpeedFastButton" mnemonicParsing="false" styleClass="dwarf-small-buttons" text="&gt;&gt;" toggleGroup="$gameSpeedGroup" />
                </children>
             </HBox>
+            <Label id="worldNameLabel" fx:id="worldNameLabel" text="World-Name" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER" />
                   </children>
               </GridPane>
    </top>
