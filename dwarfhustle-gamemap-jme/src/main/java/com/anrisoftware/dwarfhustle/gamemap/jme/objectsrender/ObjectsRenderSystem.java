@@ -127,7 +127,7 @@ public class ObjectsRenderSystem extends IntervalIteratingSystem {
         final var ec = entity.getComponent(ObjectElevatedComponent.class);
         final float tx = -gm.getWidth() + 2f * o.getPos().getX() + 1f;
         final float ty = gm.getHeight() - 2f * o.getPos().getY() - 1f;
-        final float tz = -1f + 2f * (gm.cursor.z - o.getPos().getZ()) + ec.zoff;
+        final float tz = -1f + 2f * (gm.getCursorZ() - o.getPos().getZ()) + ec.zoff;
         node.setLocalTranslation(tx, ty, tz);
     }
 

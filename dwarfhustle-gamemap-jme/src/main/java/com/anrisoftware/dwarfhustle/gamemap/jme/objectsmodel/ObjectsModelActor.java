@@ -397,9 +397,9 @@ public class ObjectsModelActor {
         long gmid = gs.get().currentMap.get();
         final var gm = getGameMap(is.og, gmid);
         final MutableIntObjectMap<ImmutableList<Integer>> map = IntObjectMaps.mutable
-                .ofInitialCapacity(gm.filledChunks.size());
+                .ofInitialCapacity(gm.getFilledChunks().size());
         try (var lock = gm.acquireLockMapObjects()) {
-            gm.filledChunks.forEachKeyMultiValues((cid, indices) -> {
+            gm.getFilledChunks().forEachKeyMultiValues((cid, indices) -> {
                 map.put(cid, Lists.immutable.ofAll(indices));
             });
         }

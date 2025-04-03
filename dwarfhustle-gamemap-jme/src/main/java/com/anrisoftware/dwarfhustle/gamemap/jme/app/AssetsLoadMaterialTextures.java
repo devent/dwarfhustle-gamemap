@@ -78,13 +78,13 @@ public class AssetsLoadMaterialTextures {
             map.put(v.getKey(), v.getValue());
             var to = loadTextureData(v.getValue());
             to.tex = tex;
-            cache.put(to.id, to);
+            cache.put(to.getId(), to);
         }
     }
 
     private TextureCacheObject loadTextureData(TexturesMapFramesData data) {
         var to = new TextureCacheObject();
-        to.id = kid2Id(data.rid);
+        to.setId(kid2Id(data.rid));
         to.rid = data.rid;
         to.specular = new ColorRGBA(data.specular[0], data.specular[1], data.specular[2], data.specular[3]);
         to.baseColor = new ColorRGBA(data.color[0], data.color[1], data.color[2], data.color[3]);

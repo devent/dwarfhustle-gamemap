@@ -117,7 +117,7 @@ public class MaterialKey {
     }
 
     public boolean isMaterial(long id) {
-        return tex.id == id;
+        return tex.getId() == id;
     }
 
 }

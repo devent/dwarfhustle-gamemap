@@ -77,7 +77,7 @@ public class AssetsLoadObjectModels {
         }
         final var node = setupMesh(data, model);
         mo.model = node;
-        cache.put(mo.id, mo);
+        cache.put(mo.getId(), mo);
     }
 
     private Spatial setupMesh(ModelMapData data, Spatial model) {
@@ -178,7 +178,7 @@ public class AssetsLoadObjectModels {
 
     private ModelCacheObject loadModelData(ModelMapData data) {
         final var mo = new ModelCacheObject();
-        mo.id = KnowledgeObject.kid2Id(data.rid);
+        mo.setId(KnowledgeObject.kid2Id(data.rid));
         mo.rid = data.rid;
         return mo;
     }

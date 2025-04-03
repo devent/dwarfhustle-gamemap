@@ -78,7 +78,7 @@ public class LoadMapObjectsAction extends RecursiveAction {
 
     @Override
     protected void compute() {
-        final int maxSize = gm.chunkSize;
+        final int maxSize = gm.getChunkSize();
         if (ex - sx > maxSize || ey - sy > maxSize || ez - sz > maxSize) {
             var tasks = ForkJoinTask.invokeAll(createSubtasks());
             for (var action : tasks) {

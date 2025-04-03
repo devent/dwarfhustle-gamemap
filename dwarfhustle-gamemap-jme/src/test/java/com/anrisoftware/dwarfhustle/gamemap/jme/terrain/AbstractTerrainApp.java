@@ -60,6 +60,7 @@ import com.anrisoftware.dwarfhustle.model.db.cache.DwarfhustleModelDbCacheModule
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
+import com.anrisoftware.dwarfhustle.model.db.strings.StringsLuceneStorage;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.DwarfhustleModelKnowledgePowerloomPlModule;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
@@ -128,6 +129,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     private Node sceneNode;
 
     protected GameObjectsLmbdStorage goStorage;
+
+    protected StringsLuceneStorage soStorage;
 
     protected MapObjectsLmbdStorage moStorage;
 
@@ -215,8 +218,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     private void setupGameSettings() {
         var gs = injector.getInstance(GameSettingsProvider.class).get();
         gs.visibleDepthLayers.set(4);
-        gs.currentMap.set(gm.id);
-        gs.currentWorld.set(wm.id);
+        gs.currentMap.set(gm.getId());
+        gs.currentWorld.set(wm.getId());
     }
 
     private void setupApp() {
@@ -247,6 +250,7 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         createChunksCache();
         createMapObjectsCache();
         createStoredObjectsCache();
+        createStringObjectCache();
         createModelObjects();
         createMaterialAssets();
         createModelsAssets();
@@ -271,8 +275,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
 
     private void nextSetGameMap() {
         if (texturesLoaded && modelsLoaded) {
-            actor.tell(new SetWorldMapMessage(wm.id));
-            actor.tell(new SetGameMapMessage(gm.id));
+            actor.tell(new SetWorldMapMessage(wm.getId()));
+            actor.tell(new SetGameMapMessage(gm.getId()));
             resetCameraState.updateCamera(gm);
             simpleUpdateCall = tpl -> nextStartTerrainForGameMap();
         }
@@ -303,6 +307,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
     protected abstract void createMapObjectsCache();
 
     protected abstract void createStoredObjectsCache();
+
+    protected abstract void createStringObjectCache();
 
     protected abstract void createChunksCache();
 

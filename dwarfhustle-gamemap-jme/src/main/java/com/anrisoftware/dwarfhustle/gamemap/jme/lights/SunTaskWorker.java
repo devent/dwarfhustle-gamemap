@@ -67,9 +67,9 @@ public class SunTaskWorker implements Runnable {
 
     @Override
     public void run() {
-        var lat = gm.area.getCenter().lat;
-        var lng = gm.area.getCenter().lon;
-        model.update(wm.time.atZone(gm.timeZone), lat, lng);
+        var lat = gm.getArea().getCenter().lat;
+        var lng = gm.getArea().getCenter().lon;
+        model.update(wm.getTime().atZone(gm.getTimeZone()), lat, lng);
         var ac = AmbientLightComponent.m.get(entity);
         ac.color.r = model.ambientColor[0];
         ac.color.g = model.ambientColor[1];

@@ -65,9 +65,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
     }
 
     public static Behavior<Message> create(Injector injector, AbstractAssetsCacheActorFactory actorFactory) {
-        return Behaviors.setup(context -> {
-            return actorFactory.create(context).start();
-        });
+        return Behaviors.setup(context -> actorFactory.create(context).start());
     }
 
     @Inject
@@ -108,7 +106,7 @@ public abstract class AbstractAssetsCacheActor implements ObjectsGetter {
         log.debug("onCachePuts {}", m);
         for (var o : m.values) {
             var go = (GameObject) o;
-            cache.put(go.id, (AssetCacheObject) go);
+            cache.put(go.getId(), (AssetCacheObject) go);
         }
         m.replyTo.tell(new CacheSuccessMessage<>(m));
         return Behaviors.same();

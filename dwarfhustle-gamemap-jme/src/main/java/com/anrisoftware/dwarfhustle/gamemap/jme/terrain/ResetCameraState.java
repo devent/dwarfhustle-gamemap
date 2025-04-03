@@ -80,13 +80,9 @@ public class ResetCameraState extends BaseAppState implements ActionListener {
     }
 
     private void saveCamera() {
-        gm.cameraPos[0] = camera.getLocation().x;
-        gm.cameraPos[1] = camera.getLocation().y;
-        gm.cameraPos[2] = camera.getLocation().z;
-        gm.cameraRot[0] = camera.getRotation().getX();
-        gm.cameraRot[1] = camera.getRotation().getY();
-        gm.cameraRot[2] = camera.getRotation().getZ();
-        gm.cameraRot[3] = camera.getRotation().getW();
+        gm.setCameraPos(camera.getLocation().x, camera.getLocation().y, camera.getLocation().z);
+        gm.setCameraRot(camera.getRotation().getX(), camera.getRotation().getY(), camera.getRotation().getZ(),
+                camera.getRotation().getW());
         saveCamera.ifPresent(it -> it.accept(gm));
     }
 

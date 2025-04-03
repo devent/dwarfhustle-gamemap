@@ -753,7 +753,7 @@ public class TerrainActor {
     }
 
     private boolean renderMeshsOnRenderingThread(GameMap gm) {
-        is.terrainState.setLightDir(gm.sunPos[0], gm.sunPos[1], gm.sunPos[2]);
+        is.terrainState.setLightDir(gm.getSunPos()[0], gm.getSunPos()[1], gm.getSunPos()[2]);
         is.terrainState.clearBlockNodes();
         is.terrainState.clearCeilingNodes();
         is.terrainState.clearWaterNodes();

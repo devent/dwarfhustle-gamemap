@@ -54,7 +54,7 @@ import com.jme3.scene.VertexBuffer.Type;
 import com.jme3.util.BufferUtils;
 
 /**
- * 
+ *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 public class BlockModelUpdate {
@@ -72,7 +72,7 @@ public class BlockModelUpdate {
             MeshSupplier meshSupplier, NormalsPredicate faceSkipTest, ObjectsGetter chunks,
             BiConsumer<MaterialKey, Geometry> consumer) {
         int w = gm.getWidth(), h = gm.getHeight(), d = gm.getDepth();
-        var cursor = gm.cursor;
+        var cursor = gm.getCursor();
         int bnum = 0;
         for (var cidMatBlocks : materialBlocks.keyValuesView()) {
             long cid = cidMatBlocks.getOne();
@@ -207,27 +207,27 @@ public class BlockModelUpdate {
     }
 
     private boolean isSkipCheckNeighborNorth(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborNorth(index, chunk, gm.width, gm.height, gm.depth, chunks);
+        var nmb = getNeighborNorth(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborSouth(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborSouth(index, chunk, gm.width, gm.height, gm.depth, chunks);
+        var nmb = getNeighborSouth(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborEast(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborEast(index, chunk, gm.width, gm.height, gm.depth, chunks);
+        var nmb = getNeighborEast(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborWest(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var nmb = getNeighborWest(index, chunk, gm.width, gm.height, gm.depth, chunks);
+        var nmb = getNeighborWest(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), chunks);
         return isSkipCheckNeighborEdge(nmb);
     }
 
     private boolean isSkipCheckNeighborUp(int index, MapChunk chunk, GameMap gm, ObjectsGetter chunks) {
-        var res = getNeighborUp(index, chunk, gm.width, gm.height, gm.depth, chunks);
+        var res = getNeighborUp(index, chunk, gm.getWidth(), gm.getHeight(), gm.getDepth(), chunks);
         if (res.isValid()) {
             if (PropertiesSet.get(getProp(res.c.getBlocks(), res.getOff()), MapBlock.FILLED_POS)) {
                 return true;

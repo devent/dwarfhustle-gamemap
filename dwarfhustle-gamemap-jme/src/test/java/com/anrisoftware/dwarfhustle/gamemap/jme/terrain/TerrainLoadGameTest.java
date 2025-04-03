@@ -49,11 +49,16 @@ import com.anrisoftware.dwarfhustle.model.db.buffers.MapChunkBuffer;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StringObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.DwarfhustleModelDbLmbdModule;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.GameObjectsLmbdStorage.GameObjectsLmbdStorageFactory;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapChunksLmbdStorage.MapChunksLmbdStorageFactory;
+import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage;
 import com.anrisoftware.dwarfhustle.model.db.lmbd.MapObjectsLmbdStorage.MapObjectsLmbdStorageFactory;
+import com.anrisoftware.dwarfhustle.model.db.strings.DwarfhustleModelDbStringsModule;
+import com.anrisoftware.dwarfhustle.model.db.strings.StringsLuceneStorage;
+import com.anrisoftware.dwarfhustle.model.db.strings.StringsLuceneStorage.StringsLuceneStorageFactory;
 import com.anrisoftware.resources.binary.internal.maps.BinariesDefaultMapsModule;
 import com.anrisoftware.resources.binary.internal.resources.BinaryResourceModule;
 import com.anrisoftware.resources.images.internal.images.ImagesResourcesModule;
@@ -81,7 +86,8 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     public static void main(String[] args) {
         final var injector = Guice.createInjector(new DwarfhustleModelActorsModule(),
-                new DwarfhustleModelApiObjectsModule(), new DwarfhustleModelDbLmbdModule());
+                new DwarfhustleModelApiObjectsModule(), new DwarfhustleModelDbLmbdModule(),
+                new DwarfhustleModelDbStringsModule());
         final var app = injector.getInstance(TerrainLoadGameTest.class);
         app.start(injector);
     }
@@ -94,6 +100,9 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @Inject
     private MapChunksLmbdStorageFactory storageFactory;
+
+    @Inject
+    private StringsLuceneStorageFactory stringsFactory;
 
     private MapChunksLmbdStorage chunksStorage;
 
@@ -140,12 +149,24 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @Override
     protected void createStoredObjectsCache() {
-        final var task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
+        val task = StoredObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, goStorage, goStorage);
         task.whenComplete((ret, ex) -> {
             if (ex != null) {
                 log.error("StoredObjectsJcsCacheActor.create", ex);
             } else {
                 log.debug("StoredObjectsJcsCacheActor created");
+            }
+        });
+    }
+
+    @Override
+    protected void createStringObjectCache() {
+        val task = StringObjectsJcsCacheActor.create(injector, CREATE_ACTOR_TIMEOUT, soStorage, soStorage);
+        task.whenComplete((ret, ex) -> {
+            if (ex != null) {
+                log.error("StringObjectsJcsCacheActor.create", ex);
+            } else {
+                log.debug("StringObjectsJcsCacheActor created");
             }
         });
     }
@@ -212,12 +233,11 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         initGameObjectsStorage(root);
         loadGameMap();
         this.chunksStorage = initMapStorage(root);
-        initMapObjectsStorage(root, gm);
-        gm.cursor.x = x;
-        gm.cursor.y = y;
-        gm.cursor.z = z;
-        gm.cameraPos = cameraPos;
-        gm.cameraRot = cameraRot;
+        this.moStorage = initMapObjectsStorage(root, gm);
+        this.soStorage = initStringsStorage(root);
+        gm.setCursor(x, y, z);
+        gm.setCameraPos(cameraPos);
+        gm.setCameraRot(cameraRot);
         MapChunkBuffer.cacheCids(gm, chunksStorage);
     }
 
@@ -233,13 +253,13 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         }
     }
 
-    private void initMapObjectsStorage(Path root, GameMap gm) {
-        final var path = root.resolve("map-" + gm.id);
+    private MapObjectsLmbdStorage initMapObjectsStorage(Path root, GameMap gm) {
+        final var path = root.resolve("map-" + gm.getId());
         if (!path.toFile().isDirectory()) {
             path.toFile().mkdir();
         }
         final long mapSize = 200 * (long) pow(10, 6);
-        this.moStorage = mapObjectsFactory.create(path, gm, mapSize);
+        return mapObjectsFactory.create(path, gm, mapSize);
     }
 
     private void initGameObjectsStorage(Path root) {
@@ -253,10 +273,17 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
 
     @SneakyThrows
     private MapChunksLmbdStorage initMapStorage(Path root) {
-        var path = root.resolve(String.format("%d-%d", wm.id, gm.id));
+        var path = root.resolve(String.format("%d-%d", wm.getId(), gm.getId()));
         var storage = storageFactory.create(path,
                 gm.getChunksCount() * MapChunkBuffer.SIZE_MIN + gm.getBlocksCount() * MapBlockBuffer.SIZE);
         this.mcRoot = storage.getChunk(0);
+        return storage;
+    }
+
+    @SneakyThrows
+    private StringsLuceneStorage initStringsStorage(Path root) {
+        var path = root.resolve("strings");
+        var storage = stringsFactory.create(path);
         return storage;
     }
 
@@ -266,7 +293,7 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
             assertThat(it.hasNext(), is(true));
             this.wm = (WorldMap) it.next();
         }
-        this.gm = goStorage.getObject(GameMap.OBJECT_TYPE, wm.currentMap);
+        this.gm = goStorage.getObject(GameMap.OBJECT_TYPE, wm.getCurrentMap());
     }
 
 }

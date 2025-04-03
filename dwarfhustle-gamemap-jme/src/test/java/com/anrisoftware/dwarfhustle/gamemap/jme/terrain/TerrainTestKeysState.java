@@ -250,29 +250,29 @@ public class TerrainTestKeysState extends BaseAppState implements ActionListener
                 break;
             }
             case CURSOR_NORTH_MAPPING: {
-                if (gm.cursor.canAddY(-1, gm.height)) {
-                    gm.setCursor(gm.cursor.addY(-1));
+                if (gm.getCursor().canAddY(-1, gm.getHeight())) {
+                    gm.setCursor(gm.getCursor().addY(-1));
                     saveCursor.get().accept(gm);
                 }
                 break;
             }
             case CURSOR_SOUTH_MAPPING: {
-                if (gm.cursor.canAddY(1, gm.height)) {
-                    gm.setCursor(gm.cursor.addY(1));
+                if (gm.getCursor().canAddY(1, gm.getHeight())) {
+                    gm.setCursor(gm.getCursor().addY(1));
                     saveCursor.get().accept(gm);
                 }
                 break;
             }
             case CURSOR_EAST_MAPPING: {
-                if (gm.cursor.canAddX(1, gm.width)) {
-                    gm.setCursor(gm.cursor.addX(1));
+                if (gm.getCursor().canAddX(1, gm.getWidth())) {
+                    gm.setCursor(gm.getCursor().addX(1));
                     saveCursor.get().accept(gm);
                 }
                 break;
             }
             case CURSOR_WEST_MAPPING: {
-                if (gm.cursor.canAddX(-1, gm.width)) {
-                    gm.setCursor(gm.cursor.addX(-1));
+                if (gm.getCursor().canAddX(-1, gm.getWidth())) {
+                    gm.setCursor(gm.getCursor().addX(-1));
                     saveCursor.get().accept(gm);
                 }
                 break;

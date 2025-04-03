@@ -293,7 +293,7 @@ public class TesterMainPanelActor extends AbstractPaneActor<TesterMainPaneContro
         runFxThread(() -> {
             var controller = is.controller;
             var gm = GameMap.getGameMap(og, m.gm);
-            var wm = WorldMap.getWorldMap(og, gm.world);
+            var wm = WorldMap.getWorldMap(og, gm.getWorld());
             controller.setMap(wm, gm);
             controller.initListeners(() -> gm, this::saveGameMap);
         });

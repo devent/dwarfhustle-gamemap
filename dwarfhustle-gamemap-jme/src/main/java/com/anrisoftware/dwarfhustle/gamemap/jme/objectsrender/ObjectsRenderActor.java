@@ -341,7 +341,7 @@ public class ObjectsRenderActor {
          * if new object, create entity, put in (x,y,z)->entity map
          */
         final long oldtime = System.currentTimeMillis();
-        final int cursorZ = gm.cursor.z;
+        final int cursorZ = gm.getCursorZ();
         chunkids.clear();
         alldbids.clear();
         removeids.clear();
