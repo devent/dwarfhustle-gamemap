@@ -36,8 +36,9 @@ import lombok.val;
 @AutoService(GameMapObjectInfoPaneItem.class)
 public class TreeSaplingInfoPaneItem extends AbstractVegetationInfoPaneItem {
 
-    public TreeSaplingInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected) {
-        super(type, id, og, kg, selected);
+    public TreeSaplingInfoPaneItem(int type, long id, ObjectsGetter og, ObjectsGetter sg, KnowledgeGetter kg,
+            boolean selected) {
+        super(type, id, og, sg, kg, selected);
     }
 
     @Override
@@ -50,9 +51,9 @@ public class TreeSaplingInfoPaneItem extends AbstractVegetationInfoPaneItem {
     }
 
     @Override
-    public AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg,
-            boolean selected) {
-        return new TreeSaplingInfoPaneItem(type, id, og, kg, selected);
+    public AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, ObjectsGetter sg,
+            KnowledgeGetter kg, boolean selected) {
+        return new TreeSaplingInfoPaneItem(type, id, og, sg, kg, selected);
     }
 
     @Override

@@ -37,8 +37,9 @@ import lombok.ToString;
 @NoArgsConstructor
 public abstract class AbstractVegetationInfoPaneItem extends AbstractGameMapObjectInfoPaneItem {
 
-    public AbstractVegetationInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected) {
-        super(type, id, og, kg, selected);
+    public AbstractVegetationInfoPaneItem(int type, long id, ObjectsGetter og, ObjectsGetter sg, KnowledgeGetter kg,
+            boolean selected) {
+        super(type, id, og, sg, kg, selected);
     }
 
     @Override

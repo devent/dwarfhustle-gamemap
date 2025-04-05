@@ -30,9 +30,11 @@ import static java.time.Duration.ofMillis;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.CompletionStage;
 
 import org.eclipse.collections.api.factory.primitive.IntLists;
+import org.lable.oss.uniqueid.IDGenerator;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.ObjectTypeNameSetMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.SetMultiBlockSelectingModeMessage;
@@ -40,15 +42,21 @@ import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
+import com.anrisoftware.dwarfhustle.model.api.objects.IdsObjectsProvider.IdsObjects;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
+import com.anrisoftware.dwarfhustle.model.api.objects.NamedObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsSetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.StringObject;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StringObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage;
 import com.anrisoftware.dwarfhustle.model.objects.InsertObjectMessage.InsertObjectSuccessMessage;
+import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 
@@ -61,6 +69,7 @@ import akka.actor.typed.javadsl.StashBuffer;
 import akka.actor.typed.javadsl.StashOverflowException;
 import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
@@ -92,6 +101,7 @@ public class ObjectInsertActor {
         public final KnowledgeGetter ko;
         public final ObjectsGetter mg;
         public final ObjectsSetter ms;
+        public final ObjectsSetter ss;
     }
 
     @RequiredArgsConstructor
@@ -165,7 +175,8 @@ public class ObjectInsertActor {
             final var ko = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
             final var mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
             final var ms = actor.getObjectSetterAsyncNow(MapObjectsJcsCacheActor.ID);
-            return new InitialStateMessage(og, os, cg, cs, ko, mg, ms);
+            final var ss = actor.getObjectSetterAsyncNow(StringObjectsJcsCacheActor.ID);
+            return new InitialStateMessage(og, os, cg, cs, ko, mg, ms, ss);
         } catch (final Exception ex) {
             return new SetupErrorMessage(ex);
         }
@@ -180,10 +191,18 @@ public class ObjectInsertActor {
     private StashBuffer<Message> buffer;
 
     @Inject
+    @Named("AppTexts")
+    private Texts appTexts;
+
+    @Inject
     private ActorSystemProvider actor;
 
     @Inject
     private GameSettingsProvider gs;
+
+    @Inject
+    @IdsObjects
+    private IDGenerator ids;
 
     private InitialStateMessage is;
 
@@ -270,10 +289,23 @@ public class ObjectInsertActor {
                         z = calcZ(index, gm.getWidth(), gm.getHeight(), 0);
                 val pos = new GameBlockPos(x, y, z);
                 val mb = findBlock(root, pos, is.cg);
-                actor.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm.getId(), mb.getParent(), ko, pos));
+                actor.tell(new InsertObjectMessage<>(objectsInsertAdapter, gm.getId(), mb.getParent(), ko, pos, go -> {
+                    if (go instanceof NamedObject no) {
+                        createName(no, ko);
+                    }
+                }));
             }
         });
         return Behaviors.same();
+    }
+
+    @SneakyThrows
+    private void createName(NamedObject go, KnowledgeObject ko) {
+        val t = appTexts.getResource(String.format("object-name-%s", ko.getName()), Locale.ENGLISH);
+        val name = t.getFormattedText(ko.getName(), go.getId() % 1000);
+        val s = new StringObject(ids.generate(), name);
+        is.ss.set(StringObject.OBJECT_TYPE, s);
+        go.setName(s.getId());
     }
 
     /**

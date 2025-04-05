@@ -17,6 +17,8 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.StringObject.getStringObject;
+
 import com.anrisoftware.dwarfhustle.model.api.buildings.Building;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
@@ -36,8 +38,9 @@ import lombok.val;
 @AutoService(GameMapObjectInfoPaneItem.class)
 public class BuildingObjectInfoPaneItem extends AbstractGameMapObjectInfoPaneItem {
 
-    public BuildingObjectInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected) {
-        super(type, id, og, kg, selected);
+    public BuildingObjectInfoPaneItem(int type, long id, ObjectsGetter og, ObjectsGetter sg, KnowledgeGetter kg,
+            boolean selected) {
+        super(type, id, og, sg, kg, selected);
     }
 
     @Override
@@ -46,13 +49,13 @@ public class BuildingObjectInfoPaneItem extends AbstractGameMapObjectInfoPaneIte
         val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
         Building go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
-        controller.objectInfoTitle.setText(ko.getName());
+        controller.objectInfoTitle.setText(getStringObject(sg, go.getName()).getS());
     }
 
     @Override
-    public AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg,
-            boolean selected) {
-        return new BuildingObjectInfoPaneItem(type, id, og, kg, selected);
+    public AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, ObjectsGetter sg,
+            KnowledgeGetter kg, boolean selected) {
+        return new BuildingObjectInfoPaneItem(type, id, og, sg, kg, selected);
     }
 
     @Override

@@ -27,7 +27,8 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
  */
 public interface GameMapObjectInfoPaneItem {
 
-    AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, KnowledgeGetter kg, boolean selected);
+    AbstractGameMapObjectInfoPaneItem create(int type, long id, ObjectsGetter og, ObjectsGetter sg, KnowledgeGetter kg,
+            boolean selected);
 
     int getType();
 }

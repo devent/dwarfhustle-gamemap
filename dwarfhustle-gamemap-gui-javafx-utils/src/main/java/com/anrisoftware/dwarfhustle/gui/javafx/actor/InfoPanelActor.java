@@ -59,6 +59,7 @@ import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StringObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.anrisoftware.resources.texts.external.TextsFactory;
@@ -131,6 +132,8 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
 
     private KnowledgeGetter kg;
 
+    private ObjectsGetter sg;
+
     @Inject
     public void setTextsFactory(TextsFactory texts) {
         this.texts = texts.create("InfoPanelActor_Texts");
@@ -142,6 +145,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
         this.cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
         this.mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
         this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
+        this.sg = actor.getObjectGetterAsyncNow(StringObjectsJcsCacheActor.ID);
         this.controller = is.controller;
         this.currentMap = gs.get().currentMap.get();
         gs.get().currentMap.addListener((o, ov, nv) -> {
@@ -278,7 +282,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
                         final boolean selected = id == gm.getSelectedObjectId();
                         var objectItem = gameMapObjectInfoPaneItems.get(type);
                         if (objectItem != null) {
-                            items.add(objectItem.create(type, id, og, kg, selected));
+                            items.add(objectItem.create(type, id, og, sg, kg, selected));
                         }
                     });
                 }

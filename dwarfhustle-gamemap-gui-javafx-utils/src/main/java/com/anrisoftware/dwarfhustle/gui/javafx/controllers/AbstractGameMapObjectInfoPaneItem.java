@@ -43,11 +43,14 @@ public abstract class AbstractGameMapObjectInfoPaneItem implements MapBlockInfoP
 
     protected boolean selected;
 
-    public AbstractGameMapObjectInfoPaneItem(int type, long id, ObjectsGetter og, KnowledgeGetter kg,
+    protected ObjectsGetter sg;
+
+    public AbstractGameMapObjectInfoPaneItem(int type, long id, ObjectsGetter og, ObjectsGetter sg, KnowledgeGetter kg,
             boolean selected) {
         this.type = type;
         this.id = id;
         this.og = og;
+        this.sg = sg;
         this.kg = kg;
         this.selected = selected;
     }
