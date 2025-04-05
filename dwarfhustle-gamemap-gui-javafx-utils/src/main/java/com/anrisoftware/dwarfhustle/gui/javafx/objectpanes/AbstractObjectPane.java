@@ -17,13 +17,17 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.objectpanes;
 
+import static com.anrisoftware.dwarfhustle.model.api.objects.StringObject.getStringObject;
+
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
+import com.anrisoftware.dwarfhustle.model.api.objects.NamedObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
+import com.anrisoftware.dwarfhustle.model.db.cache.StringObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
 
 import lombok.NoArgsConstructor;
@@ -46,11 +50,14 @@ public abstract class AbstractObjectPane implements ObjectPane {
 
     protected ActorSystemProvider actor;
 
+    protected ObjectsGetter sg;
+
     public AbstractObjectPane(int type, ActorSystemProvider actor) {
         this.type = type;
         this.actor = actor;
         this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
         this.og = actor.getObjectGetterAsyncNow(StoredObjectsJcsCacheActor.ID);
+        this.sg = actor.getObjectGetterAsyncNow(StringObjectsJcsCacheActor.ID);
     }
 
     @Override
@@ -63,6 +70,10 @@ public abstract class AbstractObjectPane implements ObjectPane {
         val klo = kg.get(KnowledgeBuilding.TYPE.hashCode());
         GameMapObject go = og.get(type, id);
         var ko = klo.objects.detect(it -> it.getKid() == go.getKid());
-        c.objectTitleLabel.setText("" + ko.getName());
+        if (go instanceof NamedObject no) {
+            c.objectTitleLabel.setText("" + getStringObject(sg, no.getName()).getS());
+        } else {
+            c.objectTitleLabel.setText("" + ko.getName());
+        }
     }
 }
