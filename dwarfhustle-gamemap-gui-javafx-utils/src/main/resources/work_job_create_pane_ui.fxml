@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<BorderPane fx:id="jobCreatePane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="426.0" prefWidth="676.0" styleClass="objectInfoPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobCreatePaneController">
+<BorderPane fx:id="jobCreatePane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobCreatePaneController">
    <center>
       <GridPane>
         <columnConstraints>
@@ -22,30 +22,27 @@
           <RowConstraints maxHeight="1.7976931348623157E308" vgrow="ALWAYS" />
         </rowConstraints>
          <children>
-            <ListView fx:id="jobNamesList" prefHeight="358.0" prefWidth="338.0" GridPane.rowIndex="1" />
+            <ListView fx:id="jobNamesList" GridPane.rowIndex="1" />
             <HBox alignment="CENTER">
                <children>
-                  <Label fx:id="jobAvailableLabel" text="Available:" />
+                  <Label fx:id="jobAvailableLabel" styleClass="objectPaneSubTitle" text="Available:" />
                   <TextField fx:id="jobSearchField" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="jobSearchButton" mnemonicParsing="false" text="Search" />
+                  <Button fx:id="jobSearchButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Search" />
+                  <Button fx:id="jobAddButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Add Job" />
                </children>
             </HBox>
             <HBox alignment="CENTER" GridPane.columnIndex="1">
                <children>
-                  <Label fx:id="jobMaterialLabel" text="Material:" />
+                  <Label fx:id="jobMaterialLabel" styleClass="objectPaneSubTitle" text="Material:" />
                   <TextField fx:id="jobMaterialField" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="jobMaterialButton" mnemonicParsing="false" text="Search" />
+                  <Button fx:id="jobMaterialButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Search" />
                </children>
             </HBox>
-            <ListView fx:id="jobMaterialsList" prefHeight="358.0" prefWidth="338.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <ListView fx:id="jobMaterialsList" GridPane.columnIndex="1" GridPane.rowIndex="1" />
          </children>
       </GridPane>
    </center>
    <bottom>
-      <HBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER">
-         <children>
-            <Button fx:id="jobAddButton" mnemonicParsing="false" text="Add Job" />
-         </children>
-      </HBox>
+      <HBox alignment="CENTER_RIGHT" BorderPane.alignment="CENTER" />
    </bottom>
 </BorderPane>

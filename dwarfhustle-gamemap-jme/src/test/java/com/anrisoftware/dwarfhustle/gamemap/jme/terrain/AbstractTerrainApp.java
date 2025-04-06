@@ -230,8 +230,8 @@ public abstract class AbstractTerrainApp extends SimpleApplication {
         s.setWidth(960);
         s.setHeight(720);
         // 1920 x 1080
-        s.setWidth(1920);
-        s.setHeight(1080);
+        // s.setWidth(1920);
+        // s.setHeight(1080);
         s.setVSync(false);
         // s.setFullscreen(true);
         s.setOpenCLSupport(false);

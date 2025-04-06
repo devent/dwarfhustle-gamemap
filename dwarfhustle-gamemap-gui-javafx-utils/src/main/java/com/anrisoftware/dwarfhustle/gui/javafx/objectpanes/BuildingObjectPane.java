@@ -18,6 +18,7 @@
 package com.anrisoftware.dwarfhustle.gui.javafx.objectpanes;
 
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs.BuildingCreateJobsPaneTab;
 import com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs.BuildingJobsPaneTab;
 import com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs.PropertiesPaneTab;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
@@ -42,6 +43,8 @@ public class BuildingObjectPane extends AbstractObjectPane {
 
     private PropertiesPaneTab propertiesTab;
 
+    private BuildingCreateJobsPaneTab createJobsTab;
+
     public BuildingObjectPane(int type, ActorSystemProvider actor) {
         super(type, actor);
     }
@@ -65,6 +68,10 @@ public class BuildingObjectPane extends AbstractObjectPane {
         if (propertiesTab == null) {
             this.propertiesTab = new PropertiesPaneTab(type, id, og, kg);
             c.objectTabs.add(propertiesTab);
+        }
+        if (createJobsTab == null) {
+            this.createJobsTab = new BuildingCreateJobsPaneTab(type, id, og, kg);
+            c.objectTabs.add(createJobsTab);
         }
         if (jobsTab == null) {
             this.jobsTab = new BuildingJobsPaneTab(type, id, og, kg);

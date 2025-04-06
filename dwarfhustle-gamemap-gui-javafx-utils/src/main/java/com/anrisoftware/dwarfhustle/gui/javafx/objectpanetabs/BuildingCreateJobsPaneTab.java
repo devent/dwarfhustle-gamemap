@@ -2,7 +2,7 @@ package com.anrisoftware.dwarfhustle.gui.javafx.objectpanetabs;
 
 import static java.time.Duration.ofSeconds;
 
-import com.anrisoftware.dwarfhustle.gui.javafx.actor.JobsPanelActor;
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.CreateJobsPanelActor;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.AttachGuiMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.ObjectPaneAttachToTabMessage;
@@ -22,13 +22,13 @@ import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Building jobs pane tab.
+ * Building create jobs pane tab.
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
 @Data
 @Slf4j
-public class BuildingJobsPaneTab implements ObjectPaneTab {
+public class BuildingCreateJobsPaneTab implements ObjectPaneTab {
 
     protected final int type;
 
@@ -43,19 +43,19 @@ public class BuildingJobsPaneTab implements ObjectPaneTab {
     @Override
     @SneakyThrows
     public void create(Injector injector, TabPane tabPane) {
-        JobsPanelActor.create(injector, ofSeconds(1)).whenComplete((res, ex) -> {
+        CreateJobsPanelActor.create(injector, ofSeconds(1)).whenComplete((res, ex) -> {
             if (ex == null) {
                 res.tell(new AttachGuiMessage(null));
                 JavaFxUtil.runFxThread(() -> {
                     val tab = new Tab();
-                    tab.setText("Current Jobs");
+                    tab.setText("Create Jobs");
                     res.tell(new ObjectPaneAttachToTabMessage(tab));
                     tabPane.getTabs().add(0, tab);
                     tabPane.getSelectionModel().select(0);
                 });
                 this.actor = res;
             } else {
-                log.error("JobsPanelActor", ex);
+                log.error("CreateJobsPanelActor", ex);
             }
         }).toCompletableFuture().get();
     }

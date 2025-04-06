@@ -27,6 +27,7 @@ import org.eclipse.collections.api.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 
+import com.anrisoftware.dwarfhustle.gui.javafx.actor.CreateJobsPanelActor.CreateJobsPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.GameTimeSpeedActor.GameTimeSpeedActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.InfoPanelActor.InfoPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.JobsPanelActor.JobsPanelActorFactory;
@@ -34,6 +35,7 @@ import com.anrisoftware.dwarfhustle.gui.javafx.actor.ObjectPanelActor.ObjectPane
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PropertiesPanelActor.PropertiesPanelActorFactory;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.InfoPaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobCreatePaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobsPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.PropertiesPaneController;
@@ -52,6 +54,7 @@ import jakarta.inject.Singleton;
  * @see ObjectPanelActorFactory
  * @see JobsPanelActorFactory
  * @see PropertiesPanelActorFactory
+ * @see CreateJobsPanelActorFactory
  *
  * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
  */
@@ -80,6 +83,9 @@ public class DwarfhustleGamemapGuiJavafxUtilsModule extends AbstractModule {
         install(new FactoryModuleBuilder()
                 .implement(new TypeLiteral<AbstractPaneActor<? extends PropertiesPaneController>>() {
                 }, PropertiesPanelActor.class).build(PropertiesPanelActorFactory.class));
+        install(new FactoryModuleBuilder()
+                .implement(new TypeLiteral<AbstractPaneActor<? extends JobCreatePaneController>>() {
+                }, CreateJobsPanelActor.class).build(CreateJobsPanelActorFactory.class));
         install(new FactoryModuleBuilder().implement(GameTimeSpeedActor.class, GameTimeSpeedActor.class)
                 .build(GameTimeSpeedActorFactory.class));
     }

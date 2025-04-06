@@ -215,8 +215,9 @@ public class TerrainLoadGameTest extends AbstractTerrainApp {
         }
         // loadTerrain(root, "terrain_4_4_4_2", 1);
         loadTerrain(root, "terrain_32_32_32_8", 9);
-//        loadTerrain(root, "terrain_512_512_128_16", 171, 189, 18, new float[] { -180.88005f, 114.93917f, 55.877968f },
-//                new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
+        // loadTerrain(root, "terrain_512_512_128_32", 171, 189, 18, new float[] {
+        // -180.88005f, 114.93917f, 55.877968f },
+        // new float[] { 0.0f, 1.0f, 0.0f, 0.0f });
     }
 
     private void loadTerrain(Path root, String name, int z) throws IOException {
