@@ -20,19 +20,28 @@ package com.anrisoftware.dwarfhustle.gui.javafx.actor;
 import static com.anrisoftware.dwarfhustle.gui.javafx.actor.AdditionalCss.ADDITIONAL_CSS;
 import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.runFxThread;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameMap.getGameMap;
+import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.id2Kid;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeId;
+import static com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.KnowledgeGetMessage.askKnowledgeObjects;
+import static java.time.Duration.ofMillis;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
+import org.eclipse.collections.api.set.primitive.IntSet;
 
 import com.anrisoftware.dwarfhustle.gamemap.model.messages.GameTickMessage;
 import com.anrisoftware.dwarfhustle.gamemap.model.resources.GameSettingsProvider;
 import com.anrisoftware.dwarfhustle.gui.javafx.actor.PanelControllerBuild.PanelControllerResult;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.GameMapObjectInfoPaneItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobCreatePaneController;
+import com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobCreatePaneController.GameMapObjectItem;
 import com.anrisoftware.dwarfhustle.gui.javafx.controllers.MapBlockItemWidgetController;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.GameQuitMessage;
 import com.anrisoftware.dwarfhustle.gui.javafx.messages.MainWindowResizedMessage;
@@ -41,14 +50,19 @@ import com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil;
 import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
+import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
+import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeWorkJob;
+import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeMaterial;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapChunksJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.MapObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.db.cache.StoredObjectsJcsCacheActor;
 import com.anrisoftware.dwarfhustle.model.knowledge.powerloom.pl.PowerLoomKnowledgeActor;
+import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
-import com.anrisoftware.resources.texts.external.TextsFactory;
 import com.google.inject.Injector;
 
 import akka.actor.typed.ActorRef;
@@ -59,6 +73,7 @@ import akka.actor.typed.receptionist.ServiceKey;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import lombok.SneakyThrows;
+import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -99,9 +114,13 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
     @Named("type-gameMapObjectInfoPaneItems")
     private IntObjectMap<GameMapObjectInfoPaneItem> gameMapObjectInfoPaneItems;
 
-    private Texts texts;
+    @Inject
+    @Named("AppTexts")
+    private Texts appTexts;
 
-    private JobCreatePaneController controller;
+    @Inject
+    @Named("AppIcons")
+    private Images appIcons;
 
     private PanelControllerResult<MapBlockItemWidgetController> mapTileItemWidget;
 
@@ -115,10 +134,7 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
 
     private KnowledgeGetter kg;
 
-    @Inject
-    public void setTextsFactory(TextsFactory texts) {
-        this.texts = texts.create("InfoPanelActor_Texts");
-    }
+    private long oldSelectedObject = 0;
 
     @Override
     protected BehaviorBuilder<Message> getBehaviorAfterAttachGui() {
@@ -126,7 +142,6 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
         this.cg = actor.getObjectGetterAsyncNow(MapChunksJcsCacheActor.ID);
         this.mg = actor.getObjectGetterAsyncNow(MapObjectsJcsCacheActor.ID);
         this.kg = actor.getKnowledgeGetterAsyncNow(PowerLoomKnowledgeActor.ID);
-        this.controller = is.controller;
         this.currentMap = gs.get().currentMap.get();
         gs.get().currentMap.addListener((o, ov, nv) -> {
             currentMap = nv.longValue();
@@ -148,7 +163,10 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
     protected Behavior<Message> onAttachPane(ObjectPaneAttachToTabMessage m) {
         log.trace("onAttachPane {}", m);
         JavaFxUtil.runFxThread(() -> {
-            m.tab.setContent(controller.jobCreatePane);
+            is.controller.onUpdateSelectedJob = this::onUpdateSelectedJob;
+            is.controller.onUpdateSelectedInputItem = this::onUpdateSelectedInputItem;
+            is.controller.jobNamesList.getSelectionModel().select(0);
+            m.tab.setContent(is.controller.jobCreatePane);
         });
         return Behaviors.same();
     }
@@ -171,8 +189,8 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
     }
 
     @Override
-    protected void setupUi() {
-        final var pane = is.root;
+    protected void setupUiOnFxThread() {
+        is.controller.setLocale(appTexts, appIcons, Locale.ENGLISH);
     }
 
     @Override
@@ -188,12 +206,53 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
     @SneakyThrows
     private void updatePane() {
         final var gm = getGameMap(og, currentMap);
+        if (oldSelectedObject == gm.getSelectedObjectId()) {
+            return;
+        }
+        this.oldSelectedObject = gm.getSelectedObjectId();
+        val buildingId = id2Kid(askKnowledgeId(actor.getActorSystem(), ofMillis(100), KnowledgeBuilding.class,
+                KnowledgeBuilding.TYPE, (o) -> o.getName().equalsIgnoreCase("building-carpenter")));
+        val jobs = askKnowledgeObjects(actor.getActorSystem(), ofMillis(100), KnowledgeWorkJob.class,
+                KnowledgeWorkJob.TYPE, (o) -> o.getBuilding() == buildingId);
         runFxThread(() -> {
+            is.controller.jobNamesItems.setAll(jobs.toList());
         });
     }
 
     private void clearInfoPane() {
         runFxThread(() -> {
+        });
+    }
+
+    private void onUpdateSelectedJob(KnowledgeWorkJob job) {
+        updateMaterialsListForJob(job);
+    }
+
+    private void onUpdateSelectedInputItem(GameMapObjectItem item) {
+
+    }
+
+    @SneakyThrows
+    private void updateMaterialsListForJob(KnowledgeWorkJob k) {
+        val gm = GameMap.getGameMap(og, currentMap);
+        IntSet inputMaterials = k.getInputUnits().keySet();
+        IntSet inputTypes = k.getInputTypes();
+        List<GameMapObjectItem> items = Lists.mutable.empty();
+        val materials = askKnowledgeObjects(actor.getActorSystem(), ofMillis(100), KnowledgeMaterial.class,
+                KnowledgeMaterial.TYPE, o -> inputMaterials.contains(o.getObjectType()));
+        for (final var it = inputTypes.intIterator(); it.hasNext();) {
+            final int type = it.next();
+            System.out.println("updateMaterialsListForJob " + type); // TODO
+            val gos = gm.getObjectForType(type);
+            for (Long id : gos) {
+                System.out.println(id); // TODO
+                GameMapObject go = og.get(type, id);
+                val material = materials.detect((m) -> m.getKid() == go.getKid());
+                items.add(new GameMapObjectItem(go, material));
+            }
+        }
+        runFxThread(() -> {
+            is.controller.jobMaterialsItems.setAll(items);
         });
     }
 

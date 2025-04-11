@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
+import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeMaterial;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
@@ -49,6 +49,6 @@ public class TerrainCoordinatesMapTileItem extends TerrainInfoPaneItem {
 
     @Override
     public int getType() {
-        return BlockMaterial.OBJECT_TYPE;
+        return KnowledgeMaterial.OBJECT_TYPE;
     }
 }

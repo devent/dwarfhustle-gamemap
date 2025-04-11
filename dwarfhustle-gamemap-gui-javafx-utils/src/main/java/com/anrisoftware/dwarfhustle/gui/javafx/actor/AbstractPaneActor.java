@@ -247,7 +247,7 @@ public abstract class AbstractPaneActor<T> {
     protected Behavior<Message> onAttachGui(AttachGuiMessage m) {
         log.debug("onAttachGui {}", m);
         runFxThread(() -> {
-            setupUi();
+            setupUiOnFxThread();
             is.actors.forEachValue(a -> a.tell(m));
         });
         app.enqueue(() -> {
@@ -276,7 +276,7 @@ public abstract class AbstractPaneActor<T> {
         ;
     }
 
-    protected void setupUi() {
+    protected void setupUiOnFxThread() {
         var pane = is.root;
         pane.setPrefSize(app.getCamera().getWidth(), app.getCamera().getHeight());
         JavaFxUI.getInstance().attachChild(pane);

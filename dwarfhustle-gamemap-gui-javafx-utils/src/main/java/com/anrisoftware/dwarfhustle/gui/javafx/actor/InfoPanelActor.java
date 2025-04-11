@@ -232,7 +232,7 @@ public class InfoPanelActor extends AbstractPaneActor<InfoPaneController> {
     }
 
     @Override
-    protected void setupUi() {
+    protected void setupUiOnFxThread() {
         final var pane = is.root;
         final var p = MouseInfo.getPointerInfo().getLocation();
         pane.setLayoutX(p.x);

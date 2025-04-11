@@ -3,12 +3,12 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import org.controlsfx.control.textfield.CustomTextField?>
 
 <BorderPane fx:id="jobCreatePane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.JobCreatePaneController">
    <center>
@@ -26,16 +26,14 @@
             <HBox alignment="CENTER">
                <children>
                   <Label fx:id="jobAvailableLabel" styleClass="objectPaneSubTitle" text="Available:" />
-                  <TextField fx:id="jobSearchField" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="jobSearchButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Search" />
-                  <Button fx:id="jobAddButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Add Job" />
+                  <CustomTextField id="jobSearchField" fx:id="jobSearchField" HBox.hgrow="ALWAYS" />
+                  <Button id="jobAddButton" fx:id="jobAddButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Add Job" />
                </children>
             </HBox>
             <HBox alignment="CENTER" GridPane.columnIndex="1">
                <children>
                   <Label fx:id="jobMaterialLabel" styleClass="objectPaneSubTitle" text="Material:" />
-                  <TextField fx:id="jobMaterialField" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="jobMaterialButton" mnemonicParsing="false" styleClass="dwarf-extra-small-buttons" text="Search" />
+                  <CustomTextField id="jobMaterialField" fx:id="jobMaterialField" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
             <ListView fx:id="jobMaterialsList" GridPane.columnIndex="1" GridPane.rowIndex="1" />

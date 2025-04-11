@@ -179,7 +179,7 @@ public class ObjectPanelActor extends AbstractPaneActor<ObjectPaneController> {
     }
 
     @Override
-    protected void setupUi() {
+    protected void setupUiOnFxThread() {
         val container = JavaFxUI.getInstance().getJmeFxContainer();
         val anchor = (AnchorPane) container.getRootNode().getChildren().get(0);
         val main = (BorderPane) anchor.getChildren().filtered(n -> n.getId().equalsIgnoreCase("mainPanel")).getFirst();

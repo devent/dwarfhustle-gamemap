@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
+import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeMaterial;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 import com.anrisoftware.dwarfhustle.model.api.objects.ObjectsGetter;
@@ -50,7 +50,7 @@ public class TerrainInfoPaneItem implements MapBlockInfoPaneItem {
 
     @Override
     public void update(MapBlockItemWidgetController controller) {
-        val klo = kg.get(BlockMaterial.TYPE.hashCode());
+        val klo = kg.get(KnowledgeMaterial.TYPE.hashCode());
         var ko = klo.objects.detect(it -> it.getKid() == mb.getMaterial());
         controller.objectInfoTitle.setText(ko.getName());
         controller.objectInfoBox.getChildren().clear();
@@ -65,7 +65,7 @@ public class TerrainInfoPaneItem implements MapBlockInfoPaneItem {
 
     @Override
     public int getType() {
-        return BlockMaterial.OBJECT_TYPE;
+        return KnowledgeMaterial.OBJECT_TYPE;
     }
 
     @Override

@@ -119,6 +119,7 @@ public class LoadMapObjectsAction extends RecursiveAction {
         val mo = getMapObject(mg, gm, index);
         mo.addObject(type, id);
         gm.addFilledBlock((int) cid, index);
+        gm.addTypeObject(type, id);
         ms.set(MapObject.OBJECT_TYPE, mo);
     }
 

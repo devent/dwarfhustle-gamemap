@@ -17,7 +17,7 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import com.anrisoftware.dwarfhustle.model.api.materials.BlockMaterial;
+import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeMaterial;
 import com.anrisoftware.dwarfhustle.model.api.objects.MapBlock;
 
 import javafx.scene.control.Label;
@@ -49,7 +49,7 @@ public class TerrainUndiscoveredInfoPaneItem implements MapBlockInfoPaneItem {
 
     @Override
     public int getType() {
-        return BlockMaterial.OBJECT_TYPE;
+        return KnowledgeMaterial.OBJECT_TYPE;
     }
 
     @Override

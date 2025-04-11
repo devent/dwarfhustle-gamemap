@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane id="objectPane" fx:id="objectPane" prefHeight="320.0" prefWidth="314.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController">
+<BorderPane id="objectPane" fx:id="objectPane" prefHeight="400.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.anrisoftware.dwarfhustle.gui.javafx.controllers.ObjectPaneController">
    <top>
       <VBox id="objectPaneTitle" BorderPane.alignment="CENTER">
          <children>

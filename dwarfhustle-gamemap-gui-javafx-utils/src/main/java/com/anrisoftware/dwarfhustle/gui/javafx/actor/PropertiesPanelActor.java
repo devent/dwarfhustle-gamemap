@@ -162,7 +162,7 @@ public class PropertiesPanelActor extends AbstractPaneActor<PropertiesPaneContro
     }
 
     @Override
-    protected void setupUi() {
+    protected void setupUiOnFxThread() {
         final var pane = is.root;
     }
 

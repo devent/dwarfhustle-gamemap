@@ -171,7 +171,7 @@ public class JobsPanelActor extends AbstractPaneActor<JobsPaneController> {
     }
 
     @Override
-    protected void setupUi() {
+    protected void setupUiOnFxThread() {
         final var pane = is.root;
     }
 

@@ -17,21 +17,32 @@
  */
 package com.anrisoftware.dwarfhustle.gui.javafx.controllers;
 
-import java.util.List;
+import static com.anrisoftware.dwarfhustle.gui.javafx.utils.JavaFxUtil.getImageView;
 
-import org.eclipse.collections.api.map.MutableMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
+
+import org.controlsfx.control.textfield.CustomTextField;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+
+import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeWorkJob;
+import com.anrisoftware.dwarfhustle.model.api.materials.KnowledgeMaterial;
+import com.anrisoftware.dwarfhustle.model.api.objects.GameMapObject;
+import com.anrisoftware.resources.images.external.IconSize;
+import com.anrisoftware.resources.images.external.Images;
+import com.anrisoftware.resources.texts.external.Texts;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.BorderPane;
-import lombok.SneakyThrows;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -40,19 +51,87 @@ import lombok.extern.slf4j.Slf4j;
  * @author Erwin Müller
  */
 @Slf4j
-public class JobCreatePaneController implements ObjectPaneTabController, ListChangeListener<JobPaneItem> {
+public class JobCreatePaneController implements ObjectPaneTabController {
+
+    /**
+     * Cell for {@link KnowledgeWorkJob}.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    private static class KnowledgeWorkJobCell extends ListCell<KnowledgeWorkJob> {
+        @Override
+        protected void updateItem(KnowledgeWorkJob item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(item.getName());
+            }
+        }
+    }
+
+    /**
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    @Data
+    public static class GameMapObjectItem {
+        public final GameMapObject go;
+        public final KnowledgeMaterial material;
+    }
+
+    /**
+     * Cell for {@link GameMapObjectItem}.
+     *
+     * @author Erwin Müller, {@code <erwin@muellerpublic.de>}
+     */
+    private static class GameMapObjectCell extends ListCell<GameMapObjectItem> {
+        @Override
+        protected void updateItem(GameMapObjectItem item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                setText(item.material.getName());
+            }
+        }
+    }
 
     @FXML
     public BorderPane jobCreatePane;
 
     @FXML
-    public ListView<JobPaneItem> jobNamesList;
+    public ListView<KnowledgeWorkJob> jobNamesList;
 
-    public ObservableList<JobPaneItem> jobNamesItems;
+    public ObservableList<KnowledgeWorkJob> jobNamesItems;
 
-    private final MutableMap<JobPaneItem, JobItemPaneController> jobItemPanel = Maps.mutable.empty();
+    @FXML
+    public Label jobAvailableLabel;
+
+    @FXML
+    public CustomTextField jobSearchField;
+
+    @FXML
+    public Button jobAddButton;
+
+    @FXML
+    public Label jobMaterialLabel;
+
+    @FXML
+    public CustomTextField jobMaterialField;
+
+    @FXML
+    public ListView<GameMapObjectItem> jobMaterialsList;
+
+    public ObservableList<GameMapObjectItem> jobMaterialsItems;
 
     private Tab tab;
+
+    public Consumer<KnowledgeWorkJob> onUpdateSelectedJob;
+
+    public Consumer<GameMapObjectItem> onUpdateSelectedInputItem;
 
     @Override
     public Tab getTab() {
@@ -63,47 +142,31 @@ public class JobCreatePaneController implements ObjectPaneTabController, ListCha
     private void initialize() {
         log.debug("initialize");
         this.tab = new Tab();
-        tab.setText("Jobs");
-        List<JobPaneItem> list = Lists.mutable.empty();
-        this.jobNamesItems = FXCollections.observableList(list);
-        jobNamesItems.addListener(this);
-        jobNamesList.setItems(jobNamesItems);
-    }
-
-    @Override
-    public void onChanged(Change<? extends JobPaneItem> c) {
-        while (c.next()) {
-            if (c.wasPermutated()) {
-                for (int i = c.getFrom(); i < c.getTo(); ++i) {
-                    // permutate
-                }
-            } else if (c.wasUpdated()) {
-                // update item
-            } else {
-                c.getRemoved().forEach(this::removeJobItemPane);
-                c.getAddedSubList().forEach(this::addJobItemPane);
+        tab.setText("Create Jobs");
+        List<KnowledgeWorkJob> jobNamesItems = Lists.mutable.empty();
+        this.jobNamesItems = FXCollections.observableList(jobNamesItems);
+        jobNamesList.setItems(this.jobNamesItems);
+        jobNamesList.setCellFactory((ListView<KnowledgeWorkJob> l) -> new KnowledgeWorkJobCell());
+        jobNamesList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            if (nv != null) {
+                onUpdateSelectedJob.accept(nv);
             }
-        }
+        });
+        List<GameMapObjectItem> jobMaterialsItems = Lists.mutable.empty();
+        this.jobMaterialsItems = FXCollections.observableList(jobMaterialsItems);
+        jobMaterialsList.setItems(this.jobMaterialsItems);
+        jobMaterialsList.setCellFactory((ListView<GameMapObjectItem> l) -> new GameMapObjectCell());
+        jobMaterialsList.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            if (nv != null) {
+                onUpdateSelectedInputItem.accept(nv);
+            }
+        });
     }
 
-    private void addJobItemPane(JobPaneItem item) {
-        var pane = createPane();
-        item.update(pane);
-        jobNamesItems.add(item);
-        jobItemPanel.put(item, pane);
+    public void setLocale(Texts texts, Images icons, Locale locale) {
+        jobSearchField.setRight(getImageView(icons, "jobSearchField", locale, IconSize.SMALL));
+        jobMaterialField.setRight(getImageView(icons, "jobMaterialField", locale, IconSize.SMALL));
+        jobAddButton.setGraphic(getImageView(icons, "jobAddButton", locale, IconSize.SMALL));
+        jobAddButton.setText(null);
     }
-
-    private void removeJobItemPane(JobPaneItem item) {
-        jobItemPanel.remove(item);
-        jobNamesItems.remove(item);
-    }
-
-    @SneakyThrows
-    private JobItemPaneController createPane() {
-        var loader = new FXMLLoader(getClass().getResource("/work_job_item_ui.fxml"));
-        loader.load();
-        JobItemPaneController c = loader.getController();
-        return c;
-    }
-
 }
