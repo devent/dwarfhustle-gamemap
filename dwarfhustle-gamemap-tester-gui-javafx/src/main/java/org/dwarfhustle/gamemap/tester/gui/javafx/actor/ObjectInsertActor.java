@@ -282,7 +282,7 @@ public class ObjectInsertActor {
         setGameMap(is.os, gm);
         val root = getChunk(is.cg, 0);
         askKnowledgeObjects(actor.getActorSystem(), KNOWLEDGE_GET_TIMEOUT, m.type).whenComplete((list, ex) -> {
-            val ko = list.detect(k -> k.name.equalsIgnoreCase(m.name));
+            val ko = list.detect(k -> k.getName().equalsIgnoreCase(m.name));
             for (final var it = selected.intIterator(); it.hasNext();) {
                 final int index = it.next();
                 final int x = calcX(index, gm.getWidth(), 0), y = calcY(index, gm.getWidth(), 0),

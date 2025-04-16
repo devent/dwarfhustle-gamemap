@@ -25,6 +25,9 @@ import com.anrisoftware.dwarfhustle.gui.javafx.messages.SettingsDialogMessage.Se
 import com.anrisoftware.dwarfhustle.gui.javafx.states.KeyMappingMap
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject
+import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeContainer
+import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeFurniture
+import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeMiscObject
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeGrass
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeShrub
 import com.anrisoftware.dwarfhustle.model.api.vegetations.KnowledgeTreeSapling
@@ -124,5 +127,8 @@ m.GRASS_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(Knowledg
 m.SHRUB_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeShrub.TYPE), code: empty(), trigger: empty()]
 m.TREE_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeTreeSapling.TYPE), code: empty(), trigger: empty()]
 m.BUILDING_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeBuilding.TYPE), code: empty(), trigger: empty()]
+m.MISC_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeMiscObject.TYPE), code: empty(), trigger: empty()]
+m.FUNRITURE_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeFurniture.TYPE), code: empty(), trigger: empty()]
+m.CONTAINER_OBJECT_INSERT_MAPPING = [message: new ObjectSetTriggeredMessage(KnowledgeContainer.TYPE), code: empty(), trigger: empty()]
 
 m

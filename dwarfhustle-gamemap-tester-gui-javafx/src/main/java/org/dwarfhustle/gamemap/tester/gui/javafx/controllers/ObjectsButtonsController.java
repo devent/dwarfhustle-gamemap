@@ -79,9 +79,21 @@ public class ObjectsButtonsController {
     @FXML
     public ListView<String> treeList;
     @FXML
+    public Tab miscTab;
+    @FXML
+    public ListView<String> miscList;
+    @FXML
     public Tab buildingTab;
     @FXML
     public ListView<String> buildingList;
+    @FXML
+    public Tab furnitureTab;
+    @FXML
+    public ListView<String> furnitureList;
+    @FXML
+    public Tab containerTab;
+    @FXML
+    public ListView<String> containerList;
 
     private final Map<String, ListView<String>> tabListviews = Maps.mutable.empty();
 
@@ -94,6 +106,9 @@ public class ObjectsButtonsController {
         tabListviews.put("shrub", shrubList);
         tabListviews.put("sapling", treeList);
         tabListviews.put("building", buildingList);
+        tabListviews.put("misc", miscList);
+        tabListviews.put("furniture", furnitureList);
+        tabListviews.put("container", containerList);
     }
 
     public void setupObjects(Map<String, List<String>> tabsButtons) {
@@ -122,6 +137,9 @@ public class ObjectsButtonsController {
         setActions(shrubList, "SHRUB_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
         setActions(treeList, "TREE_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
         setActions(buildingList, "BUILDING_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(miscList, "MISC_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(furnitureList, "FUNRITURE_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
+        setActions(containerList, "CONTAINER_OBJECT_INSERT_MAPPING", globalKeys, keyMappings);
     }
 
     private void setActions(ListView<String> list, String name, GlobalKeys globalKeys,

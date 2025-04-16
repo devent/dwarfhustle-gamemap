@@ -50,7 +50,7 @@ public class TerrainInfoPaneItem implements MapBlockInfoPaneItem {
 
     @Override
     public void update(MapBlockItemWidgetController controller) {
-        val klo = kg.get(KnowledgeMaterial.TYPE.hashCode());
+        val klo = kg.get(KnowledgeMaterial.OBJECT_TYPE);
         var ko = klo.objects.detect(it -> it.getKid() == mb.getMaterial());
         controller.objectInfoTitle.setText(ko.getName());
         controller.objectInfoBox.getChildren().clear();

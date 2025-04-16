@@ -235,8 +235,8 @@ public class CreateJobsPanelActor extends AbstractPaneActor<JobCreatePaneControl
     @SneakyThrows
     private void updateMaterialsListForJob(KnowledgeWorkJob k) {
         val gm = GameMap.getGameMap(og, currentMap);
-        IntSet inputMaterials = k.getInputUnits().keySet();
-        IntSet inputTypes = k.getInputTypes();
+        IntSet inputMaterials = k.getInputObjects().keySet();
+        IntSet inputTypes = k.getInputObjects().keySet();
         List<GameMapObjectItem> items = Lists.mutable.empty();
         val materials = askKnowledgeObjects(actor.getActorSystem(), ofMillis(100), KnowledgeMaterial.class,
                 KnowledgeMaterial.TYPE, o -> inputMaterials.contains(o.getObjectType()));

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -45,13 +46,49 @@
                               <ListView fx:id="treeList" prefHeight="200.0" prefWidth="200.0" />
                      </content>
                   </Tab>
-                  <Tab fx:id="buildingTab" text="Building">
+                  <Tab id="buildingTab" fx:id="buildingTab" text="Building">
                      <tooltip>
                         <Tooltip text="Buildings" />
                      </tooltip>
                      <content>
-                        <ListView fx:id="buildingList" prefHeight="200.0" prefWidth="200.0" />
+                        <ListView id="buildingList" fx:id="buildingList" prefHeight="200.0" prefWidth="200.0" />
                      </content>
+                  </Tab>
+                  <Tab id="miscTab" fx:id="miscTab" text="Misc">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <ListView id="miscList" fx:id="miscList" layoutX="43.0" layoutY="14.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                           </children>
+                        </AnchorPane>
+                    </content>
+                     <tooltip>
+                        <Tooltip text="Miscellaneous Objects" />
+                     </tooltip>
+                  </Tab>
+                  <Tab id="furnitureTab" fx:id="furnitureTab" text="Furniture">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <ListView id="furnitureList" fx:id="furnitureList" layoutX="43.0" layoutY="14.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                           </children>
+                        </AnchorPane>
+                    </content>
+                     <tooltip>
+                        <Tooltip text="Furnitures" />
+                     </tooltip>
+                  </Tab>
+                  <Tab id="containerTab" fx:id="containerTab" text="Container">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <ListView id="containerList" fx:id="containerList" layoutX="43.0" layoutY="14.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                           </children>
+                        </AnchorPane>
+                    </content>
+                     <tooltip>
+                        <Tooltip text="Containers" />
+                     </tooltip>
                   </Tab>
               </tabs>
             </TabPane>

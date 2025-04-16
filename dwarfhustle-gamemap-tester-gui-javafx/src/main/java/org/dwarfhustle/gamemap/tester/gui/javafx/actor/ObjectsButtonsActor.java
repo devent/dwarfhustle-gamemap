@@ -49,6 +49,9 @@ import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
 import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
+import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeContainer;
+import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeFurniture;
+import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeMiscObject;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeGetter;
 import com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject;
 import com.anrisoftware.dwarfhustle.model.api.vegetations.Grass;
@@ -59,7 +62,6 @@ import com.anrisoftware.resources.images.external.IconSize;
 import com.anrisoftware.resources.images.external.Images;
 import com.anrisoftware.resources.texts.external.Texts;
 import com.google.inject.Injector;
-import com.jayfella.jme.jfx.JavaFxUI;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -182,13 +184,15 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
             collectObjects(typeObjects, kg, "shrub", Shrub.OBJECT_TYPE);
             collectObjects(typeObjects, kg, "sapling", KnowledgeTreeSapling.OBJECT_TYPE);
             collectObjects(typeObjects, kg, "building", KnowledgeBuilding.OBJECT_TYPE);
+            collectObjects(typeObjects, kg, "misc", KnowledgeMiscObject.OBJECT_TYPE);
+            collectObjects(typeObjects, kg, "furniture", KnowledgeFurniture.OBJECT_TYPE);
+            collectObjects(typeObjects, kg, "container", KnowledgeContainer.OBJECT_TYPE);
             c.setupObjects(typeObjects);
             c.updateLocale(Locale.US, appTexts, appIcons, IconSize.SMALL);
             c.initListeners(globalKeys, keyMappings);
             c.setOnMouseEnteredGui(entered -> {
                 gs.get().mouseEnteredGui.set(entered);
             });
-            double width = JavaFxUI.getInstance().getScene().getWidth();
             c.objectsBox.requestLayout();
         });
         return super.getBehaviorAfterAttachGui()//
@@ -208,7 +212,7 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
         List<String> objectNames = Lists.mutable.withInitialCapacity(objects.objects.size());
         typeObjects.put(name, objectNames);
         for (var ko : objects.objects) {
-            objectNames.add(ko.name);
+            objectNames.add(ko.getName());
         }
     }
 

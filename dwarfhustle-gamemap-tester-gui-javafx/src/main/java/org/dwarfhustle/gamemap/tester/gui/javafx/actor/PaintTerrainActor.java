@@ -263,7 +263,7 @@ public class PaintTerrainActor {
         gm.clearSelectedBlocks();
         setGameMap(is.os, gm);
         askKnowledgeObjects(actor.getActorSystem(), KNOWLEDGE_GET_TIMEOUT, m.type).whenComplete((list, ex) -> {
-            val foundko = list.detect(ko -> ko.name.equalsIgnoreCase(m.material));
+            val foundko = list.detect(ko -> ko.getName().equalsIgnoreCase(m.material));
             for (final var it = selected.intIterator(); it.hasNext();) {
                 val index = it.next();
                 final int w = gm.getWidth();
@@ -273,7 +273,7 @@ public class PaintTerrainActor {
                 if (isProp(chunk.getBlocks(), calcOff(chunk, x, y, z), EMPTY)) {
                     z += 1;
                 }
-                setMaterial(chunk.getBlocks(), calcOff(chunk, x, y, z), foundko.kid);
+                setMaterial(chunk.getBlocks(), calcOff(chunk, x, y, z), foundko.getKid());
                 setChunk(is.cs, chunk);
             }
         });
