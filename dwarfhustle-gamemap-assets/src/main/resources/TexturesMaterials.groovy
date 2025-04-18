@@ -95,22 +95,50 @@ rid["LOAMY-SAND"] = 859
 rid["LOAM"] = 858
 
 // Wood
-rid["BIRCH-WOOD"] = 1086
-rid["PINE-WOOD"] = 1078
+rid["BIRCH-WOOD"] = 1092
+rid["PINE-WOOD"] = 1084
 
 // Grass
-rid["RED-POPPY"] = 1067
-rid["DAISY"] = 1066
-rid["CARROT"] = 1065
-rid["WHEAT"] = 1063
-rid["MEADOW-GRASS"] = 1062
+rid["RED-POPPY"] = 1073
+rid["DAISY"] = 1072
+rid["CARROT"] = 1071
+rid["WHEAT"] = 1069
+rid["MEADOW-GRASS"] = 1068
 
 // Shrub
-rid["BLUEBERRIES"] = 1069
+rid["BLUEBERRIES"] = 1075
 
 // Tree-Sapling
-rid["BIRCH-SAPLING"] = 1080
-rid["PINE-SAPLING"] = 1072
+rid["BIRCH-SAPLING"] = 1086
+rid["PINE-SAPLING"] = 1078
+
+// Furniture
+rid["FURNITURE-CHAIR"] = 1041
+rid["FURNITURE-TABLE"] = 1040
+
+// Container
+rid["VIAL"] = 1039
+rid["MUG"] = 1038
+rid["JUG"] = 1037
+rid["WATERSKIN"] = 1036
+rid["BOTTLE"] = 1035
+rid["LARGE-JUG"] = 1034
+rid["BARREL"] = 1033
+rid["BIN"] = 1032
+rid["SACK"] = 1031
+rid["BUCKET"] = 1030
+rid["BASKET"] = 1029
+
+// Misc-Object
+rid["MECHANISM"] = 1028
+rid["GIANT-SAWBLADE"] = 1027
+rid["METAL-BAR"] = 1026
+rid["METAL-ORE"] = 771
+rid["ROCK-BLOCK"] = 1025
+rid["ROCK-STONE"] = 1024
+rid["SALT-LUMP"] = 1023
+rid["WOOD-PLANK"] = 1022
+rid["WOOD-LOG"] = 1021
 
 rid["FOCUSED-BLOCK"] = 0xfffc
 rid["SELECTED-BLOCK"] = 0xfffd
