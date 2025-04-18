@@ -51,10 +51,8 @@ class TexturesMapData {
 
     def frames(def args) {
         long rid = args.rid
-        long type = args.getOrDefault("type", 0)
         def data = new TexturesMapFramesData()
         data.rid = rid
-        data.type = type
         data.image = image
         data.set(args)
         frames[rid] = data
@@ -71,8 +69,6 @@ class TexturesMapData {
 class TexturesMapFramesData {
 
     public int rid
-
-    public int type = 0
 
     public String image
 

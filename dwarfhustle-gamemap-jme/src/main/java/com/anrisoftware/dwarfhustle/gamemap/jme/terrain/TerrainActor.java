@@ -17,7 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.terrain;
 
-import static com.anrisoftware.dwarfhustle.gamemap.model.resources.TextureCacheObject.ridTypeToId;
 import static com.anrisoftware.dwarfhustle.model.actor.CreateActorMessage.createNamedActor;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcIndex;
 import static com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos.calcX;
@@ -583,7 +582,7 @@ public class TerrainActor {
         final int prop = getProp(bblocks, offset);
         val objects = new Long[4];
         findObjects(objects, gm, chunk, index, z - 1);
-        long mid = ridTypeToId(getMaterial(bblocks, offset), 0);
+        long mid = kid2Id(getMaterial(bblocks, offset));
         final Long emission = null; // TODO emission
         boolean selected = false;
         boolean transparent = false;
@@ -620,7 +619,7 @@ public class TerrainActor {
             if (hideUndiscovered && !(isProp(prop, DISCOVERED_POS))) {
                 ceilingmid = undiscoveredMaterialId;
             } else {
-                ceilingmid = ridTypeToId(getMaterial(up.c.getBlocks(), up.getOff()), 0);
+                ceilingmid = getMaterial(up.c.getBlocks(), up.getOff());
             }
             ceilings.put(lazyCreateKey(ceilingmid, objects, emission, selected, false), index);
         }

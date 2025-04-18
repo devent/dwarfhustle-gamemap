@@ -38,29 +38,12 @@ public class TextureCacheObject extends AssetCacheObject {
 
     public static final int OBJECT_TYPE = TextureCacheObject.class.getSimpleName().hashCode();
 
-    public static long ridTypeToId(int rid, int type) {
-        return (((long) rid) << 32) | (type & 0xffffffffL);
-    }
-
-    public static long idToRid(long id) {
-        return (int) (id >> 32);
-    }
-
-    public static long idToType(long id) {
-        return (int) id;
-    }
-
     public Texture tex;
 
     /**
      * Resource ID.
      */
-    public int rid;
-
-    /**
-     * Sub-type.
-     */
-    public int type;
+    public long rid;
 
     public float x;
 
@@ -82,10 +65,12 @@ public class TextureCacheObject extends AssetCacheObject {
 
     public boolean transparent;
 
-    public TextureCacheObject(int rid, int type) {
-        super(ridTypeToId(rid, type));
-        this.rid = rid;
-        this.type = type;
+    public TextureCacheObject(byte[] idbuf) {
+        super(idbuf);
+    }
+
+    public TextureCacheObject(long id) {
+        super(id);
     }
 
     @Override
