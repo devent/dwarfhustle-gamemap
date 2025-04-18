@@ -17,9 +17,6 @@
  */
 package com.anrisoftware.dwarfhustle.gamemap.jme.app;
 
-import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.id2Kid;
-import static com.anrisoftware.dwarfhustle.model.api.objects.KnowledgeObject.kid2Id;
-
 import java.net.URL;
 
 import org.eclipse.collections.api.map.primitive.MutableLongObjectMap;
@@ -83,9 +80,7 @@ public class AssetsLoadMaterialTextures {
     }
 
     private TextureCacheObject loadTextureData(TexturesMapFramesData data) {
-        var to = new TextureCacheObject();
-        to.setId(kid2Id(data.rid));
-        to.rid = data.rid;
+        var to = new TextureCacheObject(data.rid, data.type);
         to.specular = new ColorRGBA(data.specular[0], data.specular[1], data.specular[2], data.specular[3]);
         to.baseColor = new ColorRGBA(data.color[0], data.color[1], data.color[2], data.color[3]);
         to.metallic = data.metallic;
@@ -113,11 +108,11 @@ public class AssetsLoadMaterialTextures {
         return tex;
     }
 
-    public TextureCacheObject loadTextureObject(long key) {
-        var d = texturesMapFramesDataMap.get(id2Kid(key));
+    public TextureCacheObject loadTextureObject(long id) {
+        var d = texturesMapFramesDataMap.get(id);
         if (d == null) {
-            d = texturesMapFramesDataMap.get(id2Kid(0xffff));
-            log.error("No texture object with kid {}", id2Kid(key));
+            d = texturesMapFramesDataMap.get(TextureCacheObject.ridTypeToId(0xffff, 0));
+            log.error("No texture object with id {}", id);
         }
         var to = loadTextureData(d);
         to.tex = loadTexture(d.image);

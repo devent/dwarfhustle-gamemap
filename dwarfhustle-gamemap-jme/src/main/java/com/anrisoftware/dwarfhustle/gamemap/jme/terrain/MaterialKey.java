@@ -45,7 +45,7 @@ public class MaterialKey {
 
     public MaterialKey(AssetManager assets, TextureCacheObject tex, TextureCacheObject[] objectTexs, Long[] objects,
             TextureCacheObject emissive, boolean selected, boolean transparent) {
-        this.hash = calcHash(tex.rid, objects, emissive != null ? emissive.rid : null, selected, transparent);
+        this.hash = calcHash(tex.getId(), objects, emissive != null ? emissive.getId() : null, selected, transparent);
         this.tex = tex;
         this.emissive = emissive;
         this.objects = objectTexs;
