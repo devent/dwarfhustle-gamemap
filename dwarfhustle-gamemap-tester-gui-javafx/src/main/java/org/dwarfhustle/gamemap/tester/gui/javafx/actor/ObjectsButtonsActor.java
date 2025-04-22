@@ -48,7 +48,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.buildings.KnowledgeBuilding;
-import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
+import com.anrisoftware.dwarfhustle.model.api.map.KnowledgeBlock;
 import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeContainer;
 import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeFurniture;
 import com.anrisoftware.dwarfhustle.model.api.miscobjects.KnowledgeMiscObject;
@@ -178,7 +178,7 @@ public class ObjectsButtonsActor extends AbstractPaneActor<ObjectsButtonsControl
         final var c = is.controller;
         this.controller = c;
         runFxThread(() -> {
-            collectObjects(typeObjects, kg, "block", BlockObject.OBJECT_TYPE,
+            collectObjects(typeObjects, kg, "block", KnowledgeBlock.OBJECT_TYPE,
                     ko -> ko.getName().equalsIgnoreCase("block-normal") || ko.getName().contains("ramp"));
             collectObjects(typeObjects, kg, "grass", Grass.OBJECT_TYPE);
             collectObjects(typeObjects, kg, "shrub", Shrub.OBJECT_TYPE);

@@ -88,7 +88,7 @@ import com.anrisoftware.dwarfhustle.model.actor.ActorSystemProvider;
 import com.anrisoftware.dwarfhustle.model.actor.MessageActor.Message;
 import com.anrisoftware.dwarfhustle.model.actor.ShutdownMessage;
 import com.anrisoftware.dwarfhustle.model.api.map.Block;
-import com.anrisoftware.dwarfhustle.model.api.map.BlockObject;
+import com.anrisoftware.dwarfhustle.model.api.map.KnowledgeBlock;
 import com.anrisoftware.dwarfhustle.model.api.materials.Liquid;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameBlockPos;
 import com.anrisoftware.dwarfhustle.model.api.objects.GameMap;
@@ -265,9 +265,9 @@ public class TerrainActor {
             k.put(BLOCK_MATERIAL_MAGMA,
                     askKnowledgeIdByName(ko, KNOWLEDGE_GET_TIMEOUT, s.scheduler(), Liquid.TYPE, "magma"));
             k.put(OBJECT_BLOCK_CEILING,
-                    askKnowledgeIdByName(ko, KNOWLEDGE_GET_TIMEOUT, s.scheduler(), BlockObject.TYPE, "block-ceiling"));
+                    askKnowledgeIdByName(ko, KNOWLEDGE_GET_TIMEOUT, s.scheduler(), KnowledgeBlock.TYPE, "block-ceiling"));
             k.put(OBJECT_BLOCK_FOCUS,
-                    askKnowledgeIdByName(ko, KNOWLEDGE_GET_TIMEOUT, s.scheduler(), BlockObject.TYPE, "block-focus"));
+                    askKnowledgeIdByName(ko, KNOWLEDGE_GET_TIMEOUT, s.scheduler(), KnowledgeBlock.TYPE, "block-focus"));
             k.put(UNDISCOVERED_MATERIAL, 0xfffe);
             k.put(UNKNOWN_MATERIAL, 0xffff);
             k.put(BLOCK_MATERIAL_SELECTED, 0xfffd);
